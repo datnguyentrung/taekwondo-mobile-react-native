@@ -41,3 +41,11 @@ example
 # generated native folders
 /ios
 /android
+
+.claude/
+.codex/
+.codegraph/
+.agents/
+.gemini/
+
+package-lock.json
