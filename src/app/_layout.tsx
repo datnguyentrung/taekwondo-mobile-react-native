@@ -1,18 +1,50 @@
-import { DarkTheme, DefaultTheme, ThemeProvider } from 'expo-router';
+import { DarkTheme, DefaultTheme, Stack, ThemeProvider } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
+import { useEffect } from 'react';
 import { useColorScheme } from 'react-native';
 
-import AppTabs from '@/routes/navigation/AppTabs';
-import { AnimatedSplashOverlay } from '@/routes/splash/AnimatedIcon';
+import { AppProviders } from '@/app/providers/AppProviders';
+import {
+  BootstrapScreen,
+  SessionRecoveryScreen,
+  useAuthStatus,
+} from '@/features/authentication';
 
-SplashScreen.preventAutoHideAsync();
+void SplashScreen.preventAutoHideAsync();
 
-export default function TabLayout() {
+function AuthRouter() {
+  const status = useAuthStatus();
+
+  useEffect(() => {
+    void SplashScreen.hideAsync();
+  }, []);
+
+  if (status === 'bootstrapping') return <BootstrapScreen />;
+  if (status === 'recoverable-error') return <SessionRecoveryScreen />;
+
+  return (
+    <Stack screenOptions={{ headerShown: false }}>
+      <Stack.Protected guard={status === 'anonymous'}>
+        <Stack.Screen name="(auth)" />
+      </Stack.Protected>
+      <Stack.Protected
+        guard={status === 'selecting-context' || status === 'authenticated'}>
+        <Stack.Screen name="(context)" />
+      </Stack.Protected>
+      <Stack.Protected guard={status === 'authenticated'}>
+        <Stack.Screen name="(app)" />
+      </Stack.Protected>
+    </Stack>
+  );
+}
+
+export default function RootLayout() {
   const colorScheme = useColorScheme();
   return (
     <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-      <AnimatedSplashOverlay />
-      <AppTabs />
+      <AppProviders>
+        <AuthRouter />
+      </AppProviders>
     </ThemeProvider>
   );
 }

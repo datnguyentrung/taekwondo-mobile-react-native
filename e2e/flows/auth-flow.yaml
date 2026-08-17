@@ -1,0 +1,22 @@
+appId: com.dat.taekwondomobile
+---
+- launchApp:
+    clearState: true
+- assertVisible: "Đăng nhập"
+- tapOn: "Số điện thoại"
+- inputText: ${AUTH_PHONE_NUMBER}
+- tapOn: "Mật khẩu"
+- inputText: ${AUTH_PASSWORD}
+- tapOn: "Đăng nhập"
+- runFlow:
+    when:
+      visible: "Bạn muốn thao tác với hồ sơ nào?"
+    commands:
+      - tapOn: ${AUTH_CONTEXT_NAME}
+- assertVisible: "Xin chào"
+- stopApp
+- launchApp
+- assertVisible: "Xin chào"
+- tapOn: "Đăng xuất"
+- tapOn: "Đăng xuất"
+- assertVisible: "Đăng nhập"
