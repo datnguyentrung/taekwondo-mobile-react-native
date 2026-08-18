@@ -60,20 +60,6 @@ export type ScheduleStatus =
   | "INACTIVE"; // Không hoạt động
 
 // ---------------------------------------------------------------------------
-// StudentStatus
-// ---------------------------------------------------------------------------
-export type StudentStatus =
-  | "ACTIVE" // Hoạt động
-  | "RESERVED" // Bảo lưu
-  | "DROPPED"; // Nghỉ học
-
-export const StudentStatusLabel: Record<StudentStatus, string> = {
-  ACTIVE: "Đang học",
-  RESERVED: "Bảo lưu",
-  DROPPED: "Nghỉ học",
-};
-
-// ---------------------------------------------------------------------------
 // Weekday
 // ---------------------------------------------------------------------------
 export type Weekday =
