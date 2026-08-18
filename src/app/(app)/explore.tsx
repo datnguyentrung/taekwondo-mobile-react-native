@@ -1,1 +1,1 @@
-export { default } from '@/routes/explore/ExploreScreen';
+export { default } from "@/routes/explore/ExploreScreen";
