@@ -3,7 +3,7 @@ import * as SplashScreen from 'expo-splash-screen';
 import { useEffect } from 'react';
 import { useColorScheme } from 'react-native';
 
-import { AppProviders } from '@/app/providers/AppProviders';
+import { AppProviders } from '@/routes/providers/AppProviders';
 import {
   BootstrapScreen,
   SessionRecoveryScreen,
