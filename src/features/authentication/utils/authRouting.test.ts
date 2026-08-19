@@ -15,7 +15,7 @@ const response: AuthResponse = {
 };
 
 describe('auth routing', () => {
-  it('routes multi-context login to the native context group', () => {
+  it('routes a session that requires context selection to the native context group', () => {
     expect(routeAfterAuthResponse(response)).toBe('/(context)/select');
   });
 

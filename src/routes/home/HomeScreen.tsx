@@ -39,7 +39,9 @@ export default function HomeScreen() {
 
         {availableContextCount > 1 ? (
           <Pressable
-            onPress={() => router.push('/(context)/select')}
+            onPress={() =>
+              router.push({ pathname: '/(context)/select', params: { mode: 'switch' } })
+            }
             accessibilityRole="button"
             style={({ pressed }) => [styles.action, pressed ? styles.pressed : null]}>
             <View style={styles.actionIcon}>

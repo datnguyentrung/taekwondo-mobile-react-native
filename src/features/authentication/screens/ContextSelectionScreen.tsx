@@ -1,5 +1,5 @@
 import { BriefcaseBusiness, ChevronLeft, GraduationCap, ShieldCheck, UserRound } from 'lucide-react-native';
-import { useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { memo, useCallback } from 'react';
 import { ActivityIndicator, FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -78,9 +78,20 @@ const keyExtractor = (context: UserContext) =>
 
 export default function ContextSelectionScreen() {
   const router = useRouter();
+  const params = useLocalSearchParams<{ mode?: string }>();
+  const isSwitchMode = params.mode === 'switch';
   const contexts = useAuthStore((state) => state.availableContexts);
   const activeContext = useAuthStore((state) => state.activeContext);
   const switchContext = useSwitchContext();
+
+  const handleBack = useCallback(() => {
+    if (!isSwitchMode) return;
+    if (router.canGoBack()) {
+      router.back();
+      return;
+    }
+    router.replace('/(app)');
+  }, [isSwitchMode, router]);
 
   const selectContext = useCallback(
     (context: UserContext) => {
@@ -98,13 +109,14 @@ export default function ContextSelectionScreen() {
         context={item}
         disabled={switchContext.isPending}
         selected={
+          isSwitchMode &&
           activeContext?.personId === item.personId &&
           activeContext.contextType === item.contextType
         }
         onSelect={selectContext}
       />
     ),
-    [activeContext, selectContext, switchContext.isPending],
+    [activeContext, isSwitchMode, selectContext, switchContext.isPending],
   );
 
   const error = switchContext.error ? normalizeAuthError(switchContext.error) : null;
@@ -119,9 +131,9 @@ export default function ContextSelectionScreen() {
         ItemSeparatorComponent={ListSeparator}
         ListHeaderComponent={
           <View style={styles.header}>
-            {activeContext ? (
+            {isSwitchMode ? (
               <Pressable
-                onPress={() => router.back()}
+                onPress={handleBack}
                 accessibilityRole="button"
                 accessibilityLabel="Quay lại"
                 style={styles.backButton}>

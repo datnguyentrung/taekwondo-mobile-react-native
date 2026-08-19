@@ -8,11 +8,9 @@ appId: com.dat.taekwondomobile
 - tapOn: "Mật khẩu"
 - inputText: ${AUTH_PASSWORD}
 - tapOn: "Đăng nhập"
-- runFlow:
-    when:
-      visible: "Bạn muốn thao tác với hồ sơ nào?"
-    commands:
-      - tapOn: ${AUTH_CONTEXT_NAME}
+- assertVisible: "Bạn muốn thao tác với hồ sơ nào?"
+- assertNotVisible: "Xin chào"
+- tapOn: ${AUTH_CONTEXT_NAME}
 - assertVisible: "Xin chào"
 - stopApp
 - launchApp

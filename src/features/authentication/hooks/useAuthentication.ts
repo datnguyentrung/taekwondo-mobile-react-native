@@ -15,28 +15,20 @@ export function useGetAccount() {
 }
 
 export function useLogin() {
-  const router = useRouter();
   return useMutation({
     mutationFn: authSessionService.login,
-    onSuccess: (response) => {
-      router.replace(routeAfterAuthResponse(response));
-    },
   });
 }
 
 export function useLogout() {
-  const router = useRouter();
   return useMutation({
     mutationFn: authSessionService.logout,
-    onSettled: () => router.replace('/(auth)/login'),
   });
 }
 
 export function useLogoutAll() {
-  const router = useRouter();
   return useMutation({
     mutationFn: authSessionService.logoutAll,
-    onSettled: () => router.replace('/(auth)/login'),
   });
 }
 
