@@ -1,4 +1,5 @@
 import type { ClassScheduleSummary } from '@/features/class-schedule/api/class-schedule-summary.dto';
+import type { ScheduleLevel } from '@/features/class-schedule/constants/class-schedule.constants';
 import type { Belt } from '@/features/person/constants/person.constants';
 import type { StudentSummary } from '@/features/student/api/student-summary.dto';
 import type { PageResponse } from '@/infrastructure/http/pagination.types';
@@ -82,6 +83,8 @@ export interface AttendanceFilterParams {
   belts?: Belt[];
   branchIds?: number[];
   scheduleIds?: string[];
+  scheduleLevels?: ScheduleLevel[];
+  sessionIds?: string[];
   startDate?: string;
   endDate?: string;
 }

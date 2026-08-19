@@ -30,3 +30,14 @@ export interface SessionResponse {
   isAttendanceClosed: boolean;
   classSchedule: ClassScheduleSummary;
 }
+
+export interface ClassSessionFilterParams {
+  search?: string;
+  sessionDate?: string;
+  isAttendanceClosed?: boolean;
+  scheduleIds?: string[];
+  page?: number;
+  size?: number;
+  sortBy?: string;
+  sortDir?: 'asc' | 'desc';
+}

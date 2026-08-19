@@ -1,0 +1,35 @@
+import { javaApi } from '@/infrastructure/http/httpClient';
+
+import type {
+  EnrollmentsByScheduleResponse,
+  StudentEnrollmentCreateRequest,
+  StudentEnrollmentResponse,
+  StudentEnrollmentSimpleResponse,
+  StudentEnrollmentUpdateRequest,
+} from './student-enrollment.dto';
+
+export const studentEnrollmentApi = {
+  async create(request: StudentEnrollmentCreateRequest): Promise<unknown[]> {
+    const response = await javaApi.post<unknown[]>('/student-enrollments', request);
+    return response.data;
+  },
+  async update(enrollmentId: string, request: StudentEnrollmentUpdateRequest): Promise<string> {
+    const response = await javaApi.put<string>(`/student-enrollments/${enrollmentId}`, request);
+    return response.data;
+  },
+  async remove(enrollmentId: string): Promise<void> {
+    await javaApi.delete(`/student-enrollments/${enrollmentId}`);
+  },
+  async getByStudent(studentCode: string): Promise<StudentEnrollmentSimpleResponse[]> {
+    const response = await javaApi.get<StudentEnrollmentSimpleResponse[]>(`/student-enrollments/student/${studentCode}`);
+    return response.data;
+  },
+  async getDetailedByStudent(studentCode: string): Promise<StudentEnrollmentResponse[]> {
+    const response = await javaApi.get<StudentEnrollmentResponse[]>(`/student-enrollments/student/${studentCode}/detailed`);
+    return response.data;
+  },
+  async getByClassSchedule(classScheduleId: string): Promise<EnrollmentsByScheduleResponse> {
+    const response = await javaApi.get<EnrollmentsByScheduleResponse>(`/student-enrollments/class-schedule/${classScheduleId}`);
+    return response.data;
+  },
+};

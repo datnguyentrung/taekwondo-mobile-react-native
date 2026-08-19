@@ -2,7 +2,6 @@ import type { ClassScheduleSummary } from '@/features/class-schedule/api/class-s
 import type { PersonResponse } from '@/features/person/domain/person.types';
 import type { Belt } from '@/features/person/constants/person.constants';
 import type { StudentEnrollmentCreateRequest, StudentEnrollmentSimpleResponse } from '@/features/student-enrollment/api/student-enrollment.dto';
-import type { MobileUploadFile } from '@/infrastructure/http/http.types';
 import type { PageResponse } from '@/infrastructure/http/pagination.types';
 import type { UserDetail } from '@/features/user/api/user.dto';
 import type { StudentStatus } from '../constants/student.constants';
@@ -20,7 +19,6 @@ export interface GetStudentsParams {
 }
 
 export interface StudentCreateRequest {
-  file?: MobileUploadFile;
   nationalCode?: string;
   studentStatus: StudentStatus;
   fullName: string;
@@ -33,7 +31,6 @@ export interface StudentCreateRequest {
 }
 
 export interface StudentUpdateRequest {
-  file?: MobileUploadFile;
   personId?: string;
   birthDate?: string;
   belt?: Belt;

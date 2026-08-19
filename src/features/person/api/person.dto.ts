@@ -38,3 +38,11 @@ export interface FaceImageUrlResponse {
 }
 
 export type { PersonResponse };
+
+export interface PersonSearchParams {
+  search?: string;
+  page?: number;
+  size?: number;
+  sortBy?: string;
+  sortDir?: 'asc' | 'desc';
+}

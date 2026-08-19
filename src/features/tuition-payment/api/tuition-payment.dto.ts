@@ -48,3 +48,10 @@ export interface PaymentHistoryItem {
   className: string;
   paidAt: string;
 }
+
+export interface TuitionPaymentListParams {
+  search?: string;
+  page?: number;
+  size?: number;
+  sort?: string | string[];
+}

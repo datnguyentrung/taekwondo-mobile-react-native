@@ -86,4 +86,25 @@ describe('auth HTTP interceptor', () => {
     await expect(javaApi.post('/auth/mobile/login')).rejects.toBeInstanceOf(AxiosError);
     expect(refreshAccessToken).not.toHaveBeenCalled();
   });
+
+  it('serializes array params as repeated keys for Spring list request params', () => {
+    const uri = javaApi.getUri({
+      url: '/student-attendances',
+      params: { scheduleIds: ['A', 'B'] },
+    });
+
+    expect(uri).toContain('scheduleIds=A');
+    expect(uri).toContain('scheduleIds=B');
+    expect(uri).not.toContain('scheduleIds%5B%5D');
+  });
+
+  it('does not keep the JSON content type for FormData bodies', async () => {
+    javaApi.defaults.adapter = async (config) => {
+      const contentType = AxiosHeaders.from(config.headers).get('Content-Type');
+      expect(String(contentType ?? '')).not.toContain('application/json');
+      return { data: null, status: 200, statusText: 'OK', headers: {}, config };
+    };
+
+    await javaApi.post('/multipart-test', new FormData());
+  });
 });

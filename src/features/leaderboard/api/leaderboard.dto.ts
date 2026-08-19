@@ -24,3 +24,15 @@ export interface LeaderboardMember {
   fullName: string;
   belt: Belt;
 }
+
+export interface QuarterLeaderboardParams {
+  year: number;
+  quarter: number;
+  page?: number;
+  size?: number;
+  sort?: string | string[];
+}
+
+export interface FitnessLeaderboardParams extends QuarterLeaderboardParams {
+  skillLevel: import('@/features/fitness/constants/fitness.constans').SkillLevel;
+}

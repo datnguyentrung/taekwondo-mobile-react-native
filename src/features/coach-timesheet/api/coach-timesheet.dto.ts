@@ -53,4 +53,17 @@ export interface CoachTimesheetFilterRequest {
   month?: number;
   year?: number;
   search?: string;
+  page?: number;
+  size?: number;
+  sortBy?: string;
+  sortDir?: 'asc' | 'desc';
+}
+
+export interface MyCoachTimesheetsParams {
+  fromDate?: string;
+  toDate?: string;
+  month?: number;
+  year?: number;
+  page?: number;
+  size?: number;
 }

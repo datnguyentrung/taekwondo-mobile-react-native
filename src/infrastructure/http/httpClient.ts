@@ -63,6 +63,9 @@ export const javaApi = create({
     'Content-Type': 'application/json',
     'ngrok-skip-browser-warning': 'true',
   },
+  paramsSerializer: {
+    indexes: null,
+  },
 });
 
 axiosRetry(javaApi, {
@@ -77,6 +80,10 @@ axiosRetry(javaApi, {
 });
 
 javaApi.interceptors.request.use((config) => {
+  if (config.data instanceof FormData) {
+    config.headers.delete('Content-Type');
+  }
+
   const url = config.url ?? '';
   const token = authRuntime?.getAccessToken();
   if (token && !isAuthLifecycleRequest(url)) {

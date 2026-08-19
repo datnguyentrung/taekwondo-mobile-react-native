@@ -45,3 +45,18 @@ export interface NotificationRecipientListResponse {
   unreadCount: number;
   notifications: PageResponse<NotificationRecipientResponse>;
 }
+
+export interface NotificationRecipientFilterParams {
+  read?: boolean;
+  status?: NotificationRecipientStatus;
+  type?: NotificationType;
+  fromCreatedAt?: string;
+  toCreatedAt?: string;
+  fromReadAt?: string;
+  toReadAt?: string;
+  search?: string;
+  page?: number;
+  size?: number;
+  sortBy?: string;
+  sortDir?: 'asc' | 'desc';
+}

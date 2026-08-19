@@ -26,6 +26,16 @@ export interface CoachAssignmentFilterRequest {
   endDate?: string;
   effectiveDate?: string;
   search?: string;
+  page?: number;
+  size?: number;
+  sortBy?: string;
+  sortDir?: 'asc' | 'desc';
+}
+
+export interface CoachAssignmentExistsParams {
+  coachId: string;
+  classScheduleId: string;
+  workDate: string;
 }
 export interface CoachAssignmentResponse {
   assignmentId: string;

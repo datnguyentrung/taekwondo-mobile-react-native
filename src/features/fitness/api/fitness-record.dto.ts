@@ -52,3 +52,11 @@ export interface FitnessRecordUpdateRequest {
   amount: number;
   skillLevel: SkillLevel;
 }
+
+export interface FitnessRecordListParams {
+  search?: string;
+  skillLevel?: SkillLevel;
+  page?: number;
+  size?: number;
+  sort?: string | string[];
+}
