@@ -40,17 +40,13 @@ async function applyAndPersist(
 
 async function persistRotatedSession(
   response: AuthResponse & AuthTokens,
-  requireContextSelection = false,
 ): Promise<AuthResponse & AuthTokens> {
-  const sessionResponse = requireContextSelection
-    ? { ...response, requiresContextSelection: true }
-    : response;
   await authSessionStorageService.tokens.write({
-    accessToken: sessionResponse.accessToken,
-    refreshToken: sessionResponse.refreshToken,
+    accessToken: response.accessToken,
+    refreshToken: response.refreshToken,
   });
-  await applyAndPersist(sessionResponse, sessionResponse.accessToken);
-  return sessionResponse;
+  await applyAndPersist(response, response.accessToken);
+  return response;
 }
 
 let notificationSyncPromise: Promise<void> | null = null;
@@ -78,7 +74,7 @@ async function invalidateSession(reason: SessionInvalidReason): Promise<void> {
   useAuthStore.getState().setAnonymous();
 }
 
-async function refreshSession(requireContextSelection = false): Promise<string> {
+async function refreshSession(): Promise<string> {
   const tokens = await authSessionStorageService.tokens.read();
   if (!tokens?.refreshToken) {
     await invalidateSession('missing-refresh-token');
@@ -86,15 +82,12 @@ async function refreshSession(requireContextSelection = false): Promise<string> 
   }
 
   const refreshed = await authApi.refresh({ refreshToken: tokens.refreshToken });
-  const session = await persistRotatedSession(
-    refreshed,
-    requireContextSelection,
-  );
+  const session = await persistRotatedSession(refreshed);
   return session.accessToken;
 }
 
 async function refreshAccessToken(): Promise<string> {
-  return refreshSession(useAuthStore.getState().requiresContextSelection);
+  return refreshSession();
 }
 
 export const authSessionService = {
@@ -126,13 +119,10 @@ export const authSessionService = {
       }
 
       if (!isAccessTokenUsable(tokens.accessToken)) {
-        await refreshSession(Boolean(snapshot?.requiresContextSelection));
+        await refreshSession();
       } else {
         const account = await authApi.getAccount();
-        const sessionAccount = snapshot?.requiresContextSelection
-          ? { ...account, requiresContextSelection: true }
-          : account;
-        await applyAndPersist(sessionAccount, tokens.accessToken);
+        await applyAndPersist(account, tokens.accessToken);
       }
 
       void syncFcm(false).catch(() => undefined);
@@ -165,8 +155,10 @@ export const authSessionService = {
       fcmToken,
       platform: notificationService.platform,
     });
-    const session = await persistRotatedSession(response, true);
-    void syncFcm(true).catch(() => undefined);
+    const session = await persistRotatedSession(response);
+    if (!fcmToken) {
+      void syncFcm(true).catch(() => undefined);
+    }
     return session;
   },
 
@@ -185,7 +177,6 @@ export const authSessionService = {
     });
     await applyAndPersist(response, accessToken);
     queryClient.clear();
-    void syncFcm(false).catch(() => undefined);
     return response;
   },
 
