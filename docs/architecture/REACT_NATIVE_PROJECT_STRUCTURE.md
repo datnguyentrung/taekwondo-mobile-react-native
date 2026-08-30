@@ -2035,7 +2035,9 @@ Do not treat all TypeScript types as one category.
 
 ## API DTO
 
-Represents transport shape.
+Represents transport shape: data received from the backend or sent to the backend.
+
+DTOs belong to the remote data boundary. They are not frontend/domain/view models by default, even when the fields happen to match today.
 
 Placement:
 
@@ -2044,6 +2046,14 @@ features/<feature>/api/*.dto.ts
 ```
 
 or colocated with the API module.
+
+DTOs should not leak into screens, components, or hooks unless the feature is doing a tiny pass-through with no mapping, no business semantics, and no UI-specific shape.
+
+Recommended naming:
+
+```text
+<feature>.dto.ts
+```
 
 ## Domain Model
 
@@ -2059,7 +2069,7 @@ DTO and domain model may happen to match today but should not be assumed identic
 
 ## View Model
 
-UI-ready shape.
+UI-ready shape used by frontend code.
 
 Placement near the screen/component/hook that creates it.
 
@@ -2068,6 +2078,18 @@ Placement near the screen/component/hook that creates it.
 Form-specific values such as text strings, drafts, optional validation state.
 
 Placement with form/screen or feature schemas.
+
+## FE-facing Type
+
+Application/view/form types represent the shape the frontend uses internally. They should be named and placed by frontend meaning, not by backend response shape.
+
+Use:
+
+```text
+<feature>.types.ts
+```
+
+only when several cohesive feature-level types need a shared module. Use `domain/` when the type carries business meaning.
 
 ## Navigation Param Type
 
@@ -2100,6 +2122,16 @@ Use mapping when:
 - nullability differs;
 - domain invariants exist;
 - endpoint response contains transport-only metadata.
+
+Mapper placement:
+
+```text
+features/<feature>/api/<feature>.mapper.ts
+```
+
+The mapper converts DTOs into domain, view, or application types at the transport boundary.
+
+Colocate a tiny mapper in `<feature>Api.ts` only when the endpoint is simple and the mapping is obvious. Split a dedicated `<feature>.mapper.ts` when mapping is non-trivial, DTOs are large, multiple endpoints reuse the conversion, or mapper tests would improve confidence.
 
 ---
 
