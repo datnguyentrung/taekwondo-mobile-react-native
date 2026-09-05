@@ -1,5 +1,5 @@
-import { BriefcaseBusiness, ChevronLeft, GraduationCap, ShieldCheck, UserRound } from 'lucide-react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
+import { BriefcaseBusiness, ChevronLeft, GraduationCap, ShieldCheck, UserRound } from 'lucide-react-native';
 import { memo, useCallback } from 'react';
 import { ActivityIndicator, FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -10,11 +10,13 @@ import { useAuthStore } from '../store/auth.store';
 import { normalizeAuthError } from '../utils/normalizeAuthError';
 
 function contextLabel(context: UserContext): string {
-  if (context.contextType === 'STUDENT') return 'Học viên';
-  if (context.contextType === 'COACH') return 'Huấn luyện viên';
-  if (context.contextType === 'GUARDIAN') return 'Người giám hộ';
-  if (context.contextType === 'MANAGER') return 'Quản lý';
-  return context.contextType;
+  // if (context.contextType === 'STUDENT') return 'Học viên';
+  // if (context.contextType === 'COACH') return 'Huấn luyện viên';
+  // if (context.contextType === 'GUARDIAN') return 'Người giám hộ';
+  // if (context.contextType === 'MANAGER') return 'Quản lý';
+  if (context.personCode?.startsWith('VQ_')) return 'Học viên';
+  if (context.personCode?.startsWith('VQT_')) return 'Nhân viên';
+  return 'Quản lý';
 }
 
 function relationshipLabel(context: UserContext): string | null {
@@ -47,6 +49,9 @@ const ContextRow = memo(function ContextRow({
 }: ContextRowProps) {
   const relationship = relationshipLabel(context);
   const handlePress = useCallback(() => onSelect(context), [context, onSelect]);
+
+  console.log('context:', context);
+
   return (
     <Pressable
       disabled={disabled || selected}

@@ -38,10 +38,11 @@ export type AuthUser = {
 };
 
 export type UserContext = {
+  userPersonId: string;
   personId: string;
-  contextType: AuthContextType;
+  // contextType: AuthContextType;
   relationshipType: RelationshipType | null;
-  userCode: string | null;
+  personCode: string | null;
   displayName: string;
 };
 

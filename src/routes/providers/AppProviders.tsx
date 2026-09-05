@@ -1,8 +1,19 @@
 import { QueryClientProvider } from '@tanstack/react-query';
-import type { PropsWithChildren } from 'react';
+import { useEffect, type PropsWithChildren } from 'react';
 
 import { useAuthenticationRuntime } from '@/features/authentication';
+import { initializeDatabase } from '@/infrastructure/database/database';
 import { queryClient } from '@/infrastructure/query/queryClient';
+
+function DatabaseRuntime({ children }: PropsWithChildren) {
+  useEffect(() => {
+    void initializeDatabase().catch((error: unknown) => {
+      console.error('[Database] initialize failed', error);
+    });
+  }, []);
+
+  return children;
+}
 
 function AuthRuntime({ children }: PropsWithChildren) {
   useAuthenticationRuntime();
@@ -12,7 +23,9 @@ function AuthRuntime({ children }: PropsWithChildren) {
 export function AppProviders({ children }: PropsWithChildren) {
   return (
     <QueryClientProvider client={queryClient}>
-      <AuthRuntime>{children}</AuthRuntime>
+      <DatabaseRuntime>
+        <AuthRuntime>{children}</AuthRuntime>
+      </DatabaseRuntime>
     </QueryClientProvider>
   );
 }
