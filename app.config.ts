@@ -52,6 +52,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
 
   plugins: [
     "expo-router",
+    "expo-sqlite",
 
     [
       "expo-splash-screen",
@@ -122,8 +123,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
 
   extra: {
     apiUrlJava:
-      process.env.EXPO_PUBLIC_API_URL_JAVA ??
-      "http://localhost:8080/api/v1",
+      process.env.EXPO_PUBLIC_API_URL_JAVA ?? "http://localhost:8080/api/v1",
 
     router: {},
 
