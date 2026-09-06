@@ -8,6 +8,16 @@ export interface CoachTimesheetCheckInRequest {
   personId?: string;
 }
 
+export interface CoachTimesheetCreateRequest {
+  coachAssignmentId: string;
+  classSessionId: string;
+  checkInTime: string;
+  checkOutTime: string;
+  note: string;
+}
+
+export type CoachTimesheetUpdateRequest = CoachTimesheetCreateRequest;
+
 export interface CoachTimesheetAdjustRequest {
   status?: CoachTimesheetStatus;
   checkInTime?: string | null;
@@ -16,6 +26,7 @@ export interface CoachTimesheetAdjustRequest {
 }
 
 export interface CoachTimesheetResponse {
+  coachTimesheetId?: string;
   timesheetId: string;
   coachAssignmentId: string;
   classSessionId: string | null;
@@ -57,6 +68,7 @@ export interface CoachTimesheetFilterRequest {
   size?: number;
   sortBy?: string;
   sortDir?: 'asc' | 'desc';
+  sort?: string | string[];
 }
 
 export interface MyCoachTimesheetsParams {

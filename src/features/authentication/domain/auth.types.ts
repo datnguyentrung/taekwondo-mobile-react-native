@@ -35,12 +35,12 @@ export type AuthUser = {
   phoneNumber: string;
   status: AuthUserStatus;
   roles: SystemRole[];
+  permissions: string[];
 };
 
 export type UserContext = {
   userPersonId: string;
   personId: string;
-  // contextType: AuthContextType;
   relationshipType: RelationshipType | null;
   personCode: string | null;
   displayName: string;
@@ -61,14 +61,14 @@ export type AuthSnapshot = {
 };
 
 export type AuthSession = {
-  sessionId: string;
+  authSessionId: string;
   deviceInfo: string | null;
   platform: 'ANDROID' | 'IOS' | 'WEB';
   revoked: boolean;
   createdAt: string;
-  lastUsedAt: string | null;
+  updatedAt: string;
   expiresAt: string;
-  activeContextType: string | null;
+  activeUserPersonId: string | null;
 };
 
 export type AuthTokens = {

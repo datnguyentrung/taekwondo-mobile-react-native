@@ -11,7 +11,19 @@ export interface ChangePasswordRequest {
 
 export interface UserCreateRequest {
   phoneNumber: string;
+  passwordHash?: string;
+  personId?: string | null;
+  person?: unknown;
+  relationshipType?: RelationshipType;
   roleCodes: string[];
+}
+
+export interface UserUpdateRequest {
+  phoneNumber: string;
+  passwordHash: string;
+  status: UserStatus;
+  lastLoginAt: string;
+  authorizationVersion: number;
 }
 
 export interface UserInfo {
@@ -48,4 +60,10 @@ export interface UserDetail {
   relationshipType: RelationshipType | null;
   active: boolean | null;
   gender: boolean | null;
+}
+
+export interface UserListParams {
+  page?: number;
+  size?: number;
+  sort?: string | string[];
 }

@@ -2,7 +2,24 @@ import type { CoachDetail } from '@/features/coach/api/coach.dto';
 import type { CoachTimesheetResponse } from '@/features/coach-timesheet/api/coach-timesheet.dto';
 import type { StudentDetail } from '@/features/student/api/student.dto';
 import type { StudentAttendanceResponse } from '@/features/student-attendance/api/student-attendance.dto';
+import type { Belt, PersonStatus } from '../constants/person.constants';
 import type { PersonResponse } from '../domain/person.types';
+
+export interface PersonCreateRequest {
+  fullName: string;
+  gender: boolean;
+  birthDate: string;
+  email?: string | null;
+  nationalCode?: string | null;
+  faceImagePath?: string | null;
+  currentBelt: Belt;
+  status: PersonStatus;
+  startDate: string;
+}
+
+export interface PersonUpdateRequest extends PersonCreateRequest {
+  personCode?: string | null;
+}
 
 export interface PersonSearchItem {
   personId: string;
@@ -45,4 +62,5 @@ export interface PersonSearchParams {
   size?: number;
   sortBy?: string;
   sortDir?: 'asc' | 'desc';
+  sort?: string | string[];
 }

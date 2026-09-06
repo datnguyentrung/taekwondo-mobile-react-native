@@ -10,3 +10,12 @@ export const ROLE_LEVELS = {
 } as const;
 
 export type RoleLevel = (typeof ROLE_LEVELS)[keyof typeof ROLE_LEVELS];
+
+export type PermissionAction = 'CREATE' | 'UPDATE' | 'READ' | 'DELETE';
+
+export const PermissionActionValues = [
+  'CREATE',
+  'UPDATE',
+  'READ',
+  'DELETE',
+] as const satisfies readonly PermissionAction[];

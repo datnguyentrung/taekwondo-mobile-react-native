@@ -1,16 +1,22 @@
 import { javaApi } from '@/infrastructure/http/httpClient';
+import type { PageResponse } from '@/infrastructure/http/pagination.types';
 
-import type { ScheduleStatus } from '../constants/class-schedule.constants';
 import type {
   ClassScheduleCreateRequest,
   ClassScheduleDetail,
+  ClassScheduleResponse,
   ClassScheduleUpdateRequest,
   GetClassSchedulesParams,
 } from './class-schedule.dto';
 
 export const classScheduleApi = {
-  async getList(params?: GetClassSchedulesParams): Promise<ClassScheduleDetail[]> {
-    const response = await javaApi.get<ClassScheduleDetail[]>('/class-schedules', { params });
+  async list(params?: GetClassSchedulesParams): Promise<PageResponse<ClassScheduleResponse>> {
+    const response = await javaApi.get<PageResponse<ClassScheduleResponse>>('/class-schedules', { params });
+    return response.data;
+  },
+
+  async getList(params?: GetClassSchedulesParams): Promise<PageResponse<ClassScheduleDetail>> {
+    const response = await javaApi.get<PageResponse<ClassScheduleDetail>>('/class-schedules', { params });
     return response.data;
   },
 
@@ -31,9 +37,5 @@ export const classScheduleApi = {
 
   async remove(scheduleId: string): Promise<void> {
     await javaApi.delete(`/class-schedules/${scheduleId}`);
-  },
-
-  async updateStatus(scheduleId: string, status: ScheduleStatus): Promise<void> {
-    await javaApi.patch(`/class-schedules/${scheduleId}/status`, undefined, { params: { status } });
   },
 };

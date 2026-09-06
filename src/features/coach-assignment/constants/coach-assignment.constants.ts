@@ -1,15 +1,26 @@
 export type CoachAssignmentStatus =
-  | "ACTIVE" // 🟢 Đang giảng dạy
-  | "SUSPENDED" // 🟡 Tạm ngưng / Bảo lưu
-  | "COMPLETED" // 🔵 Hoàn thành nhiệm vụ
-  | "TERMINATED" // 🔴 Chấm dứt / Hủy bỏ
-  | "PENDING"; // ⚪ Dự kiến – chờ nhận lớp
+  | 'PENDING'
+  | 'ACTIVE'
+  | 'SUSPENDED'
+  | 'ENDED'
+  | 'CANCELLED'
+  | 'COMPLETED'
+  | 'TERMINATED';
 
-export const CoachAssignmentStatusLabel: Record<CoachAssignmentStatus, string> =
-  {
-    ACTIVE: "Đang giảng dạy",
-    SUSPENDED: "Tạm ngưng",
-    COMPLETED: "Hoàn thành nhiệm vụ",
-    TERMINATED: "Chấm dứt",
-    PENDING: "Chờ nhận lớp",
-  };
+export const CoachAssignmentStatusValues = [
+  'PENDING',
+  'ACTIVE',
+  'SUSPENDED',
+  'ENDED',
+  'CANCELLED',
+] as const satisfies readonly CoachAssignmentStatus[];
+
+export const CoachAssignmentStatusLabel: Record<CoachAssignmentStatus, string> = {
+  PENDING: 'Chờ phân công',
+  ACTIVE: 'Đang được phân công',
+  SUSPENDED: 'Tạm đình chỉ',
+  ENDED: 'Đã kết thúc',
+  CANCELLED: 'Đã hủy',
+  COMPLETED: 'Hoàn thành nhiệm vụ',
+  TERMINATED: 'Chấm dứt',
+};

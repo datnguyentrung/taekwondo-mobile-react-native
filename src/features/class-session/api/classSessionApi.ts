@@ -9,6 +9,12 @@ import type {
 } from './class-session.dto';
 
 export const classSessionApi = {
+  async list(params?: ClassSessionFilterParams): Promise<PageResponse<SessionResponse>> {
+    return classSessionApi.getList(params);
+  },
+  async get(sessionId: string): Promise<SessionResponse> {
+    return classSessionApi.getDetail(sessionId);
+  },
   async getList(params?: ClassSessionFilterParams): Promise<PageResponse<SessionResponse>> {
     const response = await javaApi.get<PageResponse<SessionResponse>>('/class-sessions', { params });
     return response.data;

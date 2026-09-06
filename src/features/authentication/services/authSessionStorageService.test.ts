@@ -48,6 +48,7 @@ describe('auth session storage boundaries', () => {
         phoneNumber: '0369222068',
         status: 'ACTIVE',
         roles: ['ROLE_STUDENT'],
+        permissions: [],
       },
       activeContext: null,
       availableContexts: [],

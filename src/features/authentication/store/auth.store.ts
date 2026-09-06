@@ -90,6 +90,6 @@ export const selectCurrentUserId = (state: AuthState) => state.user?.userId ?? n
 export const selectCurrentPersonId = (state: AuthState) =>
   state.activeContext?.personId ?? null;
 export const selectCurrentContextType = (state: AuthState) =>
-  state.activeContext?.contextType ?? null;
+  state.activeContext?.relationshipType ?? null;
 export const selectCurrentUserCode = (state: AuthState) =>
-  state.activeContext?.userCode ?? undefined;
+  state.activeContext?.personCode ?? undefined;

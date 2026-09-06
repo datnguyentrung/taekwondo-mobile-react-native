@@ -11,18 +11,22 @@ import type {
 
 export const fitnessRecordApi = {
   async create(request: FitnessRecordCreateRequest): Promise<FitnessRecordResponse> {
-    const response = await javaApi.post<FitnessRecordResponse>('/fitness-record', request);
+    const response = await javaApi.post<FitnessRecordResponse>('/fitness-records', request);
     return response.data;
   },
   async update(id: number, request: FitnessRecordUpdateRequest): Promise<FitnessRecordResponse> {
-    const response = await javaApi.put<FitnessRecordResponse>(`/fitness-record/${id}`, request);
+    const response = await javaApi.put<FitnessRecordResponse>(`/fitness-records/${id}`, request);
     return response.data;
   },
   async remove(id: number): Promise<void> {
-    await javaApi.delete(`/fitness-record/${id}`);
+    await javaApi.delete(`/fitness-records/${id}`);
+  },
+  async get(id: number): Promise<FitnessRecordResponse> {
+    const response = await javaApi.get<FitnessRecordResponse>(`/fitness-records/${id}`);
+    return response.data;
   },
   async getList(params?: FitnessRecordListParams): Promise<PageResponse<FitnessRecordListResponse>> {
-    const response = await javaApi.get<PageResponse<FitnessRecordListResponse>>('/fitness-record', { params });
+    const response = await javaApi.get<PageResponse<FitnessRecordListResponse>>('/fitness-records', { params });
     return response.data;
   },
 };

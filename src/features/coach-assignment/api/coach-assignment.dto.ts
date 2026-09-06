@@ -3,6 +3,8 @@ import type { ClassScheduleSummary } from '@/features/class-schedule/api/class-s
 import type { CoachSummary } from '@/features/coach/api/coach-summary.dto';
 
 export interface CoachAssignmentCreateRequest {
+  courseId?: string;
+  assignedDate?: string;
   coachId: string;
   scheduleIds: string[];
   assignmentDate: string;
@@ -11,6 +13,10 @@ export interface CoachAssignmentCreateRequest {
 }
 
 export interface CoachAssignmentUpdateRequest {
+  coachId?: string;
+  courseId?: string;
+  assignedDate?: string;
+  coachAssignmentStatus?: CoachAssignmentStatus;
   status: CoachAssignmentStatus;
   assignmentDate?: string;
   endDate?: string | null;
@@ -38,6 +44,9 @@ export interface CoachAssignmentExistsParams {
   workDate: string;
 }
 export interface CoachAssignmentResponse {
+  coachAssignmentId?: string;
+  coachId?: string;
+  courseId?: string;
   assignmentId: string;
   classSchedule: ClassScheduleSummary;
   assignedDate: string;

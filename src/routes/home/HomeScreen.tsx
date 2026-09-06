@@ -32,7 +32,7 @@ export default function HomeScreen() {
           <Text style={styles.name}>{activeContext?.displayName ?? user?.phoneNumber ?? 'Thành viên'}</Text>
           <Text style={styles.meta}>
             {activeContext
-              ? `${activeContext.contextType} · ${activeContext.userCode ?? user?.phoneNumber ?? ''}`
+              ? `${activeContext.personCode ?? activeContext.relationshipType ?? 'Hồ sơ'} · ${user?.phoneNumber ?? ''}`
               : user?.phoneNumber ?? ''}
           </Text>
         </View>

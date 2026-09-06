@@ -3,13 +3,29 @@ import { javaApi } from '@/infrastructure/http/httpClient';
 import type {
   CoachTimesheetAdjustRequest,
   CoachTimesheetCheckInRequest,
+  CoachTimesheetCreateRequest,
   CoachTimesheetFilterRequest,
   CoachTimesheetListResponse,
   CoachTimesheetResponse,
+  CoachTimesheetUpdateRequest,
   MyCoachTimesheetsParams,
 } from './coach-timesheet.dto';
 
 export const coachTimesheetApi = {
+  async list(params?: CoachTimesheetFilterRequest): Promise<CoachTimesheetListResponse> {
+    return coachTimesheetApi.getList(params);
+  },
+  async get(timesheetId: string): Promise<CoachTimesheetResponse> {
+    return coachTimesheetApi.getDetail(timesheetId);
+  },
+  async create(request: CoachTimesheetCreateRequest): Promise<CoachTimesheetResponse> {
+    const response = await javaApi.post<CoachTimesheetResponse>('/coach-timesheets', request);
+    return response.data;
+  },
+  async update(timesheetId: string, request: CoachTimesheetUpdateRequest): Promise<CoachTimesheetResponse> {
+    const response = await javaApi.put<CoachTimesheetResponse>(`/coach-timesheets/${timesheetId}`, request);
+    return response.data;
+  },
   async checkIn(request: CoachTimesheetCheckInRequest): Promise<CoachTimesheetResponse> {
     const response = await javaApi.post<CoachTimesheetResponse>('/coach-timesheets/check-in', request);
     return response.data;

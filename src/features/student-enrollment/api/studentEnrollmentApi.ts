@@ -1,14 +1,24 @@
 import { javaApi } from '@/infrastructure/http/httpClient';
+import type { PageResponse } from '@/infrastructure/http/pagination.types';
 
 import type {
   EnrollmentsByScheduleResponse,
   StudentEnrollmentCreateRequest,
+  StudentEnrollmentListParams,
   StudentEnrollmentResponse,
   StudentEnrollmentSimpleResponse,
   StudentEnrollmentUpdateRequest,
 } from './student-enrollment.dto';
 
 export const studentEnrollmentApi = {
+  async list(params?: StudentEnrollmentListParams): Promise<PageResponse<StudentEnrollmentResponse>> {
+    const response = await javaApi.get<PageResponse<StudentEnrollmentResponse>>('/student-enrollments', { params });
+    return response.data;
+  },
+  async get(enrollmentId: string): Promise<StudentEnrollmentResponse> {
+    const response = await javaApi.get<StudentEnrollmentResponse>(`/student-enrollments/${enrollmentId}`);
+    return response.data;
+  },
   async create(request: StudentEnrollmentCreateRequest): Promise<unknown[]> {
     const response = await javaApi.post<unknown[]>('/student-enrollments', request);
     return response.data;

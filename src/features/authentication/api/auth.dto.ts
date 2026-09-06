@@ -1,10 +1,5 @@
-import type {
-  AuthContextType,
-  AuthSession,
-  AuthUser,
-  UserContext,
-} from '../domain/auth.types';
 import type { NotificationPlatform } from '@/infrastructure/notifications/notification.types';
+import type { AuthSession, AuthUser, UserContext } from '../domain/auth.types';
 
 export type DevicePlatform = NotificationPlatform;
 
@@ -25,8 +20,7 @@ export type LogoutRequest = {
 };
 
 export type SwitchContextRequest = {
-  personId: string;
-  contextType: AuthContextType;
+  userPersonId: string;
 };
 
 export type AuthResponse = {

@@ -6,13 +6,14 @@ const user: AuthUser = {
   phoneNumber: '0369222068',
   status: 'ACTIVE',
   roles: ['ROLE_STUDENT'],
+  permissions: [],
 };
 
 const context: UserContext = {
+  userPersonId: 'user-person-1',
   personId: 'person-1',
-  contextType: 'STUDENT',
   relationshipType: 'OWNER',
-  userCode: 'HV001',
+  personCode: 'HV001',
   displayName: 'Nguyễn Văn A',
 };
 

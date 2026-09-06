@@ -3,9 +3,15 @@ import type { ClassScheduleSummary } from '@/features/class-schedule/api/class-s
 import type { StudentSummary } from '@/features/student/api/student-summary.dto';
 
 export interface StudentEnrollmentCreateRequest {
+  studentPersonId?: string;
+  coursePurchaseId?: string;
+  classScheduleId?: string;
+  startDate?: string;
+  endDate?: string;
   studentCode: string;
   scheduleIds: string[];
   joinDate: string;
+  status?: StudentEnrollmentStatus;
   note?: string;
 }
 
@@ -17,6 +23,12 @@ export interface StudentEnrollmentUpdateRequest {
 }
 
 export interface StudentEnrollmentResponse {
+  studentEnrollmentId?: string;
+  studentPersonId?: string;
+  coursePurchaseId?: string;
+  classScheduleId?: string;
+  startDate?: string;
+  endDate?: string;
   enrollmentId: string;
   student: StudentSummary;
   classSchedule: ClassScheduleSummary;
@@ -26,6 +38,12 @@ export interface StudentEnrollmentResponse {
   note: string | null;
   createdAt: string;
   updatedAt: string;
+}
+
+export interface StudentEnrollmentListParams {
+  page?: number;
+  size?: number;
+  sort?: string | string[];
 }
 export interface StudentEnrollmentSimpleResponse {
   enrollmentId: string;

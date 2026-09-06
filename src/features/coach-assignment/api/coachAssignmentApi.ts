@@ -12,6 +12,12 @@ import type {
 } from './coach-assignment.dto';
 
 export const coachAssignmentApi = {
+  async list(params?: CoachAssignmentFilterRequest): Promise<PageResponse<CoachAssignmentResponse>> {
+    return coachAssignmentApi.getList(params);
+  },
+  async get(assignmentId: string): Promise<CoachAssignmentResponse> {
+    return coachAssignmentApi.getDetail(assignmentId);
+  },
   async create(request: CoachAssignmentCreateRequest): Promise<CoachAssignmentSimpleResponse[]> {
     const response = await javaApi.post<CoachAssignmentSimpleResponse[]>('/coach-assignments', request);
     return response.data;

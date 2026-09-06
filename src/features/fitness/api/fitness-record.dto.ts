@@ -26,6 +26,14 @@ export interface FitnessListMetrics {
 }
 export interface FitnessRecordResponse {
   id: number;
+  fitnessRecordId?: number;
+  studentId?: string;
+  fitnessId?: number;
+  recordedByCoachId?: string;
+  recordDate?: string;
+  duration?: number;
+  createdAt?: string;
+  updatedAt?: string;
   studentSummary: StudentSummary;
   metrics: FitnessMetrics;
   recordedByCoach: CoachSummary;
@@ -38,6 +46,10 @@ export interface FitnessRecordListResponse {
 }
 
 export interface FitnessRecordCreateRequest {
+  studentId?: string;
+  fitnessId?: number;
+  recordedByCoachId?: string;
+  recordDate?: string;
   assessmentDate: string;
   studentCode: string;
   duration: number;
@@ -47,6 +59,10 @@ export interface FitnessRecordCreateRequest {
 }
 
 export interface FitnessRecordUpdateRequest {
+  studentId?: string;
+  fitnessId?: number;
+  recordedByCoachId?: string;
+  recordDate?: string;
   assessmentDate: string;
   duration: number;
   amount: number;

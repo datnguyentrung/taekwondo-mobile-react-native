@@ -7,6 +7,10 @@ import type { AttendanceStatus, EvaluationStatus } from '../constants/student-at
 import type { AttendanceStats } from './attendance-stats.dto';
 
 export interface StudentAttendanceResponse {
+  studentAttendanceId?: string;
+  classSessionId?: string;
+  studentEnrollmentId?: string;
+  coachAssignmentId?: string;
   attendanceId: string | null;
   enrollmentId: string;
   studentSummary: StudentSummary;
@@ -21,6 +25,18 @@ export interface StudentAttendanceResponse {
   evaluatedByCoachName: string | null;
   updatedAt: string;
 }
+
+export interface StudentAttendanceCreateRequest {
+  classSessionId: string;
+  studentEnrollmentId: string;
+  coachAssignmentId: string;
+  checkInTime: string;
+  attendanceStatus: AttendanceStatus;
+  evaluationStatus: EvaluationStatus;
+  note: string;
+}
+
+export type StudentAttendanceUpdateRequest = StudentAttendanceCreateRequest;
 
 export interface AttendanceListResponse {
   stats: AttendanceStats;
@@ -87,4 +103,5 @@ export interface AttendanceFilterParams {
   sessionIds?: string[];
   startDate?: string;
   endDate?: string;
+  sort?: string | string[];
 }

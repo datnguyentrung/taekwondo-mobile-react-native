@@ -1,4 +1,4 @@
-import type { Belt } from '../constants/person.constants';
+import type { Belt, PersonStatus } from '../constants/person.constants';
 
 export interface PersonResponse {
   personId: string;
@@ -8,8 +8,14 @@ export interface PersonResponse {
   nationalCode: string | null;
   email: string | null;
   belt: Belt;
+  currentBelt?: Belt;
+  personCode?: string | null;
+  status?: PersonStatus;
+  startDate?: string | null;
   faceImagePath: string | null;
   avatarUrl: string | null;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface PersonSearchItem {

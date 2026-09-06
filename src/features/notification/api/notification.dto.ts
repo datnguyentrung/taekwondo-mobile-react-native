@@ -4,11 +4,37 @@ import type { NotificationRecipientStatus, NotificationType } from '../constants
 export interface NotificationCreateRequest {
   title: string;
   body: string;
-  notificationType?: NotificationType;
-  referenceType?: string;
-  referenceId?: string;
-  payload?: string;
-  recipientUserIds: string[];
+  notificationType: NotificationType;
+  referenceType?: string | null;
+  referenceId?: string | null;
+  payload?: string | null;
+  recipientUserIds?: string[];
+}
+
+export interface NotificationUpdateRequest {
+  title: string;
+  body: string;
+  notificationType: NotificationType;
+  referenceType: string;
+  referenceId: string;
+  payload: string;
+}
+
+export interface NotificationRecipientCreateRequest {
+  notificationId: string;
+  recipientUserId: string;
+  read: boolean;
+  readAt: string;
+  deliveredAt: string;
+  notificationRecipientStatus: NotificationRecipientStatus;
+}
+
+export type NotificationRecipientUpdateRequest = NotificationRecipientCreateRequest;
+
+export interface NotificationListParams {
+  page?: number;
+  size?: number;
+  sort?: string | string[];
 }
 
 export interface NotificationRecipientResponse {
@@ -59,4 +85,5 @@ export interface NotificationRecipientFilterParams {
   size?: number;
   sortBy?: string;
   sortDir?: 'asc' | 'desc';
+  sort?: string | string[];
 }

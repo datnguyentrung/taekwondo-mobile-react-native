@@ -2,33 +2,40 @@ import type { ClassScheduleSummary } from '@/features/class-schedule/api/class-s
 import type { SessionStatus } from '../constants/class-session.constants';
 
 export interface SessionCreateRequest {
-  scheduleId: string;
+  courseId?: string;
+  scheduleId?: string;
   sessionDate?: string;
   startTime?: string;
   endTime?: string;
   note?: string;
   status?: SessionStatus;
+  attendanceClosed?: boolean;
   isAttendanceClosed?: boolean;
 }
 
 export interface SessionUpdateRequest {
+  courseId?: string;
   sessionDate?: string;
   startTime?: string;
   endTime?: string;
   note?: string;
   status?: SessionStatus;
+  attendanceClosed?: boolean;
   isAttendanceClosed?: boolean;
 }
 
 export interface SessionResponse {
+  classSessionId?: string;
+  courseId?: string;
   sessionId: string;
   sessionDate: string;
   startTime: string;
   endTime: string;
   note: string | null;
   status: SessionStatus;
+  attendanceClosed?: boolean;
   isAttendanceClosed: boolean;
-  classSchedule: ClassScheduleSummary;
+  classSchedule?: ClassScheduleSummary;
 }
 
 export interface ClassSessionFilterParams {
@@ -40,4 +47,5 @@ export interface ClassSessionFilterParams {
   size?: number;
   sortBy?: string;
   sortDir?: 'asc' | 'desc';
+  sort?: string | string[];
 }
