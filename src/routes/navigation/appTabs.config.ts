@@ -1,54 +1,82 @@
-import type { RoleLevel } from "@/features/roles/constants/roles.constants";
+import type { Href } from 'expo-router';
+
+import type { RoleLevel } from '@/features/roles/constants/roles.constants';
+import type { AppIconName } from '@/theme/icons';
+
+export type AppTabName =
+  | 'index'
+  | 'activities'
+  | 'check-in'
+  | 'schedule'
+  | 'account'
+  | 'explore';
 
 export interface AppTabConfig {
-  name: string;
+  name: AppTabName;
   label: string;
-  icon: number;
+  href: Href;
+  icon: AppIconName;
+  activeIcon?: AppIconName;
   minimumRoleLevel: RoleLevel;
   display: boolean;
+  centerAction?: boolean;
 }
 
 export const APP_TABS: AppTabConfig[] = [
   {
-    name: "index",
-    label: "Trang chủ",
-    icon: require("@/assets/images/tabIcons/home.png"),
+    name: 'index',
+    label: 'Trang chủ',
+    href: '/',
+    icon: 'homeOutline',
+    activeIcon: 'homeFill',
     minimumRoleLevel: 0,
     display: true,
   },
   {
-    name: "activities",
-    label: "Hoạt động",
-    icon: require("@/assets/images/tabIcons/home.png"),
+    name: 'activities',
+    label: 'Tính năng',
+    href: '/activities',
+    icon: 'databaseOutline',
+    activeIcon: 'databaseFill',
     minimumRoleLevel: 0,
     display: true,
   },
   {
-    name: "check-in",
-    label: "Quét mã",
-    icon: require("@/assets/images/tabIcons/home.png"),
+    name: 'check-in',
+    label: 'Quét mã',
+    href: '/check-in',
+    icon: 'qrCode',
+    minimumRoleLevel: 0,
+    display: true,
+    centerAction: true,
+  },
+  {
+    name: 'schedule',
+    label: 'Lịch học',
+    href: '/schedule',
+    icon: 'calendarOutline',
+    activeIcon: 'calendar',
     minimumRoleLevel: 0,
     display: true,
   },
   {
-    name: "schedule",
-    label: "Lịch học",
-    icon: require("@/assets/images/tabIcons/home.png"),
-    minimumRoleLevel: 0,
-    display: true,
-  },
-  {
-    name: "account",
-    label: "Tài khoản",
-    icon: require("@/assets/images/tabIcons/explore.png"),
+    name: 'account',
+    label: 'Tài khoản',
+    href: '/account',
+    icon: 'personOutline',
+    activeIcon: 'personFill',
     minimumRoleLevel: 1,
     display: true,
   },
   {
-    name: "explore",
-    label: "Khám phá",
-    icon: require("@/assets/images/tabIcons/explore.png"),
+    name: 'explore',
+    label: 'Khám phá',
+    href: '/explore',
+    icon: 'dashboardOutline',
+    activeIcon: 'dashboardFill',
     minimumRoleLevel: 1,
-    display: true,
+    display: false,
   },
 ];
+
+export const VISIBLE_APP_TABS = APP_TABS.filter((tab) => tab.display);

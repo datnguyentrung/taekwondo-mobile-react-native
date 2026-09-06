@@ -3,6 +3,6 @@ module.exports = function babelConfig(api) {
 
   return {
     presets: ['babel-preset-expo'],
-    plugins: [['inline-import', { extensions: ['.sql'] }]],
+    plugins: [['inline-import', { extensions: ['.sql', '.svg'] }]],
   };
 };

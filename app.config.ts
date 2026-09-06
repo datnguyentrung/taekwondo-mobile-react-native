@@ -64,6 +64,18 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     ],
 
     [
+      "expo-font",
+      {
+        fonts: [
+          "./node_modules/@expo-google-fonts/roboto/400Regular/Roboto_400Regular.ttf",
+          "./node_modules/@expo-google-fonts/roboto/500Medium/Roboto_500Medium.ttf",
+          "./node_modules/@expo-google-fonts/roboto/600SemiBold/Roboto_600SemiBold.ttf",
+          "./node_modules/@expo-google-fonts/roboto/800ExtraBold/Roboto_800ExtraBold.ttf",
+        ],
+      },
+    ],
+
+    [
       "expo-secure-store",
       {
         configureAndroidBackup: true,

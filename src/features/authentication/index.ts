@@ -1,4 +1,5 @@
 export { useAuthSession } from './hooks/useAuthSession';
+export { useLogout } from './hooks/useAuthentication';
 export { useAuthStatus } from './hooks/useAuthStatus';
 export { useAuthenticationRuntime } from './hooks/useAuthenticationRuntime';
 export { LogoutButton } from './components/LogoutButton';

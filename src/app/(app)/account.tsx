@@ -1,1 +1,1 @@
-export { default } from "@/routes/home/HomeScreen";
+export { default } from '@/routes/account/AccountScreen';

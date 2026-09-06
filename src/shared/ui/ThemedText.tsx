@@ -1,10 +1,24 @@
 import { Platform, StyleSheet, Text, type TextProps } from 'react-native';
 
 import { useTheme } from '@/shared/hooks/useTheme';
-import { Fonts, ThemeColor } from '@/theme/theme';
+import { Fonts, ThemeColor, typography } from '@/theme/theme';
 
 export type ThemedTextProps = TextProps & {
-  type?: 'default' | 'title' | 'small' | 'smallBold' | 'subtitle' | 'link' | 'linkPrimary' | 'code';
+  type?:
+    | 'default'
+    | 'title'
+    | 'small'
+    | 'smallBold'
+    | 'subtitle'
+    | 'heading'
+    | 'body'
+    | 'bodySmall'
+    | 'caption'
+    | 'featureLabel'
+    | 'action'
+    | 'link'
+    | 'linkPrimary'
+    | 'code';
   themeColor?: ThemeColor;
 };
 
@@ -20,6 +34,12 @@ export function ThemedText({ style, type = 'default', themeColor, ...rest }: The
         type === 'small' && styles.small,
         type === 'smallBold' && styles.smallBold,
         type === 'subtitle' && styles.subtitle,
+        type === 'heading' && typography.heading,
+        type === 'body' && typography.body,
+        type === 'bodySmall' && typography.bodySmall,
+        type === 'caption' && typography.caption,
+        type === 'featureLabel' && typography.featureLabel,
+        type === 'action' && typography.action,
         type === 'link' && styles.link,
         type === 'linkPrimary' && styles.linkPrimary,
         type === 'code' && styles.code,
@@ -32,37 +52,25 @@ export function ThemedText({ style, type = 'default', themeColor, ...rest }: The
 
 const styles = StyleSheet.create({
   small: {
-    fontSize: 14,
-    lineHeight: 20,
-    fontWeight: 500,
+    ...typography.bodySmall,
   },
   smallBold: {
-    fontSize: 14,
-    lineHeight: 20,
-    fontWeight: 700,
+    ...typography.featureLabel,
   },
   default: {
-    fontSize: 16,
-    lineHeight: 24,
-    fontWeight: 500,
+    ...typography.body,
   },
   title: {
-    fontSize: 48,
-    fontWeight: 600,
-    lineHeight: 52,
+    ...typography.title,
   },
   subtitle: {
-    fontSize: 32,
-    lineHeight: 44,
-    fontWeight: 600,
+    ...typography.subtitle,
   },
   link: {
-    lineHeight: 30,
-    fontSize: 14,
+    ...typography.bodySmall,
   },
   linkPrimary: {
-    lineHeight: 30,
-    fontSize: 14,
+    ...typography.bodySmall,
     color: '#3c87f7',
   },
   code: {
