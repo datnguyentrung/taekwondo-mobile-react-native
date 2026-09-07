@@ -2,7 +2,7 @@ import './global.css';
 
 import { Platform } from 'react-native';
 
-export { Colors, colorPrimitives, type ThemeColor } from './colors';
+export { Colors, colorPrimitives, figmaColors, Gradients, hexToRgba, type ThemeColor } from './colors';
 export { effects } from './effects';
 export { radii } from './radii';
 export { fontFamilies, typography, type TypographyVariant } from './typography';

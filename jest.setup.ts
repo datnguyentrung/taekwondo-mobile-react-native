@@ -11,9 +11,9 @@
 //   setBackgroundMessageHandler: jest.fn(),
 // }));
 
-jest.mock('lucide-react-native', () => {
-  const React = require('react');
-  const { View } = require('react-native');
+jest.mock("lucide-react-native", () => {
+  const React = require("react");
+  const { View } = require("react-native");
   return new Proxy(
     {},
     {

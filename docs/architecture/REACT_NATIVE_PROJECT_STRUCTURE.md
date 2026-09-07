@@ -2614,6 +2614,35 @@ or create a tiny adapter if route params must be converted.
 
 Do not move feature domain/API/hooks into the root `app/` route tree.
 
+### Project rule: bottom tab route grouping
+
+For this app, bottom navigation belongs to the route shell, not to a screen
+layout component.
+
+```text
+src/app/(app)/
+├── _layout.tsx              # authenticated stack shell, no bottom tabs
+├── (tabs)/
+│   ├── _layout.tsx          # the only place that renders AppTabs
+│   ├── index.tsx            # /
+│   ├── activities.tsx       # /activities
+│   ├── check-in.tsx         # /check-in
+│   ├── schedule.tsx         # /schedule
+│   └── account.tsx          # /account
+└── account/
+    └── general-info.tsx     # /account/general-info, no bottom tabs
+```
+
+Rules:
+
+- Main tab routes must live under `(tabs)`.
+- Detail, stack, and modal routes must live outside `(tabs)`, even when they
+  share a URL prefix with a tab route such as `/account/...`.
+- `BottomTabScreenLayout` is only a visual layout helper. It must not decide
+  whether bottom navigation is visible.
+- Expo route files stay thin and should only adapt or re-export feature screens
+  from `src/routes` or `src/features`.
+
 ## 27.3 Navigation side effects
 
 A feature hook may intentionally trigger navigation only if navigation is part of application-flow orchestration. Prefer injecting callbacks/navigation ports rather than importing router singleton into pure domain code.

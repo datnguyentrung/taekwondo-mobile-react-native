@@ -1,18 +1,43 @@
+export const figmaColors = {
+  /** Màu 1: #D71113 (Primary Red) */
+  color1: '#D71113',
+  /** Màu 2: #000000 (Primary Black Text) */
+  color2: '#000000',
+  /** Màu 3: #6F6F6F (Secondary Text) */
+  color3: '#6F6F6F',
+  /** Màu 4: #CACCCD (Border / Line / Divider) */
+  color4: '#CACCCD',
+  /** Màu 5: #FAFAFC (Light Element Background) */
+  color5: '#FAFAFC',
+  /** Màu nền 1: #FAFAFC (App Background 1) */
+  bg1: '#FAFAFC',
+  /** Màu nền 2: #FFFFFF (Surface / Card Background 2) */
+  bg2: '#FFFFFF',
+  /** Màu 0: Linear 0% #FD9956 100% -> 100% #C2A5FD 100% (Opacity 50%) */
+  linear0: {
+    startColor: '#FD9956',
+    endColor: '#C2A5FD',
+    opacity: 0.5,
+    colors: ['rgba(253, 153, 86, 0.5)', 'rgba(194, 165, 253, 0.5)'] as const,
+    stops: [0, 1] as const,
+  },
+} as const;
+
 export const colorPrimitives = {
   red: {
     100: '#F7CFD0',
     200: '#EFA0A1',
     300: '#E77071',
     400: '#DF4142',
-    500: '#D71113',
+    500: figmaColors.color1,
     700: '#A21D22',
   },
   neutral: {
     100: '#CCCCCC',
     200: '#999999',
-    300: '#666666',
+    300: figmaColors.color3,
     400: '#333333',
-    500: '#000000',
+    500: figmaColors.color2,
   },
   blue: {
     100: '#D2E4F2',
@@ -21,26 +46,31 @@ export const colorPrimitives = {
     400: '#4B93C9',
     500: '#1E78BC',
   },
-  white: '#FFFFFF',
-  appBackground: '#FAFAFC',
+  white: figmaColors.bg2,
+  appBackground: figmaColors.bg1,
   lineIcon: '#33363F',
-  mutedBorder: '#CACCCD',
+  mutedBorder: figmaColors.color4,
+} as const;
+
+export const Gradients = {
+  /** Màu 0: Linear 0% #FD9956 100% -> 100% #C2A5FD 100% (Opacity 50%) */
+  gradient0: figmaColors.linear0,
 } as const;
 
 export const Colors = {
   light: {
-    text: colorPrimitives.neutral[500],
-    background: colorPrimitives.appBackground,
-    surface: colorPrimitives.white,
-    backgroundElement: '#F0F0F3',
+    text: figmaColors.color2,
+    background: figmaColors.bg1,
+    surface: figmaColors.bg2,
+    backgroundElement: figmaColors.color5,
     backgroundSelected: '#E0E1E6',
-    textSecondary: '#6F6F6F',
-    primary: colorPrimitives.red[500],
+    textSecondary: figmaColors.color3,
+    primary: figmaColors.color1,
     primaryPressed: colorPrimitives.red[700],
     primarySoft: colorPrimitives.red[100],
     header: colorPrimitives.red[700],
     icon: colorPrimitives.lineIcon,
-    divider: colorPrimitives.mutedBorder,
+    divider: figmaColors.color4,
     accent: colorPrimitives.blue[500],
   },
   dark: {
@@ -61,3 +91,14 @@ export const Colors = {
 } as const;
 
 export type ThemeColor = keyof typeof Colors.light & keyof typeof Colors.dark;
+
+/**
+ * Chuyển đổi mã màu Hex (e.g. #D71113) sang chuỗi RGBA với opacity mong muốn
+ */
+export function hexToRgba(hex: string, alpha: number): string {
+  const cleanHex = hex.replace('#', '');
+  const r = parseInt(cleanHex.substring(0, 2), 16);
+  const g = parseInt(cleanHex.substring(2, 4), 16);
+  const b = parseInt(cleanHex.substring(4, 6), 16);
+  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+}

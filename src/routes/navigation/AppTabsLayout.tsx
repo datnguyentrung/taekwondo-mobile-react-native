@@ -5,14 +5,14 @@ import {
   Tabs,
   type TabListProps,
   type TabTriggerSlotProps,
-} from 'expo-router/ui';
-import { Pressable, StyleSheet, View } from 'react-native';
+} from "expo-router/ui";
+import { Pressable, StyleSheet, View } from "react-native";
 
-import { AppIcon } from '@/shared/ui/AppIcon';
-import { ThemedText } from '@/shared/ui/ThemedText';
-import { Colors, radii } from '@/theme';
+import { AppIcon } from "@/shared/ui/AppIcon";
+import { ThemedText } from "@/shared/ui/ThemedText";
+import { Colors, effects, radii } from "@/theme";
 
-import { VISIBLE_APP_TABS, type AppTabConfig } from './appTabs.config';
+import { VISIBLE_APP_TABS, type AppTabConfig } from "./appTabs.config";
 
 type TabButtonProps = TabTriggerSlotProps & {
   tab: AppTabConfig;
@@ -35,12 +35,9 @@ export default function AppTabsLayout() {
   );
 }
 
-function CustomTabList({ children, style, ...props }: TabListProps) {
+function CustomTabList({ children, style: _style, ...props }: TabListProps) {
   return (
-    <View
-      {...props}
-      pointerEvents="box-none"
-      style={[styles.tabListContainer, style]}>
+    <View {...props} pointerEvents="box-none" style={styles.tabListContainer}>
       <View style={styles.tabList}>{children}</View>
     </View>
   );
@@ -59,10 +56,13 @@ function TabButton({ tab, isFocused, ...props }: TabButtonProps) {
         accessibilityLabel={tab.label}
         accessibilityState={{ selected: active }}
         style={({ pressed }) => [
-          styles.centerButton,
+          styles.centerTabButton,
           pressed ? styles.pressed : null,
-        ]}>
-        <AppIcon name={iconName} size={41} color={Colors.light.surface} />
+        ]}
+      >
+        <View style={styles.centerButton}>
+          <AppIcon name={iconName} size={32} color={Colors.light.surface} />
+        </View>
       </Pressable>
     );
   }
@@ -73,11 +73,16 @@ function TabButton({ tab, isFocused, ...props }: TabButtonProps) {
       accessibilityRole="tab"
       accessibilityLabel={tab.label}
       accessibilityState={{ selected: active }}
-      style={({ pressed }) => [styles.tabButton, pressed ? styles.pressed : null]}>
+      style={({ pressed }) => [
+        styles.tabButton,
+        pressed ? styles.pressed : null,
+      ]}
+    >
       <AppIcon name={iconName} size={30} color={iconColor} />
       <ThemedText
         type="featureLabel"
-        style={[styles.tabLabel, active ? styles.tabLabelActive : null]}>
+        style={[styles.tabLabel, active ? styles.tabLabelActive : null]}
+      >
         {tab.label}
       </ThemedText>
     </Pressable>
@@ -89,47 +94,56 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   tabListContainer: {
-    position: 'absolute',
+    position: "absolute",
     left: 0,
     right: 0,
     bottom: 22,
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
     paddingHorizontal: 20,
   },
   tabList: {
-    width: '100%',
-    maxWidth: 352,
+    width: "100%",
+    // maxWidth: 500,
     height: 70,
     borderRadius: radii.lg,
-    backgroundColor: 'rgba(255, 255, 255, 0.2)',
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    backgroundColor: "rgba(255, 255, 255, 1)",
+    flexDirection: "row",
+    alignItems: "center",
     paddingHorizontal: 12,
-    shadowColor: '#000000',
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.2,
-    shadowRadius: 3,
-    elevation: 2,
+    opacity: 0.8,
+    // shadowColor: "#000000",
+    // shadowOffset: { width: 0, height: 0 },
+    // shadowOpacity: 0.2,
+    // shadowRadius: 3,
+    // elevation: 2,
+    ...effects.card,
   },
   tabButton: {
-    width: 64,
+    flex: 1,
     minHeight: 62,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
     gap: 1,
+  },
+  centerTabButton: {
+    flex: 1,
+    minHeight: 62,
+    alignItems: "center",
+    justifyContent: "center",
   },
   centerButton: {
     width: 46,
     height: 46,
     borderRadius: radii.md,
     backgroundColor: Colors.light.primary,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
   },
   tabLabel: {
     color: Colors.light.textSecondary,
-    textAlign: 'center',
+    textAlign: "center",
   },
   tabLabelActive: {
     color: Colors.light.primary,

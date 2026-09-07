@@ -1,19 +1,29 @@
-import { useRouter } from 'expo-router';
-import { useMemo, useState } from 'react';
+import { Image } from "expo-image";
+import { useRouter } from "expo-router";
+import { useMemo, useState } from "react";
 import {
   ActivityIndicator,
+  ImageBackground,
   Modal,
   Pressable,
   StyleSheet,
   View,
-} from 'react-native';
+} from "react-native";
 
-import { useAuthSession, useLogout } from '@/features/authentication';
-import BottomTabScreenLayout from '@/routes/navigation/layouts/BottomTabScreenLayout';
-import { AppIcon } from '@/shared/ui/AppIcon';
-import { ThemedText } from '@/shared/ui/ThemedText';
-import { Colors, colorPrimitives, effects, radii } from '@/theme';
-import type { AppIconName } from '@/theme/icons';
+import { useAuthSession, useLogout } from "@/features/authentication";
+import BottomTabScreenLayout from "@/routes/navigation/layouts/BottomTabScreenLayout";
+import { AppIcon } from "@/shared/ui/AppIcon";
+import { ThemedText } from "@/shared/ui/ThemedText";
+import {
+  Colors,
+  colorPrimitives,
+  effects,
+  figmaColors,
+  hexToRgba,
+  radii,
+  typography,
+} from "@/theme";
+import type { AppIconName } from "@/theme/icons";
 
 type AccountMenuItem = {
   label: string;
@@ -27,9 +37,9 @@ type AccountMenuSectionProps = {
 };
 
 function contextRoleLabel(personCode?: string | null) {
-  if (personCode?.startsWith('VQ_')) return 'Học viên';
-  if (personCode?.startsWith('VQT_')) return 'Nhân viên';
-  return 'Học viên';
+  if (personCode?.startsWith("VQ_")) return "Học viên";
+  if (personCode?.startsWith("VQT_")) return "Nhân viên";
+  return "Học viên";
 }
 
 export default function AccountScreen() {
@@ -38,29 +48,33 @@ export default function AccountScreen() {
   const logout = useLogout();
   const [confirmingLogout, setConfirmingLogout] = useState(false);
   const displayName =
-    activeContext?.displayName ?? user?.phoneNumber ?? 'NGUYỄN HOÀNG MINH QUÂN';
+    activeContext?.displayName ?? user?.phoneNumber ?? "NGUYỄN HOÀNG MINH QUÂN";
   const profileLabel = contextRoleLabel(activeContext?.personCode);
 
   const profileItems = useMemo<AccountMenuItem[]>(
     () => [
-      { label: 'Thông tin chung', icon: 'personFill' },
-      { label: 'Ví điện tử', icon: 'wallet' },
-      { label: 'Thành tích', icon: 'verified' },
+      {
+        label: "Thông tin chung",
+        icon: "personOutline",
+        onPress: () => router.push("/account/general-info"),
+      },
+      { label: "Ví điện tử", icon: "wallet" },
+      { label: "Thành tích", icon: "verified" },
     ],
-    [],
+    [router],
   );
 
   const settingItems = useMemo<AccountMenuItem[]>(
     () => [
-      { label: 'Đổi mật khẩu', icon: 'lockOpen' },
-      { label: 'Thông báo', icon: 'bellOutline' },
-      { label: 'Liên hệ', icon: 'headphones' },
+      { label: "Đổi mật khẩu", icon: "lockOpen" },
+      { label: "Thông báo", icon: "bellOutline" },
+      { label: "Liên hệ", icon: "headphones" },
     ],
     [],
   );
 
   const switchAccount = () => {
-    router.push({ pathname: '/(context)/select', params: { mode: 'switch' } });
+    router.push({ pathname: "/(context)/select", params: { mode: "switch" } });
   };
 
   const confirmLogout = () => {
@@ -71,7 +85,11 @@ export default function AccountScreen() {
 
   return (
     <BottomTabScreenLayout title="Tài khoản" activeTab="account">
-      <View style={styles.profileCard}>
+      <ImageBackground
+        source={require("@/assets/images/headline.png")}
+        style={styles.profileCard}
+        imageStyle={styles.profileCardImage}
+      >
         <View style={styles.avatar}>
           <AppIcon name="personFill" size={48} color={Colors.light.surface} />
         </View>
@@ -91,39 +109,45 @@ export default function AccountScreen() {
               styles.switchAccount,
               availableContextCount <= 1 ? styles.disabled : null,
               pressed ? styles.pressed : null,
-            ]}>
+            ]}
+          >
             <ThemedText type="action" style={styles.switchText}>
               Chuyển tài khoản
             </ThemedText>
-            <AppIcon name="chevronRight" width={7} height={13} color={Colors.light.primary} />
+            <AppIcon
+              name="chevronRight"
+              width={7}
+              height={13}
+              color={Colors.light.primary}
+            />
           </Pressable>
         </View>
-      </View>
+      </ImageBackground>
 
       <AccountMenuSection title="Hồ sơ cá nhân" items={profileItems} />
       <AccountMenuSection title="Cài đặt" items={settingItems} />
 
       <View style={styles.ratingCard}>
-        <View style={styles.ratingCopy}>
+        <View style={styles.ratingHeader}>
+          <Image
+            source={require("@/assets/images/evaluation-app.png")}
+            style={styles.ratingImage}
+            contentFit="cover"
+            accessibilityLabel="Đánh giá ứng dụng"
+          />
           <ThemedText type="subtitle" style={styles.ratingTitle}>
             Đánh giá của bạn
           </ThemedText>
           <ThemedText type="bodySmall" style={styles.ratingDescription}>
-            Sự hài lòng của bạn là động lực để chúng tôi phát triển.
+            Bạn hài lòng với trải nghiệm trên ứng dụng chứ ?
           </ThemedText>
-          <View style={styles.stars}>
-            {Array.from({ length: 5 }).map((_, index) => (
-              <AppIcon
-                key={`rating-star-${index}`}
-                name="star"
-                size={38}
-                color={colorPrimitives.red[300]}
-              />
-            ))}
-          </View>
         </View>
-        <View style={styles.ratingBadge}>
-          <AppIcon name="cup" size={58} color={Colors.light.primary} />
+        <View style={styles.stars}>
+          {Array.from({ length: 5 }).map((_, index) => (
+            <View key={`rating-star-${index}`} style={styles.starIcon}>
+              <AppIcon name="star" size={38} color="#FFC700" />
+            </View>
+          ))}
         </View>
       </View>
 
@@ -137,16 +161,26 @@ export default function AccountScreen() {
           styles.logoutButton,
           pressed ? styles.pressed : null,
           logout.isPending ? styles.disabled : null,
-        ]}>
+        ]}
+      >
         {logout.isPending ? (
           <ActivityIndicator color={Colors.light.surface} />
         ) : (
           <>
+            <AppIcon
+              name="logoutLight"
+              size={29}
+              color={Colors.light.surface}
+            />
             <ThemedText type="body" style={styles.logoutText}>
               Đăng xuất
             </ThemedText>
-            <AppIcon name="logoutRounded" size={29} color={Colors.light.surface} />
-            <AppIcon name="chevronRight" width={9} height={15} color={Colors.light.surface} />
+            <AppIcon
+              name="chevronRight"
+              width={9}
+              height={15}
+              color={Colors.light.surface}
+            />
           </>
         )}
       </Pressable>
@@ -155,9 +189,14 @@ export default function AccountScreen() {
         visible={confirmingLogout}
         transparent
         animationType="fade"
-        onRequestClose={() => setConfirmingLogout(false)}>
+        onRequestClose={() => setConfirmingLogout(false)}
+      >
         <View style={styles.modalOverlay}>
-          <View style={styles.modalCard} accessibilityViewIsModal accessibilityRole="alert">
+          <View
+            style={styles.modalCard}
+            accessibilityViewIsModal
+            accessibilityRole="alert"
+          >
             <ThemedText type="title" style={styles.modalTitle}>
               Bạn có chắc muốn đăng xuất?
             </ThemedText>
@@ -172,7 +211,8 @@ export default function AccountScreen() {
                 style={({ pressed }) => [
                   styles.modalCancel,
                   pressed ? styles.pressed : null,
-                ]}>
+                ]}
+              >
                 <ThemedText type="action" style={styles.modalCancelText}>
                   Hủy
                 </ThemedText>
@@ -184,7 +224,8 @@ export default function AccountScreen() {
                 style={({ pressed }) => [
                   styles.modalConfirm,
                   pressed ? styles.pressed : null,
-                ]}>
+                ]}
+              >
                 <ThemedText type="action" style={styles.modalConfirmText}>
                   Đăng xuất
                 </ThemedText>
@@ -215,12 +256,18 @@ function AccountMenuSection({ title, items }: AccountMenuSectionProps) {
             style={({ pressed }) => [
               styles.menuRow,
               pressed ? styles.pressed : null,
-            ]}>
+            ]}
+          >
             <AppIcon name={item.icon} size={29} color={Colors.light.icon} />
             <ThemedText type="body" style={styles.menuText}>
               {item.label}
             </ThemedText>
-            <AppIcon name="chevronRight" width={9} height={15} color={Colors.light.icon} />
+            <AppIcon
+              name="chevronRight"
+              width={9}
+              height={15}
+              color={Colors.light.icon}
+            />
             {index < items.length - 1 ? <View style={styles.divider} /> : null}
           </Pressable>
         ))}
@@ -234,19 +281,24 @@ const styles = StyleSheet.create({
     minHeight: 120,
     borderRadius: radii.md,
     backgroundColor: Colors.light.surface,
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     paddingHorizontal: 14,
     gap: 12,
-    ...effects.shadowSoft,
+    overflow: "hidden",
+    ...effects.card,
+  },
+  profileCardImage: {
+    borderRadius: radii.md,
+    resizeMode: "cover",
   },
   avatar: {
     width: 85,
     height: 85,
     borderRadius: 42.5,
     backgroundColor: colorPrimitives.red[300],
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
   },
   profileContent: {
     flex: 1,
@@ -254,6 +306,7 @@ const styles = StyleSheet.create({
   },
   profileName: {
     color: Colors.light.text,
+    ...typography.title,
   },
   profileLabel: {
     color: Colors.light.textSecondary,
@@ -261,10 +314,10 @@ const styles = StyleSheet.create({
   },
   switchAccount: {
     marginTop: 12,
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: 8,
-    alignSelf: 'flex-start',
+    alignSelf: "flex-start",
   },
   switchText: {
     color: Colors.light.primary,
@@ -273,12 +326,12 @@ const styles = StyleSheet.create({
     marginTop: 20,
     minHeight: 240,
     borderRadius: radii.md,
-    backgroundColor: 'rgba(215, 17, 19, 0.3)',
-    overflow: 'hidden',
+    backgroundColor: hexToRgba(figmaColors.color1, 0.3),
+    overflow: "hidden",
   },
   sectionHeader: {
     height: 60,
-    justifyContent: 'center',
+    justifyContent: "center",
     paddingHorizontal: 25,
   },
   sectionTitle: {
@@ -292,8 +345,8 @@ const styles = StyleSheet.create({
   },
   menuRow: {
     minHeight: 60,
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     paddingLeft: 11,
     paddingRight: 8,
     gap: 15,
@@ -303,7 +356,7 @@ const styles = StyleSheet.create({
     color: Colors.light.text,
   },
   divider: {
-    position: 'absolute',
+    position: "absolute",
     left: 55,
     right: 22,
     bottom: 0,
@@ -312,62 +365,73 @@ const styles = StyleSheet.create({
   },
   ratingCard: {
     marginTop: 20,
-    minHeight: 161,
+    height: 161,
     borderRadius: radii.md,
     backgroundColor: Colors.light.surface,
-    flexDirection: 'row',
-    overflow: 'hidden',
-    ...effects.shadowSoft,
+    overflow: "hidden",
+    ...effects.card,
   },
-  ratingCopy: {
-    flex: 1,
-    paddingLeft: 18,
-    paddingTop: 17,
-    paddingBottom: 18,
+  ratingHeader: {
+    height: 115,
+    backgroundColor: "rgba(215, 17, 19, 0.1)",
+    paddingLeft: 12,
+    paddingTop: 14,
   },
   ratingTitle: {
-    color: Colors.light.text,
+    color: Colors.light.primary,
   },
   ratingDescription: {
-    maxWidth: 210,
-    marginTop: 2,
-    color: Colors.light.textSecondary,
+    width: 224,
+    marginTop: 11,
+    color: Colors.light.primary,
   },
   stars: {
-    flexDirection: 'row',
-    gap: 1,
-    marginTop: 14,
+    flexDirection: "row",
+    alignItems: "flex-start",
+    justifyContent: "space-between",
+    height: 46,
+    paddingHorizontal: 22,
+    paddingTop: 7,
   },
-  ratingBadge: {
-    width: 104,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: 'rgba(215, 17, 19, 0.1)',
+  starIcon: {
+    width: 38,
+    height: 38,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  ratingImage: {
+    position: "absolute",
+    top: 3,
+    right: 34,
+    width: 82,
+    height: 82,
   },
   logoutButton: {
     marginTop: 20,
-    minHeight: 60,
+    height: 60,
     borderRadius: radii.xl,
     backgroundColor: Colors.light.primary,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 15,
-    ...effects.shadowCard,
+    flexDirection: "row",
+    alignItems: "center",
+    paddingLeft: 15,
+    paddingRight: 25,
+    gap: 10,
+    ...effects.card,
   },
   logoutText: {
+    flex: 1,
     color: Colors.light.surface,
   },
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(20, 20, 23, 0.54)',
-    justifyContent: 'center',
+    backgroundColor: "rgba(20, 20, 23, 0.54)",
+    justifyContent: "center",
     padding: 24,
   },
   modalCard: {
-    width: '100%',
+    width: "100%",
     maxWidth: 360,
-    alignSelf: 'center',
+    alignSelf: "center",
     borderRadius: radii.md,
     backgroundColor: Colors.light.surface,
     padding: 20,
@@ -380,7 +444,7 @@ const styles = StyleSheet.create({
     color: Colors.light.textSecondary,
   },
   modalActions: {
-    flexDirection: 'row',
+    flexDirection: "row",
     gap: 10,
     marginTop: 6,
   },
@@ -390,8 +454,8 @@ const styles = StyleSheet.create({
     borderRadius: radii.md,
     borderWidth: 1,
     borderColor: Colors.light.divider,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
   },
   modalCancelText: {
     color: Colors.light.text,
@@ -401,8 +465,8 @@ const styles = StyleSheet.create({
     minHeight: 48,
     borderRadius: radii.md,
     backgroundColor: Colors.light.primary,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
   },
   modalConfirmText: {
     color: Colors.light.surface,

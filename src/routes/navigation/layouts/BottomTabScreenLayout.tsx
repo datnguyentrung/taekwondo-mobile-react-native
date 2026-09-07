@@ -1,16 +1,20 @@
-import { Image } from 'expo-image';
-import { useRouter } from 'expo-router';
-import type { ReactNode } from 'react';
-import type { StyleProp, ViewStyle } from 'react-native';
-import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
-import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import { AppIcon } from "@/shared/ui/AppIcon";
+import { ThemedText } from "@/shared/ui/ThemedText";
+import { getWindowDimensions } from "@/shared/utils/windowDimensions";
+import { Colors, radii, typography } from "@/theme";
+import type { AppIconName } from "@/theme/icons";
+import { Image } from "expo-image";
+import { useRouter } from "expo-router";
+import type { ReactNode } from "react";
+import type { StyleProp, ViewStyle } from "react-native";
+import { Pressable, ScrollView, StyleSheet, View } from "react-native";
+import {
+  SafeAreaView,
+  useSafeAreaInsets,
+} from "react-native-safe-area-context";
+import type { AppTabName } from "../appTabs.config";
 
-import { AppIcon } from '@/shared/ui/AppIcon';
-import { ThemedText } from '@/shared/ui/ThemedText';
-import { Colors, radii } from '@/theme';
-import type { AppIconName } from '@/theme/icons';
-
-import type { AppTabName } from '../appTabs.config';
+const { height } = getWindowDimensions();
 
 export type HeaderAction = {
   icon: AppIconName;
@@ -37,43 +41,48 @@ export default function BottomTabScreenLayout({
 }: BottomTabScreenLayoutProps) {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const actions =
-    rightActions ??
-    [
-      { icon: 'bellOutline', label: 'Thông báo' },
-      {
-        icon: 'homeOutline',
-        label: 'Trang chủ',
-        onPress: () => router.push('/'),
-      },
-    ];
+  const actions = rightActions ?? [
+    { icon: "bellOutline", label: "Thông báo" },
+    {
+      icon: "homeOutline",
+      label: "Trang chủ",
+      onPress: () => router.push("/"),
+    },
+  ];
 
   return (
-    <SafeAreaView edges={['left', 'right']} style={styles.safeArea}>
-      <View style={[styles.header, { paddingTop: insets.top + 36 }]}>
-        <Image
-          source={require('@/assets/taekwondo-removebg-preview.png')}
-          style={styles.logo}
-          contentFit="contain"
-          accessibilityLabel="Taekwondo Văn Quán"
-        />
-        <ThemedText type="heading" style={styles.title}>
-          {title}
-        </ThemedText>
-        <View style={styles.actions}>
-          {actions.map((action) => (
-            <Pressable
-              key={`${action.label}-${action.icon}`}
-              accessibilityRole="button"
-              accessibilityLabel={action.label}
-              onPress={action.onPress}
-              style={({ pressed }) => [
-                styles.actionButton,
-                pressed ? styles.pressed : null,
-              ]}>
-              <AppIcon name={action.icon} size={29} color={Colors.light.surface} />
-            </Pressable>
-          ))}
+    <SafeAreaView edges={["left", "right"]} style={styles.safeArea}>
+      <View style={[styles.header, { paddingTop: Math.max(insets.top, 16) }]}>
+        <View style={styles.headerContent}>
+          <Image
+            source={require("@/assets/taekwondo-removebg-preview.png")}
+            style={styles.logo}
+            contentFit="contain"
+            accessibilityLabel="Taekwondo Văn Quán"
+          />
+          <ThemedText type="heading" style={styles.title}>
+            {title}
+          </ThemedText>
+          <View style={styles.actions}>
+            {actions.map((action) => (
+              <Pressable
+                key={`${action.label}-${action.icon}`}
+                accessibilityRole="button"
+                accessibilityLabel={action.label}
+                onPress={action.onPress}
+                style={({ pressed }) => [
+                  styles.actionButton,
+                  pressed ? styles.pressed : null,
+                ]}
+              >
+                <AppIcon
+                  name={action.icon}
+                  size={29}
+                  color={Colors.light.surface}
+                />
+              </Pressable>
+            ))}
+          </View>
         </View>
       </View>
 
@@ -85,7 +94,8 @@ export default function BottomTabScreenLayout({
           styles.content,
           { paddingBottom: BOTTOM_TAB_SPACE + Math.max(insets.bottom, 10) },
           contentContainerStyle,
-        ]}>
+        ]}
+      >
         {children}
       </ScrollView>
     </SafeAreaView>
@@ -98,35 +108,39 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.light.background,
   },
   header: {
-    height: 110,
     borderBottomLeftRadius: radii.header,
     backgroundColor: Colors.light.header,
-    paddingHorizontal: 15,
+    // paddingHorizontal: 15,
+    // paddingBottom: 12,
+  },
+  headerContent: {
+    height: height * 0.08,
+    justifyContent: "center",
+    alignItems: "center",
   },
   logo: {
-    position: 'absolute',
+    position: "absolute",
     left: 15,
-    bottom: 6,
     width: 68,
     height: 59,
   },
   title: {
     color: Colors.light.surface,
-    textAlign: 'center',
+    textAlign: "center",
+    ...typography.heading,
   },
   actions: {
-    position: 'absolute',
-    right: 34,
-    bottom: 14,
-    flexDirection: 'row',
-    alignItems: 'center',
+    position: "absolute",
+    right: 15,
+    flexDirection: "row",
+    alignItems: "center",
     gap: 10,
   },
   actionButton: {
     width: 29,
     height: 29,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
   },
   scroll: {
     flex: 1,
