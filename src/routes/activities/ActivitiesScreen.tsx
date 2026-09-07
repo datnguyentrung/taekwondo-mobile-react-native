@@ -1,10 +1,14 @@
 import { StyleSheet, View } from "react-native";
 
-import BottomTabScreenLayout from "@/routes/navigation/layouts/BottomTabScreenLayout";
+import BottomTabScreenLayout, {
+  type HeaderAction,
+} from "@/routes/navigation/layouts/BottomTabScreenLayout";
 import { Colors } from "@/theme";
 
-import { ActivitiesGridSection } from "./components/ActivitiesGridSection";
+import { useRouter } from "expo-router";
+import { useState } from "react";
 import type { ActivitiesAction } from "./components/ActivitiesActionButton";
+import { ActivitiesGridSection } from "./components/ActivitiesGridSection";
 
 const CATALOG_FEATURES: ActivitiesAction[] = [
   { label: "Điểm danh", icon: "featureAttendance" },
@@ -13,17 +17,41 @@ const CATALOG_FEATURES: ActivitiesAction[] = [
   { label: "Danh sách HLV", icon: "featureCoachList" },
 ];
 
-const GENERAL_UTILITIES: ActivitiesAction[] = Array.from({ length: 8 }, (_, index) => ({
-  label: `TN${index + 1}`,
-  icon:
-    index === 2 || index === 6
-      ? "featureUtilityDashboardAlt"
-      : "featureUtilityDashboard",
-}));
+const GENERAL_UTILITIES: ActivitiesAction[] = Array.from(
+  { length: 8 },
+  (_, index) => ({
+    label: `TN${index + 1}`,
+    icon:
+      index === 2 || index === 6
+        ? "featureUtilityDashboardAlt"
+        : "featureUtilityDashboard",
+  }),
+);
 
 export default function ActivitiesScreen() {
+  const [changeListQuickFeatures, setChangeListQuickFeatures] =
+    useState<boolean>(false);
+  const router = useRouter();
+
+  const actions: HeaderAction[] = [
+    {
+      icon: "bellOutline",
+      label: "Thông báo",
+      onPress: () => router.push("/"),
+    },
+    {
+      icon: changeListQuickFeatures ? "star" : "checkRead",
+      label: "Trang chủ",
+      onPress: () => setChangeListQuickFeatures(!changeListQuickFeatures),
+    },
+  ];
+
   return (
-    <BottomTabScreenLayout title="Tính năng" activeTab="activities">
+    <BottomTabScreenLayout
+      title="Tính năng"
+      activeTab="activities"
+      rightActions={actions}
+    >
       <ActivitiesGridSection actions={CATALOG_FEATURES} variant="quick" />
 
       <ActivitiesGridSection

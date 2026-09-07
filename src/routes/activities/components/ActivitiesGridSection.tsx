@@ -70,7 +70,6 @@ const styles = StyleSheet.create({
     ...typography.subtitle,
   },
   quickPanel: {
-    height: 130,
     overflow: "hidden",
     borderRadius: radii.md,
     backgroundColor: Colors.light.header,
@@ -82,10 +81,12 @@ const styles = StyleSheet.create({
     top: 0,
   },
   quickGrid: {
-    flex: 1,
     flexDirection: "row",
+    flexWrap: "wrap",
     alignItems: "flex-start",
-    paddingTop: 30,
+    rowGap: 16,
+    paddingTop: 20,
+    paddingBottom: 16,
     paddingHorizontal: 8,
   },
   sectionGrid: {
