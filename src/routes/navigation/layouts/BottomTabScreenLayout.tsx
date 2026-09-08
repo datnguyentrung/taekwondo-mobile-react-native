@@ -15,6 +15,7 @@ import {
 import type { AppTabName } from "../appTabs.config";
 
 const { height } = getWindowDimensions();
+// const notificationListHref = "/notifications" as Href;
 
 export type HeaderAction = {
   icon: AppIconName;
@@ -42,7 +43,11 @@ export default function BottomTabScreenLayout({
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const actions = rightActions ?? [
-    { icon: "bellOutline", label: "Thông báo" },
+    {
+      icon: "bellOutline",
+      label: "Thông báo",
+      onPress: () => router.push("/notifications"),
+    },
     {
       icon: "homeOutline",
       label: "Trang chủ",

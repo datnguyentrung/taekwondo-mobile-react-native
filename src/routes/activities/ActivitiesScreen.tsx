@@ -1,47 +1,101 @@
 import { StyleSheet, View } from "react-native";
 
-import BottomTabScreenLayout, {
-  type HeaderAction,
-} from "@/routes/navigation/layouts/BottomTabScreenLayout";
+import { useRouter, type Href } from "expo-router";
+import { useCallback, useEffect, useMemo, useState } from "react";
+
+import type { ActivitiesAction } from "@/features/activities/components/activities.constants";
+import { ACTIVITIES_GROUPS } from "@/features/activities/components/activities.constants";
+import { ActivitiesGridSection } from "@/features/activities/components/ActivitiesGridSection";
+import { activitiesQuickStorageService } from "@/features/activities/components/activitiesQuickStorageService";
 import { Colors } from "@/theme";
+import BottomTabScreenLayout, {
+  HeaderAction,
+} from "../navigation/layouts/BottomTabScreenLayout";
 
-import { useRouter } from "expo-router";
-import { useState } from "react";
-import type { ActivitiesAction } from "./components/ActivitiesActionButton";
-import { ActivitiesGridSection } from "./components/ActivitiesGridSection";
-
-const CATALOG_FEATURES: ActivitiesAction[] = [
-  { label: "Điểm danh", icon: "featureAttendance" },
-  { label: "Bảng xếp hạng", icon: "featureRanking" },
-  { label: "Danh sách học viên", icon: "featureStudentList" },
-  { label: "Danh sách HLV", icon: "featureCoachList" },
-];
-
-const GENERAL_UTILITIES: ActivitiesAction[] = Array.from(
-  { length: 8 },
-  (_, index) => ({
-    label: `TN${index + 1}`,
-    icon:
-      index === 2 || index === 6
-        ? "featureUtilityDashboardAlt"
-        : "featureUtilityDashboard",
-  }),
-);
+const MAX_QUICK_FEATURES = 4;
+const notificationListHref = "/notifications" as Href;
+const ALL_ACTIVITIES = ACTIVITIES_GROUPS.flatMap((group) => group.actions);
+const DEFAULT_QUICK_IDS = ALL_ACTIVITIES.filter((action) => action.defaultQuick)
+  .slice(0, MAX_QUICK_FEATURES)
+  .map((action) => action.id);
 
 export default function ActivitiesScreen() {
   const [changeListQuickFeatures, setChangeListQuickFeatures] =
     useState<boolean>(false);
+  const [isQuickHydrated, setIsQuickHydrated] = useState(false);
+  const [quickActionIds, setQuickActionIds] =
+    useState<string[]>(DEFAULT_QUICK_IDS);
   const router = useRouter();
+
+  const activitiesById = useMemo(
+    () => new Map(ALL_ACTIVITIES.map((action) => [action.id, action])),
+    [],
+  );
+
+  const quickActions = useMemo(
+    () =>
+      quickActionIds
+        .map((id) => activitiesById.get(id))
+        .filter((action): action is ActivitiesAction => Boolean(action)),
+    [activitiesById, quickActionIds],
+  );
+
+  useEffect(() => {
+    let isMounted = true;
+
+    activitiesQuickStorageService
+      .read()
+      .then((storedIds) => {
+        if (!isMounted) return;
+        if (storedIds) {
+          setQuickActionIds(
+            storedIds
+              .filter((id) => activitiesById.has(id))
+              .slice(0, MAX_QUICK_FEATURES),
+          );
+        }
+      })
+      .finally(() => {
+        if (isMounted) setIsQuickHydrated(true);
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, [activitiesById]);
+
+  useEffect(() => {
+    if (!isQuickHydrated) return;
+    void activitiesQuickStorageService.write(quickActionIds);
+  }, [isQuickHydrated, quickActionIds]);
+
+  const addQuickAction = useCallback((action: ActivitiesAction) => {
+    setQuickActionIds((currentIds) => {
+      if (
+        currentIds.includes(action.id) ||
+        currentIds.length >= MAX_QUICK_FEATURES
+      ) {
+        return currentIds;
+      }
+      return [...currentIds, action.id];
+    });
+  }, []);
+
+  const removeQuickAction = useCallback((action: ActivitiesAction) => {
+    setQuickActionIds((currentIds) =>
+      currentIds.filter((id) => id !== action.id),
+    );
+  }, []);
 
   const actions: HeaderAction[] = [
     {
       icon: "bellOutline",
       label: "Thông báo",
-      onPress: () => router.push("/"),
+      onPress: () => router.push(notificationListHref),
     },
     {
-      icon: changeListQuickFeatures ? "star" : "checkRead",
-      label: "Trang chủ",
+      icon: changeListQuickFeatures ? "checkRead" : "star",
+      label: "Lựa chọn nhanh",
       onPress: () => setChangeListQuickFeatures(!changeListQuickFeatures),
     },
   ];
@@ -52,28 +106,32 @@ export default function ActivitiesScreen() {
       activeTab="activities"
       rightActions={actions}
     >
-      <ActivitiesGridSection actions={CATALOG_FEATURES} variant="quick" />
-
       <ActivitiesGridSection
-        title="Danh mục"
-        actions={CATALOG_FEATURES}
-        style={styles.catalogSection}
+        actions={quickActions}
+        variant="quick"
+        isEditingQuick={changeListQuickFeatures}
+        onRemoveQuickAction={removeQuickAction}
       />
 
-      <View style={styles.divider} />
-
-      <ActivitiesGridSection
-        title="Tiện ích chung"
-        actions={GENERAL_UTILITIES}
-        style={styles.utilitySection}
-      />
+      {ACTIVITIES_GROUPS.map((group, index) => (
+        <View key={group.title ?? index}>
+          {index > 0 ? <View style={styles.divider} /> : null}
+          <ActivitiesGridSection
+            title={group.title}
+            actions={group.actions}
+            isEditingQuick={changeListQuickFeatures}
+            onAddQuickAction={addQuickAction}
+            style={index === 0 ? styles.catalogSection : styles.utilitySection}
+          />
+        </View>
+      ))}
     </BottomTabScreenLayout>
   );
 }
 
 const styles = StyleSheet.create({
   catalogSection: {
-    marginTop: 48,
+    marginTop: 38,
   },
   divider: {
     height: StyleSheet.hairlineWidth,

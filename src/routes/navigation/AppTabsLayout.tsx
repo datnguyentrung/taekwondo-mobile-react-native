@@ -10,7 +10,7 @@ import { Pressable, StyleSheet, View } from "react-native";
 
 import { AppIcon } from "@/shared/ui/AppIcon";
 import { ThemedText } from "@/shared/ui/ThemedText";
-import { Colors, effects, radii } from "@/theme";
+import { Colors, effects, radii, typography } from "@/theme";
 
 import { VISIBLE_APP_TABS, type AppTabConfig } from "./appTabs.config";
 
@@ -144,6 +144,7 @@ const styles = StyleSheet.create({
   tabLabel: {
     color: Colors.light.textSecondary,
     textAlign: "center",
+    ...typography.caption,
   },
   tabLabelActive: {
     color: Colors.light.primary,

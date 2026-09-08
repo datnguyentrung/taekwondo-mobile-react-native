@@ -14,7 +14,7 @@ export const typography = {
     fontFamily: fontFamilies.robotoMedium,
     fontSize: 20,
     lineHeight: 28,
-    fontWeight: "500",
+    fontWeight: "600",
   },
   subtitle: {
     fontFamily: fontFamilies.robotoExtraBold,
@@ -48,9 +48,9 @@ export const typography = {
   },
   featureLabel: {
     fontFamily: fontFamilies.robotoSemiBold,
-    fontSize: 13,
+    fontSize: 14,
     lineHeight: 20,
-    fontWeight: "600",
+    fontWeight: "700",
   },
   action: {
     fontFamily: fontFamilies.robotoMedium,

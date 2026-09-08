@@ -14,7 +14,7 @@ const context: UserContext = {
   personId: 'person-1',
   relationshipType: 'OWNER',
   personCode: 'HV001',
-  displayName: 'Nguyễn Văn A',
+  displayName: 'NGUYỄN VĂN A',
 };
 
 it('derives anonymous, context selection and authenticated states with web parity', () => {

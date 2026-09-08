@@ -1,11 +1,14 @@
 import { Image } from "expo-image";
 import { StyleSheet, View } from "react-native";
 
-import StackScreenLayout from "@/routes/navigation/layouts/StackScreenLayout";
+import StackScreenLayout, {
+  StackHeaderAction,
+} from "@/routes/navigation/layouts/StackScreenLayout";
 import { AppIcon } from "@/shared/ui/AppIcon";
 import { ThemedText } from "@/shared/ui/ThemedText";
-import { Colors, effects, radii, typography } from "@/theme";
+import { Colors, effects, figmaColors, radii, typography } from "@/theme";
 import type { AppIconName } from "@/theme/icons";
+import { router } from "expo-router";
 
 type GeneralInfoItem = {
   label: string;
@@ -15,7 +18,7 @@ type GeneralInfoItem = {
 
 const GENERAL_INFO_ITEMS: GeneralInfoItem[] = [
   { label: "Giới tính", value: "Nam", icon: "profileUser" },
-  { label: "Ngày sinh", value: "31-10-2005", icon: "profileCalendar" },
+  { label: "Ngày sinh", value: "31-10-2005", icon: "dateRangeDuotoneLine" },
   { label: "Email", value: "vq@gmail.com", icon: "profileMail" },
   { label: "Số điện thoại", value: "0912345678", icon: "profilePhone" },
   { label: "Chiều cao", value: "180 cm", icon: "profileHeight" },
@@ -25,11 +28,27 @@ const GENERAL_INFO_ITEMS: GeneralInfoItem[] = [
 ];
 
 export default function GeneralInfoScreen() {
+  const labelName = "Nguyễn Trung Đạt".toLocaleUpperCase("vi-VN");
+
+  const actions: StackHeaderAction[] = [
+    {
+      icon: "bellOutline",
+      label: "Thông báo",
+      onPress: () => router.push("/notifications"),
+    },
+    {
+      icon: "homeOutline",
+      label: "Trang chủ",
+      onPress: () => router.push("/"),
+    },
+  ];
+
   return (
     <StackScreenLayout
       title="Thông tin chung"
       contentContainerStyle={styles.content}
       floatingContent={<SupportButtons />}
+      rightActions={actions}
     >
       <View style={styles.card}>
         <View style={styles.avatarWrap}>
@@ -40,7 +59,7 @@ export default function GeneralInfoScreen() {
         </View>
 
         <ThemedText type="title" style={styles.name}>
-          NGUYEN TRUNG DAT
+          {labelName}
         </ThemedText>
 
         <View style={styles.infoList}>
@@ -66,7 +85,12 @@ function GeneralInfoRow({
 }) {
   return (
     <View style={[styles.infoRow, !showDivider ? styles.infoRowLast : null]}>
-      <AppIcon name={item.icon} size={35} style={styles.infoIcon} />
+      <AppIcon
+        name={item.icon}
+        color={figmaColors.color1}
+        size={30}
+        style={styles.infoIcon}
+      />
       <View style={styles.infoCopy}>
         <ThemedText type="bodySmall" style={styles.infoLabel}>
           {item.label}

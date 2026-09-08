@@ -1,14 +1,19 @@
-import type { PageResponse } from '@/infrastructure/http/pagination.types';
-import type { NotificationRecipientStatus, NotificationType } from '../constants/notification.constants';
+import type { PageResponse } from "@/infrastructure/http/pagination.types";
+import type {
+  NotificationRecipientStatus,
+  NotificationSortBy,
+  NotificationSortDir,
+  NotificationType,
+} from "../constants/notification.constants";
 
 export interface NotificationCreateRequest {
   title: string;
   body: string;
-  notificationType: NotificationType;
+  notificationType?: NotificationType | null;
   referenceType?: string | null;
   referenceId?: string | null;
   payload?: string | null;
-  recipientUserIds?: string[];
+  recipientUserIds: string[];
 }
 
 export interface NotificationUpdateRequest {
@@ -18,6 +23,24 @@ export interface NotificationUpdateRequest {
   referenceType: string;
   referenceId: string;
   payload: string;
+}
+
+export interface NotificationListParams {
+  page?: number;
+  size?: number;
+  sort?: string | string[];
+}
+
+export interface NotificationResponse {
+  notificationId: string;
+  title: string;
+  body: string;
+  notificationType: NotificationType;
+  referenceType: string | null;
+  referenceId: string | null;
+  payload: string | null;
+  createdAt: string;
+  recipientCount: number | null;
 }
 
 export interface NotificationRecipientCreateRequest {
@@ -31,10 +54,16 @@ export interface NotificationRecipientCreateRequest {
 
 export type NotificationRecipientUpdateRequest = NotificationRecipientCreateRequest;
 
-export interface NotificationListParams {
-  page?: number;
-  size?: number;
-  sort?: string | string[];
+export interface NotificationRecipientAdminResponse {
+  notificationRecipientId: string;
+  notificationId: string;
+  recipientUserId: string;
+  read: boolean;
+  readAt: string | null;
+  deliveredAt: string | null;
+  notificationRecipientStatus: NotificationRecipientStatus;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface NotificationRecipientResponse {
@@ -55,18 +84,6 @@ export interface NotificationRecipientResponse {
   updatedAt: string;
 }
 
-export interface NotificationResponse {
-  notificationId: string;
-  title: string;
-  body: string;
-  notificationType: NotificationType;
-  referenceType: string | null;
-  referenceId: string | null;
-  payload: string | null;
-  createdAt: string;
-  recipientCount: number;
-}
-
 export interface NotificationRecipientListResponse {
   unreadCount: number;
   notifications: PageResponse<NotificationRecipientResponse>;
@@ -83,7 +100,6 @@ export interface NotificationRecipientFilterParams {
   search?: string;
   page?: number;
   size?: number;
-  sortBy?: string;
-  sortDir?: 'asc' | 'desc';
-  sort?: string | string[];
+  sortBy?: NotificationSortBy;
+  sortDir?: NotificationSortDir;
 }

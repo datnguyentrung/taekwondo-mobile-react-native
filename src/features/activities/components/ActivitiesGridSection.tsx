@@ -5,9 +5,9 @@ import { AppIcon } from "@/shared/ui/AppIcon";
 import { ThemedText } from "@/shared/ui/ThemedText";
 import { Colors, effects, radii, typography } from "@/theme";
 
+import type { ActivitiesAction } from "./activities.constants";
 import {
   ActivitiesActionButton,
-  type ActivitiesAction,
   type ActivitiesActionVariant,
 } from "./ActivitiesActionButton";
 
@@ -15,6 +15,9 @@ type ActivitiesGridSectionProps = {
   title?: string;
   actions: ActivitiesAction[];
   variant?: ActivitiesActionVariant;
+  isEditingQuick?: boolean;
+  onAddQuickAction?: (action: ActivitiesAction) => void;
+  onRemoveQuickAction?: (action: ActivitiesAction) => void;
   style?: StyleProp<ViewStyle>;
 };
 
@@ -22,9 +25,13 @@ export function ActivitiesGridSection({
   title,
   actions,
   variant = "default",
+  isEditingQuick = false,
+  onAddQuickAction,
+  onRemoveQuickAction,
   style,
 }: ActivitiesGridSectionProps) {
   const isQuick = variant === "quick";
+  const handleActionPress = isQuick ? onRemoveQuickAction : onAddQuickAction;
 
   return (
     <View style={style}>
@@ -54,8 +61,13 @@ export function ActivitiesGridSection({
 
         <View style={isQuick ? styles.quickGrid : styles.defaultGrid}>
           {actions.map((action) => (
-            <View key={action.label} style={styles.itemWrapper}>
-              <ActivitiesActionButton action={action} variant={variant} />
+            <View key={action.id} style={styles.itemWrapper}>
+              <ActivitiesActionButton
+                action={action}
+                variant={variant}
+                isEditingQuick={isEditingQuick}
+                onPress={isEditingQuick ? handleActionPress : undefined}
+              />
             </View>
           ))}
         </View>
@@ -90,12 +102,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
   },
   sectionGrid: {
-    marginTop: 32,
+    marginTop: 22,
   },
   defaultGrid: {
     flexDirection: "row",
     flexWrap: "wrap",
-    rowGap: 19,
+    rowGap: 10,
   },
   itemWrapper: {
     width: "25%",

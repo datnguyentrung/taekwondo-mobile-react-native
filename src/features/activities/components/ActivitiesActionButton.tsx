@@ -2,19 +2,16 @@ import { Pressable, StyleSheet, View } from "react-native";
 
 import { AppIcon } from "@/shared/ui/AppIcon";
 import { ThemedText } from "@/shared/ui/ThemedText";
-import { Colors, effects, typography } from "@/theme";
-import type { AppIconName } from "@/theme/icons";
+import { Colors, effects, figmaColors, hexToRgba, typography } from "@/theme";
+import type { ActivitiesAction } from "./activities.constants";
 
 export type ActivitiesActionVariant = "quick" | "default";
-
-export type ActivitiesAction = {
-  label: string;
-  icon: AppIconName;
-};
 
 type ActivitiesActionButtonProps = {
   action: ActivitiesAction;
   variant?: ActivitiesActionVariant;
+  isEditingQuick?: boolean;
+  onPress?: (action: ActivitiesAction) => void;
 };
 
 const noop = () => undefined;
@@ -22,25 +19,26 @@ const noop = () => undefined;
 export function ActivitiesActionButton({
   action,
   variant = "default",
+  isEditingQuick = false,
+  onPress,
 }: ActivitiesActionButtonProps) {
   const isQuick = variant === "quick";
+  const badgeName = isQuick ? "featureBadgeMinus" : "featureBadgePlus";
 
   return (
     <Pressable
       accessibilityRole="button"
       accessibilityLabel={action.label}
-      onPress={noop}
+      onPress={onPress ? () => onPress(action) : noop}
       style={({ pressed }) => [styles.root, pressed ? styles.pressed : null]}
     >
       <View
         style={[styles.tile, isQuick ? styles.quickTile : styles.defaultTile]}
       >
         <AppIcon name={action.icon} size={38} />
-        <AppIcon
-          name={isQuick ? "featureBadgeMinus" : "featureBadgePlus"}
-          size={22}
-          style={styles.badge}
-        />
+        {isEditingQuick ? (
+          <AppIcon name={badgeName} size={22} style={styles.badge} />
+        ) : null}
       </View>
       <ThemedText
         type="featureLabel"
@@ -63,8 +61,8 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   tile: {
-    width: 60,
-    height: 60,
+    width: 70,
+    height: 70,
     borderRadius: 16,
     alignItems: "center",
     justifyContent: "center",
@@ -74,7 +72,7 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.light.surface,
   },
   defaultTile: {
-    backgroundColor: "rgba(215, 17, 19, 0.2)",
+    backgroundColor: hexToRgba(figmaColors.color1, 0.1),
   },
   badge: {
     position: "absolute",
@@ -89,9 +87,11 @@ const styles = StyleSheet.create({
   },
   quickLabel: {
     color: Colors.light.surface,
+    ...typography.bodySmall,
   },
   defaultLabel: {
     color: Colors.light.text,
+    ...typography.bodySmall,
   },
   pressed: {
     opacity: 0.75,

@@ -5,6 +5,7 @@ export const NotificationTypeValues = [
   "CLASS_SCHEDULE",
   "COACH_TIMESHEET",
   "ANNOUNCEMENT",
+  "CLASS_SESSION_REPORT",
 ] as const satisfies readonly NotificationType[];
 
 export const NotificationTypeLabel: Record<NotificationType, string> = {
@@ -14,6 +15,7 @@ export const NotificationTypeLabel: Record<NotificationType, string> = {
   CLASS_SCHEDULE: "Lịch học",
   COACH_TIMESHEET: "Chấm công",
   ANNOUNCEMENT: "Thông báo chung",
+  CLASS_SESSION_REPORT: "Báo cáo buổi học",
 };
 
 export const NotificationRecipientStatusValues = [
@@ -45,7 +47,8 @@ export type NotificationType =
   | "TUITION"
   | "CLASS_SCHEDULE"
   | "COACH_TIMESHEET"
-  | "ANNOUNCEMENT";
+  | "ANNOUNCEMENT"
+  | "CLASS_SESSION_REPORT";
 
 export type NotificationSortBy =
   | "createdAt"

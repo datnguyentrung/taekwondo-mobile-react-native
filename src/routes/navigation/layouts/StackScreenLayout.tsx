@@ -26,6 +26,7 @@ export type StackScreenLayoutProps = {
   rightActions?: StackHeaderAction[];
   contentContainerStyle?: StyleProp<ViewStyle>;
   floatingContent?: ReactNode;
+  scrollEnabled?: boolean;
 };
 
 export default function StackScreenLayout({
@@ -34,6 +35,7 @@ export default function StackScreenLayout({
   rightActions,
   contentContainerStyle,
   floatingContent,
+  scrollEnabled = true,
 }: StackScreenLayoutProps) {
   const router = useRouter();
   const insets = useSafeAreaInsets();
@@ -85,14 +87,20 @@ export default function StackScreenLayout({
         </View>
       </View>
 
-      <ScrollView
-        style={styles.scroll}
-        contentInsetAdjustmentBehavior="never"
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={[styles.content, contentContainerStyle]}
-      >
-        {children}
-      </ScrollView>
+      {scrollEnabled ? (
+        <ScrollView
+          style={styles.scroll}
+          contentInsetAdjustmentBehavior="never"
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={[styles.content, contentContainerStyle]}
+        >
+          {children}
+        </ScrollView>
+      ) : (
+        <View style={[styles.scroll, styles.content, contentContainerStyle]}>
+          {children}
+        </View>
+      )}
 
       {floatingContent}
     </SafeAreaView>

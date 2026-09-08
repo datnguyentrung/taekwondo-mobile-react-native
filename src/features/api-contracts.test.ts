@@ -37,8 +37,11 @@ const contracts = [
   [coursePurchaseApi, ['list', 'get', 'create', 'update', 'remove']],
   [walletApi, ['list', 'get', 'create', 'update', 'remove', 'topUp', 'purchaseCourse', 'refund']],
   [walletTransactionApi, ['list', 'get', 'create', 'update', 'remove']],
-  [notificationApi, ['list', 'get', 'create', 'update', 'remove']],
-  [notificationRecipientApi, ['list', 'get', 'create', 'update', 'remove']],
+  [notificationApi, ['list', 'create', 'getDetail', 'update', 'remove']],
+  [
+    notificationRecipientApi,
+    ['getMine', 'getDetail', 'markRead', 'create', 'update', 'remove'],
+  ],
   [facebookApi, ['verifyWebhook', 'getVideoInsights', 'getPostInsights', 'receiveWebhook']],
   [authApi, ['login', 'refresh', 'getAccount', 'getContexts', 'switchContext', 'getSessions', 'logout', 'logoutAll', 'updateFcm']],
   [authSessionApi, ['list', 'get', 'create', 'update', 'remove']],

@@ -1,15 +1,15 @@
-import type { Href } from 'expo-router';
+import type { Href } from "expo-router";
 
-import type { RoleLevel } from '@/features/roles/constants/roles.constants';
-import type { AppIconName } from '@/theme/icons';
+import type { RoleLevel } from "@/features/roles/constants/roles.constants";
+import type { AppIconName } from "@/theme/icons";
 
 export type AppTabName =
-  | 'index'
-  | 'activities'
-  | 'check-in'
-  | 'schedule'
-  | 'account'
-  | 'explore';
+  | "index"
+  | "activities"
+  | "check-in"
+  | "schedule"
+  | "account"
+  | "explore";
 
 export interface AppTabConfig {
   name: AppTabName;
@@ -24,56 +24,56 @@ export interface AppTabConfig {
 
 export const APP_TABS: AppTabConfig[] = [
   {
-    name: 'index',
-    label: 'Trang chủ',
-    href: '/',
-    icon: 'homeOutline',
-    activeIcon: 'homeFill',
+    name: "index",
+    label: "Trang chủ",
+    href: "/",
+    icon: "homeOutline",
+    activeIcon: "homeFill",
     minimumRoleLevel: 0,
     display: true,
   },
   {
-    name: 'activities',
-    label: 'Tính năng',
-    href: '/activities',
-    icon: 'databaseOutline',
-    activeIcon: 'databaseFill',
+    name: "activities",
+    label: "Tính năng",
+    href: "/activities",
+    icon: "databaseOutline",
+    activeIcon: "databaseFill",
     minimumRoleLevel: 0,
     display: true,
   },
   {
-    name: 'check-in',
-    label: 'Quét mã',
-    href: '/check-in',
-    icon: 'qrCode',
+    name: "check-in",
+    label: "Quét mã",
+    href: "/check-in",
+    icon: "qrCode",
     minimumRoleLevel: 0,
     display: true,
     centerAction: true,
   },
   {
-    name: 'schedule',
-    label: 'Lịch học',
-    href: '/schedule',
-    icon: 'calendarOutline',
-    activeIcon: 'calendar',
+    name: "schedule",
+    label: "Lịch học",
+    href: "/schedule",
+    icon: "calendarOutline",
+    activeIcon: "calendarOutline",
     minimumRoleLevel: 0,
     display: true,
   },
   {
-    name: 'account',
-    label: 'Tài khoản',
-    href: '/account',
-    icon: 'personOutline',
-    activeIcon: 'personFill',
+    name: "account",
+    label: "Tài khoản",
+    href: "/account",
+    icon: "personOutline",
+    activeIcon: "personFill",
     minimumRoleLevel: 1,
     display: true,
   },
   {
-    name: 'explore',
-    label: 'Khám phá',
-    href: '/explore',
-    icon: 'dashboardOutline',
-    activeIcon: 'dashboardFill',
+    name: "explore",
+    label: "Khám phá",
+    href: "/explore",
+    icon: "dashboardOutline",
+    activeIcon: "dashboardFill",
     minimumRoleLevel: 1,
     display: false,
   },

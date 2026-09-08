@@ -16,6 +16,8 @@ import dashboardOutline from '../../assets/icons/figma/dashboard-outline.svg';
 import dashboard from '../../assets/icons/figma/dashboard.svg';
 import databaseFill from '../../assets/icons/figma/database-fill.svg';
 import databaseOutline from '../../assets/icons/figma/database-outline.svg';
+import dateRangeDuotoneLine from '../../assets/icons/figma/date-range-duotone-line.svg';
+import dateRange from '../../assets/icons/figma/date-range.svg';
 import docText from '../../assets/icons/figma/doc-text.svg';
 import featureAttendance from '../../assets/icons/figma/feature-attendance.svg';
 import featureBadgeMinus from '../../assets/icons/figma/feature-badge-minus.svg';
@@ -32,7 +34,9 @@ import headphonesFill from '../../assets/icons/figma/headphones-fill.svg';
 import headphones from '../../assets/icons/figma/headphones.svg';
 import homeFill from '../../assets/icons/figma/home-fill.svg';
 import homeOutline from '../../assets/icons/figma/home-outline.svg';
+import home from '../../assets/icons/figma/home.svg';
 import layersFill from '../../assets/icons/figma/layers-fill.svg';
+import listCheck from '../../assets/icons/figma/list-check.svg';
 import location from '../../assets/icons/figma/location.svg';
 import lockOpen from '../../assets/icons/figma/lock-open.svg';
 import logoutLight from '../../assets/icons/figma/logout-light.svg';
@@ -86,6 +90,8 @@ export const appIcons = {
   dashboard,
   databaseFill,
   databaseOutline,
+  dateRangeDuotoneLine,
+  dateRange,
   docText,
   featureAttendance,
   featureBadgeMinus,
@@ -102,7 +108,9 @@ export const appIcons = {
   headphones,
   homeFill,
   homeOutline,
+  home,
   layersFill,
+  listCheck,
   location,
   lockOpen,
   logoutLight,

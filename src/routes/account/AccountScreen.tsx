@@ -47,8 +47,11 @@ export default function AccountScreen() {
   const { activeContext, user, availableContextCount } = useAuthSession();
   const logout = useLogout();
   const [confirmingLogout, setConfirmingLogout] = useState(false);
-  const displayName =
-    activeContext?.displayName ?? user?.phoneNumber ?? "NGUYỄN HOÀNG MINH QUÂN";
+  const displayName = (
+    activeContext?.displayName ??
+    user?.phoneNumber ??
+    "NGUYỄN HOÀNG MINH QUÂN"
+  ).toLocaleUpperCase("vi-VN");
   const profileLabel = contextRoleLabel(activeContext?.personCode);
 
   const profileItems = useMemo<AccountMenuItem[]>(
@@ -354,6 +357,7 @@ const styles = StyleSheet.create({
   menuText: {
     flex: 1,
     color: Colors.light.text,
+    ...typography.body,
   },
   divider: {
     position: "absolute",
