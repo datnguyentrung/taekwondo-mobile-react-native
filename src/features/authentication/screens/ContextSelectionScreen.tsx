@@ -88,7 +88,7 @@ export default function ContextSelectionScreen() {
       router.back();
       return;
     }
-    router.replace('/(app)');
+    router.replace('/');
   }, [isSwitchMode, router]);
 
   const selectContext = useCallback(

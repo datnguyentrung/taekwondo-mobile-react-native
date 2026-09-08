@@ -20,6 +20,7 @@ const { height } = getWindowDimensions();
 export type HeaderAction = {
   icon: AppIconName;
   label: string;
+  badge?: string | number;
   onPress?: () => void;
 };
 
@@ -85,6 +86,13 @@ export default function BottomTabScreenLayout({
                   size={29}
                   color={Colors.light.surface}
                 />
+                {action.badge ? (
+                  <View style={styles.actionBadge}>
+                    <ThemedText type="caption" style={styles.actionBadgeText}>
+                      {action.badge}
+                    </ThemedText>
+                  </View>
+                ) : null}
               </Pressable>
             ))}
           </View>
@@ -146,6 +154,23 @@ const styles = StyleSheet.create({
     height: 29,
     alignItems: "center",
     justifyContent: "center",
+  },
+  actionBadge: {
+    position: "absolute",
+    top: -5,
+    right: -5,
+    minWidth: 21,
+    height: 15,
+    borderRadius: 30,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: 4,
+    backgroundColor: Colors.light.surface,
+  },
+  actionBadgeText: {
+    color: Colors.light.text,
+    textAlign: "center",
+    lineHeight: 15,
   },
   scroll: {
     flex: 1,

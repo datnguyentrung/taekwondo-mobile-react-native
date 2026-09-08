@@ -55,3 +55,6 @@ example
 
 package-lock.json
 .env
+
+.expo-schedule-err.log
+.expo-schedule-out.log

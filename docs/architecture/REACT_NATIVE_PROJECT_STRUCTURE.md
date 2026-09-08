@@ -682,6 +682,9 @@ Feature modules.
 
 ### Reuse rules
 A shared UI component must remain domain-agnostic. If its props accumulate business nouns, demote or split.
+Shared UI primitives must not hardcode feature vocabulary, accessibility copy,
+analytics names, or business labels. Pass feature-specific content through props
+or compose it in the owning feature.
 
 ### When to create a new file
 When there is a stable generic visual/interaction primitive.
@@ -2641,7 +2644,10 @@ Rules:
 - `BottomTabScreenLayout` is only a visual layout helper. It must not decide
   whether bottom navigation is visible.
 - Expo route files stay thin and should only adapt or re-export feature screens
-  from `src/routes` or `src/features`.
+  from `src/features/<feature>/screens`.
+- `src/routes` may contain route shell, navigation layout, or legacy route
+  adapters during migration. Do not place new or substantially reworked
+  business screen implementations under `src/routes`.
 
 ## 27.3 Navigation side effects
 
@@ -2797,6 +2803,15 @@ features/high-knee/assets/
 ```
 
 for feature-only instructional images, animations, or model metadata when bundler/toolchain support makes this practical.
+
+Example:
+
+```text
+src/features/class-schedule/assets/images/class-basic.png
+```
+
+Use this shape for bundled images that are only meaningful inside one feature's
+screen or workflow.
 
 ## AI/ML models
 

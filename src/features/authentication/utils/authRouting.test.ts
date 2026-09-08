@@ -20,7 +20,7 @@ describe("auth routing", () => {
     expect(routeAfterAuthResponse(response)).toBe("/(context)/select");
   });
 
-  it("routes an active context to the protected app group", () => {
+  it("routes an active context to the protected app home route", () => {
     expect(
       routeAfterAuthResponse({
         ...response,
@@ -33,6 +33,6 @@ describe("auth routing", () => {
           displayName: "NGUYỄN VĂN A",
         },
       }),
-    ).toBe("/(app)");
+    ).toBe("/");
   });
 });
