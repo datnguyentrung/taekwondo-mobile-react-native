@@ -17,7 +17,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
  * );
  *
  * // With profile-aware key (auto refetch on switchProfile)
- * const { data } = useGetQuery<AttendanceListResponse>(
+ * const { data } = useGetQuery<StudentAttendanceListResponse>(
  *   ["attendance", profileId],
  *   () => attendanceAPI.filter(profileId),
  *   { enabled: !!profileId },

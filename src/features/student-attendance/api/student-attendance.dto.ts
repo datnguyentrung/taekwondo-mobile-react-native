@@ -1,107 +1,49 @@
-import type { ClassScheduleSummary } from '@/features/class-schedule/api/class-schedule-summary.dto';
-import type { ScheduleLevel } from '@/features/class-schedule/constants/class-schedule.constants';
-import type { Belt } from '@/features/person/constants/person.constants';
-import type { StudentSummary } from '@/features/student/api/student-summary.dto';
 import type { PageResponse } from '@/infrastructure/http/pagination.types';
 import type { AttendanceStatus, EvaluationStatus } from '../constants/student-attendance.constants';
-import type { AttendanceStats } from './attendance-stats.dto';
+
+export interface AllowedActions {
+  update: boolean;
+  delete: boolean;
+}
 
 export interface StudentAttendanceResponse {
-  studentAttendanceId?: string;
-  classSessionId?: string;
-  studentEnrollmentId?: string;
-  coachAssignmentId?: string;
-  attendanceId: string | null;
-  enrollmentId: string;
-  studentSummary: StudentSummary;
-  classSchedule: ClassScheduleSummary;
-  sessionDate: string;
-  attendanceStatus: AttendanceStatus | null;
+  studentAttendanceId: string;
+  classSessionId: string;
+  studentEnrollmentId: string;
+  courseStaffAssignmentId: string | null;
   checkInTime: string | null;
-  recordedByCoachName: string | null;
-  alreadyCheckedIn: boolean;
+  attendanceStatus: AttendanceStatus;
   evaluationStatus: EvaluationStatus | null;
   note: string | null;
-  evaluatedByCoachName: string | null;
+  allowedActions: AllowedActions;
+  createdAt: string;
   updatedAt: string;
 }
 
 export interface StudentAttendanceCreateRequest {
   classSessionId: string;
   studentEnrollmentId: string;
-  coachAssignmentId: string;
   checkInTime: string;
   attendanceStatus: AttendanceStatus;
   evaluationStatus: EvaluationStatus;
   note: string;
 }
 
-export type StudentAttendanceUpdateRequest = StudentAttendanceCreateRequest;
-
-export interface AttendanceListResponse {
-  stats: AttendanceStats;
-  attendances: PageResponse<StudentAttendanceResponse>;
-}
-export interface StudentAttendanceSimpleResponse {
-  attendanceId: string;
-  enrollmentId: string;
-  studentId: string;
+export interface StudentAttendanceUpdateRequest {
+  checkInTime: string;
   attendanceStatus: AttendanceStatus;
-  recordedByCoachName: string | null;
-  checkInTime: string | null;
-  evaluationStatus: EvaluationStatus | null;
-  evaluatedByCoachName: string | null;
-  note: string | null;
-}
-
-export interface AttendanceBatchCreateRequest {
-  classScheduleId: string;
-  sessionDate: string;
-}
-
-export interface AttendanceManualLogRequest {
-  studentId: string;
-  classScheduleId: string;
-  sessionDate: string;
-  attendanceStatus: AttendanceStatus;
-  checkInTime?: string | null;
-  note?: string;
-}
-
-export interface AttendanceUpdateStatusRequest {
-  attendanceStatus: AttendanceStatus;
-}
-export interface AttendanceUpdateEvaluationRequest {
-  evaluationStatus?: EvaluationStatus;
-  note?: string;
-}
-
-export interface AttendanceFullUpdateRequest {
-  attendanceStatus?: AttendanceStatus;
-  evaluationStatus?: EvaluationStatus;
-  note?: string;
-}
-
-export interface AttendanceCheckInRequest {
-  studentCode?: string;
-  personId?: string;
+  evaluationStatus: EvaluationStatus;
+  note: string;
 }
 
 export interface AttendanceFilterParams {
-  search?: string;
+  from: string;
+  to: string;
+  courseId?: string;
+  studentPersonId?: string;
   page?: number;
   size?: number;
-  sortBy?: string;
-  sortDir?: 'asc' | 'desc';
-  sessionDate?: string;
-  attendanceStatuses?: AttendanceStatus[];
-  evaluationStatuses?: EvaluationStatus[];
-  belts?: Belt[];
-  branchIds?: number[];
-  scheduleIds?: string[];
-  scheduleLevels?: ScheduleLevel[];
-  sessionIds?: string[];
-  startDate?: string;
-  endDate?: string;
   sort?: string | string[];
 }
+
+export type StudentAttendanceListResponse = PageResponse<StudentAttendanceResponse>;

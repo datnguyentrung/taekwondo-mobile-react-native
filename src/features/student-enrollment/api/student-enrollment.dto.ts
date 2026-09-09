@@ -1,46 +1,42 @@
-import type { StudentEnrollmentStatus } from '../constants/student-enrollment.constants';
 import type { ClassScheduleSummary } from '@/features/class-schedule/api/class-schedule-summary.dto';
 import type { StudentSummary } from '@/features/student/api/student-summary.dto';
+import type { StudentEnrollmentStatus } from '../constants/student-enrollment.constants';
 
 export interface StudentEnrollmentCreateRequest {
-  studentPersonId?: string;
-  coursePurchaseId?: string;
-  classScheduleId?: string;
-  startDate?: string;
-  endDate?: string;
-  studentCode: string;
-  scheduleIds: string[];
-  joinDate: string;
-  status?: StudentEnrollmentStatus;
-  note?: string;
+  studentPersonId: string;
+  coursePurchaseId: string;
+  classScheduleId: string;
+  startDate: string;
+  endDate: string;
+  status: StudentEnrollmentStatus;
 }
 
 export interface StudentEnrollmentUpdateRequest {
+  studentPersonId: string;
+  coursePurchaseId: string;
+  classScheduleId: string;
+  startDate: string;
+  endDate: string;
   status: StudentEnrollmentStatus;
-  leaveDate?: string | null;
-  joinDate?: string;
-  note?: string;
 }
 
 export interface StudentEnrollmentResponse {
-  studentEnrollmentId?: string;
-  studentPersonId?: string;
-  coursePurchaseId?: string;
-  classScheduleId?: string;
-  startDate?: string;
-  endDate?: string;
-  enrollmentId: string;
-  student: StudentSummary;
-  classSchedule: ClassScheduleSummary;
-  joinDate: string;
-  leaveDate: string | null;
+  studentEnrollmentId: string;
+  studentPersonId: string;
+  coursePurchaseId: string;
+  classScheduleId: string;
+  startDate: string;
+  endDate: string;
   status: StudentEnrollmentStatus;
-  note: string | null;
   createdAt: string;
   updatedAt: string;
 }
 
 export interface StudentEnrollmentListParams {
+  from: string;
+  to: string;
+  courseId?: string;
+  studentPersonId?: string;
   page?: number;
   size?: number;
   sort?: string | string[];

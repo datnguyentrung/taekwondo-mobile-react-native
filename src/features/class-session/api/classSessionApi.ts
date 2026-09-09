@@ -3,6 +3,7 @@ import type { PageResponse } from '@/infrastructure/http/pagination.types';
 
 import type {
   ClassSessionFilterParams,
+  ReopenAttendanceRequest,
   SessionCreateRequest,
   SessionResponse,
   SessionUpdateRequest,
@@ -29,6 +30,13 @@ export const classSessionApi = {
   },
   async update(sessionId: string, request: SessionUpdateRequest): Promise<SessionResponse> {
     const response = await javaApi.put<SessionResponse>(`/class-sessions/${sessionId}`, request);
+    return response.data;
+  },
+  async reopenAttendance(sessionId: string, request: ReopenAttendanceRequest): Promise<SessionResponse> {
+    const response = await javaApi.post<SessionResponse>(
+      `/class-sessions/${sessionId}/attendance-reopen`,
+      request,
+    );
     return response.data;
   },
   async remove(sessionId: string): Promise<void> {

@@ -4,8 +4,8 @@ import { beltExamApi } from './belt-exam/api/beltExamApi';
 import { branchApi } from './branch/api/branchApi';
 import { classScheduleApi } from './class-schedule/api/classScheduleApi';
 import { classSessionApi } from './class-session/api/classSessionApi';
-import { coachAssignmentApi } from './coach-assignment/api/coachAssignmentApi';
 import { coachTimesheetApi } from './coach-timesheet/api/coachTimesheetApi';
+import { courseStaffAssignmentApi } from './course-staff-assignment/api/courseStaffAssignmentApi';
 import { courseApi } from './course/api/courseApi';
 import { coursePriceApi } from './course-price/api/coursePriceApi';
 import { coursePurchaseApi } from './course-purchase/api/coursePurchaseApi';
@@ -53,8 +53,8 @@ const contracts = [
   [fitnessApi, ['list', 'get', 'create', 'update', 'remove', 'getBySkillLevel']],
   [fitnessRecordApi, ['getList', 'get', 'create', 'update', 'remove']],
   [beltExamApi, ['list', 'get', 'create', 'update', 'remove']],
-  [classSessionApi, ['list', 'get', 'create', 'update', 'remove']],
-  [coachAssignmentApi, ['list', 'get', 'create', 'update', 'remove']],
+  [classSessionApi, ['list', 'get', 'create', 'update', 'reopenAttendance', 'remove']],
+  [courseStaffAssignmentApi, ['list', 'get', 'create', 'update', 'remove']],
   [coachTimesheetApi, ['list', 'get', 'create', 'update', 'remove']],
   [leaveRequestApi, ['list', 'get', 'create', 'approve', 'reject', 'cancel']],
   [studentAttendanceApi, ['list', 'get', 'create', 'update', 'remove']],

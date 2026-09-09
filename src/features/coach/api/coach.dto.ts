@@ -1,4 +1,3 @@
-import type { CoachAssignmentCreateRequest, CoachAssignmentSimpleResponse } from '@/features/coach-assignment/api/coach-assignment.dto';
 import type { PersonResponse } from '@/features/person/domain/person.types';
 import type { Belt } from '@/features/person/constants/person.constants';
 import type { UserDetail } from '@/features/user/api/user.dto';
@@ -13,7 +12,6 @@ export interface CoachCreateRequest {
   belt: Belt;
   email: string;
   roleCode?: string;
-  assignmentRequest?: CoachAssignmentCreateRequest;
 }
 
 export interface CoachUpdateRequest {
@@ -31,7 +29,6 @@ export interface CoachDetail extends PersonResponse {
   email: string;
   staffCode: string;
   coachStatus: CoachStatus;
-  currentAssignments: CoachAssignmentSimpleResponse[];
 }
 
 export type { CoachSummary };
