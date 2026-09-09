@@ -17,8 +17,8 @@ export const ACTIVITIES_GROUPS: GroupActivitiesAction[] = [
     title: "Tính năng",
     actions: [
       {
-        id: "attendance",
-        label: "Điểm danh",
+        id: "attendance-history",
+        label: "Lịch sử điểm danh",
         icon: "featureAttendance",
         defaultQuick: true,
       },

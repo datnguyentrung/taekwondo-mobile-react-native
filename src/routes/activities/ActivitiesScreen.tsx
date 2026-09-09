@@ -5,9 +5,9 @@ import type { ActivitiesAction } from "@/features/activities/components/activiti
 import { ACTIVITIES_GROUPS } from "@/features/activities/components/activities.constants";
 import { ActivitiesGridSection } from "@/features/activities/components/ActivitiesGridSection";
 import { activitiesQuickStorageService } from "@/features/activities/components/activitiesQuickStorageService";
-import { DefaultHeaderActions } from "@/routes/navigation/components/DefaultHeaderActions";
 import { HeaderActionButton } from "@/routes/navigation/components/HeaderActionButton";
 import { Colors } from "@/theme";
+import { NotificationHeaderButton } from "../navigation/components/NotificationHeaderButton";
 import BottomTabScreenLayout from "../navigation/layouts/BottomTabScreenLayout";
 
 const MAX_QUICK_FEATURES = 4;
@@ -89,13 +89,13 @@ export default function ActivitiesScreen() {
       activeTab="activities"
       rightActions={
         <>
+          <NotificationHeaderButton color={Colors.light.surface} />
           <HeaderActionButton
             icon={changeListQuickFeatures ? "checkRead" : "star"}
             label="Lựa chọn nhanh"
             color={Colors.light.surface}
             onPress={() => setChangeListQuickFeatures((current) => !current)}
           />
-          <DefaultHeaderActions color={Colors.light.surface} />
         </>
       }
     >
