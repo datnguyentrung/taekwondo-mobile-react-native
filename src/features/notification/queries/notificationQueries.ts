@@ -19,6 +19,7 @@ import type {
   NotificationSortDir,
   NotificationType,
 } from "../constants/notification.constants";
+import { useNotificationStore } from "../store/notification.store";
 
 export const DEFAULT_NOTIFICATION_PAGE_SIZE = 30;
 
@@ -56,7 +57,8 @@ export type NotificationInfiniteData = InfiniteData<
 
 type MarkReadMutationContext = {
   detailSnapshot?: NotificationRecipientResponse;
-  listSnapshots: Array<[QueryKey, NotificationInfiniteData | undefined]>;
+  listSnapshots: [QueryKey, NotificationInfiniteData | undefined][];
+  didUpdateUnreadCount: boolean;
 };
 
 export const notificationKeys = {
@@ -149,6 +151,31 @@ function updateInfiniteDataAfterMarkRead(
   };
 }
 
+function findReadStateInLists(
+  snapshots: [QueryKey, NotificationInfiniteData | undefined][],
+  id: string,
+): boolean | undefined {
+  for (const [, data] of snapshots) {
+    for (const page of data?.pages ?? []) {
+      const item = page.notifications.content.find(
+        (notification) => notification.notificationRecipientId === id,
+      );
+      if (item) return item.read;
+    }
+  }
+  return undefined;
+}
+
+function resolveWasUnread(
+  detailSnapshot: NotificationRecipientResponse | undefined,
+  listSnapshots: [QueryKey, NotificationInfiniteData | undefined][],
+  id: string,
+): boolean {
+  if (detailSnapshot) return detailSnapshot.read === false;
+  const listReadState = findReadStateInLists(listSnapshots, id);
+  return listReadState === undefined ? true : listReadState === false;
+}
+
 export function useNotifications(filters: NotificationFilters) {
   return useInfiniteQuery(notificationListQueryOptions(filters));
 }
@@ -179,7 +206,7 @@ export function useMarkNotificationRead() {
       const listSnapshots = queryClient.getQueriesData<NotificationInfiniteData>(
         { queryKey: notificationKeys.lists() },
       );
-      const wasUnread = detailSnapshot?.read === false;
+      const wasUnread = resolveWasUnread(detailSnapshot, listSnapshots, id);
 
       queryClient.setQueryData<NotificationRecipientResponse>(
         detailKey,
@@ -190,9 +217,14 @@ export function useMarkNotificationRead() {
         (old) => updateInfiniteDataAfterMarkRead(old, id, wasUnread),
       );
 
+      if (wasUnread) {
+        useNotificationStore.getState().decrementUnread();
+      }
+
       return {
         detailSnapshot,
         listSnapshots,
+        didUpdateUnreadCount: wasUnread,
       };
     },
     onError: (_error, id, context) => {
@@ -203,6 +235,10 @@ export function useMarkNotificationRead() {
 
       for (const [queryKey, data] of context?.listSnapshots ?? []) {
         queryClient.setQueryData(queryKey, data);
+      }
+
+      if (context?.didUpdateUnreadCount) {
+        useNotificationStore.getState().incrementUnread();
       }
     },
     onSettled: (_data, _error, id) => {

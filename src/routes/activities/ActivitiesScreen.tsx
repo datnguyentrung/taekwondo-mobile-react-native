@@ -1,19 +1,16 @@
-import { StyleSheet, View } from "react-native";
-
-import { useRouter, type Href } from "expo-router";
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { StyleSheet, View } from "react-native";
 
 import type { ActivitiesAction } from "@/features/activities/components/activities.constants";
 import { ACTIVITIES_GROUPS } from "@/features/activities/components/activities.constants";
 import { ActivitiesGridSection } from "@/features/activities/components/ActivitiesGridSection";
 import { activitiesQuickStorageService } from "@/features/activities/components/activitiesQuickStorageService";
+import { DefaultHeaderActions } from "@/routes/navigation/components/DefaultHeaderActions";
+import { HeaderActionButton } from "@/routes/navigation/components/HeaderActionButton";
 import { Colors } from "@/theme";
-import BottomTabScreenLayout, {
-  HeaderAction,
-} from "../navigation/layouts/BottomTabScreenLayout";
+import BottomTabScreenLayout from "../navigation/layouts/BottomTabScreenLayout";
 
 const MAX_QUICK_FEATURES = 4;
-const notificationListHref = "/notifications" as Href;
 const ALL_ACTIVITIES = ACTIVITIES_GROUPS.flatMap((group) => group.actions);
 const DEFAULT_QUICK_IDS = ALL_ACTIVITIES.filter((action) => action.defaultQuick)
   .slice(0, MAX_QUICK_FEATURES)
@@ -25,7 +22,6 @@ export default function ActivitiesScreen() {
   const [isQuickHydrated, setIsQuickHydrated] = useState(false);
   const [quickActionIds, setQuickActionIds] =
     useState<string[]>(DEFAULT_QUICK_IDS);
-  const router = useRouter();
 
   const activitiesById = useMemo(
     () => new Map(ALL_ACTIVITIES.map((action) => [action.id, action])),
@@ -87,24 +83,21 @@ export default function ActivitiesScreen() {
     );
   }, []);
 
-  const actions: HeaderAction[] = [
-    {
-      icon: "bellOutline",
-      label: "Thông báo",
-      onPress: () => router.push(notificationListHref),
-    },
-    {
-      icon: changeListQuickFeatures ? "checkRead" : "star",
-      label: "Lựa chọn nhanh",
-      onPress: () => setChangeListQuickFeatures(!changeListQuickFeatures),
-    },
-  ];
-
   return (
     <BottomTabScreenLayout
       title="Tính năng"
       activeTab="activities"
-      rightActions={actions}
+      rightActions={
+        <>
+          <HeaderActionButton
+            icon={changeListQuickFeatures ? "checkRead" : "star"}
+            label="Lựa chọn nhanh"
+            color={Colors.light.surface}
+            onPress={() => setChangeListQuickFeatures((current) => !current)}
+          />
+          <DefaultHeaderActions color={Colors.light.surface} />
+        </>
+      }
     >
       <ActivitiesGridSection
         actions={quickActions}

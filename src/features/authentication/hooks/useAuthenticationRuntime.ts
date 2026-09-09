@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 
+import { useNotificationStore } from '@/features/notification/store/notification.store';
 import { notificationService } from '@/infrastructure/notifications/notificationService';
 
 import { authSessionService } from '../services/authSessionService';
@@ -7,6 +8,9 @@ import { useAuthStore } from '../store/auth.store';
 
 export function useAuthenticationRuntime(): void {
   const status = useAuthStore((state) => state.status);
+  const activeContextId = useAuthStore(
+    (state) => state.activeContext?.userPersonId ?? null,
+  );
 
   useEffect(() => {
     const disposeHttp = authSessionService.configureHttp();
@@ -15,19 +19,32 @@ export function useAuthenticationRuntime(): void {
   }, []);
 
   useEffect(() => {
+    if (status === 'anonymous') {
+      useNotificationStore.getState().reset();
+      return undefined;
+    }
+
     if (status !== 'authenticated' && status !== 'selecting-context') {
       return undefined;
+    }
+
+    if (status === 'authenticated') {
+      void useNotificationStore
+        .getState()
+        .fetchUnreadCount({ contextId: activeContextId });
     }
 
     const unsubscribeToken = notificationService.subscribeToTokenRefresh(() => {
       void authSessionService.syncFcm(false).catch(() => undefined);
     });
     const unsubscribeMessages =
-      notificationService.subscribeToForegroundMessages(() => undefined);
+      notificationService.subscribeToForegroundMessages(() => {
+        useNotificationStore.getState().incrementUnread();
+      });
 
     return () => {
       unsubscribeToken();
       unsubscribeMessages();
     };
-  }, [status]);
+  }, [activeContextId, status]);
 }

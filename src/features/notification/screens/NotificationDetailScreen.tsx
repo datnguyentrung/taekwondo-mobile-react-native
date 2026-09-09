@@ -2,7 +2,9 @@ import { useEffect } from "react";
 import { StyleSheet } from "react-native";
 import { useLocalSearchParams, useRouter, type Href } from "expo-router";
 
+import { HomeHeaderButton } from "@/routes/navigation/components/HomeHeaderButton";
 import StackScreenLayout from "@/routes/navigation/layouts/StackScreenLayout";
+import { Colors } from "@/theme";
 
 import { NotificationDetailInfoPanel } from "../components/NotificationDetailInfoPanel";
 import {
@@ -40,13 +42,7 @@ export default function NotificationDetailScreen() {
   return (
     <StackScreenLayout
       title="Chi tiết thông báo"
-      rightActions={[
-        {
-          icon: "homeOutline",
-          label: "Trang chủ",
-          onPress: () => router.push("/"),
-        },
-      ]}
+      rightActions={<HomeHeaderButton color={Colors.light.text} />}
       contentContainerStyle={styles.content}
     >
       {detailQuery.isLoading || detailQuery.isPending ? (

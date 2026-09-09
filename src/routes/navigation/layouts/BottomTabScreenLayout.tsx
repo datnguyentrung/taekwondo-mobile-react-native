@@ -1,34 +1,36 @@
-import { AppIcon } from "@/shared/ui/AppIcon";
 import { ThemedText } from "@/shared/ui/ThemedText";
 import { getWindowDimensions } from "@/shared/utils/windowDimensions";
 import { Colors, radii, typography } from "@/theme";
 import type { AppIconName } from "@/theme/icons";
 import { Image } from "expo-image";
-import { useRouter } from "expo-router";
 import type { ReactNode } from "react";
 import type { StyleProp, ViewStyle } from "react-native";
-import { Pressable, ScrollView, StyleSheet, View } from "react-native";
+import { ScrollView, StyleSheet, View } from "react-native";
 import {
   SafeAreaView,
   useSafeAreaInsets,
 } from "react-native-safe-area-context";
 import type { AppTabName } from "../appTabs.config";
+import { DefaultHeaderActions } from "../components/DefaultHeaderActions";
+import { HeaderActionButton } from "../components/HeaderActionButton";
 
 const { height } = getWindowDimensions();
-// const notificationListHref = "/notifications" as Href;
 
 export type HeaderAction = {
   icon: AppIconName;
   label: string;
   badge?: string | number;
+  badgeVariant?: "dot" | "count";
+  color?: string;
   onPress?: () => void;
+  testID?: string;
 };
 
 export type BottomTabScreenLayoutProps = {
   title: string;
   activeTab: AppTabName;
   children: ReactNode;
-  rightActions?: HeaderAction[];
+  rightActions?: ReactNode | HeaderAction[];
   contentContainerStyle?: StyleProp<ViewStyle>;
 };
 
@@ -41,20 +43,8 @@ export default function BottomTabScreenLayout({
   rightActions,
   contentContainerStyle,
 }: BottomTabScreenLayoutProps) {
-  const router = useRouter();
   const insets = useSafeAreaInsets();
-  const actions = rightActions ?? [
-    {
-      icon: "bellOutline",
-      label: "Thông báo",
-      onPress: () => router.push("/notifications"),
-    },
-    {
-      icon: "homeOutline",
-      label: "Trang chủ",
-      onPress: () => router.push("/"),
-    },
-  ];
+  const actionColor = Colors.light.surface;
 
   return (
     <SafeAreaView edges={["left", "right"]} style={styles.safeArea}>
@@ -70,31 +60,15 @@ export default function BottomTabScreenLayout({
             {title}
           </ThemedText>
           <View style={styles.actions}>
-            {actions.map((action) => (
-              <Pressable
-                key={`${action.label}-${action.icon}`}
-                accessibilityRole="button"
-                accessibilityLabel={action.label}
-                onPress={action.onPress}
-                style={({ pressed }) => [
-                  styles.actionButton,
-                  pressed ? styles.pressed : null,
-                ]}
-              >
-                <AppIcon
-                  name={action.icon}
-                  size={29}
-                  color={Colors.light.surface}
-                />
-                {action.badge ? (
-                  <View style={styles.actionBadge}>
-                    <ThemedText type="caption" style={styles.actionBadgeText}>
-                      {action.badge}
-                    </ThemedText>
-                  </View>
-                ) : null}
-              </Pressable>
-            ))}
+            {Array.isArray(rightActions)
+              ? rightActions.map((action) => (
+                  <HeaderActionButton
+                    key={`${action.label}-${action.icon}`}
+                    {...action}
+                    color={action.color ?? actionColor}
+                  />
+                ))
+              : rightActions ?? <DefaultHeaderActions color={actionColor} />}
           </View>
         </View>
       </View>
@@ -123,8 +97,6 @@ const styles = StyleSheet.create({
   header: {
     borderBottomLeftRadius: radii.header,
     backgroundColor: Colors.light.header,
-    // paddingHorizontal: 15,
-    // paddingBottom: 12,
   },
   headerContent: {
     height: height * 0.08,
@@ -147,30 +119,7 @@ const styles = StyleSheet.create({
     right: 15,
     flexDirection: "row",
     alignItems: "center",
-    gap: 10,
-  },
-  actionButton: {
-    width: 29,
-    height: 29,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  actionBadge: {
-    position: "absolute",
-    top: -5,
-    right: -5,
-    minWidth: 21,
-    height: 15,
-    borderRadius: 30,
-    alignItems: "center",
-    justifyContent: "center",
-    paddingHorizontal: 4,
-    backgroundColor: Colors.light.surface,
-  },
-  actionBadgeText: {
-    color: Colors.light.text,
-    textAlign: "center",
-    lineHeight: 15,
+    gap: 2,
   },
   scroll: {
     flex: 1,
@@ -178,8 +127,5 @@ const styles = StyleSheet.create({
   content: {
     paddingTop: 30,
     paddingHorizontal: 20,
-  },
-  pressed: {
-    opacity: 0.75,
   },
 });

@@ -1,5 +1,5 @@
 import { useRouter, type Href } from "expo-router";
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   FlatList,
   Pressable,
@@ -8,6 +8,7 @@ import {
   View,
 } from "react-native";
 
+import { HomeHeaderButton } from "@/routes/navigation/components/HomeHeaderButton";
 import StackScreenLayout from "@/routes/navigation/layouts/StackScreenLayout";
 import { ThemedText } from "@/shared/ui/ThemedText";
 import { Colors, radii } from "@/theme";
@@ -28,6 +29,7 @@ import {
   useNotifications,
   type NotificationFilters,
 } from "../queries/notificationQueries";
+import { useNotificationStore } from "../store/notification.store";
 
 export default function NotificationScreen() {
   const router = useRouter();
@@ -49,6 +51,8 @@ export default function NotificationScreen() {
   );
 
   const notificationsQuery = useNotifications(filters);
+  const storeUnreadCount = useNotificationStore((state) => state.unreadCount);
+  const setUnreadCount = useNotificationStore((state) => state.setUnreadCount);
   const notifications = useMemo(
     () =>
       notificationsQuery.data?.pages.flatMap(
@@ -61,6 +65,12 @@ export default function NotificationScreen() {
     notificationsQuery.data?.pages[0]?.notifications.totalElements ?? 0;
   const isInitialLoading =
     notificationsQuery.isLoading || notificationsQuery.isPending;
+
+  useEffect(() => {
+    const serverCount = notificationsQuery.data?.pages[0]?.unreadCount;
+    if (serverCount === undefined || serverCount === storeUnreadCount) return;
+    setUnreadCount(serverCount);
+  }, [notificationsQuery.data, setUnreadCount, storeUnreadCount]);
 
   const openNotification = useCallback(
     (notification: NotificationRecipientResponse) => {
@@ -82,13 +92,7 @@ export default function NotificationScreen() {
     <StackScreenLayout
       title="Thông báo"
       scrollEnabled={false}
-      rightActions={[
-        {
-          icon: "home",
-          label: "Trang chủ",
-          onPress: () => router.push("/"),
-        },
-      ]}
+      rightActions={<HomeHeaderButton color={Colors.light.text} />}
       contentContainerStyle={styles.screenContent}
     >
       <FlatList

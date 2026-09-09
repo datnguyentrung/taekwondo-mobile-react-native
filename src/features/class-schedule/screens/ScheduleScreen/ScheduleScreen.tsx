@@ -1,10 +1,11 @@
-import { useRouter } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
-import type { HeaderAction } from '@/routes/navigation/layouts/BottomTabScreenLayout';
+import { DefaultHeaderActions } from '@/routes/navigation/components/DefaultHeaderActions';
+import { HeaderActionButton } from '@/routes/navigation/components/HeaderActionButton';
 import BottomTabScreenLayout from '@/routes/navigation/layouts/BottomTabScreenLayout';
 import { BottomSheetWindow } from '@/shared/ui/BottomSheetWindow';
+import { Colors } from '@/theme';
 import type { Weekday } from '../../constants/class-schedule.constants';
 import { ScheduleCard } from './ScheduleCard';
 import { FilterActions, ScheduleFilterContent } from './ScheduleFilterContent';
@@ -18,7 +19,6 @@ import {
 import type { ScheduleFilterState } from './scheduleScreen.types';
 
 export default function ScheduleScreen() {
-  const router = useRouter();
   const [selectedDay, setSelectedDay] = useState<Weekday>('MONDAY');
   const [filters, setFilters] = useState<ScheduleFilterState>(emptyScheduleFilters);
   const [draftFilters, setDraftFilters] =
@@ -33,35 +33,26 @@ export default function ScheduleScreen() {
     [filters, selectedDay],
   );
 
-  const actions: HeaderAction[] = [
-    {
-      icon: 'sliders',
-      label: 'Lọc lịch học',
-      badge: appliedCount || undefined,
-      onPress: () => {
-        setDraftFilters(filters);
-        setFilterVisible(true);
-      },
-    },
-    {
-      icon: 'bellOutline',
-      label: 'Thông báo',
-      badge: 10,
-      onPress: () => router.push('/notifications'),
-    },
-    {
-      icon: 'homeOutline',
-      label: 'Trang chủ',
-      onPress: () => router.push('/'),
-    },
-  ];
-
   return (
     <>
       <BottomTabScreenLayout
         title="Lịch học"
         activeTab="schedule"
-        rightActions={actions}
+        rightActions={
+          <>
+            <HeaderActionButton
+              icon="sliders"
+              label="Lọc lịch học"
+              badge={appliedCount || undefined}
+              color={Colors.light.surface}
+              onPress={() => {
+                setDraftFilters(filters);
+                setFilterVisible(true);
+              }}
+            />
+            <DefaultHeaderActions color={Colors.light.surface} />
+          </>
+        }
         contentContainerStyle={styles.layoutContent}
       >
         <ScheduleWeekTabBar

@@ -1,14 +1,11 @@
 import { Image } from "expo-image";
 import { StyleSheet, View } from "react-native";
 
-import StackScreenLayout, {
-  StackHeaderAction,
-} from "@/routes/navigation/layouts/StackScreenLayout";
+import StackScreenLayout from "@/routes/navigation/layouts/StackScreenLayout";
 import { AppIcon } from "@/shared/ui/AppIcon";
 import { ThemedText } from "@/shared/ui/ThemedText";
 import { Colors, effects, figmaColors, radii, typography } from "@/theme";
 import type { AppIconName } from "@/theme/icons";
-import { router } from "expo-router";
 
 type GeneralInfoItem = {
   label: string;
@@ -30,25 +27,11 @@ const GENERAL_INFO_ITEMS: GeneralInfoItem[] = [
 export default function GeneralInfoScreen() {
   const labelName = "Nguyễn Trung Đạt".toLocaleUpperCase("vi-VN");
 
-  const actions: StackHeaderAction[] = [
-    {
-      icon: "bellOutline",
-      label: "Thông báo",
-      onPress: () => router.push("/notifications"),
-    },
-    {
-      icon: "homeOutline",
-      label: "Trang chủ",
-      onPress: () => router.push("/"),
-    },
-  ];
-
   return (
     <StackScreenLayout
       title="Thông tin chung"
       contentContainerStyle={styles.content}
       floatingContent={<SupportButtons />}
-      rightActions={actions}
     >
       <View style={styles.card}>
         <View style={styles.avatarWrap}>

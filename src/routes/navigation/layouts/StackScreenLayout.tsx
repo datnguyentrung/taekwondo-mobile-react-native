@@ -11,19 +11,25 @@ import {
   SafeAreaView,
   useSafeAreaInsets,
 } from "react-native-safe-area-context";
+import { DefaultHeaderActions } from "../components/DefaultHeaderActions";
+import { HeaderActionButton } from "../components/HeaderActionButton";
 
 const { height } = getWindowDimensions();
 
 export type StackHeaderAction = {
   icon: AppIconName;
   label: string;
+  badge?: string | number;
+  badgeVariant?: "dot" | "count";
+  color?: string;
   onPress?: () => void;
+  testID?: string;
 };
 
 export type StackScreenLayoutProps = {
   title: string;
   children: ReactNode;
-  rightActions?: StackHeaderAction[];
+  rightActions?: ReactNode | StackHeaderAction[];
   contentContainerStyle?: StyleProp<ViewStyle>;
   floatingContent?: ReactNode;
   scrollEnabled?: boolean;
@@ -39,14 +45,7 @@ export default function StackScreenLayout({
 }: StackScreenLayoutProps) {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const actions = rightActions ?? [
-    { icon: "bellOutline", label: "Thông báo" },
-    {
-      icon: "homeOutline",
-      label: "Trang chủ",
-      onPress: () => router.push("/"),
-    },
-  ];
+  const actionColor = Colors.light.text;
 
   return (
     <SafeAreaView edges={["left", "right"]} style={styles.safeArea}>
@@ -55,6 +54,7 @@ export default function StackScreenLayout({
           <Pressable
             accessibilityRole="button"
             accessibilityLabel="Quay lại"
+            hitSlop={8}
             onPress={() =>
               router.canGoBack() ? router.back() : router.push("/")
             }
@@ -63,26 +63,26 @@ export default function StackScreenLayout({
               pressed ? styles.pressed : null,
             ]}
           >
-            <AppIcon name="chevronLeft" width={12} height={20} />
+            <AppIcon
+              name="chevronLeft"
+              width={12}
+              height={20}
+              color={actionColor}
+            />
           </Pressable>
           <ThemedText type="heading" style={styles.title}>
             {title}
           </ThemedText>
           <View style={styles.actions}>
-            {actions.map((action) => (
-              <Pressable
-                key={`${action.label}-${action.icon}`}
-                accessibilityRole="button"
-                accessibilityLabel={action.label}
-                onPress={action.onPress}
-                style={({ pressed }) => [
-                  styles.actionButton,
-                  pressed ? styles.pressed : null,
-                ]}
-              >
-                <AppIcon name={action.icon} size={29} />
-              </Pressable>
-            ))}
+            {Array.isArray(rightActions)
+              ? rightActions.map((action) => (
+                  <HeaderActionButton
+                    key={`${action.label}-${action.icon}`}
+                    {...action}
+                    color={action.color ?? actionColor}
+                  />
+                ))
+              : rightActions ?? <DefaultHeaderActions color={actionColor} />}
           </View>
         </View>
       </View>
@@ -124,8 +124,8 @@ const styles = StyleSheet.create({
   backButton: {
     position: "absolute",
     left: 20,
-    width: 32,
-    height: 32,
+    minWidth: 44,
+    minHeight: 44,
     alignItems: "flex-start",
     justifyContent: "center",
   },
@@ -139,13 +139,7 @@ const styles = StyleSheet.create({
     right: 19,
     flexDirection: "row",
     alignItems: "center",
-    gap: 10,
-  },
-  actionButton: {
-    width: 29,
-    height: 29,
-    alignItems: "center",
-    justifyContent: "center",
+    gap: 2,
   },
   scroll: {
     flex: 1,
