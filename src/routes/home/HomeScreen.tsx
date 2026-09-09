@@ -1,10 +1,11 @@
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
-import { ChevronRight, UserRoundCog } from 'lucide-react-native';
+import { ChevronRight, Database, HardDrive, ShieldCheck, Terminal, UserRoundCog } from 'lucide-react-native';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { LogoutButton, useAuthSession } from '@/features/authentication';
+import { storageLogger } from '@/infrastructure/storage/storageLogger';
 
 export default function HomeScreen() {
   const router = useRouter();
@@ -55,6 +56,43 @@ export default function HomeScreen() {
           </Pressable>
         ) : null}
 
+        <View style={styles.debugSection}>
+          <Text style={styles.sectionTitle}>Bộ nhớ & Storage Debug</Text>
+          <Text style={styles.sectionDescription}>
+            Nhấn các nút bên dưới để in thông tin bộ nhớ lưu trữ ra Console ngay ngắn.
+          </Text>
+
+          <View style={styles.debugGrid}>
+            <Pressable
+              onPress={() => void storageLogger.logAsyncStorage()}
+              style={({ pressed }) => [styles.debugBtn, pressed ? styles.pressed : null]}>
+              <HardDrive size={18} color="#252529" />
+              <Text style={styles.debugBtnText}>AsyncStorage</Text>
+            </Pressable>
+
+            <Pressable
+              onPress={() => void storageLogger.logSecureStore()}
+              style={({ pressed }) => [styles.debugBtn, pressed ? styles.pressed : null]}>
+              <ShieldCheck size={18} color="#252529" />
+              <Text style={styles.debugBtnText}>SecureStore</Text>
+            </Pressable>
+
+            <Pressable
+              onPress={() => void storageLogger.logSQLite()}
+              style={({ pressed }) => [styles.debugBtn, pressed ? styles.pressed : null]}>
+              <Database size={18} color="#252529" />
+              <Text style={styles.debugBtnText}>SQLite</Text>
+            </Pressable>
+
+            <Pressable
+              onPress={() => void storageLogger.logAll()}
+              style={({ pressed }) => [styles.debugBtnAll, pressed ? styles.pressed : null]}>
+              <Terminal size={18} color="#FFFFFF" />
+              <Text style={styles.debugBtnAllText}>Log tất cả</Text>
+            </Pressable>
+          </View>
+        </View>
+
         <View style={styles.sessionSection}>
           <Text style={styles.sectionTitle}>Phiên đăng nhập</Text>
           <Text style={styles.sectionDescription}>
@@ -100,6 +138,30 @@ const styles = StyleSheet.create({
   actionTitle: { color: '#252529', fontSize: 16, fontWeight: '700' },
   actionDescription: { color: '#68686F', fontSize: 13, lineHeight: 18 },
   pressed: { opacity: 0.78 },
+  debugSection: { gap: 10, marginTop: 4 },
+  debugGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginTop: 6 },
+  debugBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#E0E0E4',
+    backgroundColor: '#F8F8F9',
+  },
+  debugBtnText: { color: '#252529', fontSize: 13, fontWeight: '600' },
+  debugBtnAll: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 8,
+    backgroundColor: '#A9151A',
+  },
+  debugBtnAllText: { color: '#FFFFFF', fontSize: 13, fontWeight: '700' },
   sessionSection: { gap: 10, marginTop: 6 },
   sectionTitle: { color: '#252529', fontSize: 17, fontWeight: '800' },
   sectionDescription: { color: '#68686F', fontSize: 14, lineHeight: 20, marginBottom: 4 },
