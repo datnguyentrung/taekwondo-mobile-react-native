@@ -9,7 +9,10 @@ Nó được port trực tiếp từ auth của `ai-receptionist-web-fe`; bảng
 Consumer bên ngoài feature chỉ import từ `@/features/authentication`:
 
 - Auth route screens và `useAuthenticationRuntime` dùng tại composition root.
-- `useAuthSession`, selector auth nhỏ, domain types và role helpers.
+- `useAuthSession`, selector auth nhỏ và domain types.
+
+Quyết định UI theo permission nằm ở `@/features/authorization` (`useCan`,
+`PermissionGate`, `Permission` catalog) — không đặt logic access trong feature này.
 
 Không export API client, store mutation, service orchestration hoặc storage adapter. Token chỉ được
 giữ trong memory store và SecureStore; snapshot không nhạy cảm nằm trong AsyncStorage.

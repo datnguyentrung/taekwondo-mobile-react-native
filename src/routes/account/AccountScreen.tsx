@@ -11,6 +11,7 @@ import {
 } from "react-native";
 
 import { useAuthSession, useLogout } from "@/features/authentication";
+import { Permission, useCan } from "@/features/authorization";
 import BottomTabScreenLayout from "@/routes/navigation/layouts/BottomTabScreenLayout";
 import { AppIcon } from "@/shared/ui/AppIcon";
 import { ThemedText } from "@/shared/ui/ThemedText";
@@ -45,6 +46,7 @@ function contextRoleLabel(personCode?: string | null) {
 export default function AccountScreen() {
   const router = useRouter();
   const { activeContext, user, availableContextCount } = useAuthSession();
+  const canReadNotifications = useCan(Permission.NOTIFICATION_RECIPIENT_READ);
   const logout = useLogout();
   const [confirmingLogout, setConfirmingLogout] = useState(false);
   const displayName = (
@@ -68,12 +70,20 @@ export default function AccountScreen() {
   );
 
   const settingItems = useMemo<AccountMenuItem[]>(
-    () => [
-      { label: "Đổi mật khẩu", icon: "lockOpen" },
-      { label: "Thông báo", icon: "bellOutline" },
-      { label: "Liên hệ", icon: "headphones" },
-    ],
-    [],
+    () => {
+      const items: AccountMenuItem[] = [
+        { label: "Đổi mật khẩu", icon: "lockOpen" },
+        { label: "Liên hệ", icon: "headphones" },
+      ];
+      if (canReadNotifications) {
+        items.splice(1, 0, {
+          label: "Thông báo",
+          icon: "bellOutline",
+        });
+      }
+      return items;
+    },
+    [canReadNotifications],
   );
 
   const switchAccount = () => {

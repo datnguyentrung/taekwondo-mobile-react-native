@@ -14,7 +14,6 @@ export {
   selectCurrentUserId,
   selectIsAuthenticated,
 } from './store/auth.store';
-export { hasAnyRole, hasRole, normalizeRole } from './domain/roleAuthorization';
 export type {
   AuthContextType,
   AuthStatus,

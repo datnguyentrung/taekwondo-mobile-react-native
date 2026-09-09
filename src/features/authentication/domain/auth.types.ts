@@ -1,3 +1,5 @@
+import type { PermissionValue } from '@/features/authorization/domain/permissions';
+
 export type AuthUserStatus =
   | 'ACTIVE'
   | 'LOCKED'
@@ -35,7 +37,7 @@ export type AuthUser = {
   phoneNumber: string;
   status: AuthUserStatus;
   roles: SystemRole[];
-  permissions: string[];
+  permissions: PermissionValue[];
 };
 
 export type UserContext = {

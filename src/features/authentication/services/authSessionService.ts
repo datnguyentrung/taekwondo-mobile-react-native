@@ -1,5 +1,6 @@
 import { isAxiosError } from 'axios';
 
+import { useNotificationStore } from '@/features/notification/store/notification.store';
 import { configureAuthHttp } from '@/infrastructure/http/httpClient';
 import { notificationService } from '@/infrastructure/notifications/notificationService';
 import { queryClient } from '@/infrastructure/query/queryClient';
@@ -66,6 +67,7 @@ async function syncFcm(requestPermission: boolean): Promise<void> {
 async function invalidateSession(reason: SessionInvalidReason): Promise<void> {
   await Promise.allSettled([
     authSessionStorageService.clear(),
+    useNotificationStore.getState().reset(),
     reason === 'logout' || reason === 'logout-all'
       ? notificationService.cleanup()
       : Promise.resolve(),

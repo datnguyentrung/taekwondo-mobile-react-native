@@ -8,6 +8,7 @@ import {
 } from "expo-router/ui";
 import { Pressable, StyleSheet, View } from "react-native";
 
+import { canAll, usePermissions } from "@/features/authorization";
 import { AppIcon } from "@/shared/ui/AppIcon";
 import { ThemedText } from "@/shared/ui/ThemedText";
 import { Colors, effects, radii, typography } from "@/theme";
@@ -19,12 +20,18 @@ type TabButtonProps = TabTriggerSlotProps & {
 };
 
 export default function AppTabsLayout() {
+  const permissions = usePermissions();
+  const visibleTabs = VISIBLE_APP_TABS.filter((tab) => {
+    const required = tab.requiredPermissions ?? [];
+    return required.length === 0 || canAll(permissions, required);
+  });
+
   return (
     <Tabs>
       <TabSlot style={styles.slot} />
       <TabList asChild>
         <CustomTabList>
-          {VISIBLE_APP_TABS.map((tab) => (
+          {visibleTabs.map((tab) => (
             <TabTrigger key={tab.name} name={tab.name} href={tab.href} asChild>
               <TabButton tab={tab} />
             </TabTrigger>

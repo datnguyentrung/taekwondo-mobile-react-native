@@ -19,11 +19,6 @@ export function useAuthenticationRuntime(): void {
   }, []);
 
   useEffect(() => {
-    if (status === 'anonymous') {
-      useNotificationStore.getState().reset();
-      return undefined;
-    }
-
     if (status !== 'authenticated' && status !== 'selecting-context') {
       return undefined;
     }

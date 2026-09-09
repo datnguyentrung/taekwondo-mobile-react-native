@@ -1,6 +1,6 @@
 import type { Href } from "expo-router";
 
-import type { RoleLevel } from "@/features/roles/constants/roles.constants";
+import type { PermissionValue } from "@/features/authorization";
 import type { AppIconName } from "@/theme/icons";
 
 export type AppTabName =
@@ -17,7 +17,12 @@ export interface AppTabConfig {
   href: Href;
   icon: AppIconName;
   activeIcon?: AppIconName;
-  minimumRoleLevel: RoleLevel;
+  /**
+   * Permissions required to show this tab.
+   * Empty means the tab is always visible for authenticated users.
+   * Wire these up when the feature behind the tab has a real screen/API.
+   */
+  requiredPermissions?: PermissionValue[];
   display: boolean;
   centerAction?: boolean;
 }
@@ -29,7 +34,7 @@ export const APP_TABS: AppTabConfig[] = [
     href: "/",
     icon: "homeOutline",
     activeIcon: "homeFill",
-    minimumRoleLevel: 0,
+    requiredPermissions: [],
     display: true,
   },
   {
@@ -38,7 +43,7 @@ export const APP_TABS: AppTabConfig[] = [
     href: "/activities",
     icon: "databaseOutline",
     activeIcon: "databaseFill",
-    minimumRoleLevel: 0,
+    requiredPermissions: [],
     display: true,
   },
   {
@@ -46,7 +51,7 @@ export const APP_TABS: AppTabConfig[] = [
     label: "Quét mã",
     href: "/check-in",
     icon: "qrCode",
-    minimumRoleLevel: 0,
+    requiredPermissions: [],
     display: true,
     centerAction: true,
   },
@@ -56,7 +61,7 @@ export const APP_TABS: AppTabConfig[] = [
     href: "/schedule",
     icon: "calendarOutline",
     activeIcon: "calendarOutline",
-    minimumRoleLevel: 0,
+    requiredPermissions: [],
     display: true,
   },
   {
@@ -65,7 +70,7 @@ export const APP_TABS: AppTabConfig[] = [
     href: "/account",
     icon: "personOutline",
     activeIcon: "personFill",
-    minimumRoleLevel: 1,
+    requiredPermissions: [],
     display: true,
   },
   {
@@ -74,7 +79,7 @@ export const APP_TABS: AppTabConfig[] = [
     href: "/explore",
     icon: "dashboardOutline",
     activeIcon: "dashboardFill",
-    minimumRoleLevel: 1,
+    requiredPermissions: [],
     display: false,
   },
 ];
