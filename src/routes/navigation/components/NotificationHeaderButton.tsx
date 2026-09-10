@@ -19,7 +19,7 @@ export function NotificationHeaderButton({ color }: { color?: string }) {
       label="Thông báo"
       badge={badge}
       color={color}
-      onPress={() => router.push('/notifications' as Href)}
+      onPress={() => router.navigate('/notifications' as Href)}
       testID="notification-header-button"
     />
   );
