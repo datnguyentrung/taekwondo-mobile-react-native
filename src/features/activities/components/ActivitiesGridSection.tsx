@@ -18,6 +18,7 @@ type ActivitiesGridSectionProps = {
   isEditingQuick?: boolean;
   onAddQuickAction?: (action: ActivitiesAction) => void;
   onRemoveQuickAction?: (action: ActivitiesAction) => void;
+  onActionPress?: (action: ActivitiesAction) => void;
   style?: StyleProp<ViewStyle>;
 };
 
@@ -28,10 +29,15 @@ export function ActivitiesGridSection({
   isEditingQuick = false,
   onAddQuickAction,
   onRemoveQuickAction,
+  onActionPress,
   style,
 }: ActivitiesGridSectionProps) {
   const isQuick = variant === "quick";
-  const handleActionPress = isQuick ? onRemoveQuickAction : onAddQuickAction;
+  const handleActionPress = isEditingQuick
+    ? isQuick
+      ? onRemoveQuickAction
+      : onAddQuickAction
+    : onActionPress;
 
   return (
     <View style={style}>
@@ -66,7 +72,7 @@ export function ActivitiesGridSection({
                 action={action}
                 variant={variant}
                 isEditingQuick={isEditingQuick}
-                onPress={isEditingQuick ? handleActionPress : undefined}
+                onPress={handleActionPress}
               />
             </View>
           ))}

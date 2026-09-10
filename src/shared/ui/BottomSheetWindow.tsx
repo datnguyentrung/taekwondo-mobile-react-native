@@ -25,6 +25,7 @@ import { ThemedText } from './ThemedText';
 export type BottomSheetWindowProps = {
   visible: boolean;
   title: string;
+  heightRatio?: number;
   accessibilityLabel?: string;
   backdropAccessibilityLabel?: string;
   closeAccessibilityLabel?: string;
@@ -43,9 +44,14 @@ function rubberband(overshoot: number, dimension: number, constant = 0.55) {
   return (overshoot * dimension * constant) / (dimension + constant * Math.abs(overshoot));
 }
 
+function clampHeightRatio(heightRatio: number) {
+  return Math.min(Math.max(heightRatio, 0.25), 0.95);
+}
+
 export function BottomSheetWindow({
   visible,
   title,
+  heightRatio,
   accessibilityLabel,
   backdropAccessibilityLabel = 'Đóng cửa sổ',
   closeAccessibilityLabel = 'Đóng',
@@ -58,6 +64,19 @@ export function BottomSheetWindow({
   const sheetHeight = useSharedValue(Math.max(height - 110, 480));
   const translateY = useSharedValue(0);
   const context = useSharedValue(0);
+  const sheetSizingStyle = useMemo(() => {
+    if (!heightRatio) {
+      return styles.defaultSheetSizing;
+    }
+
+    const heightValue = Math.round(height * clampHeightRatio(heightRatio));
+
+    return {
+      height: heightValue,
+      maxHeight: heightValue,
+      minHeight: heightValue,
+    };
+  }, [height, heightRatio]);
 
   useEffect(() => {
     translateY.set(visible || reducedMotion ? 0 : sheetHeight.get());
@@ -142,7 +161,7 @@ export function BottomSheetWindow({
           <Animated.View
             accessibilityLabel={accessibilityLabel ?? title}
             accessibilityViewIsModal
-            style={[styles.sheet, sheetStyle]}
+            style={[styles.sheet, sheetSizingStyle, sheetStyle]}
             onLayout={(event) => {
               sheetHeight.set(event.nativeEvent.layout.height);
             }}
@@ -188,13 +207,15 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0, 0, 0, 0.6)',
   },
   sheet: {
-    maxHeight: '88%',
-    minHeight: '78%',
     backgroundColor: Colors.light.surface,
     borderTopLeftRadius: radii.md,
     borderTopRightRadius: radii.md,
     overflow: 'hidden',
     ...effects.glass,
+  },
+  defaultSheetSizing: {
+    maxHeight: '88%',
+    minHeight: '78%',
   },
   header: {
     height: 60,

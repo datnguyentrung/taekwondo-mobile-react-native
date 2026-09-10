@@ -23,19 +23,19 @@
       "source": "expo/skills",
       "sourceType": "github",
       "skillPath": "plugins/expo/skills/expo-animation/SKILL.md",
-      "computedHash": "9e9ad7e0c4a73085484ecf9f4cc763474415ce0d466097b9e09109414ebd55d7"
+      "computedHash": "c8655c9596b704a05c3e544d97f85f03e83b25bb805ace265a440cf8e868d46e"
     },
     "expo-design-system": {
       "source": "expo/skills",
       "sourceType": "github",
       "skillPath": "plugins/expo/skills/expo-design-system/SKILL.md",
-      "computedHash": "cf425c344c671f3f75e300009791c88a821359282872c397ba97aa1f55c96abd"
+      "computedHash": "66eaad5bb936710d6ca46bdb5550f414b2b1e4ef0375af95767519f569d3fc21"
     },
     "expo-native-ui": {
       "source": "expo/skills",
       "sourceType": "github",
       "skillPath": "plugins/expo/skills/expo-native-ui/SKILL.md",
-      "computedHash": "e05b54d43dc74683126d0df50e2409bd48de9e6dc801c0a2868a9ea953c93f14"
+      "computedHash": "e6899567b8564fe814f17e45de3de308dceafa6ecadf00580e4c6d7759429ecf"
     },
     "figma": {
       "source": "heygen-com/hyperframes",

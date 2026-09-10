@@ -29,6 +29,7 @@ import featureRanking from '../../assets/icons/figma/feature-ranking.svg';
 import featureStudentList from '../../assets/icons/figma/feature-student-list.svg';
 import featureUtilityDashboardAlt from '../../assets/icons/figma/feature-utility-dashboard-alt.svg';
 import featureUtilityDashboard from '../../assets/icons/figma/feature-utility-dashboard.svg';
+import fiRrInfo from '../../assets/icons/figma/fi-rr-info.svg';
 import filter from '../../assets/icons/figma/filter.svg';
 import headphonesFill from '../../assets/icons/figma/headphones-fill.svg';
 import headphones from '../../assets/icons/figma/headphones.svg';
@@ -103,6 +104,7 @@ export const appIcons = {
   featureStudentList,
   featureUtilityDashboardAlt,
   featureUtilityDashboard,
+  fiRrInfo,
   filter,
   headphonesFill,
   headphones,
