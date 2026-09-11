@@ -7,7 +7,7 @@ export function HomeHeaderButton({ color }: { color?: string }) {
 
   const handlePress = () => {
     if (router.canDismiss()) {
-      router.dismissAll();
+      router.dismissTo('/');
     } else {
       router.replace('/');
     }
