@@ -6,12 +6,12 @@ import calendarAlt from '../../assets/icons/figma/calendar-alt.svg';
 import calendarOutline from '../../assets/icons/figma/calendar-outline.svg';
 import calendar from '../../assets/icons/figma/calendar.svg';
 import checkRead from '../../assets/icons/figma/check-read.svg';
-import closeRing from '../../assets/icons/figma/close_ring.svg';
-import closeRingFill from '../../assets/icons/figma/close_ring_fill.svg';
 import chevronLeft from '../../assets/icons/figma/chevron-left.svg';
 import chevronRight from '../../assets/icons/figma/chevron-right.svg';
 import clockFill from '../../assets/icons/figma/clock-fill.svg';
 import clockOutline from '../../assets/icons/figma/clock-outline.svg';
+import close_ring from '../../assets/icons/figma/close_ring.svg';
+import close_ring_fill from '../../assets/icons/figma/close_ring_fill.svg';
 import cup from '../../assets/icons/figma/cup.svg';
 import dashboardFill from '../../assets/icons/figma/dashboard-fill.svg';
 import dashboardOutline from '../../assets/icons/figma/dashboard-outline.svg';
@@ -31,6 +31,7 @@ import featureRanking from '../../assets/icons/figma/feature-ranking.svg';
 import featureStudentList from '../../assets/icons/figma/feature-student-list.svg';
 import featureUtilityDashboardAlt from '../../assets/icons/figma/feature-utility-dashboard-alt.svg';
 import featureUtilityDashboard from '../../assets/icons/figma/feature-utility-dashboard.svg';
+import fiRrBuilding from '../../assets/icons/figma/fi-rr-building.svg';
 import fiRrInfo from '../../assets/icons/figma/fi-rr-info.svg';
 import filter from '../../assets/icons/figma/filter.svg';
 import headphonesFill from '../../assets/icons/figma/headphones-fill.svg';
@@ -83,12 +84,12 @@ export const appIcons = {
   calendarOutline,
   calendar,
   checkRead,
-  closeRing,
-  closeRingFill,
   chevronLeft,
   chevronRight,
   clockFill,
   clockOutline,
+  close_ring,
+  close_ring_fill,
   cup,
   dashboardFill,
   dashboardOutline,
@@ -108,6 +109,7 @@ export const appIcons = {
   featureStudentList,
   featureUtilityDashboardAlt,
   featureUtilityDashboard,
+  fiRrBuilding,
   fiRrInfo,
   filter,
   headphonesFill,

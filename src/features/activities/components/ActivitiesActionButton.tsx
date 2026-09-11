@@ -35,9 +35,14 @@ export function ActivitiesActionButton({
       <View
         style={[styles.tile, isQuick ? styles.quickTile : styles.defaultTile]}
       >
-        <AppIcon name={action.icon} size={38} />
+        <AppIcon name={action.icon} size={38} color={Colors.light.primary} />
         {isEditingQuick ? (
-          <AppIcon name={badgeName} size={22} style={styles.badge} />
+          <AppIcon
+            name={badgeName}
+            size={22}
+            style={styles.badge}
+            color={Colors.light.primary}
+          />
         ) : null}
       </View>
       <ThemedText

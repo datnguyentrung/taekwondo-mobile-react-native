@@ -45,7 +45,11 @@ export const ACTIVITIES_GROUPS: GroupActivitiesAction[] = [
   {
     title: "Tiện ích chung",
     actions: [
-      { id: "utility-1", label: "TN1", icon: "featureUtilityDashboard" },
+      {
+        id: "branch-list",
+        label: "Cơ sở",
+        icon: "fiRrBuilding",
+      },
       { id: "utility-2", label: "TN2", icon: "featureUtilityDashboard" },
       { id: "utility-3", label: "TN3", icon: "featureUtilityDashboard" },
       { id: "utility-4", label: "TN4", icon: "featureUtilityDashboard" },
