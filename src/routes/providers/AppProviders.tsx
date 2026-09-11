@@ -4,6 +4,7 @@ import { useEffect, type PropsWithChildren } from 'react';
 import { useAuthenticationRuntime } from '@/features/authentication';
 import { initializeDatabase } from '@/infrastructure/database/database';
 import { queryClient } from '@/infrastructure/query/queryClient';
+import { ToastProvider } from '@/shared/ui/Toast';
 
 function DatabaseRuntime({ children }: PropsWithChildren) {
   useEffect(() => {
@@ -24,7 +25,9 @@ export function AppProviders({ children }: PropsWithChildren) {
   return (
     <QueryClientProvider client={queryClient}>
       <DatabaseRuntime>
-        <AuthRuntime>{children}</AuthRuntime>
+        <AuthRuntime>
+          <ToastProvider>{children}</ToastProvider>
+        </AuthRuntime>
       </DatabaseRuntime>
     </QueryClientProvider>
   );

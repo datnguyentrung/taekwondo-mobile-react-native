@@ -63,6 +63,7 @@ export default function AttendanceHistoryScreen({
   const filterGroups = useMemo(() => getHistoryFilterGroups(records), [records]);
   const appliedCount = filters.branchIds.length + filters.shifts.length;
   const canSearch = Boolean(selectedYear && selectedQuarter);
+  const searchEnabled = canSearch && !hasSearched;
   const visibleRecords = useMemo(
     () => (hasSearched ? filterHistoryRecords(records, filters) : []),
     [filters, hasSearched, records],
@@ -192,13 +193,13 @@ export default function AttendanceHistoryScreen({
         <Pressable
           accessibilityRole="button"
           accessibilityLabel="Tra cứu"
-          accessibilityState={{ disabled: !canSearch }}
-          disabled={!canSearch}
+          accessibilityState={{ disabled: !searchEnabled }}
+          disabled={!searchEnabled}
           onPress={handleSearch}
           style={({ pressed }) => [
             styles.searchButton,
-            canSearch ? styles.searchButtonActive : null,
-            pressed && canSearch ? styles.pressed : null,
+            searchEnabled ? styles.searchButtonActive : null,
+            pressed && searchEnabled ? styles.pressed : null,
           ]}
         >
           <ThemedText type="body" style={styles.searchButtonText}>

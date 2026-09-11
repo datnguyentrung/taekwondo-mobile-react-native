@@ -6,6 +6,8 @@ import calendarAlt from '../../assets/icons/figma/calendar-alt.svg';
 import calendarOutline from '../../assets/icons/figma/calendar-outline.svg';
 import calendar from '../../assets/icons/figma/calendar.svg';
 import checkRead from '../../assets/icons/figma/check-read.svg';
+import closeRing from '../../assets/icons/figma/close_ring.svg';
+import closeRingFill from '../../assets/icons/figma/close_ring_fill.svg';
 import chevronLeft from '../../assets/icons/figma/chevron-left.svg';
 import chevronRight from '../../assets/icons/figma/chevron-right.svg';
 import clockFill from '../../assets/icons/figma/clock-fill.svg';
@@ -81,6 +83,8 @@ export const appIcons = {
   calendarOutline,
   calendar,
   checkRead,
+  closeRing,
+  closeRingFill,
   chevronLeft,
   chevronRight,
   clockFill,

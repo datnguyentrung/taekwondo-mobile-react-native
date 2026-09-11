@@ -13,9 +13,12 @@ import {
 import { useAuthSession, useLogout } from "@/features/authentication";
 import BottomTabScreenLayout from "@/routes/navigation/layouts/BottomTabScreenLayout";
 import { AppIcon } from "@/shared/ui/AppIcon";
+import { useToast } from "@/shared/ui/Toast";
 import { ThemedText } from "@/shared/ui/ThemedText";
+import { showComingSoon } from "@/shared/utils/comingSoon";
 import {
   Colors,
+  activeEffect,
   colorPrimitives,
   effects,
   figmaColors,
@@ -44,6 +47,7 @@ function contextRoleLabel(personCode?: string | null) {
 
 export default function AccountScreen() {
   const router = useRouter();
+  const toast = useToast();
   const { activeContext, user, availableContextCount, isAuthenticated } =
     useAuthSession();
   // Inbox is app-facing: only requires an authenticated user, not the
@@ -65,27 +69,28 @@ export default function AccountScreen() {
         icon: "personOutline",
         onPress: () => router.push("/account/general-info"),
       },
-      { label: "Ví điện tử", icon: "wallet" },
-      { label: "Thành tích", icon: "verified" },
+      { label: "Ví điện tử", icon: "wallet", onPress: () => showComingSoon(toast) },
+      { label: "Thành tích", icon: "verified", onPress: () => showComingSoon(toast) },
     ],
-    [router],
+    [router, toast],
   );
 
   const settingItems = useMemo<AccountMenuItem[]>(
     () => {
       const items: AccountMenuItem[] = [
-        { label: "Đổi mật khẩu", icon: "lockOpen" },
-        { label: "Liên hệ", icon: "headphones" },
+        { label: "Đổi mật khẩu", icon: "lockOpen", onPress: () => showComingSoon(toast) },
+        { label: "Liên hệ", icon: "headphones", onPress: () => showComingSoon(toast) },
       ];
       if (canOpenNotifications) {
         items.splice(1, 0, {
           label: "Thông báo",
           icon: "bellOutline",
+          onPress: () => showComingSoon(toast),
         });
       }
       return items;
     },
-    [canOpenNotifications],
+    [canOpenNotifications, toast],
   );
 
   const switchAccount = () => {
@@ -123,7 +128,7 @@ export default function AccountScreen() {
             style={({ pressed }) => [
               styles.switchAccount,
               availableContextCount <= 1 ? styles.disabled : null,
-              pressed ? styles.pressed : null,
+              activeEffect(pressed, "pressed"),
             ]}
           >
             <ThemedText type="action" style={styles.switchText}>
@@ -174,7 +179,7 @@ export default function AccountScreen() {
         onPress={() => setConfirmingLogout(true)}
         style={({ pressed }) => [
           styles.logoutButton,
-          pressed ? styles.pressed : null,
+          activeEffect(pressed, "pressedScale"),
           logout.isPending ? styles.disabled : null,
         ]}
       >
@@ -225,7 +230,7 @@ export default function AccountScreen() {
                 onPress={() => setConfirmingLogout(false)}
                 style={({ pressed }) => [
                   styles.modalCancel,
-                  pressed ? styles.pressed : null,
+                  activeEffect(pressed, "pressed"),
                 ]}
               >
                 <ThemedText type="action" style={styles.modalCancelText}>
@@ -238,7 +243,7 @@ export default function AccountScreen() {
                 onPress={confirmLogout}
                 style={({ pressed }) => [
                   styles.modalConfirm,
-                  pressed ? styles.pressed : null,
+                  activeEffect(pressed, "pressed"),
                 ]}
               >
                 <ThemedText type="action" style={styles.modalConfirmText}>
@@ -270,7 +275,7 @@ function AccountMenuSection({ title, items }: AccountMenuSectionProps) {
             onPress={item.onPress}
             style={({ pressed }) => [
               styles.menuRow,
-              pressed ? styles.pressed : null,
+              activeEffect(pressed, "pressedHighlight"),
             ]}
           >
             <AppIcon name={item.icon} size={29} color={Colors.light.icon} />
