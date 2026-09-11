@@ -1,34 +1,60 @@
 import { javaApi } from '@/infrastructure/http/httpClient';
+import type { PageResponse } from '@/infrastructure/http/pagination.types';
 
 import type {
+  MineListParams,
+  NotificationRecipientAdminDetail,
   NotificationRecipientAdminResponse,
   NotificationRecipientCreateRequest,
-  NotificationRecipientFilterParams,
-  NotificationRecipientListResponse,
-  NotificationRecipientResponse,
+  NotificationRecipientMine,
   NotificationRecipientUpdateRequest,
+  UnreadCountResponse,
 } from './notification.dto';
 
 export const notificationRecipientApi = {
   async getMine(
-    params?: NotificationRecipientFilterParams,
-  ): Promise<NotificationRecipientListResponse> {
-    const response = await javaApi.get<NotificationRecipientListResponse>(
-      '/notification-recipients',
+    params?: MineListParams,
+  ): Promise<PageResponse<NotificationRecipientMine>> {
+    const response = await javaApi.get<PageResponse<NotificationRecipientMine>>(
+      '/notification-recipients/mine',
       { params },
     );
     return response.data;
   },
 
-  async getDetail(notificationRecipientId: string): Promise<NotificationRecipientResponse> {
-    const response = await javaApi.get<NotificationRecipientResponse>(
+  async getUnreadCount(): Promise<UnreadCountResponse> {
+    const response = await javaApi.get<UnreadCountResponse>(
+      '/notification-recipients/mine/unread-count',
+    );
+    return response.data;
+  },
+
+  async getMineDetail(notificationRecipientId: string): Promise<NotificationRecipientMine> {
+    const response = await javaApi.get<NotificationRecipientMine>(
+      `/notification-recipients/mine/${notificationRecipientId}`,
+    );
+    return response.data;
+  },
+
+  async getDetail(notificationRecipientId: string): Promise<NotificationRecipientAdminDetail> {
+    const response = await javaApi.get<NotificationRecipientAdminDetail>(
       `/notification-recipients/${notificationRecipientId}`,
     );
     return response.data;
   },
 
-  async markRead(notificationRecipientId: string): Promise<void> {
-    await javaApi.patch(`/notification-recipients/${notificationRecipientId}/read`);
+  async markRead(notificationRecipientId: string): Promise<UnreadCountResponse> {
+    const response = await javaApi.patch<UnreadCountResponse>(
+      `/notification-recipients/${notificationRecipientId}/read`,
+    );
+    return response.data;
+  },
+
+  async markAllRead(): Promise<UnreadCountResponse> {
+    const response = await javaApi.patch<UnreadCountResponse>(
+      '/notification-recipients/mine/read-all',
+    );
+    return response.data;
   },
 
   async create(request: NotificationRecipientCreateRequest): Promise<NotificationRecipientAdminResponse> {

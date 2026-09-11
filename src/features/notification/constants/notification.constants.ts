@@ -50,12 +50,3 @@ export type NotificationType =
   | "ANNOUNCEMENT"
   | "CLASS_SESSION_REPORT";
 
-export type NotificationSortBy =
-  | "createdAt"
-  | "readAt"
-  | "deliveredAt"
-  | "updatedAt"
-  | "recipientStatus"
-  | "read";
-
-export type NotificationSortDir = "asc" | "desc";

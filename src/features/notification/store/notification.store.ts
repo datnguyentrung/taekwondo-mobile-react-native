@@ -7,24 +7,23 @@ import { notificationRecipientApi } from '../api/notificationRecipientApi';
 
 type FetchUnreadCountOptions = {
   force?: boolean;
-  contextId?: string | null;
+  personId?: string | null;
 };
 
 export interface NotificationState {
   unreadCount: number;
   hasFetched: boolean;
   isFetching: boolean;
-  lastActiveContextId: string | null;
+  lastActivePersonId: string | null;
   setUnreadCount: (count: number) => void;
   incrementUnread: (by?: number) => void;
-  decrementUnread: (by?: number) => void;
   fetchUnreadCount: (options?: FetchUnreadCountOptions) => Promise<void>;
   reset: () => void;
 }
 
 type PersistedNotificationState = Pick<
   NotificationState,
-  'unreadCount' | 'lastActiveContextId'
+  'unreadCount' | 'lastActivePersonId'
 >;
 
 const STORAGE_KEY = 'notification-storage';
@@ -40,7 +39,7 @@ export const useNotificationStore = create<NotificationState>()(
       unreadCount: 0,
       hasFetched: false,
       isFetching: false,
-      lastActiveContextId: null,
+      lastActivePersonId: null,
 
       setUnreadCount: (count) => {
         set({ unreadCount: clampUnreadCount(count) });
@@ -52,36 +51,29 @@ export const useNotificationStore = create<NotificationState>()(
         }));
       },
 
-      decrementUnread: (by = 1) => {
-        set((state) => ({
-          unreadCount: clampUnreadCount(state.unreadCount - by),
-        }));
-      },
-
       fetchUnreadCount: async (options = {}) => {
-        const nextContextId = options.contextId ?? null;
+        const nextPersonId = options.personId ?? null;
         const state = get();
-        const isSameContext = state.lastActiveContextId === nextContextId;
+        const isSamePerson = state.lastActivePersonId === nextPersonId;
 
         if (state.isFetching) return;
-        if (!options.force && state.hasFetched && isSameContext) return;
+        if (!options.force && state.hasFetched && isSamePerson) return;
 
-        set({ isFetching: true });
+        // Switching person must not keep showing the previous person's badge.
+        set(
+          isSamePerson
+            ? { isFetching: true }
+            : { unreadCount: 0, hasFetched: false, isFetching: true, lastActivePersonId: nextPersonId },
+        );
 
         try {
-          const response = await notificationRecipientApi.getMine({
-            size: 1,
-            sortBy: 'createdAt',
-            sortDir: 'desc',
-          });
+          const response = await notificationRecipientApi.getUnreadCount();
           set({
             unreadCount: clampUnreadCount(response.unreadCount),
             hasFetched: true,
-            lastActiveContextId: nextContextId,
+            isFetching: false,
           });
         } catch {
-          set({ lastActiveContextId: nextContextId });
-        } finally {
           set({ isFetching: false });
         }
       },
@@ -91,7 +83,7 @@ export const useNotificationStore = create<NotificationState>()(
           unreadCount: 0,
           hasFetched: false,
           isFetching: false,
-          lastActiveContextId: null,
+          lastActivePersonId: null,
         });
       },
     }),
@@ -100,9 +92,19 @@ export const useNotificationStore = create<NotificationState>()(
       storage: createJSONStorage(() => zustandKeyValueStorage),
       partialize: (state) => ({
         unreadCount: state.unreadCount,
-        lastActiveContextId: state.lastActiveContextId,
+        lastActivePersonId: state.lastActivePersonId,
       }),
-      version: 1,
+      version: 2,
+      migrate: (persistedState) => {
+        const previous = persistedState as
+          | (Partial<PersistedNotificationState> & { lastActiveContextId?: string | null })
+          | undefined;
+
+        return {
+          unreadCount: clampUnreadCount(previous?.unreadCount ?? 0),
+          lastActivePersonId: null,
+        };
+      },
     },
   ),
 );

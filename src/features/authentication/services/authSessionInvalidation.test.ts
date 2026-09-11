@@ -29,7 +29,7 @@ describe('session invalidation', () => {
     useNotificationStore.setState({
       unreadCount: 12,
       hasFetched: true,
-      lastActiveContextId: 'context-old',
+      lastActivePersonId: 'person-old',
     });
 
     await authSessionService.invalidateSession('logout');
@@ -37,6 +37,6 @@ describe('session invalidation', () => {
     const state = useNotificationStore.getState();
     expect(state.unreadCount).toBe(0);
     expect(state.hasFetched).toBe(false);
-    expect(state.lastActiveContextId).toBeNull();
+    expect(state.lastActivePersonId).toBeNull();
   });
 });

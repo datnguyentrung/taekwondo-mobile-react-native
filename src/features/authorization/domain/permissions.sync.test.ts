@@ -10,11 +10,21 @@ import { PERMISSION_VALUES } from './permissions';
  * (e.g. mobile-only CI), so the test skips when the file cannot be resolved.
  * Override the location with BACKEND_JAVA_REPO_DIR when needed.
  */
-const BACKEND_PERMISSION_FILE = join(
-  process.env.BACKEND_JAVA_REPO_DIR ??
-    'D:\\TKD_Van_Quan\\ai-receptionist-web-be-java',
-  'src/main/java/com/dat/ai_receptionist_web/enums/Security/PermissionDefinition.java',
-);
+const PERMISSION_FILE_RELATIVE =
+  'src/main/java/com/dat/ai_receptionist_web/enums/Security/PermissionDefinition.java';
+
+const BACKEND_DIR_CANDIDATES = [
+  process.env.BACKEND_JAVA_REPO_DIR,
+  'D:\\ai-receptionist-web\\ai-receptionist-web-be-java',
+  'D:\\TKD_Van_Quan\\ai-receptionist-web-be-java',
+  join(process.cwd(), '..', 'ai-receptionist-web-be-java'),
+].filter((directory): directory is string => Boolean(directory));
+
+const BACKEND_PERMISSION_FILE =
+  BACKEND_DIR_CANDIDATES.map((directory) =>
+    join(directory, PERMISSION_FILE_RELATIVE),
+  ).find((file) => existsSync(file)) ??
+  join(BACKEND_DIR_CANDIDATES[0], PERMISSION_FILE_RELATIVE);
 
 function extractBackendPermissionCodes(source: string): string[] {
   const codes = new Set<string>();

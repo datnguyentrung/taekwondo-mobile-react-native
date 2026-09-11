@@ -19,18 +19,18 @@ jest.mock('@/infrastructure/storage/zustandKeyValueStorage', () => ({
 
 jest.mock('../api/notificationRecipientApi', () => ({
   notificationRecipientApi: {
-    getMine: jest.fn(),
+    getUnreadCount: jest.fn(),
   },
 }));
 
-const getMineMock = notificationRecipientApi.getMine as jest.Mock;
+const getUnreadCountMock = notificationRecipientApi.getUnreadCount as jest.Mock;
 
 function resetNotificationStore() {
   useNotificationStore.setState({
     unreadCount: 0,
     hasFetched: false,
     isFetching: false,
-    lastActiveContextId: null,
+    lastActivePersonId: null,
   });
 }
 
@@ -47,18 +47,18 @@ describe('notification store', () => {
     store.setUnreadCount(2.9);
     expect(useNotificationStore.getState().unreadCount).toBe(2);
 
-    useNotificationStore.getState().decrementUnread(5);
+    useNotificationStore.getState().setUnreadCount(-5);
     expect(useNotificationStore.getState().unreadCount).toBe(0);
 
     useNotificationStore.getState().incrementUnread(3);
     expect(useNotificationStore.getState().unreadCount).toBe(3);
   });
 
-  it('persists only the count and active context projection', () => {
+  it('persists only the count and active person projection', () => {
     useNotificationStore.setState({
       hasFetched: true,
       isFetching: true,
-      lastActiveContextId: 'ctx-1',
+      lastActivePersonId: 'person-1',
     });
 
     useNotificationStore.getState().setUnreadCount(7);
@@ -66,40 +66,65 @@ describe('notification store', () => {
     const stored = JSON.parse(mockStorage.get('notification-storage') ?? '{}');
     expect(stored.state).toEqual({
       unreadCount: 7,
-      lastActiveContextId: 'ctx-1',
+      lastActivePersonId: 'person-1',
     });
     expect(stored.state.hasFetched).toBeUndefined();
     expect(stored.state.isFetching).toBeUndefined();
+    expect(stored.version).toBe(2);
   });
 
-  it('fetches once per context unless forced or context changes', async () => {
-    getMineMock.mockResolvedValue({ unreadCount: 6, notifications: emptyPage() });
+  it('fetches once per person unless forced or the person changes', async () => {
+    getUnreadCountMock.mockResolvedValue({ unreadCount: 6 });
 
     await useNotificationStore
       .getState()
-      .fetchUnreadCount({ contextId: 'ctx-1' });
+      .fetchUnreadCount({ personId: 'person-1' });
     await useNotificationStore
       .getState()
-      .fetchUnreadCount({ contextId: 'ctx-1' });
+      .fetchUnreadCount({ personId: 'person-1' });
     await useNotificationStore
       .getState()
-      .fetchUnreadCount({ contextId: 'ctx-2' });
+      .fetchUnreadCount({ personId: 'person-2' });
     await useNotificationStore
       .getState()
-      .fetchUnreadCount({ force: true, contextId: 'ctx-2' });
+      .fetchUnreadCount({ force: true, personId: 'person-2' });
 
-    expect(getMineMock).toHaveBeenCalledTimes(3);
-    expect(getMineMock).toHaveBeenCalledWith({
-      size: 1,
-      sortBy: 'createdAt',
-      sortDir: 'desc',
-    });
+    expect(getUnreadCountMock).toHaveBeenCalledTimes(3);
     expect(useNotificationStore.getState().unreadCount).toBe(6);
+    expect(useNotificationStore.getState().lastActivePersonId).toBe('person-2');
+  });
+
+  it('zeroes the badge before refetching when the active person changes', async () => {
+    getUnreadCountMock.mockResolvedValue({ unreadCount: 5 });
+    await useNotificationStore
+      .getState()
+      .fetchUnreadCount({ personId: 'person-1' });
+    expect(useNotificationStore.getState().unreadCount).toBe(5);
+
+    let resolveNextFetch: (value: unknown) => void = () => undefined;
+    getUnreadCountMock.mockReturnValueOnce(
+      new Promise((resolve) => {
+        resolveNextFetch = resolve;
+      }),
+    );
+
+    const pendingFetch = useNotificationStore
+      .getState()
+      .fetchUnreadCount({ personId: 'person-2' });
+
+    expect(useNotificationStore.getState().unreadCount).toBe(0);
+    expect(useNotificationStore.getState().lastActivePersonId).toBe('person-2');
+
+    resolveNextFetch({ unreadCount: 2 });
+    await pendingFetch;
+
+    expect(useNotificationStore.getState().unreadCount).toBe(2);
+    expect(useNotificationStore.getState().hasFetched).toBe(true);
   });
 
   it('guards concurrent fetches and releases the lock after failure', async () => {
     let resolveFetch: (value: unknown) => void = () => undefined;
-    getMineMock
+    getUnreadCountMock
       .mockReturnValueOnce(
         new Promise((resolve) => {
           resolveFetch = resolve;
@@ -109,30 +134,50 @@ describe('notification store', () => {
 
     const firstFetch = useNotificationStore
       .getState()
-      .fetchUnreadCount({ contextId: 'ctx-1' });
+      .fetchUnreadCount({ personId: 'person-1' });
     const secondFetch = useNotificationStore
       .getState()
-      .fetchUnreadCount({ contextId: 'ctx-1' });
+      .fetchUnreadCount({ personId: 'person-1' });
 
-    expect(getMineMock).toHaveBeenCalledTimes(1);
-    resolveFetch({ unreadCount: 4, notifications: emptyPage() });
+    expect(getUnreadCountMock).toHaveBeenCalledTimes(1);
+    resolveFetch({ unreadCount: 4 });
     await Promise.all([firstFetch, secondFetch]);
 
     await useNotificationStore
       .getState()
-      .fetchUnreadCount({ force: true, contextId: 'ctx-1' });
+      .fetchUnreadCount({ force: true, personId: 'person-1' });
 
-    expect(getMineMock).toHaveBeenCalledTimes(2);
+    expect(getUnreadCountMock).toHaveBeenCalledTimes(2);
     expect(useNotificationStore.getState().isFetching).toBe(false);
     expect(useNotificationStore.getState().unreadCount).toBe(4);
   });
 
-  it('resets count, fetch flags, and context', () => {
+  it('keeps the badge empty and retryable when the very first fetch fails', async () => {
+    getUnreadCountMock.mockRejectedValueOnce(new Error('offline'));
+
+    await useNotificationStore
+      .getState()
+      .fetchUnreadCount({ personId: 'person-1' });
+
+    expect(useNotificationStore.getState().unreadCount).toBe(0);
+    expect(useNotificationStore.getState().hasFetched).toBe(false);
+    expect(useNotificationStore.getState().isFetching).toBe(false);
+
+    getUnreadCountMock.mockResolvedValueOnce({ unreadCount: 3 });
+    await useNotificationStore
+      .getState()
+      .fetchUnreadCount({ personId: 'person-1' });
+
+    expect(getUnreadCountMock).toHaveBeenCalledTimes(2);
+    expect(useNotificationStore.getState().unreadCount).toBe(3);
+  });
+
+  it('resets count, fetch flags, and person', () => {
     useNotificationStore.setState({
       unreadCount: 9,
       hasFetched: true,
       isFetching: true,
-      lastActiveContextId: 'ctx-1',
+      lastActivePersonId: 'person-1',
     });
 
     useNotificationStore.getState().reset();
@@ -141,20 +186,36 @@ describe('notification store', () => {
       unreadCount: 0,
       hasFetched: false,
       isFetching: false,
-      lastActiveContextId: null,
+      lastActivePersonId: null,
     });
   });
 });
 
-function emptyPage() {
-  return {
-    content: [],
-    pageNumber: 0,
-    pageSize: 1,
-    totalElements: 0,
-    totalPages: 0,
-    first: true,
-    last: true,
-    empty: true,
-  };
-}
+describe('notification store persistence migration', () => {
+  beforeEach(() => {
+    mockStorage.clear();
+    jest.clearAllMocks();
+  });
+
+  it('migrates persisted v1 state by dropping the stale context key', async () => {
+    mockStorage.set(
+      'notification-storage',
+      JSON.stringify({
+        state: { unreadCount: 7, lastActiveContextId: 'ctx-1' },
+        version: 1,
+      }),
+    );
+
+    let isolatedStore: typeof useNotificationStore | undefined;
+    jest.isolateModules(() => {
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      const module = require('./notification.store') as typeof import('./notification.store');
+      isolatedStore = module.useNotificationStore;
+    });
+
+    await isolatedStore!.persist.rehydrate();
+
+    expect(isolatedStore!.getState().unreadCount).toBe(7);
+    expect(isolatedStore!.getState().lastActivePersonId).toBeNull();
+  });
+});

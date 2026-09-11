@@ -1,4 +1,4 @@
 export type {
-  NotificationRecipientResponse as NotificationRecipient,
+  NotificationRecipientMine as NotificationRecipient,
   NotificationResponse as Notification,
 } from "../api/notification.dto";

@@ -4,7 +4,7 @@ import { AppIcon } from "@/shared/ui/AppIcon";
 import { ThemedText } from "@/shared/ui/ThemedText";
 import { Colors, effects, radii } from "@/theme";
 
-import type { NotificationRecipientResponse } from "../api/notification.dto";
+import type { NotificationRecipientMine } from "../api/notification.dto";
 import {
   NotificationRecipientStatusLabel,
   NotificationTypeLabel,
@@ -14,7 +14,7 @@ import { NotificationPill } from "./NotificationPill";
 import { NotificationTypeIcon } from "./NotificationTypeIcon";
 
 export type NotificationDetailInfoPanelProps = {
-  detail: NotificationRecipientResponse;
+  detail: NotificationRecipientMine;
   onBackToList: () => void;
 };
 
@@ -49,7 +49,9 @@ export function NotificationDetailInfoPanel({
                 {detail.read ? "Đã đọc" : "Chưa đọc"}
               </NotificationPill>
               <NotificationPill>
-                {NotificationRecipientStatusLabel[detail.recipientStatus]}
+                {NotificationRecipientStatusLabel[
+                  detail.notificationRecipientStatus
+                ] ?? detail.notificationRecipientStatus}
               </NotificationPill>
             </View>
           </View>

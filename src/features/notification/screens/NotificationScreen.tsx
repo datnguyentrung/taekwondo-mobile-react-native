@@ -1,5 +1,5 @@
 import { useRouter, type Href } from "expo-router";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import {
   FlatList,
   Pressable,
@@ -9,11 +9,12 @@ import {
 } from "react-native";
 
 import { HomeHeaderButton } from "@/routes/navigation/components/HomeHeaderButton";
+import { HeaderActionButton } from "@/routes/navigation/components/HeaderActionButton";
 import StackScreenLayout from "@/routes/navigation/layouts/StackScreenLayout";
 import { ThemedText } from "@/shared/ui/ThemedText";
 import { Colors, radii } from "@/theme";
 
-import type { NotificationRecipientResponse } from "../api/notification.dto";
+import type { NotificationRecipientMine } from "../api/notification.dto";
 import { NotificationCard } from "../components/NotificationCard";
 import {
   NotificationFilterBar,
@@ -26,6 +27,8 @@ import {
 import { NotificationSummaryCard } from "../components/NotificationSummaryCard";
 import type { NotificationType } from "../constants/notification.constants";
 import {
+  useMarkAllNotificationsRead,
+  useMarkNotificationRead,
   useNotifications,
   type NotificationFilters,
 } from "../queries/notificationQueries";
@@ -44,45 +47,42 @@ export default function NotificationScreen() {
       read: tab === "unread" ? false : undefined,
       search: search || undefined,
       type: selectedType,
-      sortBy: "createdAt",
-      sortDir: "desc",
     }),
     [search, selectedType, tab],
   );
 
   const notificationsQuery = useNotifications(filters);
-  const storeUnreadCount = useNotificationStore((state) => state.unreadCount);
-  const setUnreadCount = useNotificationStore((state) => state.setUnreadCount);
+  const unreadCount = useNotificationStore((state) => state.unreadCount);
+  const { mutate: markRead } = useMarkNotificationRead();
+  const { mutate: markAllRead, isPending: isMarkAllReadPending } =
+    useMarkAllNotificationsRead();
   const notifications = useMemo(
-    () =>
-      notificationsQuery.data?.pages.flatMap(
-        (page) => page.notifications.content,
-      ) ?? [],
+    () => notificationsQuery.data?.pages.flatMap((page) => page.content) ?? [],
     [notificationsQuery.data],
   );
-  const unreadCount = notificationsQuery.data?.pages[0]?.unreadCount ?? 0;
-  const totalCount =
-    notificationsQuery.data?.pages[0]?.notifications.totalElements ?? 0;
+  const totalCount = notificationsQuery.data?.pages[0]?.totalElements ?? 0;
   const isInitialLoading =
     notificationsQuery.isLoading || notificationsQuery.isPending;
 
-  useEffect(() => {
-    const serverCount = notificationsQuery.data?.pages[0]?.unreadCount;
-    if (serverCount === undefined || serverCount === storeUnreadCount) return;
-    setUnreadCount(serverCount);
-  }, [notificationsQuery.data, setUnreadCount, storeUnreadCount]);
-
   const openNotification = useCallback(
-    (notification: NotificationRecipientResponse) => {
+    (notification: NotificationRecipientMine) => {
+      if (!notification.read) {
+        markRead(notification.notificationRecipientId);
+      }
       router.push(
         `/notifications/${notification.notificationRecipientId}` as unknown as Href,
       );
     },
-    [router],
+    [markRead, router],
   );
 
+  const handleMarkAllRead = useCallback(() => {
+    if (isMarkAllReadPending) return;
+    markAllRead();
+  }, [isMarkAllReadPending, markAllRead]);
+
   const renderItem = useCallback(
-    ({ item }: { item: NotificationRecipientResponse }) => (
+    ({ item }: { item: NotificationRecipientMine }) => (
       <NotificationCard notification={item} onPress={openNotification} />
     ),
     [openNotification],
@@ -92,7 +92,20 @@ export default function NotificationScreen() {
     <StackScreenLayout
       title="Thông báo"
       scrollEnabled={false}
-      rightActions={<HomeHeaderButton color={Colors.light.text} />}
+      rightActions={
+        <>
+          {unreadCount > 0 ? (
+            <HeaderActionButton
+              icon="checkRead"
+              label="Đánh dấu tất cả đã đọc"
+              color={Colors.light.text}
+              testID="notification-read-all-button"
+              onPress={handleMarkAllRead}
+            />
+          ) : null}
+          <HomeHeaderButton color={Colors.light.text} />
+        </>
+      }
       contentContainerStyle={styles.screenContent}
     >
       <FlatList

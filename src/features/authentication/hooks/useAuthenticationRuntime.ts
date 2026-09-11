@@ -8,8 +8,8 @@ import { useAuthStore } from '../store/auth.store';
 
 export function useAuthenticationRuntime(): void {
   const status = useAuthStore((state) => state.status);
-  const activeContextId = useAuthStore(
-    (state) => state.activeContext?.userPersonId ?? null,
+  const activePersonId = useAuthStore(
+    (state) => state.activeContext?.personId ?? null,
   );
 
   useEffect(() => {
@@ -26,7 +26,7 @@ export function useAuthenticationRuntime(): void {
     if (status === 'authenticated') {
       void useNotificationStore
         .getState()
-        .fetchUnreadCount({ contextId: activeContextId });
+        .fetchUnreadCount({ personId: activePersonId });
     }
 
     const unsubscribeToken = notificationService.subscribeToTokenRefresh(() => {
@@ -41,5 +41,5 @@ export function useAuthenticationRuntime(): void {
       unsubscribeToken();
       unsubscribeMessages();
     };
-  }, [activeContextId, status]);
+  }, [activePersonId, status]);
 }

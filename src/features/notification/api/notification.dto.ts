@@ -1,8 +1,5 @@
-import type { PageResponse } from "@/infrastructure/http/pagination.types";
 import type {
   NotificationRecipientStatus,
-  NotificationSortBy,
-  NotificationSortDir,
   NotificationType,
 } from "../constants/notification.constants";
 
@@ -66,10 +63,11 @@ export interface NotificationRecipientAdminResponse {
   updatedAt: string;
 }
 
-export interface NotificationRecipientResponse {
+/** App-facing inbox item (`GET /notification-recipients/mine`). */
+export interface NotificationRecipientMine {
   notificationRecipientId: string;
   notificationId: string;
-  recipientUserId: string;
+  contextPersonId: string | null;
   title: string;
   body: string;
   notificationType: NotificationType;
@@ -79,27 +77,32 @@ export interface NotificationRecipientResponse {
   read: boolean;
   readAt: string | null;
   deliveredAt: string | null;
-  recipientStatus: NotificationRecipientStatus;
+  notificationRecipientStatus: NotificationRecipientStatus;
+  createdAt: string;
+}
+
+/** Management detail (`GET /notification-recipients/{id}`). */
+export interface NotificationRecipientAdminDetail {
+  notificationRecipientId: string;
+  notificationId: string;
+  recipientUserId: string;
+  contextPersonId: string | null;
+  read: boolean;
+  readAt: string | null;
+  deliveredAt: string | null;
+  notificationRecipientStatus: NotificationRecipientStatus;
   createdAt: string;
   updatedAt: string;
 }
 
-export interface NotificationRecipientListResponse {
+export interface UnreadCountResponse {
   unreadCount: number;
-  notifications: PageResponse<NotificationRecipientResponse>;
 }
 
-export interface NotificationRecipientFilterParams {
-  read?: boolean;
-  status?: NotificationRecipientStatus;
-  type?: NotificationType;
-  fromCreatedAt?: string;
-  toCreatedAt?: string;
-  fromReadAt?: string;
-  toReadAt?: string;
-  search?: string;
+export interface MineListParams {
   page?: number;
   size?: number;
-  sortBy?: NotificationSortBy;
-  sortDir?: NotificationSortDir;
+  read?: boolean;
+  type?: NotificationType;
+  search?: string;
 }

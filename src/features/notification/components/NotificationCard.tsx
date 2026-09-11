@@ -5,15 +5,15 @@ import { AppIcon } from "@/shared/ui/AppIcon";
 import { ThemedText } from "@/shared/ui/ThemedText";
 import { Colors, effects, hexToRgba, radii, typography } from "@/theme";
 
-import type { NotificationRecipientResponse } from "../api/notification.dto";
+import type { NotificationRecipientMine } from "../api/notification.dto";
 import { NotificationTypeLabel } from "../constants/notification.constants";
 import { formatNotificationDate } from "../utils/formatNotificationDate";
 import { NotificationPill } from "./NotificationPill";
 import { NotificationTypeIcon } from "./NotificationTypeIcon";
 
 export type NotificationCardProps = {
-  notification: NotificationRecipientResponse;
-  onPress: (notification: NotificationRecipientResponse) => void;
+  notification: NotificationRecipientMine;
+  onPress: (notification: NotificationRecipientMine) => void;
 };
 
 function NotificationCardComponent({

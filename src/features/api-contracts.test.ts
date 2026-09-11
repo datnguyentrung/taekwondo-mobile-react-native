@@ -40,7 +40,17 @@ const contracts = [
   [notificationApi, ['list', 'create', 'getDetail', 'update', 'remove']],
   [
     notificationRecipientApi,
-    ['getMine', 'getDetail', 'markRead', 'create', 'update', 'remove'],
+    [
+      'getMine',
+      'getUnreadCount',
+      'getMineDetail',
+      'getDetail',
+      'markRead',
+      'markAllRead',
+      'create',
+      'update',
+      'remove',
+    ],
   ],
   [facebookApi, ['verifyWebhook', 'getVideoInsights', 'getPostInsights', 'receiveWebhook']],
   [authApi, ['login', 'refresh', 'getAccount', 'getContexts', 'switchContext', 'getSessions', 'logout', 'logoutAll', 'updateFcm']],

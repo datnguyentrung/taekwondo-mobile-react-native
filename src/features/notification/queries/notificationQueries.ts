@@ -9,16 +9,14 @@ import {
   type QueryKey,
 } from "@tanstack/react-query";
 
+import type { PageResponse } from "@/infrastructure/http/pagination.types";
+
 import type {
-  NotificationRecipientListResponse,
-  NotificationRecipientResponse,
+  NotificationRecipientMine,
+  UnreadCountResponse,
 } from "../api/notification.dto";
 import { notificationRecipientApi } from "../api/notificationRecipientApi";
-import type {
-  NotificationSortBy,
-  NotificationSortDir,
-  NotificationType,
-} from "../constants/notification.constants";
+import type { NotificationType } from "../constants/notification.constants";
 import { useNotificationStore } from "../store/notification.store";
 
 export const DEFAULT_NOTIFICATION_PAGE_SIZE = 30;
@@ -28,8 +26,6 @@ export interface NotificationFilters {
   search?: string;
   type?: NotificationType;
   size?: number;
-  sortBy?: NotificationSortBy;
-  sortDir?: NotificationSortDir;
 }
 
 export const notificationTypes = [
@@ -45,20 +41,22 @@ export const notificationTypes = [
 const notificationTypeSet = new Set<string>(notificationTypes);
 const pendingMarkReadIds = new Set<string>();
 
-export type NotificationListFilters = Required<
-  Pick<NotificationFilters, "size" | "sortBy" | "sortDir">
-> &
+export type NotificationListFilters = Required<Pick<NotificationFilters, "size">> &
   Pick<NotificationFilters, "read" | "search" | "type">;
 
 export type NotificationInfiniteData = InfiniteData<
-  NotificationRecipientListResponse,
+  PageResponse<NotificationRecipientMine>,
   number
 >;
 
 type MarkReadMutationContext = {
-  detailSnapshot?: NotificationRecipientResponse;
+  detailSnapshot?: NotificationRecipientMine;
   listSnapshots: [QueryKey, NotificationInfiniteData | undefined][];
-  didUpdateUnreadCount: boolean;
+};
+
+type MarkAllMutationContext = {
+  detailSnapshots: [QueryKey, NotificationRecipientMine | undefined][];
+  listSnapshots: [QueryKey, NotificationInfiniteData | undefined][];
 };
 
 export const notificationKeys = {
@@ -85,8 +83,6 @@ export function normalizeNotificationFilters(
     search: normalizedSearch || undefined,
     type: isNotificationType(filters.type) ? filters.type : undefined,
     size: filters.size ?? DEFAULT_NOTIFICATION_PAGE_SIZE,
-    sortBy: filters.sortBy ?? "createdAt",
-    sortDir: filters.sortDir ?? "desc",
   };
 }
 
@@ -102,9 +98,7 @@ export function notificationListQueryOptions(filters: NotificationFilters = {}) 
       }),
     initialPageParam: 0,
     getNextPageParam: (lastPage) =>
-      lastPage.notifications.last
-        ? undefined
-        : lastPage.notifications.pageNumber + 1,
+      lastPage.last ? undefined : lastPage.pageNumber + 1,
     staleTime: 45_000,
   });
 }
@@ -121,8 +115,8 @@ export function isNotificationMarkReadPending(id: string) {
 }
 
 function updateDetailAsRead(
-  old: NotificationRecipientResponse | undefined,
-): NotificationRecipientResponse | undefined {
+  old: NotificationRecipientMine | undefined,
+): NotificationRecipientMine | undefined {
   if (!old) return old;
   return { ...old, read: true };
 }
@@ -130,7 +124,6 @@ function updateDetailAsRead(
 function updateInfiniteDataAfterMarkRead(
   old: NotificationInfiniteData | undefined,
   id: string,
-  wasUnread: boolean,
 ): NotificationInfiniteData | undefined {
   if (!old) return old;
 
@@ -138,42 +131,27 @@ function updateInfiniteDataAfterMarkRead(
     ...old,
     pages: old.pages.map((page) => ({
       ...page,
-      unreadCount: wasUnread
-        ? Math.max(0, page.unreadCount - 1)
-        : page.unreadCount,
-      notifications: {
-        ...page.notifications,
-        content: page.notifications.content.map((item) =>
-          item.notificationRecipientId === id ? { ...item, read: true } : item,
-        ),
-      },
+      content: page.content.map((item) =>
+        item.notificationRecipientId === id ? { ...item, read: true } : item,
+      ),
     })),
   };
 }
 
-function findReadStateInLists(
-  snapshots: [QueryKey, NotificationInfiniteData | undefined][],
-  id: string,
-): boolean | undefined {
-  for (const [, data] of snapshots) {
-    for (const page of data?.pages ?? []) {
-      const item = page.notifications.content.find(
-        (notification) => notification.notificationRecipientId === id,
-      );
-      if (item) return item.read;
-    }
-  }
-  return undefined;
-}
+function updateInfiniteDataAfterMarkAll(
+  old: NotificationInfiniteData | undefined,
+): NotificationInfiniteData | undefined {
+  if (!old) return old;
 
-function resolveWasUnread(
-  detailSnapshot: NotificationRecipientResponse | undefined,
-  listSnapshots: [QueryKey, NotificationInfiniteData | undefined][],
-  id: string,
-): boolean {
-  if (detailSnapshot) return detailSnapshot.read === false;
-  const listReadState = findReadStateInLists(listSnapshots, id);
-  return listReadState === undefined ? true : listReadState === false;
+  return {
+    ...old,
+    pages: old.pages.map((page) => ({
+      ...page,
+      content: page.content.map((item) =>
+        item.read ? item : { ...item, read: true },
+      ),
+    })),
+  };
 }
 
 export function useNotifications(filters: NotificationFilters) {
@@ -184,7 +162,7 @@ export function useNotificationDetail(notificationRecipientId?: string) {
   return useQuery({
     queryKey: notificationKeys.detail(notificationRecipientId ?? ""),
     queryFn: () =>
-      notificationRecipientApi.getDetail(notificationRecipientId as string),
+      notificationRecipientApi.getMineDetail(notificationRecipientId as string),
     enabled: Boolean(notificationRecipientId),
     staleTime: 30_000,
   });
@@ -193,7 +171,7 @@ export function useNotificationDetail(notificationRecipientId?: string) {
 export function useMarkNotificationRead() {
   const queryClient = useQueryClient();
 
-  return useMutation<void, Error, string, MarkReadMutationContext>({
+  return useMutation<UnreadCountResponse, Error, string, MarkReadMutationContext>({
     mutationFn: notificationRecipientApi.markRead,
     retry: 1,
     onMutate: async (id) => {
@@ -202,30 +180,27 @@ export function useMarkNotificationRead() {
 
       const detailKey = notificationKeys.detail(id);
       const detailSnapshot =
-        queryClient.getQueryData<NotificationRecipientResponse>(detailKey);
+        queryClient.getQueryData<NotificationRecipientMine>(detailKey);
       const listSnapshots = queryClient.getQueriesData<NotificationInfiniteData>(
         { queryKey: notificationKeys.lists() },
       );
-      const wasUnread = resolveWasUnread(detailSnapshot, listSnapshots, id);
 
-      queryClient.setQueryData<NotificationRecipientResponse>(
+      queryClient.setQueryData<NotificationRecipientMine>(
         detailKey,
         updateDetailAsRead,
       );
       queryClient.setQueriesData<NotificationInfiniteData>(
         { queryKey: notificationKeys.lists() },
-        (old) => updateInfiniteDataAfterMarkRead(old, id, wasUnread),
+        (old) => updateInfiniteDataAfterMarkRead(old, id),
       );
-
-      if (wasUnread) {
-        useNotificationStore.getState().decrementUnread();
-      }
 
       return {
         detailSnapshot,
         listSnapshots,
-        didUpdateUnreadCount: wasUnread,
       };
+    },
+    onSuccess: (response) => {
+      useNotificationStore.getState().setUnreadCount(response.unreadCount);
     },
     onError: (_error, id, context) => {
       queryClient.setQueryData(
@@ -236,16 +211,60 @@ export function useMarkNotificationRead() {
       for (const [queryKey, data] of context?.listSnapshots ?? []) {
         queryClient.setQueryData(queryKey, data);
       }
-
-      if (context?.didUpdateUnreadCount) {
-        useNotificationStore.getState().incrementUnread();
-      }
     },
     onSettled: (_data, _error, id) => {
       pendingMarkReadIds.delete(id);
       void queryClient.invalidateQueries({ queryKey: notificationKeys.lists() });
       void queryClient.invalidateQueries({
         queryKey: notificationKeys.detail(id),
+      });
+    },
+  });
+}
+
+export function useMarkAllNotificationsRead() {
+  const queryClient = useQueryClient();
+
+  return useMutation<UnreadCountResponse, Error, void, MarkAllMutationContext>({
+    mutationFn: () => notificationRecipientApi.markAllRead(),
+    retry: 1,
+    onMutate: async () => {
+      await queryClient.cancelQueries({ queryKey: notificationKeys.all });
+
+      const detailSnapshots =
+        queryClient.getQueriesData<NotificationRecipientMine>({
+          queryKey: notificationKeys.details(),
+        });
+      const listSnapshots = queryClient.getQueriesData<NotificationInfiniteData>(
+        { queryKey: notificationKeys.lists() },
+      );
+
+      queryClient.setQueriesData<NotificationRecipientMine>(
+        { queryKey: notificationKeys.details() },
+        updateDetailAsRead,
+      );
+      queryClient.setQueriesData<NotificationInfiniteData>(
+        { queryKey: notificationKeys.lists() },
+        updateInfiniteDataAfterMarkAll,
+      );
+
+      return { detailSnapshots, listSnapshots };
+    },
+    onSuccess: (response) => {
+      useNotificationStore.getState().setUnreadCount(response.unreadCount);
+    },
+    onError: (_error, _variables, context) => {
+      for (const [queryKey, data] of context?.detailSnapshots ?? []) {
+        queryClient.setQueryData(queryKey, data);
+      }
+      for (const [queryKey, data] of context?.listSnapshots ?? []) {
+        queryClient.setQueryData(queryKey, data);
+      }
+    },
+    onSettled: () => {
+      void queryClient.invalidateQueries({ queryKey: notificationKeys.lists() });
+      void queryClient.invalidateQueries({
+        queryKey: notificationKeys.details(),
       });
     },
   });
