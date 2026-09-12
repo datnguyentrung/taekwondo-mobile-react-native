@@ -17,11 +17,12 @@ import { notificationApi } from './notification/api/notificationApi';
 import { notificationRecipientApi } from './notification/api/notificationRecipientApi';
 import { personApi } from './person/api/personApi';
 import { userPersonApi } from './person/api/userPersonApi';
+import { positionApi } from './position/api/positionApi';
 import { permissionApi } from './roles/api/permissionApi';
 import { roleApi } from './roles/api/roleApi';
 import { rolePermissionApi } from './roles/api/rolePermissionApi';
 import { userRoleApi } from './roles/api/userRoleApi';
-import { studentAttendanceApi } from './student-attendance/api/studentAttendanceApi';
+import { sessionAttendanceApi, studentAttendanceApi } from './student-attendance/api/studentAttendanceApi';
 import { studentEnrollmentApi } from './student-enrollment/api/studentEnrollmentApi';
 import { userApi } from './user/api/userApi';
 import { walletApi } from './wallet/api/walletApi';
@@ -33,6 +34,7 @@ const contracts = [
   [coursePriceApi, ['list', 'get', 'create', 'update', 'remove']],
   [branchApi, ['list', 'get', 'create', 'update', 'remove']],
   [personApi, ['list', 'get', 'create', 'update', 'remove']],
+  [positionApi, ['list', 'get', 'create', 'update', 'remove']],
   [userPersonApi, ['list', 'get', 'create', 'update', 'remove']],
   [coursePurchaseApi, ['list', 'get', 'create', 'update', 'remove']],
   [walletApi, ['list', 'get', 'create', 'update', 'remove', 'topUp', 'purchaseCourse', 'refund']],
@@ -67,6 +69,7 @@ const contracts = [
   [courseStaffAssignmentApi, ['list', 'get', 'create', 'update', 'remove']],
   [coachTimesheetApi, ['list', 'get', 'create', 'update', 'remove']],
   [leaveRequestApi, ['list', 'get', 'create', 'approve', 'reject', 'cancel']],
+  [sessionAttendanceApi, ['list', 'get', 'create', 'update', 'remove']],
   [studentAttendanceApi, ['list', 'get', 'create', 'update', 'remove']],
   [studentEnrollmentApi, ['list', 'get', 'create', 'update', 'remove']],
 ] as const;

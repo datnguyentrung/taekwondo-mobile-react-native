@@ -3,18 +3,18 @@ import { Permission } from '@/features/authorization';
 import { getAttendanceHistoryNavigationDecision } from './historyAccess';
 
 describe('getAttendanceHistoryNavigationDecision', () => {
-  it('routes directly to student history for student attendance permission only', () => {
+  it('routes directly to student history for session attendance permission only', () => {
     expect(
       getAttendanceHistoryNavigationDecision([
-        Permission.STUDENT_ATTENDANCE_READ,
+        Permission.SESSION_ATTENDANCE_READ,
       ]),
     ).toEqual({ type: 'route', mode: 'student' });
   });
 
-  it('opens picker when both student attendance and coach timesheet permissions exist', () => {
+  it('opens picker when both session attendance and coach timesheet permissions exist', () => {
     expect(
       getAttendanceHistoryNavigationDecision([
-        Permission.STUDENT_ATTENDANCE_READ,
+        Permission.SESSION_ATTENDANCE_READ,
         Permission.COACH_TIMESHEET_READ,
       ]),
     ).toEqual({ type: 'picker' });

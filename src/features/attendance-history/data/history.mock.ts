@@ -24,6 +24,7 @@ const allowedActions = { update: false, delete: false };
 export const studentAttendanceMockRecords: StudentMockRecord[] = [
   {
     attendance: {
+      sessionAttendanceId: 'student-attendance-2026-08-09',
       studentAttendanceId: 'student-attendance-2026-08-09',
       classSessionId: 'class-session-2026-08-09',
       studentEnrollmentId: 'student-enrollment-1',
@@ -41,6 +42,7 @@ export const studentAttendanceMockRecords: StudentMockRecord[] = [
   },
   {
     attendance: {
+      sessionAttendanceId: 'student-attendance-2026-08-06',
       studentAttendanceId: 'student-attendance-2026-08-06',
       classSessionId: 'class-session-2026-08-06',
       studentEnrollmentId: 'student-enrollment-1',
@@ -58,6 +60,7 @@ export const studentAttendanceMockRecords: StudentMockRecord[] = [
   },
   {
     attendance: {
+      sessionAttendanceId: 'student-attendance-2026-08-01',
       studentAttendanceId: 'student-attendance-2026-08-01',
       classSessionId: 'class-session-2026-08-01',
       studentEnrollmentId: 'student-enrollment-1',
@@ -75,6 +78,7 @@ export const studentAttendanceMockRecords: StudentMockRecord[] = [
   },
   {
     attendance: {
+      sessionAttendanceId: 'student-attendance-2026-07-21',
       studentAttendanceId: 'student-attendance-2026-07-21',
       classSessionId: 'class-session-2026-07-21',
       studentEnrollmentId: 'student-enrollment-1',

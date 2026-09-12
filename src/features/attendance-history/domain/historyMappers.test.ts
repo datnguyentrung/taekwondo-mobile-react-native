@@ -9,6 +9,7 @@ import {
 describe('historyMappers', () => {
   it('maps student attendance API shape to a student history card model', () => {
     const attendance: StudentAttendanceResponse = {
+      sessionAttendanceId: 'attendance-1',
       studentAttendanceId: 'attendance-1',
       classSessionId: 'session-1',
       studentEnrollmentId: 'enrollment-1',

@@ -39,7 +39,7 @@ export function mapStudentAttendanceToHistoryRecord(
   const evaluationStatus = attendance.evaluationStatus ?? 'PENDING';
 
   return {
-    id: attendance.studentAttendanceId,
+    id: attendance.sessionAttendanceId ?? attendance.studentAttendanceId,
     mode: 'student',
     dateLabel: formatDisplayDate(attendance.checkInTime ?? attendance.createdAt),
     branchLabel: meta.branchLabel,

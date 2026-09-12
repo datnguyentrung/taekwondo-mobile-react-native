@@ -7,6 +7,7 @@ export interface PersonResponse {
   birthDate: string;
   nationalCode: string | null;
   email: string | null;
+  positionId?: string | null;
   belt: Belt;
   currentBelt?: Belt;
   personCode?: string | null;

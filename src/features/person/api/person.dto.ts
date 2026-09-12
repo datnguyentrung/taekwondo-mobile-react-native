@@ -12,6 +12,7 @@ export interface PersonCreateRequest {
   email?: string | null;
   nationalCode?: string | null;
   faceImagePath?: string | null;
+  positionId?: string | null;
   currentBelt: Belt;
   status: PersonStatus;
   startDate: string;
@@ -19,6 +20,7 @@ export interface PersonCreateRequest {
 
 export interface PersonUpdateRequest extends PersonCreateRequest {
   personCode?: string | null;
+  positionId?: string | null;
 }
 
 export interface PersonSearchItem {

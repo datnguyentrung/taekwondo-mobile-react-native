@@ -6,10 +6,11 @@ export interface AllowedActions {
   delete: boolean;
 }
 
-export interface StudentAttendanceResponse {
-  studentAttendanceId: string;
+export interface SessionAttendanceResponse {
+  sessionAttendanceId: string;
+  studentAttendanceId?: string;
   classSessionId: string;
-  studentEnrollmentId: string;
+  studentEnrollmentId: string | null;
   courseStaffAssignmentId: string | null;
   checkInTime: string | null;
   attendanceStatus: AttendanceStatus;
@@ -20,30 +21,41 @@ export interface StudentAttendanceResponse {
   updatedAt: string;
 }
 
-export interface StudentAttendanceCreateRequest {
+export type StudentAttendanceResponse = SessionAttendanceResponse;
+
+export interface SessionAttendanceCreateRequest {
   classSessionId: string;
-  studentEnrollmentId: string;
-  checkInTime: string;
+  studentEnrollmentId?: string | null;
+  courseStaffAssignmentId?: string | null;
+  checkInTime?: string | null;
   attendanceStatus: AttendanceStatus;
-  evaluationStatus: EvaluationStatus;
-  note: string;
+  evaluationStatus?: EvaluationStatus | null;
+  note?: string | null;
 }
 
-export interface StudentAttendanceUpdateRequest {
-  checkInTime: string;
+export type StudentAttendanceCreateRequest = SessionAttendanceCreateRequest;
+
+export interface SessionAttendanceUpdateRequest {
+  checkInTime?: string | null;
   attendanceStatus: AttendanceStatus;
-  evaluationStatus: EvaluationStatus;
-  note: string;
+  evaluationStatus?: EvaluationStatus | null;
+  note?: string | null;
 }
+
+export type StudentAttendanceUpdateRequest = SessionAttendanceUpdateRequest;
 
 export interface AttendanceFilterParams {
-  from: string;
-  to: string;
+  from?: string;
+  to?: string;
   courseId?: string;
   studentPersonId?: string;
+  staffPersonId?: string;
   page?: number;
   size?: number;
   sort?: string | string[];
 }
 
-export type StudentAttendanceListResponse = PageResponse<StudentAttendanceResponse>;
+export type SessionAttendanceFilterParams = AttendanceFilterParams;
+
+export type SessionAttendanceListResponse = PageResponse<SessionAttendanceResponse>;
+export type StudentAttendanceListResponse = SessionAttendanceListResponse;

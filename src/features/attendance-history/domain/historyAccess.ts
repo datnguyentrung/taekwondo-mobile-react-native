@@ -11,19 +11,19 @@ export type AttendanceHistoryNavigationDecision =
 export function getAttendanceHistoryNavigationDecision(
   permissions: readonly PermissionValue[] | undefined,
 ): AttendanceHistoryNavigationDecision {
-  const canReadStudentAttendance = hasPermission(
+  const canReadSessionAttendance = hasPermission(
     permissions,
-    Permission.STUDENT_ATTENDANCE_READ,
+    Permission.SESSION_ATTENDANCE_READ,
   );
   const canReadCoachTimesheet = hasPermission(
     permissions,
     Permission.COACH_TIMESHEET_READ,
   );
 
-  if (canReadStudentAttendance && canReadCoachTimesheet) {
+  if (canReadSessionAttendance && canReadCoachTimesheet) {
     return { type: 'picker' };
   }
-  if (canReadStudentAttendance) {
+  if (canReadSessionAttendance) {
     return { type: 'route', mode: 'student' };
   }
   if (canReadCoachTimesheet) {
