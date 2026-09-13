@@ -35,6 +35,11 @@ export const ACTIVITIES_GROUPS: GroupActivitiesAction[] = [
         defaultQuick: true,
       },
       {
+        id: "course-list",
+        label: "Khóa học",
+        icon: "databaseFill",
+      },
+      {
         id: "coach-list",
         label: "Danh sách HLV",
         icon: "featureCoachList",

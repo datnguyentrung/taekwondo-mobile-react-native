@@ -1,5 +1,5 @@
 import { Image } from "expo-image";
-import { useRouter } from "expo-router";
+import { type Href, useRouter } from "expo-router";
 import { useMemo, useState } from "react";
 import {
   ActivityIndicator,
@@ -69,7 +69,7 @@ export default function AccountScreen() {
         icon: "personOutline",
         onPress: () => router.push("/account/general-info"),
       },
-      { label: "Ví điện tử", icon: "wallet", onPress: () => showComingSoon(toast) },
+      { label: "Ví điện tử", icon: "wallet", onPress: () => router.push("/account/wallet" as Href) },
       { label: "Thành tích", icon: "verified", onPress: () => showComingSoon(toast) },
     ],
     [router, toast],

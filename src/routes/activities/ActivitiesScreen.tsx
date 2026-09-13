@@ -13,6 +13,7 @@ import {
 import { usePermissions } from "@/features/authorization";
 import { HeaderActionButton } from "@/routes/navigation/components/HeaderActionButton";
 import { Colors } from "@/theme";
+import type { Href } from "expo-router";
 import { useRouter } from "expo-router";
 import { NotificationHeaderButton } from "../navigation/components/NotificationHeaderButton";
 import BottomTabScreenLayout from "../navigation/layouts/BottomTabScreenLayout";
@@ -123,6 +124,16 @@ export default function ActivitiesScreen() {
 
   const handleActionPress = useCallback(
     (action: ActivitiesAction) => {
+      if (action.id === "course-list") {
+        router.push("/courses" as Href);
+        return;
+      }
+
+      if (action.id === "student-list") {
+        router.push("/students" as Href);
+        return;
+      }
+
       if (action.id !== "attendance-history") return;
 
       const decision = getAttendanceHistoryNavigationDecision(permissions);
