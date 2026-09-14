@@ -5,7 +5,7 @@ import { AppIcon } from "@/shared/ui/AppIcon";
 import { ThemedText } from "@/shared/ui/ThemedText";
 import {
   Colors,
-  effects,
+  activeEffect,
   hexToRgba,
   radii,
   typography,
@@ -17,9 +17,8 @@ type WalletSectionGroupProps = {
   title: string;
   subtitle: string;
   count: number;
-  children: ReactNode;
-  footerLabel: string;
-  onFooterPress: () => void;
+  onPress: () => void;
+  showDivider?: boolean;
 };
 
 export function WalletSectionGroup({
@@ -27,96 +26,85 @@ export function WalletSectionGroup({
   title,
   subtitle,
   count,
-  children,
-  footerLabel,
-  onFooterPress,
+  onPress,
+  showDivider = false,
 }: WalletSectionGroupProps) {
   return (
-    <View style={styles.container}>
-      <View style={styles.header}>
-        <View style={styles.headerIcon}>
-          <AppIcon name={icon} size={28} color={Colors.light.primary} />
-        </View>
-        <View style={styles.headerCopy}>
-          <ThemedText type="subtitle" style={styles.title}>
-            {title} ({count})
-          </ThemedText>
-          <ThemedText type="bodySmall" style={styles.subtitle}>
-            {subtitle}
-          </ThemedText>
-        </View>
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={title}
+      onPress={onPress}
+      style={({ pressed }) => [
+        styles.row,
+        activeEffect(pressed, "pressedHighlight"),
+      ]}
+    >
+      <View style={styles.iconBox}>
+        <AppIcon name={icon} size={29} color={Colors.light.icon} />
       </View>
-
-      <View style={styles.body}>{children}</View>
-
-      <View style={styles.divider} />
-      <Pressable
-        accessibilityRole="button"
-        onPress={onFooterPress}
-        style={({ pressed }) => [styles.footer, pressed ? styles.pressed : null]}
-      >
-        <ThemedText type="action" style={styles.footerText}>
-          {footerLabel}
+      <View style={styles.copy}>
+        <ThemedText type="body" numberOfLines={1} style={styles.title}>
+          {title} ({count})
         </ThemedText>
-        <AppIcon name="chevronRight" width={8} height={14} color={Colors.light.primary} />
-      </Pressable>
-    </View>
+        <ThemedText type="bodySmall" numberOfLines={1} style={styles.subtitle}>
+          {subtitle}
+        </ThemedText>
+      </View>
+      <AppIcon
+        name="chevronRight"
+        width={9}
+        height={15}
+        color={Colors.light.icon}
+      />
+      {showDivider ? <View style={styles.divider} /> : null}
+    </Pressable>
   );
 }
 
+export function WalletSectionList({ children }: { children: ReactNode }) {
+  return <View style={styles.list}>{children}</View>;
+}
+
 const styles = StyleSheet.create({
-  container: {
-    width: "100%",
-    gap: 20,
-    padding: 14,
-    borderWidth: 1,
-    borderColor: hexToRgba(Colors.light.divider, 0.58),
-    borderRadius: radii.lg,
+  list: {
+    overflow: "hidden",
+    borderRadius: radii.md,
     backgroundColor: Colors.light.surface,
-    ...effects.soft,
   },
-  header: {
+  row: {
+    minHeight: 74,
     flexDirection: "row",
     alignItems: "center",
-    gap: 12,
+    gap: 14,
+    paddingLeft: 12,
+    paddingRight: 10,
+    backgroundColor: Colors.light.surface,
   },
-  headerIcon: {
-    width: 54,
-    height: 54,
+  iconBox: {
+    width: 44,
+    height: 44,
     alignItems: "center",
     justifyContent: "center",
-    borderRadius: radii.lg,
+    borderRadius: radii.md,
     backgroundColor: hexToRgba(Colors.light.primary, 0.08),
   },
-  headerCopy: {
+  copy: {
     flex: 1,
     minWidth: 0,
   },
   title: {
     color: Colors.light.text,
+    ...typography.body,
   },
   subtitle: {
     color: Colors.light.textSecondary,
   },
-  body: {
-    gap: 12,
-  },
   divider: {
+    position: "absolute",
+    left: 70,
+    right: 20,
+    bottom: 0,
     height: StyleSheet.hairlineWidth,
-    backgroundColor: hexToRgba(Colors.light.divider, 0.85),
-  },
-  footer: {
-    minHeight: 32,
-    flexDirection: "row",
-    alignItems: "center",
-    alignSelf: "flex-start",
-    gap: 6,
-  },
-  footerText: {
-    color: Colors.light.primary,
-    ...typography.action,
-  },
-  pressed: {
-    opacity: 0.75,
+    backgroundColor: Colors.light.divider,
   },
 });

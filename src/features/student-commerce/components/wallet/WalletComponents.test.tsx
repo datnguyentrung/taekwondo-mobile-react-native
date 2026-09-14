@@ -20,41 +20,31 @@ describe("wallet components", () => {
       />,
     );
 
-    expect(screen.getByText("Đang xem ví của")).toBeTruthy();
     expect(screen.getByText("Nguyễn Văn An · VQ_00123")).toBeTruthy();
-    expect(screen.getByText("Hồ sơ học viên đang hoạt động")).toBeTruthy();
+    expect(screen.getByText("Đang hoạt động")).toBeTruthy();
     expect(screen.getByText("2.500.000đ")).toBeTruthy();
 
     fireEvent.press(screen.getByText("Hướng dẫn nạp tiền"));
     expect(onActionPress).toHaveBeenCalledTimes(1);
   });
 
-  it("renders wallet section group and handles footer press", async () => {
-    const onFooterPress = jest.fn();
+  it("renders wallet section row and handles press", async () => {
+    const onPress = jest.fn();
     const screen = await render(
       <WalletSectionGroup
         icon="layersFill"
         title="Khóa học đang học"
-        subtitle="Tiếp tục hành trình chinh phục mục tiêu của bạn"
+        subtitle="Xem danh sách khóa học hiện tại"
         count={2}
-        footerLabel="Xem tất cả khóa học"
-        onFooterPress={onFooterPress}
-      >
-        <WalletCoursePreviewCard
-          enrollment={studentCommerceMock.enrollments[0]}
-          onPress={jest.fn()}
-        />
-      </WalletSectionGroup>,
+        onPress={onPress}
+      />,
     );
 
     expect(screen.getByText("Khóa học đang học (2)")).toBeTruthy();
-    expect(
-      screen.getByText("Tiếp tục hành trình chinh phục mục tiêu của bạn"),
-    ).toBeTruthy();
-    expect(screen.getByText("Taekwondo Cơ bản")).toBeTruthy();
+    expect(screen.getByText("Xem danh sách khóa học hiện tại")).toBeTruthy();
 
-    fireEvent.press(screen.getByText("Xem tất cả khóa học"));
-    expect(onFooterPress).toHaveBeenCalledTimes(1);
+    fireEvent.press(screen.getByText("Khóa học đang học (2)"));
+    expect(onPress).toHaveBeenCalledTimes(1);
   });
 
   it("renders course preview progress from remaining sessions", async () => {

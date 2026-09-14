@@ -5,9 +5,8 @@ import StackScreenLayout from "@/routes/navigation/layouts/StackScreenLayout";
 
 import {
   WalletBalanceCard,
-  WalletCoursePreviewCard,
   WalletSectionGroup,
-  WalletTransactionPreviewCard,
+  WalletSectionList,
 } from "../components/wallet";
 import { studentCommerceMock } from "../fixtures/studentCommerce.fixtures";
 
@@ -56,46 +55,23 @@ function WalletOverview({ studentCode, context }: WalletOverviewProps) {
         onActionPress={() => router.push(asHref(topUpPath))}
       />
 
-      <WalletSectionGroup
-        icon="layersFill"
-        title="Khóa học đang học"
-        subtitle="Tiếp tục hành trình chinh phục mục tiêu của bạn"
-        count={activeEnrollments.length}
-        footerLabel="Xem tất cả khóa học"
-        onFooterPress={() => router.push(asHref(courseListPath))}
-      >
-        {activeEnrollments.map((enrollment) => (
-          <WalletCoursePreviewCard
-            key={enrollment.enrollmentId}
-            enrollment={enrollment}
-            onPress={() =>
-              router.push(
-                asHref(
-                  isAccount
-                    ? `/account/courses/${enrollment.enrollmentId}`
-                    : `/students/${routeStudentCode}/courses/${enrollment.enrollmentId}`,
-                ),
-              )
-            }
-          />
-        ))}
-      </WalletSectionGroup>
-
-      <WalletSectionGroup
-        icon="noteText"
-        title="Giao dịch gần đây"
-        subtitle="Theo dõi các khoản thu chi của bạn"
-        count={recentTransactions.length}
-        footerLabel="Xem tất cả giao dịch"
-        onFooterPress={() => router.push(asHref(transactionListPath))}
-      >
-        {recentTransactions.map((transaction) => (
-          <WalletTransactionPreviewCard
-            key={transaction.id}
-            transaction={transaction}
-          />
-        ))}
-      </WalletSectionGroup>
+      <WalletSectionList>
+        <WalletSectionGroup
+          icon="layersFill"
+          title="Khóa học đang học"
+          subtitle="Xem danh sách khóa học hiện tại"
+          count={activeEnrollments.length}
+          showDivider
+          onPress={() => router.push(asHref(courseListPath))}
+        />
+        <WalletSectionGroup
+          icon="noteText"
+          title="Giao dịch gần đây"
+          subtitle="Xem lịch sử thu chi của ví"
+          count={recentTransactions.length}
+          onPress={() => router.push(asHref(transactionListPath))}
+        />
+      </WalletSectionList>
     </StackScreenLayout>
   );
 }
