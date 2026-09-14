@@ -1,14 +1,16 @@
-import { type Href, useRouter } from 'expo-router';
-import { useMemo, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
-import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import { type Href, useRouter } from "expo-router";
+import { useMemo, useState } from "react";
+import { Pressable, ScrollView, StyleSheet, View } from "react-native";
+import {
+  SafeAreaView,
+  useSafeAreaInsets,
+} from "react-native-safe-area-context";
 
-import StackScreenLayout from '@/routes/navigation/layouts/StackScreenLayout';
-import { AppIcon } from '@/shared/ui/AppIcon';
-import { BottomSheetWindow } from '@/shared/ui/BottomSheetWindow';
-import { ThemedText } from '@/shared/ui/ThemedText';
-import { Colors, effects, radii } from '@/theme';
-import type { AppIconName } from '@/theme/icons';
+import StackScreenLayout from "@/routes/navigation/layouts/StackScreenLayout";
+import { AppIcon } from "@/shared/ui/AppIcon";
+import { BottomSheetWindow } from "@/shared/ui/BottomSheetWindow";
+import { ThemedText } from "@/shared/ui/ThemedText";
+import { Colors, effects, radii } from "@/theme";
 
 import {
   CourseCatalogCard,
@@ -22,8 +24,8 @@ import {
   StudentSummaryCard,
   SurfaceCard,
   TransactionCard,
-} from '../components/StudentCommercePrimitives';
-import { studentCommerceMock } from '../fixtures/studentCommerce.fixtures';
+} from "../components/StudentCommercePrimitives";
+import { studentCommerceMock } from "../fixtures/studentCommerce.fixtures";
 import type {
   CourseCatalogTab,
   CourseRegistrationDraft,
@@ -31,7 +33,7 @@ import type {
   StudentCourseTab,
   TopUpDraft,
   TransactionFilter,
-} from '../types';
+} from "../types";
 import {
   calculateBalanceAfterTopUp,
   canConfirmCourseRegistration,
@@ -41,7 +43,9 @@ import {
   getCourse,
   getPackage,
   getRegistrationSummary,
-} from '../utils/studentCommerceUtils';
+} from "../utils/studentCommerceUtils";
+
+export { AccountWalletScreen, WalletScreen } from "./WalletOverviewScreen";
 
 type StudentRouteProps = {
   studentCode?: string;
@@ -49,7 +53,7 @@ type StudentRouteProps = {
 
 type EnrollmentRouteProps = StudentRouteProps & {
   enrollmentId?: string;
-  context?: 'admin-student' | 'account';
+  context?: "admin-student" | "account";
 };
 
 type CourseRouteProps = {
@@ -58,11 +62,11 @@ type CourseRouteProps = {
 };
 
 type WalletTransactionsProps = StudentRouteProps & {
-  context?: 'admin-student' | 'account';
+  context?: "admin-student" | "account";
   initialFilter?: TransactionFilter;
 };
 
-function useCommerceState() {
+function getCommerceState() {
   return studentCommerceMock;
 }
 
@@ -75,8 +79,11 @@ function defaultPackageId(courseId: string) {
 }
 
 function getEnrollment(enrollmentId?: string) {
-  const state = useCommerceState();
-  return state.enrollments.find((item) => item.enrollmentId === enrollmentId) ?? state.enrollments[0];
+  const state = getCommerceState();
+  return (
+    state.enrollments.find((item) => item.enrollmentId === enrollmentId) ??
+    state.enrollments[0]
+  );
 }
 
 function RootLikeScreen({
@@ -85,14 +92,16 @@ function RootLikeScreen({
   children,
 }: {
   title: string;
-  activeTab: 'activities' | 'account';
+  activeTab: "activities" | "account";
   children: React.ReactNode;
 }) {
   const insets = useSafeAreaInsets();
 
   return (
-    <SafeAreaView edges={['left', 'right']} style={styles.root}>
-      <View style={[styles.simpleAppBar, { paddingTop: Math.max(insets.top, 28) }]}>
+    <SafeAreaView edges={["left", "right"]} style={styles.root}>
+      <View
+        style={[styles.simpleAppBar, { paddingTop: Math.max(insets.top, 28) }]}
+      >
         <ThemedText type="heading" style={styles.blackText}>
           {title}
         </ThemedText>
@@ -106,39 +115,13 @@ function RootLikeScreen({
       >
         {children}
       </ScrollView>
-      <View style={[styles.prototypeBottomNav, { bottom: Math.max(insets.bottom, 0) }]}>
-        {[
-          ['homeOutline', 'Trang chủ', 'index'],
-          ['databaseFill', 'Hoạt động', 'activities'],
-          ['qrCode', 'QR', 'check-in'],
-          ['calendarOutline', 'Lịch học', 'schedule'],
-          ['personFill', 'Tài khoản', 'account'],
-        ].map(([icon, label, key]) => {
-          const selected = key === activeTab;
-          return (
-            <View key={key} style={styles.prototypeTab}>
-              <AppIcon
-                name={icon as AppIconName}
-                size={key === 'check-in' ? 22 : 20}
-                color={selected ? Colors.light.primary : Colors.light.text}
-              />
-              <ThemedText
-                type="featureLabel"
-                style={selected ? styles.primaryText : styles.blackText}
-              >
-                {label}
-              </ThemedText>
-            </View>
-          );
-        })}
-      </View>
     </SafeAreaView>
   );
 }
 
 export function StudentListScreen() {
   const router = useRouter();
-  const state = useCommerceState();
+  const state = getCommerceState();
 
   return (
     <RootLikeScreen title="Học viên" activeTab="activities">
@@ -151,9 +134,9 @@ export function StudentListScreen() {
       <SegmentedTabs
         value="learning"
         tabs={[
-          { value: 'all', label: 'Tất cả' },
-          { value: 'learning', label: 'Đang học' },
-          { value: 'paused', label: 'Bảo lưu' },
+          { value: "all", label: "Tất cả" },
+          { value: "learning", label: "Đang học" },
+          { value: "paused", label: "Bảo lưu" },
         ]}
         onChange={() => undefined}
       />
@@ -161,7 +144,9 @@ export function StudentListScreen() {
         <Pressable
           key={student.studentCode}
           accessibilityRole="button"
-          onPress={() => router.push(asHref(`/students/${student.studentCode}`))}
+          onPress={() =>
+            router.push(asHref(`/students/${student.studentCode}`))
+          }
           style={({ pressed }) => [pressed ? styles.pressed : null]}
         >
           <SurfaceCard>
@@ -192,22 +177,35 @@ export function StudentListScreen() {
 
 export function StudentDetailScreen({ studentCode }: StudentRouteProps) {
   const router = useRouter();
-  const state = useCommerceState();
-  const student = state.students.find((item) => item.studentCode === studentCode) ?? state.selectedStudent;
-  const activeEnrollments = state.enrollments.filter((item) => !item.history).slice(0, 2);
+  const state = getCommerceState();
+  const student =
+    state.students.find((item) => item.studentCode === studentCode) ??
+    state.selectedStudent;
+  const activeEnrollments = state.enrollments
+    .filter((item) => !item.history)
+    .slice(0, 2);
 
   return (
-    <StackScreenLayout title="Chi tiết học viên" contentContainerStyle={styles.content}>
+    <StackScreenLayout
+      title="Chi tiết học viên"
+      contentContainerStyle={styles.content}
+    >
       <StudentSummaryCard student={student} />
       <View style={styles.actionRow}>
         <PrimaryActionButton
           title="Nạp tiền"
           variant="outline"
-          onPress={() => router.push(asHref(`/students/${student.studentCode}/top-up`))}
+          onPress={() =>
+            router.push(asHref(`/students/${student.studentCode}/top-up`))
+          }
         />
         <PrimaryActionButton
           title="Đăng ký khóa học"
-          onPress={() => router.push(asHref(`/students/${student.studentCode}/course-registration`))}
+          onPress={() =>
+            router.push(
+              asHref(`/students/${student.studentCode}/course-registration`),
+            )
+          }
         />
       </View>
       <SurfaceCard>
@@ -223,7 +221,11 @@ export function StudentDetailScreen({ studentCode }: StudentRouteProps) {
         <ThemedText type="bodySmall" style={styles.blackText}>
           Số dư khả dụng
         </ThemedText>
-        <Pressable onPress={() => router.push(asHref(`/students/${student.studentCode}/wallet`))}>
+        <Pressable
+          onPress={() =>
+            router.push(asHref(`/students/${student.studentCode}/wallet`))
+          }
+        >
           <ThemedText type="action" style={styles.primaryText}>
             Xem chi tiết ví ›
           </ThemedText>
@@ -233,7 +235,11 @@ export function StudentDetailScreen({ studentCode }: StudentRouteProps) {
         <ThemedText type="title" style={styles.blackText}>
           Khóa học đang học ({activeEnrollments.length})
         </ThemedText>
-        <Pressable onPress={() => router.push(asHref(`/students/${student.studentCode}/courses`))}>
+        <Pressable
+          onPress={() =>
+            router.push(asHref(`/students/${student.studentCode}/courses`))
+          }
+        >
           <ThemedText type="action" style={styles.primaryText}>
             Xem tất cả →
           </ThemedText>
@@ -244,7 +250,11 @@ export function StudentDetailScreen({ studentCode }: StudentRouteProps) {
           key={enrollment.enrollmentId}
           enrollment={enrollment}
           onPress={() =>
-            router.push(asHref(`/students/${student.studentCode}/courses/${enrollment.enrollmentId}`))
+            router.push(
+              asHref(
+                `/students/${student.studentCode}/courses/${enrollment.enrollmentId}`,
+              ),
+            )
           }
         />
       ))}
@@ -258,11 +268,11 @@ export function StudentDetailScreen({ studentCode }: StudentRouteProps) {
 }
 
 export function TopUpScreen({ studentCode }: StudentRouteProps) {
-  const state = useCommerceState();
+  const state = getCommerceState();
   const [draft, setDraft] = useState<TopUpDraft>({
     amount: 2000000,
-    externalReference: 'ZALO-13092026',
-    note: 'PH chuyển khoản qua Zalo',
+    externalReference: "ZALO-13092026",
+    note: "PH chuyển khoản qua Zalo",
     hasTransferImage: false,
   });
   const [submitting, setSubmitting] = useState(false);
@@ -278,13 +288,18 @@ export function TopUpScreen({ studentCode }: StudentRouteProps) {
         keyboardType="numeric"
         helper="Tiền sẽ được cộng trực tiếp vào ví học viên"
         onChangeText={(value) =>
-          setDraft((current) => ({ ...current, amount: Number(value.replace(/\D/g, '')) || 0 }))
+          setDraft((current) => ({
+            ...current,
+            amount: Number(value.replace(/\D/g, "")) || 0,
+          }))
         }
       />
       <FormField
         label="Mã tham chiếu"
         value={draft.externalReference}
-        onChangeText={(externalReference) => setDraft((current) => ({ ...current, externalReference }))}
+        onChangeText={(externalReference) =>
+          setDraft((current) => ({ ...current, externalReference }))
+        }
       />
       <FormField
         label="Ghi chú"
@@ -294,17 +309,30 @@ export function TopUpScreen({ studentCode }: StudentRouteProps) {
       <SurfaceCard soft style={styles.uploadBox}>
         <Pressable
           accessibilityRole="button"
-          onPress={() => setDraft((current) => ({ ...current, hasTransferImage: !current.hasTransferImage }))}
+          onPress={() =>
+            setDraft((current) => ({
+              ...current,
+              hasTransferImage: !current.hasTransferImage,
+            }))
+          }
         >
           <ThemedText type="bodySmall" style={styles.primaryText}>
-            {draft.hasTransferImage ? 'Đã thêm ảnh chuyển khoản' : '＋ Thêm ảnh chuyển khoản'}
+            {draft.hasTransferImage
+              ? "Đã thêm ảnh chuyển khoản"
+              : "＋ Thêm ảnh chuyển khoản"}
           </ThemedText>
         </Pressable>
       </SurfaceCard>
       <ThemedText type="bodySmall" style={styles.secondaryText}>
         JPG / PNG
       </ThemedText>
-      <BalanceCard label="Số dư sau giao dịch" amount={calculateBalanceAfterTopUp({ ...state.wallet, balance: balanceBefore }, draft.amount)} />
+      <BalanceCard
+        label="Số dư sau giao dịch"
+        amount={calculateBalanceAfterTopUp(
+          { ...state.wallet, balance: balanceBefore },
+          draft.amount,
+        )}
+      />
       <PrimaryActionButton
         title="Xác nhận nạp tiền"
         loading={submitting}
@@ -325,21 +353,33 @@ export function StudentCourseRegistrationScreen({
   studentCode,
   initialCourseId,
   initialPackageId,
-}: StudentRouteProps & { initialCourseId?: string; initialPackageId?: string }) {
-  const router = useRouter();
-  const state = useCommerceState();
+}: StudentRouteProps & {
+  initialCourseId?: string;
+  initialPackageId?: string;
+}) {
+  const state = getCommerceState();
   const [draft, setDraft] = useState<CourseRegistrationDraft>(
-    initialCourseId ? { courseId: initialCourseId, packageId: initialPackageId ?? defaultPackageId(initialCourseId) } : {},
+    initialCourseId
+      ? {
+          courseId: initialCourseId,
+          packageId: initialPackageId ?? defaultPackageId(initialCourseId),
+        }
+      : {},
   );
   const [pickerVisible, setPickerVisible] = useState(false);
   const [submitting, setSubmitting] = useState(false);
-  const course = draft.courseId ? getCourse(state.courses, draft.courseId) : undefined;
+  const course = draft.courseId
+    ? getCourse(state.courses, draft.courseId)
+    : undefined;
   const selectedPackage = getPackage(course, draft.packageId);
   const summary = getRegistrationSummary(state.wallet, course, selectedPackage);
 
   return (
     <>
-      <StackScreenLayout title="Đăng ký khóa học" contentContainerStyle={styles.content}>
+      <StackScreenLayout
+        title="Đăng ký khóa học"
+        contentContainerStyle={styles.content}
+      >
         <StudentSummaryCard student={state.selectedStudent} />
         <BalanceCard label="Số dư ví" amount={3500000} />
         <SurfaceCard soft>
@@ -348,15 +388,19 @@ export function StudentCourseRegistrationScreen({
           </ThemedText>
           <ThemedText type="bodySmall" style={styles.blackText}>
             {course
-              ? 'Đăng ký này sẽ thêm một khóa học mới, không thay thế 2 khóa học đang học.'
-              : 'Học viên đang học 2 khóa. Chọn thêm một khóa khác để đăng ký; các khóa hiện tại vẫn giữ nguyên.'}
+              ? "Đăng ký này sẽ thêm một khóa học mới, không thay thế 2 khóa học đang học."
+              : "Học viên đang học 2 khóa. Chọn thêm một khóa khác để đăng ký; các khóa hiện tại vẫn giữ nguyên."}
           </ThemedText>
         </SurfaceCard>
         <Pressable onPress={() => setPickerVisible(true)}>
           <FormField
             editable={false}
             label="Khóa học"
-            value={course ? `${course.courseName} · ${course.branchName}` : 'Chọn khóa học'}
+            value={
+              course
+                ? `${course.courseName} · ${course.branchName}`
+                : "Chọn khóa học"
+            }
           />
         </Pressable>
         {course && selectedPackage ? (
@@ -367,16 +411,24 @@ export function StudentCourseRegistrationScreen({
             {course.packages.map((item) => (
               <Pressable
                 key={item.id}
-                onPress={() => setDraft((current) => ({ ...current, packageId: item.id }))}
+                onPress={() =>
+                  setDraft((current) => ({ ...current, packageId: item.id }))
+                }
               >
-                <SurfaceCard style={draft.packageId === item.id ? styles.selectedCard : null}>
+                <SurfaceCard
+                  style={
+                    draft.packageId === item.id ? styles.selectedCard : null
+                  }
+                >
                   <ThemedText type="bodySmall" style={styles.blackText}>
                     {item.label}
                   </ThemedText>
                   <ThemedText type="subtitle" style={styles.blackText}>
                     {formatVnd(item.amount)}
                   </ThemedText>
-                  {draft.packageId === item.id ? <StatusBadge label="Đã chọn" /> : null}
+                  {draft.packageId === item.id ? (
+                    <StatusBadge label="Đã chọn" />
+                  ) : null}
                 </SurfaceCard>
               </Pressable>
             ))}
@@ -387,7 +439,9 @@ export function StudentCourseRegistrationScreen({
             />
             <PrimaryActionButton
               title="Xác nhận đăng ký"
-              disabled={!canConfirmCourseRegistration(draft.courseId, draft.packageId)}
+              disabled={
+                !canConfirmCourseRegistration(draft.courseId, draft.packageId)
+              }
               loading={submitting}
               onPress={() => {
                 setSubmitting(true);
@@ -401,7 +455,8 @@ export function StudentCourseRegistrationScreen({
               Chọn khóa học trước
             </ThemedText>
             <ThemedText type="bodySmall" style={styles.blackText}>
-              Sau khi chọn khóa học, các gói học của khóa đó sẽ hiển thị tại đây.
+              Sau khi chọn khóa học, các gói học của khóa đó sẽ hiển thị tại
+              đây.
             </ThemedText>
           </SurfaceCard>
         )}
@@ -418,51 +473,39 @@ export function StudentCourseRegistrationScreen({
   );
 }
 
-export function WalletScreen({ studentCode, context = 'admin-student' }: StudentRouteProps & { context?: 'admin-student' | 'account' }) {
-  if (context === 'account') return <AccountWalletScreen />;
-  const router = useRouter();
-  const state = useCommerceState();
-
-  return (
-    <StackScreenLayout title="Ví học viên" contentContainerStyle={styles.content}>
-      <StudentSummaryCard student={state.selectedStudent} />
-      <WalletHero onPress={() => router.push(asHref(`/students/${studentCode ?? state.selectedStudent.studentCode}/top-up`))} />
-      <ThemedText type="title" style={styles.blackText}>
-        Giao dịch gần đây
-      </ThemedText>
-      {state.transactions.slice(0, 3).map((transaction) => (
-        <TransactionCard key={transaction.id} transaction={transaction} />
-      ))}
-      <Pressable onPress={() => router.push(asHref(`/students/${studentCode ?? state.selectedStudent.studentCode}/wallet/transactions`))}>
-        <ThemedText type="action" style={styles.primaryText}>
-          Xem tất cả giao dịch ›
-        </ThemedText>
-      </Pressable>
-    </StackScreenLayout>
-  );
-}
-
-export function WalletTransactionsScreen({ context = 'admin-student', initialFilter = 'all' }: WalletTransactionsProps) {
-  const state = useCommerceState();
+export function WalletTransactionsScreen({
+  context = "admin-student",
+  initialFilter = "all",
+}: WalletTransactionsProps) {
+  const state = getCommerceState();
   const [filter, setFilter] = useState<TransactionFilter>(initialFilter);
-  const transactions = useMemo(() => filterTransactions(state.transactions, filter), [filter, state.transactions]);
+  const transactions = useMemo(
+    () => filterTransactions(state.transactions, filter),
+    [filter, state.transactions],
+  );
 
   return (
-    <StackScreenLayout title="Lịch sử giao dịch" contentContainerStyle={styles.content}>
+    <StackScreenLayout
+      title="Lịch sử giao dịch"
+      contentContainerStyle={styles.content}
+    >
       <SurfaceCard soft>
         <ThemedText type="title" style={styles.blackText}>
-          {context === 'account' ? 'Nguyễn Văn An' : state.selectedStudent.fullName}
+          {context === "account"
+            ? "Nguyễn Văn An"
+            : state.selectedStudent.fullName}
         </ThemedText>
         <ThemedText type="bodySmall" style={styles.blackText}>
-          {state.selectedStudent.studentCode} · Số dư hiện tại {formatVnd(state.wallet.balance)}
+          {state.selectedStudent.studentCode} · Số dư hiện tại{" "}
+          {formatVnd(state.wallet.balance)}
         </ThemedText>
       </SurfaceCard>
       <SegmentedTabs
         value={filter}
         tabs={[
-          { value: 'all', label: 'Tất cả' },
-          { value: 'credit', label: 'Tiền vào' },
-          { value: 'debit', label: 'Tiền ra' },
+          { value: "all", label: "Tất cả" },
+          { value: "credit", label: "Tiền vào" },
+          { value: "debit", label: "Tiền ra" },
         ]}
         onChange={setFilter}
       />
@@ -475,23 +518,27 @@ export function WalletTransactionsScreen({ context = 'admin-student', initialFil
 
 export function StudentCoursesScreen({ studentCode }: StudentRouteProps) {
   const router = useRouter();
-  const state = useCommerceState();
-  const [tab, setTab] = useState<StudentCourseTab>('current');
-  const enrollments = state.enrollments.filter((item) => (tab === 'history' ? item.history : !item.history));
+  const state = getCommerceState();
+  const [tab, setTab] = useState<StudentCourseTab>("current");
+  const enrollments = state.enrollments.filter((item) =>
+    tab === "history" ? item.history : !item.history,
+  );
 
   return (
     <StackScreenLayout title="Khóa học" contentContainerStyle={styles.content}>
       <SegmentedTabs
         value={tab}
         tabs={[
-          { value: 'current', label: 'Hiện tại' },
-          { value: 'history', label: 'Lịch sử' },
+          { value: "current", label: "Hiện tại" },
+          { value: "history", label: "Lịch sử" },
         ]}
         onChange={setTab}
       />
       <View>
         <ThemedText type="title" style={styles.blackText}>
-          {tab === 'current' ? `${enrollments.length} khóa học đang học` : `${enrollments.length} khóa học lịch sử`}
+          {tab === "current"
+            ? `${enrollments.length} khóa học đang học`
+            : `${enrollments.length} khóa học lịch sử`}
         </ThemedText>
         <ThemedText type="bodySmall" style={styles.secondaryText}>
           Tiến độ riêng từng khóa
@@ -501,21 +548,35 @@ export function StudentCoursesScreen({ studentCode }: StudentRouteProps) {
         <EnrollmentCard
           key={enrollment.enrollmentId}
           enrollment={enrollment}
-          onPress={() => router.push(asHref(`/students/${studentCode ?? state.selectedStudent.studentCode}/courses/${enrollment.enrollmentId}`))}
+          onPress={() =>
+            router.push(
+              asHref(
+                `/students/${studentCode ?? state.selectedStudent.studentCode}/courses/${enrollment.enrollmentId}`,
+              ),
+            )
+          }
         />
       ))}
     </StackScreenLayout>
   );
 }
 
-export function CourseDetailScreen({ enrollmentId, context = 'admin-student' }: EnrollmentRouteProps) {
+export function CourseDetailScreen({
+  enrollmentId,
+  context = "admin-student",
+}: EnrollmentRouteProps) {
   const router = useRouter();
   const enrollment = getEnrollment(enrollmentId);
   const historyPath =
-    context === 'account' ? '/account/wallet/transactions' : '/students/VQ_00123/wallet/transactions';
+    context === "account"
+      ? "/account/wallet/transactions"
+      : "/students/VQ_00123/wallet/transactions";
 
   return (
-    <StackScreenLayout title="Chi tiết khóa học" contentContainerStyle={styles.content}>
+    <StackScreenLayout
+      title="Chi tiết khóa học"
+      contentContainerStyle={styles.content}
+    >
       <SurfaceCard>
         <ThemedText type="title" style={styles.blackText}>
           {enrollment.courseName}
@@ -530,7 +591,8 @@ export function CourseDetailScreen({ enrollmentId, context = 'admin-student' }: 
           Số buổi còn lại
         </ThemedText>
         <ThemedText type="bodySmall" style={styles.blackText}>
-          {Math.max(enrollment.totalSessions - enrollment.usedSessions, 0)} / {enrollment.totalSessions}
+          {Math.max(enrollment.totalSessions - enrollment.usedSessions, 0)} /{" "}
+          {enrollment.totalSessions}
         </ThemedText>
         <ThemedText type="bodySmall" style={styles.blackText}>
           Đã sử dụng {enrollment.usedSessions} buổi
@@ -558,9 +620,13 @@ export function CourseDetailScreen({ enrollmentId, context = 'admin-student' }: 
   );
 }
 
-export function CourseCatalogScreen({ initialTab = 'registration' }: { initialTab?: CourseCatalogTab }) {
+export function CourseCatalogScreen({
+  initialTab = "registration",
+}: {
+  initialTab?: CourseCatalogTab;
+}) {
   const router = useRouter();
-  const state = useCommerceState();
+  const state = getCommerceState();
   const [tab, setTab] = useState<CourseCatalogTab>(initialTab);
   const [packageCourse, setPackageCourse] = useState<CourseView | undefined>();
   const courses = filterCoursesByCatalogTab(state.courses, tab);
@@ -570,13 +636,21 @@ export function CourseCatalogScreen({ initialTab = 'registration' }: { initialTa
       <SegmentedTabs
         value={tab}
         tabs={[
-          { value: 'registration', label: 'Đăng ký' },
-          { value: 'active', label: 'Đang diễn ra' },
-          { value: 'ended', label: 'Đã kết thúc' },
+          { value: "registration", label: "Đăng ký" },
+          { value: "active", label: "Đang diễn ra" },
+          { value: "ended", label: "Đã kết thúc" },
         ]}
         onChange={setTab}
       />
-      <FormField label="Tìm kiếm" value={tab === 'registration' ? 'Tên khóa học, cơ sở...' : 'Tên khóa học, HLV...'} editable={false} />
+      <FormField
+        label="Tìm kiếm"
+        value={
+          tab === "registration"
+            ? "Tên khóa học, cơ sở..."
+            : "Tên khóa học, HLV..."
+        }
+        editable={false}
+      />
       {courses.map((course) => (
         <CourseCatalogCard
           key={course.courseId}
@@ -593,7 +667,8 @@ export function CourseCatalogScreen({ initialTab = 'registration' }: { initialTa
         onOpenPackage={(packageId) => {
           const courseId = packageCourse?.courseId;
           setPackageCourse(undefined);
-          if (courseId) router.push(asHref(`/courses/${courseId}/packages/${packageId}`));
+          if (courseId)
+            router.push(asHref(`/courses/${courseId}/packages/${packageId}`));
         }}
       />
     </RootLikeScreen>
@@ -602,11 +677,14 @@ export function CourseCatalogScreen({ initialTab = 'registration' }: { initialTa
 
 export function AdminCourseDetailScreen({ courseId }: CourseRouteProps) {
   const router = useRouter();
-  const state = useCommerceState();
+  const state = getCommerceState();
   const course = getCourse(state.courses, courseId);
 
   return (
-    <StackScreenLayout title="Chi tiết khóa học" contentContainerStyle={styles.content}>
+    <StackScreenLayout
+      title="Chi tiết khóa học"
+      contentContainerStyle={styles.content}
+    >
       <SurfaceCard>
         <ThemedText type="title" style={styles.blackText}>
           {course.courseName}
@@ -622,7 +700,10 @@ export function AdminCourseDetailScreen({ courseId }: CourseRouteProps) {
         </ThemedText>
         <InfoRow label="Lịch học" value={course.scheduleLabel} />
         <InfoRow label="Sức chứa" value={`${course.capacity ?? 0} học viên`} />
-        <InfoRow label="Đang học" value={`${course.enrolledStudentCount ?? 0} học viên`} />
+        <InfoRow
+          label="Đang học"
+          value={`${course.enrolledStudentCount ?? 0} học viên`}
+        />
         <InfoRow label="Gói học" value="1 tháng / 3 tháng" />
       </SurfaceCard>
       <SurfaceCard>
@@ -639,7 +720,11 @@ export function AdminCourseDetailScreen({ courseId }: CourseRouteProps) {
         </ThemedText>
         <View style={styles.coachCard}>
           <View style={styles.coachImage}>
-            <AppIcon name="personOutline" size={48} color={Colors.light.textSecondary} />
+            <AppIcon
+              name="personOutline"
+              size={48}
+              color={Colors.light.textSecondary}
+            />
           </View>
           <ThemedText type="bodySmall" style={styles.blackText}>
             {course.coachName}
@@ -662,12 +747,17 @@ export function AdminCourseDetailScreen({ courseId }: CourseRouteProps) {
           Học viên {course.enrolledStudentCount ?? 18} học viên
         </ThemedText>
         <ThemedText type="bodySmall" style={styles.blackText}>
-          Danh sách hiển thị theo enrollment ACTIVE của khóa học tại thời điểm hiện tại.
+          Danh sách hiển thị theo enrollment ACTIVE của khóa học tại thời điểm
+          hiện tại.
         </ThemedText>
         {state.students.map((student) => (
           <View key={student.studentCode} style={styles.studentLine}>
             <View style={styles.personBubble}>
-              <AppIcon name="personOutline" size={22} color={Colors.light.text} />
+              <AppIcon
+                name="personOutline"
+                size={22}
+                color={Colors.light.text}
+              />
             </View>
             <View>
               <ThemedText type="bodySmall" style={styles.blackText}>
@@ -685,7 +775,9 @@ export function AdminCourseDetailScreen({ courseId }: CourseRouteProps) {
       </SurfaceCard>
       <PrimaryActionButton
         title="Đăng ký học viên"
-        onPress={() => router.push(asHref(`/courses/${course.courseId}/register`))}
+        onPress={() =>
+          router.push(asHref(`/courses/${course.courseId}/register`))
+        }
       />
     </StackScreenLayout>
   );
@@ -693,12 +785,15 @@ export function AdminCourseDetailScreen({ courseId }: CourseRouteProps) {
 
 export function PackageDetailScreen({ courseId, packageId }: CourseRouteProps) {
   const router = useRouter();
-  const state = useCommerceState();
+  const state = getCommerceState();
   const course = getCourse(state.courses, courseId);
   const item = getPackage(course, packageId)!;
 
   return (
-    <StackScreenLayout title="Chi tiết gói học" contentContainerStyle={styles.content}>
+    <StackScreenLayout
+      title="Chi tiết gói học"
+      contentContainerStyle={styles.content}
+    >
       <SurfaceCard soft>
         <ThemedText type="title" style={styles.blackText}>
           {course.courseName}
@@ -750,14 +845,21 @@ export function PackageDetailScreen({ courseId, packageId }: CourseRouteProps) {
       </SurfaceCard>
       <PrimaryActionButton
         title="Đăng ký"
-        onPress={() => router.push(asHref(`/courses/${course.courseId}/packages/${item.id}/register`))}
+        onPress={() =>
+          router.push(
+            asHref(`/courses/${course.courseId}/packages/${item.id}/register`),
+          )
+        }
       />
     </StackScreenLayout>
   );
 }
 
-export function PackageRegistrationScreen({ courseId, packageId }: CourseRouteProps) {
-  const state = useCommerceState();
+export function PackageRegistrationScreen({
+  courseId,
+  packageId,
+}: CourseRouteProps) {
+  const state = getCommerceState();
   const course = getCourse(state.courses, courseId);
   const selectedPackage = getPackage(course, packageId);
   return (
@@ -769,78 +871,19 @@ export function PackageRegistrationScreen({ courseId, packageId }: CourseRoutePr
   );
 }
 
-export function AccountWalletScreen() {
-  const router = useRouter();
-  const state = useCommerceState();
-  const activeEnrollments = state.enrollments.filter((item) => !item.history).slice(0, 2);
-
-  return (
-    <RootLikeScreen title="Ví điện tử" activeTab="account">
-      <SurfaceCard soft>
-        <ThemedText type="bodySmall" style={styles.blackText}>
-          Đang xem ví của
-        </ThemedText>
-        <ThemedText type="bodySmall" style={styles.blackText}>
-          Nguyễn Văn An · VQ_00123
-        </ThemedText>
-        <ThemedText type="bodySmall" style={styles.blackText}>
-          Hồ sơ học viên đang hoạt động
-        </ThemedText>
-      </SurfaceCard>
-      <SurfaceCard>
-        <ThemedText type="bodySmall" style={styles.blackText}>
-          Số dư khả dụng
-        </ThemedText>
-        <ThemedText type="heading" style={styles.primaryText}>
-          {formatVnd(state.wallet.balance)}
-        </ThemedText>
-        <PrimaryActionButton
-          title="Hướng dẫn nạp tiền"
-          variant="outline"
-          onPress={() => router.push(asHref('/account/wallet/top-up-guide'))}
-        />
-      </SurfaceCard>
-      <ThemedText type="title" style={styles.blackText}>
-        Khóa học đang học (2)
-      </ThemedText>
-      {activeEnrollments.map((enrollment) => (
-        <EnrollmentCard
-          key={enrollment.enrollmentId}
-          enrollment={enrollment}
-          onPress={() => router.push(asHref(`/account/courses/${enrollment.enrollmentId}`))}
-        />
-      ))}
-      <Pressable onPress={() => router.push('/account/courses' as Href)}>
-        <ThemedText type="action" style={styles.blackText}>
-          Xem tất cả khóa học ›
-        </ThemedText>
-      </Pressable>
-      <SurfaceCard>
-        <ThemedText type="title" style={styles.blackText}>
-          Giao dịch gần đây
-        </ThemedText>
-        {state.transactions.slice(0, 2).map((transaction) => (
-          <TransactionCard key={transaction.id} transaction={transaction} />
-        ))}
-        <Pressable onPress={() => router.push('/account/wallet/transactions' as Href)}>
-          <ThemedText type="action" style={styles.blackText}>
-            Xem tất cả giao dịch ›
-          </ThemedText>
-        </Pressable>
-      </SurfaceCard>
-    </RootLikeScreen>
-  );
-}
-
 export function AccountTopUpGuideScreen() {
   return (
-    <StackScreenLayout title="Hướng dẫn nạp tiền" contentContainerStyle={styles.content}>
+    <StackScreenLayout
+      title="Hướng dẫn nạp tiền"
+      contentContainerStyle={styles.content}
+    >
       <SurfaceCard>
         <ThemedText type="title" style={styles.blackText}>
           Hướng dẫn chuyển khoản
         </ThemedText>
         <ThemedText type="bodySmall" style={styles.blackText}>
-          Vui lòng chuyển khoản theo thông tin trung tâm cung cấp, sau đó gửi ảnh giao dịch cho quản trị viên để được cộng tiền vào ví.
+          Vui lòng chuyển khoản theo thông tin trung tâm cung cấp, sau đó gửi
+          ảnh giao dịch cho quản trị viên để được cộng tiền vào ví.
         </ThemedText>
       </SurfaceCard>
       <SurfaceCard soft>
@@ -868,22 +911,15 @@ function BalanceCard({ label, amount }: { label: string; amount: number }) {
   );
 }
 
-function WalletHero({ onPress }: { onPress: () => void }) {
-  const state = useCommerceState();
-  return (
-    <SurfaceCard>
-      <ThemedText type="bodySmall" style={styles.blackText}>
-        Số dư khả dụng
-      </ThemedText>
-      <ThemedText type="heading" style={styles.blackText}>
-        {formatVnd(state.wallet.balance)}
-      </ThemedText>
-      <PrimaryActionButton title="Nạp tiền" variant="outline" onPress={onPress} />
-    </SurfaceCard>
-  );
-}
-
-function PurchaseSummary({ balance, price, balanceAfter }: { balance: number; price: number; balanceAfter: number }) {
+function PurchaseSummary({
+  balance,
+  price,
+  balanceAfter,
+}: {
+  balance: number;
+  price: number;
+  balanceAfter: number;
+}) {
   return (
     <SurfaceCard>
       <InfoRow label="Số dư hiện tại" value={formatVnd(balance)} />
@@ -902,8 +938,10 @@ function PackageCoursePicker({
   onClose: () => void;
   onSelect: (courseId: string) => void;
 }) {
-  const state = useCommerceState();
-  const options = state.courses.filter((course) => ['basic', 'advanced', 'expert'].includes(course.courseId));
+  const state = getCommerceState();
+  const options = state.courses.filter((course) =>
+    ["basic", "advanced", "expert"].includes(course.courseId),
+  );
 
   return (
     <BottomSheetWindow
@@ -933,7 +971,9 @@ function PackageCoursePicker({
                     {course.branchName} · {course.scheduleLabel}
                   </ThemedText>
                 </View>
-                <StatusBadge label={course.courseId === 'expert' ? 'Đăng ký' : 'Đang học'} />
+                <StatusBadge
+                  label={course.courseId === "expert" ? "Đăng ký" : "Đang học"}
+                />
               </View>
             </SurfaceCard>
           </Pressable>
@@ -950,7 +990,7 @@ const styles = StyleSheet.create({
   },
   simpleAppBar: {
     minHeight: 84,
-    justifyContent: 'center',
+    justifyContent: "center",
     paddingHorizontal: 20,
     backgroundColor: Colors.light.surface,
   },
@@ -966,12 +1006,12 @@ const styles = StyleSheet.create({
     paddingBottom: 24,
   },
   prototypeBottomNav: {
-    position: 'absolute',
+    position: "absolute",
     left: 0,
     right: 0,
     height: 72,
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: 4,
     paddingHorizontal: 8,
     borderRadius: radii.lg,
@@ -980,20 +1020,20 @@ const styles = StyleSheet.create({
   },
   prototypeTab: {
     flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
     gap: 2,
   },
   inlineSummary: {
     minHeight: 30,
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: 8,
     backgroundColor: Colors.light.surface,
   },
   row: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: 10,
   },
   flex: {
@@ -1007,20 +1047,20 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.light.backgroundElement,
   },
   actionRow: {
-    flexDirection: 'row',
+    flexDirection: "row",
     gap: 12,
-    justifyContent: 'center',
+    justifyContent: "center",
   },
   sectionHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
     gap: 12,
   },
   uploadBox: {
     height: 96,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
   },
   selectedCard: {
     borderColor: Colors.light.primary,
@@ -1035,23 +1075,23 @@ const styles = StyleSheet.create({
   coachImage: {
     width: 132,
     height: 112,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
     borderRadius: radii.md,
     backgroundColor: Colors.light.surface,
   },
   studentLine: {
     minHeight: 60,
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: 10,
     paddingVertical: 10,
   },
   personBubble: {
     width: 40,
     height: 40,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
     borderRadius: radii.pill,
     backgroundColor: Colors.light.backgroundElement,
   },

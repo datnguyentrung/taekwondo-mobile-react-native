@@ -31,6 +31,8 @@ import featureRanking from '../../assets/icons/figma/feature-ranking.svg';
 import featureStudentList from '../../assets/icons/figma/feature-student-list.svg';
 import featureUtilityDashboardAlt from '../../assets/icons/figma/feature-utility-dashboard-alt.svg';
 import featureUtilityDashboard from '../../assets/icons/figma/feature-utility-dashboard.svg';
+import fiBrDownload from '../../assets/icons/figma/fi-br-download.svg';
+import fiRrArrowSmallUp from '../../assets/icons/figma/fi-rr-arrow-small-up.svg';
 import fiRrBuilding from '../../assets/icons/figma/fi-rr-building.svg';
 import fiRrInfo from '../../assets/icons/figma/fi-rr-info.svg';
 import filter from '../../assets/icons/figma/filter.svg';
@@ -109,6 +111,8 @@ export const appIcons = {
   featureStudentList,
   featureUtilityDashboardAlt,
   featureUtilityDashboard,
+  fiBrDownload,
+  fiRrArrowSmallUp,
   fiRrBuilding,
   fiRrInfo,
   filter,
