@@ -220,7 +220,7 @@ export function Toast({ message, variant, duration, onDismiss }: ToastProps) {
             pressed && styles.dismissPressed,
           ]}
         >
-          <AppIcon name="close_ring_fill" size={22} color={config.iconColor} />
+          <AppIcon name="closeRingFill" size={22} color={config.iconColor} />
         </Pressable>
       </Pressable>
     </Animated.View>

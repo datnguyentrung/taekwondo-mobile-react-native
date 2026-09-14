@@ -2,7 +2,7 @@ import { Pressable, StyleSheet, View } from "react-native";
 
 import { AppIcon } from "@/shared/ui/AppIcon";
 import { ThemedText } from "@/shared/ui/ThemedText";
-import { Colors, radii } from "@/theme";
+import { Colors, hexToRgba, radii } from "@/theme";
 
 import type {
   CourseView,
@@ -82,7 +82,7 @@ export function CourseCatalogCard({
               onPress={onPackagePress}
             />
           ) : (
-            <StatusBadge label={course.statusLabel} />
+            <CourseCatalogStatusBadge label={course.statusLabel} mode={mode} />
           )}
         </View>
         {mode === "active" ? (
@@ -97,6 +97,30 @@ export function CourseCatalogCard({
         ) : null}
       </SurfaceCard>
     </Pressable>
+  );
+}
+
+function CourseCatalogStatusBadge({
+  label,
+  mode,
+}: {
+  label: string;
+  mode: "active" | "ended";
+}) {
+  const ended = mode === "ended";
+  return (
+    <View style={[styles.courseStatusBadge, ended ? styles.courseStatusEnded : styles.courseStatusActive]}>
+      <ThemedText
+        type="featureLabel"
+        style={[
+          styles.courseStatusText,
+          ended ? styles.courseStatusTextEnded : styles.courseStatusTextActive,
+        ]}
+        numberOfLines={1}
+      >
+        {label}
+      </ThemedText>
+    </View>
   );
 }
 
@@ -262,6 +286,32 @@ const styles = StyleSheet.create({
     height: 6,
     borderRadius: radii.pill,
     backgroundColor: Colors.light.primary,
+  },
+  courseStatusBadge: {
+    minHeight: 30,
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 1,
+    borderRadius: radii.pill,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+  },
+  courseStatusActive: {
+    borderColor: hexToRgba(Colors.light.primary, 0.2),
+    backgroundColor: hexToRgba(Colors.light.primary, 0.08),
+  },
+  courseStatusEnded: {
+    borderColor: Colors.light.divider,
+    backgroundColor: hexToRgba(Colors.light.divider, 0.24),
+  },
+  courseStatusText: {
+    textAlign: "center",
+  },
+  courseStatusTextActive: {
+    color: Colors.light.primary,
+  },
+  courseStatusTextEnded: {
+    color: Colors.light.textSecondary,
   },
   transactionCard: {
     paddingVertical: 8,

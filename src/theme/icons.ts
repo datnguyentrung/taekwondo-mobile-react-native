@@ -1,4 +1,5 @@
 // AUTO-GENERATED FILE BY scripts/generate-icons.js - DO NOT EDIT MANUALLY
+import personUserWave3Fill from '../../assets/icons/figma/Person-User-Wave-3-Fill.svg';
 import activity from '../../assets/icons/figma/activity.svg';
 import barChart from '../../assets/icons/figma/bar-chart.svg';
 import bellOutline from '../../assets/icons/figma/bell-outline.svg';
@@ -10,8 +11,8 @@ import chevronLeft from '../../assets/icons/figma/chevron-left.svg';
 import chevronRight from '../../assets/icons/figma/chevron-right.svg';
 import clockFill from '../../assets/icons/figma/clock-fill.svg';
 import clockOutline from '../../assets/icons/figma/clock-outline.svg';
-import close_ring from '../../assets/icons/figma/close_ring.svg';
-import close_ring_fill from '../../assets/icons/figma/close_ring_fill.svg';
+import closeRing from '../../assets/icons/figma/close_ring.svg';
+import closeRingFill from '../../assets/icons/figma/close_ring_fill.svg';
 import cup from '../../assets/icons/figma/cup.svg';
 import dashboardFill from '../../assets/icons/figma/dashboard-fill.svg';
 import dashboardOutline from '../../assets/icons/figma/dashboard-outline.svg';
@@ -35,6 +36,7 @@ import fiBrDownload from '../../assets/icons/figma/fi-br-download.svg';
 import fiRrArrowSmallUp from '../../assets/icons/figma/fi-rr-arrow-small-up.svg';
 import fiRrBuilding from '../../assets/icons/figma/fi-rr-building.svg';
 import fiRrInfo from '../../assets/icons/figma/fi-rr-info.svg';
+import fiRrStats from '../../assets/icons/figma/fi-rr-stats.svg';
 import filter from '../../assets/icons/figma/filter.svg';
 import headphonesFill from '../../assets/icons/figma/headphones-fill.svg';
 import headphones from '../../assets/icons/figma/headphones.svg';
@@ -79,6 +81,7 @@ import wallet from '../../assets/icons/figma/wallet.svg';
 import widgetAdd from '../../assets/icons/figma/widget-add.svg';
 
 export const appIcons = {
+  personUserWave3Fill,
   activity,
   barChart,
   bellOutline,
@@ -90,8 +93,8 @@ export const appIcons = {
   chevronRight,
   clockFill,
   clockOutline,
-  close_ring,
-  close_ring_fill,
+  closeRing,
+  closeRingFill,
   cup,
   dashboardFill,
   dashboardOutline,
@@ -115,6 +118,7 @@ export const appIcons = {
   fiRrArrowSmallUp,
   fiRrBuilding,
   fiRrInfo,
+  fiRrStats,
   filter,
   headphonesFill,
   headphones,

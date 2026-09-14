@@ -3,6 +3,7 @@ import { Pressable, StyleSheet, View } from "react-native";
 
 import StackScreenLayout from "@/routes/navigation/layouts/StackScreenLayout";
 import { AppIcon } from "@/shared/ui/AppIcon";
+import { NavigationMenu, NavigationMenuItem } from "@/shared/ui/NavigationMenu";
 import { ThemedText } from "@/shared/ui/ThemedText";
 import { Colors } from "@/theme";
 
@@ -71,38 +72,43 @@ export function StudentDetailScreen({ studentCode }: StudentRouteProps) {
           </ThemedText>
         </Pressable>
       </SurfaceCard>
-      <View style={styles.sectionHeader}>
-        <ThemedText type="title" style={styles.blackText}>
-          Khóa học đang học ({activeEnrollments.length})
-        </ThemedText>
-        <Pressable
+
+      <NavigationMenu>
+        <NavigationMenuItem
+          icon="docText"
+          title="Khóa học đang học"
+          count={activeEnrollments.length}
           onPress={() =>
             router.push(asHref(`/students/${student.studentCode}/courses`))
           }
-        >
-          <ThemedText type="action" style={styles.primaryText}>
-            Xem tất cả →
-          </ThemedText>
-        </Pressable>
-      </View>
-      {activeEnrollments.map((enrollment) => (
-        <EnrollmentCard
-          key={enrollment.enrollmentId}
-          enrollment={enrollment}
-          onPress={() =>
-            router.push(
-              asHref(
-                `/students/${student.studentCode}/courses/${enrollment.enrollmentId}`,
-              ),
-            )
-          }
         />
-      ))}
-      <SurfaceCard soft>
-        <ThemedText type="title" style={styles.blackText}>
-          Lịch sử tập luyện ›
-        </ThemedText>
-      </SurfaceCard>
+        <NavigationMenuItem
+          icon="featureAttendance"
+          title="Lịch sử tập luyện"
+          onPress={() => router.push(asHref("/history/student"))}
+        />
+      </NavigationMenu>
+
+      {activeEnrollments.length > 0 ? (
+        <View style={styles.enrollmentsPreview}>
+          <ThemedText type="subtitle" style={styles.previewTitle}>
+            Khóa học đang học gần đây
+          </ThemedText>
+          {activeEnrollments.map((enrollment) => (
+            <EnrollmentCard
+              key={enrollment.enrollmentId}
+              enrollment={enrollment}
+              onPress={() =>
+                router.push(
+                  asHref(
+                    `/students/${student.studentCode}/courses/${enrollment.enrollmentId}`,
+                  ),
+                )
+              }
+            />
+          ))}
+        </View>
+      ) : null}
     </StackScreenLayout>
   );
 }
@@ -124,11 +130,11 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: 10,
   },
-  sectionHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
+  enrollmentsPreview: {
     gap: 12,
+  },
+  previewTitle: {
+    color: Colors.light.text,
   },
   blackText: {
     color: Colors.light.text,

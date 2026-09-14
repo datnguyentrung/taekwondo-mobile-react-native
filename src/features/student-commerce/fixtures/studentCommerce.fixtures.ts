@@ -16,7 +16,7 @@ export const studentCommerceMock: StudentCommerceState = {
       fullName: 'Trần Minh Anh',
       beltLabel: 'Đai vàng',
       branchName: 'Cơ sở Văn Quán',
-      statusLabel: 'Đang học',
+      statusLabel: 'Bảo lưu',
     },
     {
       personId: 'person-vq-00642',

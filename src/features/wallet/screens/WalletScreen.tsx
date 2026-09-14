@@ -3,12 +3,9 @@ import { StyleSheet } from "react-native";
 
 import StackScreenLayout from "@/routes/navigation/layouts/StackScreenLayout";
 
-import {
-  WalletBalanceCard,
-  WalletSectionGroup,
-  WalletSectionList,
-} from "@/features/student-commerce/components/wallet";
+import { WalletBalanceCard } from "@/features/student-commerce/components/wallet";
 import { studentCommerceMock } from "@/features/student-commerce/fixtures/studentCommerce.fixtures";
+import { NavigationMenu, NavigationMenuItem } from "@/shared/ui/NavigationMenu";
 
 type StudentRouteProps = {
   studentCode?: string;
@@ -58,23 +55,24 @@ function WalletOverview({ studentCode, context }: WalletOverviewProps) {
         onActionPress={() => router.push(asHref(topUpPath))}
       />
 
-      <WalletSectionList>
-        <WalletSectionGroup
+      <NavigationMenu>
+        <NavigationMenuItem
           icon="noteText"
+          // iconBox
           title="Giao dịch gần đây"
           subtitle="Xem lịch sử thu chi của ví"
           count={recentTransactions.length}
           onPress={() => router.push(asHref(transactionListPath))}
         />
-        <WalletSectionGroup
+        <NavigationMenuItem
           icon="layersFill"
+          // iconBox
           title="Khóa học tham gia"
           subtitle="Xem danh sách khóa học hiện tại"
           count={activeEnrollments.length}
-          showDivider
           onPress={() => router.push(asHref(courseListPath))}
         />
-      </WalletSectionList>
+      </NavigationMenu>
     </StackScreenLayout>
   );
 }

@@ -1,4 +1,10 @@
-import { Pressable, StyleSheet, View, type StyleProp, type ViewStyle } from "react-native";
+import {
+  Pressable,
+  StyleSheet,
+  View,
+  type StyleProp,
+  type ViewStyle,
+} from "react-native";
 
 import { Colors, effects, radii } from "@/theme";
 
@@ -76,7 +82,7 @@ export function SegmentedControl<T extends string>({
 const styles = StyleSheet.create({
   root: {
     width: "100%",
-    minHeight: 44,
+    minHeight: 52,
     flexDirection: "row",
     gap: 4,
     padding: 4,

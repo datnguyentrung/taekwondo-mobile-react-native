@@ -7,7 +7,8 @@ const OUTPUT_FILE = path.join(__dirname, '../src/theme/icons.ts');
 function fileNameToCamelCase(fileName) {
   return fileName
     .replace(/\.svg$/, '')
-    .replace(/-([a-z0-9])/g, (_, char) => char.toUpperCase());
+    .replace(/^([A-Z])/, (_, char) => char.toLowerCase())
+    .replace(/[-_]+([a-zA-Z0-9])/g, (_, char) => char.toUpperCase());
 }
 
 function generateIcons() {
