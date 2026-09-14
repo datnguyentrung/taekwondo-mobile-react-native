@@ -1,6 +1,6 @@
 import { useLocalSearchParams } from 'expo-router';
 
-import { TopUpScreen } from '@/features/student-commerce';
+import { TopUpScreen } from '@/features/wallet';
 
 export default function StudentTopUpRoute() {
   const { studentCode } = useLocalSearchParams<{ studentCode?: string }>();

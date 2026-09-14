@@ -1,6 +1,6 @@
 import { useLocalSearchParams } from 'expo-router';
 
-import { WalletScreen } from '@/features/student-commerce';
+import { WalletScreen } from '@/features/wallet';
 
 export default function StudentWalletRoute() {
   const { studentCode } = useLocalSearchParams<{ studentCode?: string }>();

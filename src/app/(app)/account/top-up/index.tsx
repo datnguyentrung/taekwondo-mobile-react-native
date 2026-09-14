@@ -1,4 +1,4 @@
-import { TopUpScreen } from '@/features/student-commerce';
+import { TopUpScreen } from '@/features/wallet';
 
 export default function AccountTopUpRoute() {
   return <TopUpScreen studentCode="VQ_00123" />;

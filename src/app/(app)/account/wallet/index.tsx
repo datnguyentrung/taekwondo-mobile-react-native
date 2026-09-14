@@ -1,5 +1,5 @@
-import { AccountWalletScreen } from '@/features/student-commerce';
+import { WalletScreen } from '@/features/wallet';
 
 export default function AccountWalletRoute() {
-  return <AccountWalletScreen />;
+  return <WalletScreen studentCode="VQ_00123" context="account" />;
 }

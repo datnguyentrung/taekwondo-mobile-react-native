@@ -90,3 +90,23 @@ export type StudentCommerceState = {
   enrollments: CourseEnrollmentView[];
   courses: CourseView[];
 };
+
+export type StudentRouteProps = {
+  studentCode?: string;
+};
+
+export type EnrollmentRouteProps = StudentRouteProps & {
+  enrollmentId?: string;
+  context?: "admin-student" | "account";
+};
+
+export type CourseRouteProps = {
+  courseId?: string;
+  packageId?: string;
+};
+
+export type WalletTransactionsProps = StudentRouteProps & {
+  context?: "admin-student" | "account";
+  initialFilter?: TransactionFilter;
+};
+

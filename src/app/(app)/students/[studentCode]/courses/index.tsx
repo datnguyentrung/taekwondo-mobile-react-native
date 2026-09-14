@@ -1,6 +1,6 @@
 import { useLocalSearchParams } from 'expo-router';
 
-import { StudentCoursesScreen } from '@/features/student-commerce';
+import { StudentCoursesScreen } from '@/features/student-enrollment';
 
 export default function StudentCoursesRoute() {
   const { studentCode } = useLocalSearchParams<{ studentCode?: string }>();

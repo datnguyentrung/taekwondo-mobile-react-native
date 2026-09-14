@@ -1,5 +1,5 @@
-import { AccountCoursesScreen } from '@/features/student-commerce';
+import { StudentCoursesScreen } from '@/features/student-enrollment';
 
 export default function AccountCoursesRoute() {
-  return <AccountCoursesScreen />;
+  return <StudentCoursesScreen studentCode="VQ_00123" />;
 }

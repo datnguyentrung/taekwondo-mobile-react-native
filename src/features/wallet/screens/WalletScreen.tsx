@@ -7,8 +7,8 @@ import {
   WalletBalanceCard,
   WalletSectionGroup,
   WalletSectionList,
-} from "../components/wallet";
-import { studentCommerceMock } from "../fixtures/studentCommerce.fixtures";
+} from "@/features/student-commerce/components/wallet";
+import { studentCommerceMock } from "@/features/student-commerce/fixtures/studentCommerce.fixtures";
 
 type StudentRouteProps = {
   studentCode?: string;
@@ -47,7 +47,10 @@ function WalletOverview({ studentCode, context }: WalletOverviewProps) {
     : `/students/${routeStudentCode}/top-up`;
 
   return (
-    <StackScreenLayout title="Ví điện tử" contentContainerStyle={styles.content}>
+    <StackScreenLayout
+      title="Ví điện tử"
+      contentContainerStyle={styles.content}
+    >
       <WalletBalanceCard
         student={state.selectedStudent}
         balance={state.wallet.balance}
@@ -57,19 +60,19 @@ function WalletOverview({ studentCode, context }: WalletOverviewProps) {
 
       <WalletSectionList>
         <WalletSectionGroup
-          icon="layersFill"
-          title="Khóa học đang học"
-          subtitle="Xem danh sách khóa học hiện tại"
-          count={activeEnrollments.length}
-          showDivider
-          onPress={() => router.push(asHref(courseListPath))}
-        />
-        <WalletSectionGroup
           icon="noteText"
           title="Giao dịch gần đây"
           subtitle="Xem lịch sử thu chi của ví"
           count={recentTransactions.length}
           onPress={() => router.push(asHref(transactionListPath))}
+        />
+        <WalletSectionGroup
+          icon="layersFill"
+          title="Khóa học tham gia"
+          subtitle="Xem danh sách khóa học hiện tại"
+          count={activeEnrollments.length}
+          showDivider
+          onPress={() => router.push(asHref(courseListPath))}
         />
       </WalletSectionList>
     </StackScreenLayout>

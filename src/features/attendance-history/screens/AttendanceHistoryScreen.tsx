@@ -1,44 +1,38 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
-import {
-  Pressable,
-  StyleSheet,
-  type StyleProp,
-  View,
-  type ViewStyle,
-} from 'react-native';
+import { useEffect, useMemo, useRef, useState } from "react";
+import { StyleSheet, View } from "react-native";
 
-import { DefaultHeaderActions } from '@/routes/navigation/components/DefaultHeaderActions';
-import { HeaderActionButton } from '@/routes/navigation/components/HeaderActionButton';
-import StackScreenLayout from '@/routes/navigation/layouts/StackScreenLayout';
-import { BottomSheetWindow } from '@/shared/ui/BottomSheetWindow';
-import { AppIcon } from '@/shared/ui/AppIcon';
-import { ThemedText } from '@/shared/ui/ThemedText';
-import { Colors, effects, radii } from '@/theme';
+import { DefaultHeaderActions } from "@/routes/navigation/components/DefaultHeaderActions";
+import { HeaderActionButton } from "@/routes/navigation/components/HeaderActionButton";
+import StackScreenLayout from "@/routes/navigation/layouts/StackScreenLayout";
+import { BottomSheetWindow } from "@/shared/ui/BottomSheetWindow";
+import { ThemedText } from "@/shared/ui/ThemedText";
+import { Colors } from "@/theme";
 
-import { HistoryRecordCard } from '../components/HistoryRecordCard';
-import { HistorySelectSheet } from '../components/HistorySelectSheet';
-import { TrainingScoreFloatingButton } from '../components/TrainingScoreFloatingButton';
-import { TrainingScoreSheet } from '../components/TrainingScoreSheet';
-import { getMockHistoryRecords } from '../data/history.mock';
-import type { AttendanceHistoryMode } from '../domain/historyAccess';
-import type { CalendarQuarter } from '../domain/historyDateRange';
+import { HistoryRecordCard } from "../components/HistoryRecordCard";
+import { HistorySelectSheet } from "../components/HistorySelectSheet";
+import { TrainingScoreFloatingButton } from "../components/TrainingScoreFloatingButton";
+import { TrainingScoreSheet } from "../components/TrainingScoreSheet";
+import { getMockHistoryRecords } from "../data/history.mock";
+import type { AttendanceHistoryMode } from "../domain/historyAccess";
+import type { CalendarQuarter } from "../domain/historyDateRange";
 import {
   HistoryFilterActions,
   HistoryFilterContent,
-} from './AttendanceHistoryScreen/HistoryFilterContent';
+} from "./AttendanceHistoryScreen/HistoryFilterContent";
+import { HistoryPeriodSearchForm } from "./AttendanceHistoryScreen/HistoryPeriodSearchForm";
 import {
   emptyHistoryFilters,
   filterHistoryRecords,
   getHistoryFilterDateRange,
   getHistoryFilterGroups,
-} from './AttendanceHistoryScreen/historyFilter.logic';
-import type { HistoryFilterState } from './AttendanceHistoryScreen/historyFilter.types';
+} from "./AttendanceHistoryScreen/historyFilter.logic";
+import type { HistoryFilterState } from "./AttendanceHistoryScreen/historyFilter.types";
 
 type AttendanceHistoryScreenProps = {
   mode: AttendanceHistoryMode;
 };
 
-type PickerType = 'year' | 'quarter' | null;
+type PickerType = "year" | "quarter" | null;
 
 const SHEET_HANDOFF_DELAY_MS = 140;
 
@@ -69,9 +63,9 @@ export default function AttendanceHistoryScreen({
     [filters, hasSearched, records],
   );
   const selectedRange = hasSearched ? getHistoryFilterDateRange(filters) : null;
-  const title = mode === 'student' ? 'Điểm danh' : 'Chấm công';
+  const title = mode === "student" ? "Điểm danh" : "Chấm công";
   const filterLabel =
-    mode === 'student' ? 'Lọc lịch sử điểm danh' : 'Lọc lịch sử chấm công';
+    mode === "student" ? "Lọc lịch sử điểm danh" : "Lọc lịch sử chấm công";
 
   useEffect(
     () => () => {
@@ -96,23 +90,23 @@ export default function AttendanceHistoryScreen({
 
     setPicker(null);
     handoffTimerRef.current = setTimeout(() => {
-      setPicker('quarter');
+      setPicker("quarter");
     }, SHEET_HANDOFF_DELAY_MS);
   };
 
   const handleYearPress = () => {
     setQuarterError(null);
-    setPicker('year');
+    setPicker("year");
   };
 
   const handleQuarterPress = () => {
     if (!selectedYear) {
-      setQuarterError('Vui lòng chọn năm học trước');
+      setQuarterError("Vui lòng chọn năm học trước");
       return;
     }
 
     setQuarterError(null);
-    setPicker('quarter');
+    setPicker("quarter");
   };
 
   const openFilter = () => {
@@ -172,46 +166,21 @@ export default function AttendanceHistoryScreen({
         }
         contentContainerStyle={styles.content}
         floatingContent={
-          hasSearched && mode === 'student' ? (
+          hasSearched && mode === "student" ? (
             <TrainingScoreFloatingButton onPress={() => setScoreVisible(true)} />
           ) : undefined
         }
       >
-        <SelectField
-          label="Năm học"
-          value={selectedYear ? String(selectedYear) : 'Chọn'}
-          onPress={handleYearPress}
+        <HistoryPeriodSearchForm
+          selectedYear={selectedYear}
+          selectedQuarter={selectedQuarter}
+          quarterError={quarterError}
+          searchEnabled={searchEnabled}
+          selectedRange={selectedRange}
+          onYearPress={handleYearPress}
+          onQuarterPress={handleQuarterPress}
+          onSearch={handleSearch}
         />
-        <SelectField
-          label="Quý"
-          value={selectedQuarter ? String(selectedQuarter) : 'Chọn'}
-          onPress={handleQuarterPress}
-          error={quarterError}
-          style={styles.quarterField}
-        />
-
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel="Tra cứu"
-          accessibilityState={{ disabled: !searchEnabled }}
-          disabled={!searchEnabled}
-          onPress={handleSearch}
-          style={({ pressed }) => [
-            styles.searchButton,
-            searchEnabled ? styles.searchButtonActive : null,
-            pressed && searchEnabled ? styles.pressed : null,
-          ]}
-        >
-          <ThemedText type="body" style={styles.searchButtonText}>
-            Tra cứu
-          </ThemedText>
-        </Pressable>
-
-        {selectedRange ? (
-          <ThemedText type="bodySmall" style={styles.rangeHint}>
-            {selectedRange.from} - {selectedRange.to}
-          </ThemedText>
-        ) : null}
 
         {hasSearched ? (
           visibleRecords.length ? (
@@ -234,7 +203,7 @@ export default function AttendanceHistoryScreen({
       </StackScreenLayout>
 
       <HistorySelectSheet
-        visible={picker === 'year'}
+        visible={picker === "year"}
         title="Chọn năm học"
         options={filterGroups.years.options}
         selectedValue={selectedYear}
@@ -247,13 +216,11 @@ export default function AttendanceHistoryScreen({
           setFilters(emptyHistoryFilters);
           setDraftFilters(emptyHistoryFilters);
         }}
-        onSelect={() => {
-          openQuarterPickerAfterHandoff();
-        }}
+        onSelect={openQuarterPickerAfterHandoff}
       />
 
       <HistorySelectSheet
-        visible={picker === 'quarter'}
+        visible={picker === "quarter"}
         title="Chọn quý"
         options={filterGroups.quarters.options}
         selectedValue={selectedQuarter}
@@ -309,139 +276,24 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingBottom: 34,
   },
-  fieldLabel: {
-    color: Colors.light.text,
-    marginBottom: 12,
-  },
-  quarterField: {
-    marginTop: 23,
-  },
-  selectBox: {
-    height: 60,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    borderRadius: radii.md,
-    backgroundColor: Colors.light.surface,
-    paddingHorizontal: 20,
-    ...effects.card,
-  },
-  selectBoxError: {
-    borderWidth: 1.5,
-    borderColor: Colors.light.primary,
-  },
-  selectValue: {
-    color: Colors.light.text,
-  },
-  selectValueError: {
-    color: Colors.light.primary,
-  },
-  dropdownIcon: {
-    transform: [{ rotate: '90deg' }],
-  },
-  errorHint: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    marginTop: 8,
-  },
-  errorHintText: {
-    color: Colors.light.primary,
-  },
-  searchButton: {
-    height: 50,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderRadius: radii.pill,
-    backgroundColor: Colors.light.divider,
-    marginTop: 30,
-  },
-  searchButtonActive: {
-    backgroundColor: Colors.light.primary,
-  },
-  searchButtonText: {
-    color: Colors.light.surface,
-  },
-  rangeHint: {
-    marginTop: 12,
-    color: Colors.light.textSecondary,
-    textAlign: 'center',
-  },
   list: {
     gap: 20,
     marginTop: 21,
     paddingBottom: 36,
   },
   emptyState: {
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
     gap: 8,
     paddingTop: 82,
     paddingHorizontal: 18,
   },
   emptyTitle: {
     color: Colors.light.text,
-    textAlign: 'center',
+    textAlign: "center",
   },
   emptyDescription: {
     color: Colors.light.textSecondary,
-    textAlign: 'center',
-  },
-  pressed: {
-    opacity: 0.75,
+    textAlign: "center",
   },
 });
-
-function SelectField({
-  label,
-  value,
-  onPress,
-  style,
-  error,
-}: {
-  label: string;
-  value: string;
-  onPress: () => void;
-  style?: StyleProp<ViewStyle>;
-  error?: string | null;
-}) {
-  return (
-    <View style={style}>
-      <ThemedText type="subtitle" style={styles.fieldLabel}>
-        {label}
-      </ThemedText>
-      <Pressable
-        accessibilityRole="button"
-        accessibilityLabel={label}
-        onPress={onPress}
-        style={({ pressed }) => [
-          styles.selectBox,
-          error ? styles.selectBoxError : null,
-          pressed ? styles.pressed : null,
-        ]}
-      >
-        <ThemedText
-          type="body"
-          style={[styles.selectValue, error ? styles.selectValueError : null]}
-        >
-          {value}
-        </ThemedText>
-        <AppIcon
-          name="chevronRight"
-          width={9}
-          height={15}
-          color={error ? Colors.light.primary : Colors.light.text}
-          style={styles.dropdownIcon}
-        />
-      </Pressable>
-      {error ? (
-        <View style={styles.errorHint}>
-          <AppIcon name="fiRrInfo" size={14} color={Colors.light.primary} />
-          <ThemedText type="bodySmall" style={styles.errorHintText}>
-            {error}
-          </ThemedText>
-        </View>
-      ) : null}
-    </View>
-  );
-}

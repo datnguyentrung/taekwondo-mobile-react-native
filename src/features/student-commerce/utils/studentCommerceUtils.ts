@@ -1,3 +1,6 @@
+import type { Href } from 'expo-router';
+
+import { studentCommerceMock } from '../fixtures/studentCommerce.fixtures';
 import type {
   CourseCatalogTab,
   CoursePackageView,
@@ -7,6 +10,26 @@ import type {
   WalletSummaryView,
   WalletTransactionView,
 } from '../types';
+
+export function asHref(path: string) {
+  return path as Href;
+}
+
+export function getCommerceState() {
+  return studentCommerceMock;
+}
+
+export function defaultPackageId(courseId: string) {
+  return `${courseId}-3m`;
+}
+
+export function getEnrollment(enrollmentId?: string) {
+  const state = getCommerceState();
+  return (
+    state.enrollments.find((item) => item.enrollmentId === enrollmentId) ??
+    state.enrollments[0]
+  );
+}
 
 export function formatVnd(amount: number) {
   return `${new Intl.NumberFormat('vi-VN').format(amount)}đ`;

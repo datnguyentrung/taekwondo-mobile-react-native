@@ -1,4 +1,4 @@
-import { CourseCatalogScreen } from '@/features/student-commerce';
+import { CourseCatalogScreen } from '@/features/course';
 
 export default function AdminCoursesRoute() {
   return <CourseCatalogScreen />;

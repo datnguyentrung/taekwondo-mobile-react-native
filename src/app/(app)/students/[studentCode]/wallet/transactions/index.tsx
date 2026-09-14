@@ -1,6 +1,7 @@
 import { useLocalSearchParams } from 'expo-router';
 
-import { WalletTransactionsScreen, type TransactionFilter } from '@/features/student-commerce';
+import type { TransactionFilter } from '@/features/student-commerce';
+import { WalletTransactionsScreen } from '@/features/wallet-transaction';
 
 export default function StudentWalletTransactionsRoute() {
   const { studentCode, transactionFilter } = useLocalSearchParams<{

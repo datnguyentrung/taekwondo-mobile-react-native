@@ -1,6 +1,6 @@
 import { useLocalSearchParams } from 'expo-router';
 
-import { PackageDetailScreen } from '@/features/student-commerce';
+import { PackageDetailScreen } from '@/features/course';
 
 export default function AdminPackageDetailRoute() {
   const { courseId, packageId } = useLocalSearchParams<{ courseId?: string; packageId?: string }>();
