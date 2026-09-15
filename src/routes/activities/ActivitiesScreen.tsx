@@ -1,10 +1,19 @@
+import { Check, Star } from "reicon-react-native";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { StyleSheet, View } from "react-native";
 
-import type { ActivitiesAction } from "@/features/activities/components/activities.constants";
 import { ACTIVITIES_GROUPS } from "@/features/activities/components/activities.constants";
 import { ActivitiesGridSection } from "@/features/activities/components/ActivitiesGridSection";
-import { activitiesQuickStorageService } from "@/features/activities/components/activitiesQuickStorageService";
+import { activitiesQuickStorageService } from "@/features/activities/data/activitiesQuickStorageService";
+import type { ActivitiesAction } from "@/features/activities/domain/activities.types";
+import {
+  addQuickActionId,
+  getAvailableCatalogGroups,
+  getDefaultQuickActionIds,
+  getQuickActions,
+  getValidQuickActionIds,
+  removeQuickActionId,
+} from "@/features/activities/domain/quickActions";
 import {
   getAttendanceHistoryNavigationDecision,
   HistoryModePickerSheet,
@@ -18,12 +27,9 @@ import { useRouter } from "expo-router";
 import { NotificationHeaderButton } from "../navigation/components/NotificationHeaderButton";
 import BottomTabScreenLayout from "../navigation/layouts/BottomTabScreenLayout";
 
-const MAX_QUICK_FEATURES = 4;
 const HISTORY_PICKER_CLOSE_DELAY_MS = 180;
 const ALL_ACTIVITIES = ACTIVITIES_GROUPS.flatMap((group) => group.actions);
-const DEFAULT_QUICK_IDS = ALL_ACTIVITIES.filter((action) => action.defaultQuick)
-  .slice(0, MAX_QUICK_FEATURES)
-  .map((action) => action.id);
+const DEFAULT_QUICK_IDS = getDefaultQuickActionIds(ALL_ACTIVITIES);
 
 export default function ActivitiesScreen() {
   const router = useRouter();
@@ -39,17 +45,14 @@ export default function ActivitiesScreen() {
     null,
   );
 
-  const activitiesById = useMemo(
-    () => new Map(ALL_ACTIVITIES.map((action) => [action.id, action])),
-    [],
+  const quickActions = useMemo(
+    () => getQuickActions(quickActionIds, ALL_ACTIVITIES),
+    [quickActionIds],
   );
 
-  const quickActions = useMemo(
-    () =>
-      quickActionIds
-        .map((id) => activitiesById.get(id))
-        .filter((action): action is ActivitiesAction => Boolean(action)),
-    [activitiesById, quickActionIds],
+  const catalogGroups = useMemo(
+    () => getAvailableCatalogGroups(ACTIVITIES_GROUPS, quickActionIds),
+    [quickActionIds],
   );
 
   useEffect(() => {
@@ -60,11 +63,7 @@ export default function ActivitiesScreen() {
       .then((storedIds) => {
         if (!isMounted) return;
         if (storedIds) {
-          setQuickActionIds(
-            storedIds
-              .filter((id) => activitiesById.has(id))
-              .slice(0, MAX_QUICK_FEATURES),
-          );
+          setQuickActionIds(getValidQuickActionIds(storedIds, ALL_ACTIVITIES));
         }
       })
       .finally(() => {
@@ -74,7 +73,7 @@ export default function ActivitiesScreen() {
     return () => {
       isMounted = false;
     };
-  }, [activitiesById]);
+  }, []);
 
   useEffect(() => {
     if (!isQuickHydrated) return;
@@ -91,20 +90,12 @@ export default function ActivitiesScreen() {
   );
 
   const addQuickAction = useCallback((action: ActivitiesAction) => {
-    setQuickActionIds((currentIds) => {
-      if (
-        currentIds.includes(action.id) ||
-        currentIds.length >= MAX_QUICK_FEATURES
-      ) {
-        return currentIds;
-      }
-      return [...currentIds, action.id];
-    });
+    setQuickActionIds((currentIds) => addQuickActionId(currentIds, action.id));
   }, []);
 
   const removeQuickAction = useCallback((action: ActivitiesAction) => {
     setQuickActionIds((currentIds) =>
-      currentIds.filter((id) => id !== action.id),
+      removeQuickActionId(currentIds, action.id),
     );
   }, []);
 
@@ -157,7 +148,7 @@ export default function ActivitiesScreen() {
           <>
             <NotificationHeaderButton color={Colors.light.surface} />
             <HeaderActionButton
-              icon={changeListQuickFeatures ? "checkRead" : "star"}
+              icon={changeListQuickFeatures ? <Check /> : <Star />}
               label="Lựa chọn nhanh"
               color={Colors.light.surface}
               onPress={() => setChangeListQuickFeatures((current) => !current)}
@@ -173,7 +164,7 @@ export default function ActivitiesScreen() {
           onActionPress={handleActionPress}
         />
 
-        {ACTIVITIES_GROUPS.map((group, index) => (
+        {catalogGroups.map((group, index) => (
           <View key={group.title ?? index}>
             {index > 0 ? <View style={styles.divider} /> : null}
             <ActivitiesGridSection

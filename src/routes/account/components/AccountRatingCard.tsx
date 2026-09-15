@@ -1,3 +1,4 @@
+import { Star } from "reicon-react-native";
 import { Image } from "expo-image";
 import { StyleSheet, View } from "react-native";
 
@@ -25,7 +26,7 @@ export function AccountRatingCard() {
       <View style={styles.stars}>
         {Array.from({ length: 5 }).map((_, index) => (
           <View key={`rating-star-${index}`} style={styles.starIcon}>
-            <AppIcon name="star" size={38} color="#FFC700" />
+            <AppIcon icon={<Star />} size={38} color="#FFC700" />
           </View>
         ))}
       </View>

@@ -1,3 +1,4 @@
+import { Bell } from "reicon-react-native";
 import { useEffect } from "react";
 import { StyleSheet } from "react-native";
 import { useLocalSearchParams, useRouter, type Href } from "expo-router";
@@ -49,7 +50,7 @@ export default function NotificationDetailScreen() {
         <NotificationSkeletonList />
       ) : detailQuery.isError || !detail ? (
         <NotificationStateView
-          icon="bellOutline"
+          icon={<Bell />}
           title="Không tìm thấy thông báo"
           description="Thông báo có thể đã bị xóa hoặc bạn không còn quyền xem."
           actionLabel="Thử lại"

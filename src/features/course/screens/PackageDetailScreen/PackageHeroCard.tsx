@@ -1,10 +1,11 @@
+import { Calendar, ChevronRight, Tag } from "reicon-react-native";
 import { Image } from "expo-image";
 import { StyleSheet, View } from "react-native";
 
 import { AppIcon } from "@/shared/ui/AppIcon";
 import { ThemedText } from "@/shared/ui/ThemedText";
 import { Colors, effects, hexToRgba, radii, typography } from "@/theme";
-import type { AppIconName } from "@/theme/icons";
+import type { AppIconElement } from "@/theme/icons";
 
 import type { CoursePackageView } from "@/features/student-commerce/types";
 import { formatVnd } from "@/features/student-commerce/utils/studentCommerceUtils";
@@ -29,12 +30,12 @@ export function PackageHeroCard({ item }: { item: CoursePackageView }) {
 
         <View style={styles.heroMetaList}>
           <HeroMetaItem
-            icon="calendar"
+            icon={<Calendar />}
             label="Thời hạn"
             value={item.durationLabel}
           />
           <HeroMetaItem
-            icon="tagOutline"
+            icon={<Tag />}
             label="Giá"
             value={formatVnd(item.amount)}
           />
@@ -45,8 +46,7 @@ export function PackageHeroCard({ item }: { item: CoursePackageView }) {
         <ThemedText type="action" style={styles.heroMoreText}>
           Tìm hiểu thêm
         </ThemedText>
-        <AppIcon
-          name="chevronRight"
+        <AppIcon icon={<ChevronRight />}
           width={9}
           height={16}
           color={Colors.light.primary}
@@ -61,14 +61,14 @@ function HeroMetaItem({
   label,
   value,
 }: {
-  icon: AppIconName;
+  icon: AppIconElement;
   label: string;
   value: string;
 }) {
   return (
     <View style={styles.heroMetaItem}>
       <View style={styles.heroIconBubble}>
-        <AppIcon name={icon} size={26} color={Colors.light.primary} />
+        <AppIcon icon={icon} size={26} color={Colors.light.primary} />
       </View>
       <View style={styles.heroMetaText}>
         <ThemedText type="bodySmall" style={styles.heroMetaLabel}>

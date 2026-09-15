@@ -1,3 +1,4 @@
+import { Bell, ChevronRight, Headphones, LockOpen, Logout, User, Verified, Wallet } from "reicon-react-native";
 import { type Href, useRouter } from "expo-router";
 import { useMemo, useState } from "react";
 import { ActivityIndicator, Modal, Pressable, StyleSheet } from "react-native";
@@ -43,17 +44,17 @@ export default function AccountScreen() {
     () => [
       {
         label: "Thông tin chung",
-        icon: "personOutline",
+        icon: <User />,
         onPress: () => router.push("/account/general-info"),
       },
       {
         label: "Ví điện tử",
-        icon: "wallet",
+        icon: <Wallet />,
         onPress: () => router.push("/account/wallet" as Href),
       },
       {
         label: "Thành tích",
-        icon: "verified",
+        icon: <Verified />,
         onPress: () => showComingSoon(toast),
       },
     ],
@@ -64,19 +65,19 @@ export default function AccountScreen() {
     const items: AccountMenuItem[] = [
       {
         label: "Đổi mật khẩu",
-        icon: "lockOpen",
+        icon: <LockOpen />,
         onPress: () => showComingSoon(toast),
       },
       {
         label: "Liên hệ",
-        icon: "headphones",
+        icon: <Headphones />,
         onPress: () => showComingSoon(toast),
       },
     ];
     if (canOpenNotifications) {
       items.splice(1, 0, {
         label: "Thông báo",
-        icon: "bellOutline",
+        icon: <Bell />,
         onPress: () => showComingSoon(toast),
       });
     }
@@ -122,16 +123,14 @@ export default function AccountScreen() {
           <ActivityIndicator color={Colors.light.surface} />
         ) : (
           <>
-            <AppIcon
-              name="logoutLight"
+            <AppIcon icon={<Logout />}
               size={29}
               color={Colors.light.surface}
             />
             <ThemedText type="body" style={styles.logoutText}>
               Đăng xuất
             </ThemedText>
-            <AppIcon
-              name="chevronRight"
+            <AppIcon icon={<ChevronRight />}
               width={9}
               height={15}
               color={Colors.light.surface}

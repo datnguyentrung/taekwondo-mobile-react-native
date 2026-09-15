@@ -1,8 +1,9 @@
+import { ChevronLeft } from "reicon-react-native";
 import { AppIcon } from "@/shared/ui/AppIcon";
 import { ThemedText } from "@/shared/ui/ThemedText";
 import { getWindowDimensions } from "@/shared/utils/windowDimensions";
 import { Colors, effects, typography } from "@/theme";
-import type { AppIconName } from "@/theme/icons";
+import type { AppIconElement } from "@/theme/icons";
 import { useRouter } from "expo-router";
 import type { ReactNode } from "react";
 import type { StyleProp, ViewStyle } from "react-native";
@@ -17,7 +18,7 @@ import { HeaderActionButton } from "../components/HeaderActionButton";
 const { height } = getWindowDimensions();
 
 export type StackHeaderAction = {
-  icon: AppIconName;
+  icon: AppIconElement;
   label: string;
   badge?: string | number;
   badgeVariant?: "dot" | "count";
@@ -63,8 +64,7 @@ export default function StackScreenLayout({
               pressed ? styles.pressed : null,
             ]}
           >
-            <AppIcon
-              name="chevronLeft"
+            <AppIcon icon={<ChevronLeft />}
               width={12}
               height={20}
               color={actionColor}

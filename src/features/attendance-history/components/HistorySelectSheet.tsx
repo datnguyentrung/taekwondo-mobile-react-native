@@ -1,3 +1,4 @@
+import { Check } from "reicon-react-native";
 import { useEffect, useRef, useState } from 'react';
 import * as Haptics from 'expo-haptics';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
@@ -104,7 +105,7 @@ export function HistorySelectSheet<T extends string | number>({
                 {option.label}
               </ThemedText>
               {selected ? (
-                <AppIcon name="checkRead" size={22} color={Colors.light.primary} />
+                <AppIcon icon={<Check />} size={22} color={Colors.light.primary} />
               ) : null}
             </Pressable>
           );

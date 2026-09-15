@@ -1,9 +1,10 @@
+import { ChartBar, Users2 } from "reicon-react-native";
 import { StyleSheet, View } from "react-native";
 
 import { AppIcon } from "@/shared/ui/AppIcon";
 import { ThemedText } from "@/shared/ui/ThemedText";
 import { Colors, hexToRgba, radii } from "@/theme";
-import type { AppIconName } from "@/theme/icons";
+import type { AppIconElement } from "@/theme/icons";
 
 export function StudentStatsCard({
   totalCount,
@@ -15,13 +16,13 @@ export function StudentStatsCard({
   return (
     <View style={styles.card}>
       <StatBlock
-        icon="personUserWave3Fill"
+        icon={<Users2 weight="Filled" />}
         value={String(totalCount)}
         label="Học viên"
       />
       <View style={styles.divider} />
       <StatBlock
-        icon="fiRrStats"
+        icon={<ChartBar />}
         value={String(activeCount)}
         label="Hoạt động"
         emphasized
@@ -36,7 +37,7 @@ function StatBlock({
   label,
   emphasized = false,
 }: {
-  icon: AppIconName;
+  icon: AppIconElement;
   value: string;
   label: string;
   emphasized?: boolean;
@@ -44,7 +45,7 @@ function StatBlock({
   return (
     <View style={styles.block}>
       <View style={styles.iconBubble}>
-        <AppIcon name={icon} size={30} color={Colors.light.primary} />
+        <AppIcon icon={icon} size={30} color={Colors.light.primary} />
       </View>
       <View style={styles.copy}>
         <ThemedText

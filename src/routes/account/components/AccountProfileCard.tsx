@@ -1,3 +1,4 @@
+import { ChevronRight, User } from "reicon-react-native";
 import { ImageBackground, Pressable, StyleSheet, View } from "react-native";
 
 import { AppIcon } from "@/shared/ui/AppIcon";
@@ -29,7 +30,7 @@ export function AccountProfileCard({
       imageStyle={styles.profileCardImage}
     >
       <View style={styles.avatar}>
-        <AppIcon name="personFill" size={48} color={Colors.light.surface} />
+        <AppIcon icon={<User weight="Filled" />} size={48} color={Colors.light.surface} />
       </View>
       <View style={styles.profileContent}>
         <ThemedText type="title" numberOfLines={2} style={styles.profileName}>
@@ -52,8 +53,7 @@ export function AccountProfileCard({
           <ThemedText type="action" style={styles.switchText}>
             Chuyển tài khoản
           </ThemedText>
-          <AppIcon
-            name="chevronRight"
+          <AppIcon icon={<ChevronRight />}
             width={7}
             height={13}
             color={Colors.light.primary}

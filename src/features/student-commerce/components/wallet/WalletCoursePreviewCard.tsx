@@ -1,3 +1,4 @@
+import { Calendar, Layers } from "reicon-react-native";
 import { Pressable, StyleSheet, View } from "react-native";
 
 import { AppIcon } from "@/shared/ui/AppIcon";
@@ -29,7 +30,7 @@ export function WalletCoursePreviewCard({
     >
       <View style={styles.topRow}>
         <View style={styles.iconBox}>
-          <AppIcon name="layersFill" size={26} color={Colors.light.text} />
+          <AppIcon icon={<Layers weight="Filled" />} size={26} color={Colors.light.text} />
         </View>
         <View style={styles.titleBlock}>
           <ThemedText type="subtitle" numberOfLines={1} style={styles.title}>
@@ -58,7 +59,7 @@ export function WalletCoursePreviewCard({
         </ThemedText>
       </View>
       <View style={styles.dateRow}>
-        <AppIcon name="calendarOutline" size={20} color={Colors.light.icon} />
+        <AppIcon icon={<Calendar />} size={20} color={Colors.light.icon} />
         <ThemedText type="bodySmall" style={styles.meta}>
           {enrollment.dateRangeLabel}
         </ThemedText>

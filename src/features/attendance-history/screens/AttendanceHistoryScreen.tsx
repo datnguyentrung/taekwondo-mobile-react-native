@@ -1,3 +1,4 @@
+import { Tuning } from "reicon-react-native";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { StyleSheet, View } from "react-native";
 
@@ -154,7 +155,7 @@ export default function AttendanceHistoryScreen({
           <>
             {hasSearched ? (
               <HeaderActionButton
-                icon="sliders"
+                icon={<Tuning />}
                 label={filterLabel}
                 badge={appliedCount || undefined}
                 onPress={openFilter}

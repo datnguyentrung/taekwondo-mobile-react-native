@@ -1,17 +1,18 @@
+import { Check } from "reicon-react-native";
 import type { ReactNode } from "react";
 import { StyleSheet, View } from "react-native";
 
 import { AppIcon } from "@/shared/ui/AppIcon";
 import { ThemedText } from "@/shared/ui/ThemedText";
 import { Colors, effects, hexToRgba, radii } from "@/theme";
-import type { AppIconName } from "@/theme/icons";
+import type { AppIconElement } from "@/theme/icons";
 
 export function PackageSectionCard({
   icon,
   title,
   children,
 }: {
-  icon: AppIconName;
+  icon: AppIconElement;
   title: string;
   children: ReactNode;
 }) {
@@ -19,7 +20,7 @@ export function PackageSectionCard({
     <View style={styles.sectionCard}>
       <View style={styles.sectionHeader}>
         <View style={styles.sectionIconBubble}>
-          <AppIcon name={icon} size={20} color={Colors.light.primary} />
+          <AppIcon icon={icon} size={20} color={Colors.light.primary} />
         </View>
         <ThemedText type="heading" style={styles.sectionTitle}>
           {title}
@@ -33,7 +34,7 @@ export function PackageSectionCard({
 export function BenefitLine({ children }: { children: ReactNode }) {
   return (
     <View style={styles.benefitLine}>
-      <AppIcon name="checkRead" size={20} color={Colors.light.primary} />
+      <AppIcon icon={<Check />} size={20} color={Colors.light.primary} />
       <ThemedText type="bodySmall" style={styles.benefitText}>
         {children}
       </ThemedText>

@@ -1,3 +1,4 @@
+import { ChevronLeft } from "reicon-react-native";
 import { Pressable, StyleSheet, View } from "react-native";
 
 import { AppIcon } from "@/shared/ui/AppIcon";
@@ -98,7 +99,7 @@ export function NotificationDetailInfoPanel({
             pressed ? styles.pressed : null,
           ]}
         >
-          <AppIcon name="chevronLeft" width={12} height={20} />
+          <AppIcon icon={<ChevronLeft />} width={12} height={20} />
           <ThemedText type="action" style={styles.backText}>
             Quay về danh sách
           </ThemedText>

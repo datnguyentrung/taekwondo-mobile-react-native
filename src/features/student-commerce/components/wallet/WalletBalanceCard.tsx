@@ -1,3 +1,4 @@
+import { ChevronRight, DocText, InfoCircle, User } from "reicon-react-native";
 import { ImageBackground, Pressable, StyleSheet, View } from "react-native";
 
 import { AppIcon } from "@/shared/ui/AppIcon";
@@ -33,7 +34,7 @@ export function WalletBalanceCard({
       <View style={styles.cardContent}>
         <View style={styles.profileRow}>
           <View style={styles.avatar}>
-            <AppIcon name="personFill" size={34} color={Colors.light.primary} />
+            <AppIcon icon={<User weight="Filled" />} size={34} color={Colors.light.primary} />
           </View>
           <View style={styles.profileCopy}>
             <ThemedText
@@ -63,7 +64,7 @@ export function WalletBalanceCard({
             <ThemedText type="body" style={styles.whiteRegular}>
               Số dư khả dụng
             </ThemedText>
-            <AppIcon name="fiRrInfo" size={18} color={Colors.light.surface} />
+            <AppIcon icon={<InfoCircle />} size={18} color={Colors.light.surface} />
           </View>
           <ThemedText style={styles.balance}>{formatVnd(balance)}</ThemedText>
         </View>
@@ -76,12 +77,11 @@ export function WalletBalanceCard({
             pressed ? styles.pressed : null,
           ]}
         >
-          <AppIcon name="docText" size={26} color={Colors.light.primary} />
+          <AppIcon icon={<DocText />} size={26} color={Colors.light.primary} />
           <ThemedText type="subtitle" style={styles.actionText}>
             {actionLabel}
           </ThemedText>
-          <AppIcon
-            name="chevronRight"
+          <AppIcon icon={<ChevronRight />}
             width={13}
             height={24}
             color={Colors.light.primary}

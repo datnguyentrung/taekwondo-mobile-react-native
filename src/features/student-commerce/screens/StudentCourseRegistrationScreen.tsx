@@ -1,3 +1,11 @@
+import {
+  ChevronRight,
+  Database,
+  Filter,
+  InfoCircle,
+  User,
+  Wallet,
+} from "reicon-react-native";
 import { useEffect, useState, type ReactNode } from "react";
 import {
   ActivityIndicator,
@@ -13,6 +21,7 @@ import { ThemedText } from "@/shared/ui/ThemedText";
 import { useDebounce } from "@/shared/hooks/useDebounce";
 import StackScreenLayout from "@/routes/navigation/layouts/StackScreenLayout";
 import { Colors, effects, hexToRgba, radii, typography } from "@/theme";
+import type { AppIconElement } from "@/theme/icons";
 
 import {
   PrimaryActionButton,
@@ -237,7 +246,7 @@ function StudentSelectCard({
       style={({ pressed }) => [pressed ? styles.pressed : null]}
     >
       <SurfaceCard style={styles.selectCard}>
-        <IconCircle icon="personFill" />
+        <IconCircle icon={<User weight="Filled" />} />
         <View style={styles.flex}>
           {student ? (
             <>
@@ -264,7 +273,7 @@ function StudentSelectCard({
           )}
         </View>
         {student ? <StatusBadge label={student.statusLabel} /> : null}
-        <AppIcon name="chevronRight" width={10} height={18} color={Colors.light.text} />
+        <AppIcon icon={<ChevronRight />} width={10} height={18} color={Colors.light.text} />
       </SurfaceCard>
     </Pressable>
   );
@@ -285,7 +294,7 @@ function CourseSelectCard({
       style={({ pressed }) => [pressed ? styles.pressed : null]}
     >
       <SurfaceCard style={styles.courseSelectCard}>
-        <IconCircle icon="databaseFill" size={44} />
+        <IconCircle icon={<Database weight="Filled" />} size={44} />
         <View style={styles.flex}>
           <ThemedText
             type="title"
@@ -302,8 +311,7 @@ function CourseSelectCard({
             </ThemedText>
           ) : null}
         </View>
-        <AppIcon
-          name="chevronRight"
+        <AppIcon icon={<ChevronRight />}
           width={10}
           height={18}
           color={Colors.light.textSecondary}
@@ -316,7 +324,7 @@ function CourseSelectCard({
 function WalletBalanceCard({ amount }: { amount: number }) {
   return (
     <SurfaceCard style={styles.balanceCard}>
-      <IconCircle icon="wallet" />
+      <IconCircle icon={<Wallet />} />
       <View style={styles.flex}>
         <ThemedText type="bodySmall" style={styles.secondaryText}>
           Số dư ví
@@ -332,7 +340,7 @@ function WalletBalanceCard({ amount }: { amount: number }) {
 function RegistrationNotice({ activeCourseCount }: { activeCourseCount: number }) {
   return (
     <View style={styles.notice}>
-      <AppIcon name="fiRrInfo" size={25} color={Colors.light.primary} />
+      <AppIcon icon={<InfoCircle />} size={25} color={Colors.light.primary} />
       <View style={styles.flex}>
         <ThemedText type="title" style={styles.noticeTitle}>
           Có thể học nhiều khóa cùng lúc
@@ -475,7 +483,7 @@ function RegistrationSearchSheet<T>({
     >
       <View style={styles.sheetBody}>
         <View style={styles.searchBox}>
-          <AppIcon name="filter" size={18} color={Colors.light.textSecondary} />
+          <AppIcon icon={<Filter />} size={18} color={Colors.light.textSecondary} />
           <TextInput
             value={draftSearch}
             onChangeText={setDraftSearch}
@@ -558,7 +566,7 @@ function StudentOptionRow({
         soft
         style={selected ? styles.optionCardSelected : styles.optionCard}
       >
-        <IconCircle icon="personFill" size={44} />
+        <IconCircle icon={<User weight="Filled" />} size={44} />
         <View style={styles.flex}>
           <ThemedText type="title" numberOfLines={1} style={styles.blackText}>
             {student.fullName}
@@ -597,7 +605,7 @@ function CourseOptionRow({
         soft
         style={selected ? styles.optionCardSelected : styles.optionCard}
       >
-        <IconCircle icon="databaseFill" size={44} />
+        <IconCircle icon={<Database weight="Filled" />} size={44} />
         <View style={styles.flex}>
           <ThemedText type="title" numberOfLines={1} style={styles.blackText}>
             {course.courseName}
@@ -607,8 +615,7 @@ function CourseOptionRow({
           </ThemedText>
         </View>
         <StatusBadge label={course.statusLabel} />
-        <AppIcon
-          name="chevronRight"
+        <AppIcon icon={<ChevronRight />}
           width={10}
           height={18}
           color={Colors.light.textSecondary}
@@ -622,12 +629,12 @@ function IconCircle({
   icon,
   size = 52,
 }: {
-  icon: "personFill" | "wallet" | "databaseFill";
+  icon: AppIconElement;
   size?: number;
 }) {
   return (
     <View style={[styles.iconCircle, { width: size, height: size, borderRadius: size / 2 }]}>
-      <AppIcon name={icon} size={Math.round(size * 0.5)} color={Colors.light.primary} />
+      <AppIcon icon={icon} size={Math.round(size * 0.5)} color={Colors.light.primary} />
     </View>
   );
 }

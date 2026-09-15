@@ -1,3 +1,4 @@
+import { Check, InfoCircle } from "reicon-react-native";
 import {
   Pressable,
   ScrollView,
@@ -44,7 +45,7 @@ export function MultiSelectFilterContent({
     >
       {error ? (
         <View style={styles.errorHint}>
-          <AppIcon name="fiRrInfo" size={14} color={Colors.light.primary} />
+          <AppIcon icon={<InfoCircle />} size={14} color={Colors.light.primary} />
           <ThemedText type="bodySmall" style={styles.errorHintText}>
             {error}
           </ThemedText>
@@ -135,7 +136,7 @@ function FilterGroup({ group }: { group: MultiSelectFilterGroup }) {
             </ThemedText>
             <View style={[styles.checkbox, selected ? styles.checkboxSelected : null]}>
               {selected ? (
-                <AppIcon name="checkRead" size={14} color={Colors.light.surface} />
+                <AppIcon icon={<Check />} size={14} color={Colors.light.surface} />
               ) : null}
             </View>
           </Pressable>

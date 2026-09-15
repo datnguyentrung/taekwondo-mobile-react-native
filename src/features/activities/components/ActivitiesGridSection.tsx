@@ -1,11 +1,13 @@
 import type { StyleProp, ViewStyle } from "react-native";
 import { StyleSheet, View } from "react-native";
+import { SvgXml } from "react-native-svg";
 
-import { AppIcon } from "@/shared/ui/AppIcon";
+import type { ActivitiesAction } from "@/features/activities/domain/activities.types";
 import { ThemedText } from "@/shared/ui/ThemedText";
 import { Colors, effects, radii, typography } from "@/theme";
 
-import type { ActivitiesAction } from "./activities.constants";
+import quickMaskPrimary from "../../../../assets/icons/figma/feature-quick-mask-primary.svg";
+import quickMaskSecondary from "../../../../assets/icons/figma/feature-quick-mask-secondary.svg";
 import {
   ActivitiesActionButton,
   type ActivitiesActionVariant,
@@ -50,21 +52,24 @@ export function ActivitiesGridSection({
       <View style={isQuick ? styles.quickPanel : styles.sectionGrid}>
         {isQuick ? (
           <>
-            <AppIcon
-              name="featureQuickMaskPrimary"
-              width={353}
-              height={130}
-              style={styles.mask}
+            <SvgXml
+              xml={quickMaskPrimary}
+              width="100%"
+              height="100%"
+              style={styles.quickMask}
+              pointerEvents="none"
+              testID="activities-quick-mask-primary"
             />
-            <AppIcon
-              name="featureQuickMaskSecondary"
-              width={353}
-              height={130}
-              style={styles.mask}
+            <SvgXml
+              xml={quickMaskSecondary}
+              width="100%"
+              height="100%"
+              style={styles.quickMask}
+              pointerEvents="none"
+              testID="activities-quick-mask-secondary"
             />
           </>
         ) : null}
-
         <View style={isQuick ? styles.quickGrid : styles.defaultGrid}>
           {actions.map((action) => (
             <View key={action.id} style={styles.itemWrapper}>
@@ -88,17 +93,17 @@ const styles = StyleSheet.create({
     ...typography.subtitle,
   },
   quickPanel: {
+    minHeight: 130,
     overflow: "hidden",
     borderRadius: radii.md,
     backgroundColor: Colors.light.header,
     ...effects.card,
   },
-  mask: {
-    position: "absolute",
-    left: 0,
-    top: 0,
+  quickMask: {
+    ...StyleSheet.absoluteFill,
   },
   quickGrid: {
+    position: "relative",
     flexDirection: "row",
     flexWrap: "wrap",
     alignItems: "flex-start",

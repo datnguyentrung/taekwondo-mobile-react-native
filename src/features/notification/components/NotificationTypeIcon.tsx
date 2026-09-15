@@ -1,17 +1,19 @@
+import { Bell, Calendar, Check, Clock, DocText, NoteText, Wallet } from "reicon-react-native";
+
 import { AppIcon } from "@/shared/ui/AppIcon";
 import { Colors } from "@/theme";
-import type { AppIconName } from "@/theme/icons";
+import type { AppIconElement } from "@/theme/icons";
 
 import type { NotificationType } from "../constants/notification.constants";
 
-const notificationTypeIcon: Record<NotificationType, AppIconName> = {
-  SYSTEM: "bellOutline",
-  ATTENDANCE: "checkRead",
-  TUITION: "wallet",
-  CLASS_SCHEDULE: "calendar",
-  COACH_TIMESHEET: "clockOutline",
-  ANNOUNCEMENT: "noteText",
-  CLASS_SESSION_REPORT: "docText",
+const notificationTypeIcon: Record<NotificationType, AppIconElement> = {
+  SYSTEM: <Bell />,
+  ATTENDANCE: <Check />,
+  TUITION: <Wallet />,
+  CLASS_SCHEDULE: <Calendar />,
+  COACH_TIMESHEET: <Clock />,
+  ANNOUNCEMENT: <NoteText />,
+  CLASS_SESSION_REPORT: <DocText />,
 };
 
 export type NotificationTypeIconProps = {
@@ -25,5 +27,5 @@ export function NotificationTypeIcon({
   size = 22,
   color = Colors.light.primary,
 }: NotificationTypeIconProps) {
-  return <AppIcon name={notificationTypeIcon[type]} size={size} color={color} />;
+  return <AppIcon icon={notificationTypeIcon[type]} size={size} color={color} />;
 }

@@ -1,3 +1,4 @@
+import { File, Gift, ShieldCheck } from "reicon-react-native";
 import { useRouter } from "expo-router";
 import { StyleSheet, View } from "react-native";
 
@@ -51,7 +52,7 @@ export function PackageDetailScreen({ courseId, packageId }: CourseRouteProps) {
 
       <PackageHeroCard item={item} />
 
-      <PackageSectionCard icon="giftOutline" title="Bạn nhận được">
+      <PackageSectionCard icon={<Gift />} title="Bạn nhận được">
         <BenefitLine>
           {item.sessions} buổi học theo lịch của khóa học đã chọn
         </BenefitLine>
@@ -60,7 +61,7 @@ export function PackageDetailScreen({ courseId, packageId }: CourseRouteProps) {
         </BenefitLine>
       </PackageSectionCard>
 
-      <PackageSectionCard icon="fileOutline" title="Thông tin gói">
+      <PackageSectionCard icon={<File />} title="Thông tin gói">
         <View style={styles.infoRows}>
           <PackageInfoRow label="Số buổi" value={`${item.sessions} buổi`} />
           <PackageInfoRow label="Thời hạn" value={item.durationLabel} />
@@ -73,7 +74,7 @@ export function PackageDetailScreen({ courseId, packageId }: CourseRouteProps) {
       </PackageSectionCard>
 
       <PackageSectionCard
-        icon="shieldCheckOutline"
+        icon={<ShieldCheck />}
         title="Điều kiện & chính sách"
       >
         <ThemedText type="bodySmall" style={styles.policyText}>

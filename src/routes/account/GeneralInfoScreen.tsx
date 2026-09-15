@@ -1,3 +1,4 @@
+import { ArrowUp, AwardCertificate, CalendarDays, ChartSuccess, Headphones, Mailbox, Phone, User, UserCircle, UserEdit, Weight } from "reicon-react-native";
 import { Image } from "expo-image";
 import { StyleSheet, View } from "react-native";
 
@@ -5,23 +6,23 @@ import StackScreenLayout from "@/routes/navigation/layouts/StackScreenLayout";
 import { AppIcon } from "@/shared/ui/AppIcon";
 import { ThemedText } from "@/shared/ui/ThemedText";
 import { Colors, effects, figmaColors, radii, typography } from "@/theme";
-import type { AppIconName } from "@/theme/icons";
+import type { AppIconElement } from "@/theme/icons";
 
 type GeneralInfoItem = {
   label: string;
   value: string;
-  icon: AppIconName;
+  icon: AppIconElement;
 };
 
 const GENERAL_INFO_ITEMS: GeneralInfoItem[] = [
-  { label: "Giới tính", value: "Nam", icon: "profileUser" },
-  { label: "Ngày sinh", value: "31-10-2005", icon: "dateRangeDuotoneLine" },
-  { label: "Email", value: "vq@gmail.com", icon: "profileMail" },
-  { label: "Số điện thoại", value: "0912345678", icon: "profilePhone" },
-  { label: "Chiều cao", value: "180 cm", icon: "profileHeight" },
-  { label: "Cân nặng", value: "80 kg", icon: "profileWeight" },
-  { label: "Cấp độ đai", value: "Đen", icon: "profileBelt" },
-  { label: "Điểm rèn luyện quý gần nhất", value: "8/10", icon: "profileScore" },
+  { label: "Giới tính", value: "Nam", icon: <User /> },
+  { label: "Ngày sinh", value: "31-10-2005", icon: <CalendarDays /> },
+  { label: "Email", value: "vq@gmail.com", icon: <Mailbox /> },
+  { label: "Số điện thoại", value: "0912345678", icon: <Phone /> },
+  { label: "Chiều cao", value: "180 cm", icon: <ArrowUp /> },
+  { label: "Cân nặng", value: "80 kg", icon: <Weight /> },
+  { label: "Cấp độ đai", value: "Đen", icon: <AwardCertificate /> },
+  { label: "Điểm rèn luyện quý gần nhất", value: "8/10", icon: <ChartSuccess /> },
 ];
 
 export default function GeneralInfoScreen() {
@@ -35,9 +36,9 @@ export default function GeneralInfoScreen() {
     >
       <View style={styles.card}>
         <View style={styles.avatarWrap}>
-          <AppIcon name="profileAvatar" size={90} />
+          <AppIcon icon={<UserCircle weight="Filled" />} size={90} />
           <View style={styles.editBadge}>
-            <AppIcon name="profileEdit" size={21} />
+            <AppIcon icon={<UserEdit />} size={21} />
           </View>
         </View>
 
@@ -68,8 +69,7 @@ function GeneralInfoRow({
 }) {
   return (
     <View style={[styles.infoRow, !showDivider ? styles.infoRowLast : null]}>
-      <AppIcon
-        name={item.icon}
+      <AppIcon icon={item.icon}
         color={figmaColors.color1}
         size={30}
         style={styles.infoIcon}
@@ -91,7 +91,7 @@ function SupportButtons() {
   return (
     <View pointerEvents="box-none" style={styles.supportButtons}>
       <View style={styles.supportButton}>
-        <AppIcon name="headphonesFill" size={35} color={Colors.light.accent} />
+        <AppIcon icon={<Headphones weight="Filled" />} size={35} color={Colors.light.accent} />
       </View>
       <Image
         source={require("@/assets/images/zalo-support.png")}

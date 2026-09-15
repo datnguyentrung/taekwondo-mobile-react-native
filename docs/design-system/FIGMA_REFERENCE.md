@@ -149,10 +149,9 @@ Representative nodes include:
 - Database
 - Info
 
-The project already contains many corresponding SVGs under:
-`assets/icons/figma`
+The app now renders product icons with `reicon-react-native` through `AppIcon`.
 
-Before adding an icon, inspect both the Figma board and the existing asset directory.
+Before adding an icon, inspect both the Figma board and the available Reicon glyph names.
 
 ### 7. Components
 

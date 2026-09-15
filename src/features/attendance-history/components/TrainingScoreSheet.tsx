@@ -1,10 +1,11 @@
+import { Clock, InfoCircle, NoteText, Trophy } from "reicon-react-native";
 import { ScrollView, StyleSheet, View } from "react-native";
 
 import { AppIcon } from "@/shared/ui/AppIcon";
 import { BottomSheetWindow } from "@/shared/ui/BottomSheetWindow";
 import { ThemedText } from "@/shared/ui/ThemedText";
 import { Colors, effects, hexToRgba, radii } from "@/theme";
-import type { AppIconName } from "@/theme/icons";
+import type { AppIconElement } from "@/theme/icons";
 
 import { trainingScoreMock } from "../data/history.mock";
 
@@ -12,6 +13,12 @@ type TrainingScoreSheetProps = {
   visible: boolean;
   onClose: () => void;
 };
+
+const scoreSectionIcons = {
+  clockOutline: <Clock />,
+  noteText: <NoteText />,
+  cup: <Trophy />,
+} as const;
 
 export function TrainingScoreSheet({
   visible,
@@ -38,11 +45,14 @@ export function TrainingScoreSheet({
           <ThemedText type="body" style={styles.quarterLabel}>
             {trainingScoreMock.quarterLabel}
           </ThemedText>
-          <AppIcon name="fiRrInfo" size={30} color={Colors.light.primary} />
+          <AppIcon icon={<InfoCircle />} size={30} color={Colors.light.primary} />
         </View>
 
         {trainingScoreMock.sections.map((section) => (
-          <TrainingScoreSection key={section.title} section={section} />
+          <TrainingScoreSection
+            key={section.title}
+            section={{ ...section, icon: scoreSectionIcons[section.icon] }}
+          />
         ))}
 
         <View style={styles.totalCard}>
@@ -63,7 +73,7 @@ function TrainingScoreSection({
 }: {
   section: {
     title: string;
-    icon: AppIconName;
+    icon: AppIconElement;
     total: string;
     rows: { label: string; value: string }[];
   };
@@ -73,8 +83,7 @@ function TrainingScoreSection({
       <View style={styles.sectionCardInner}>
         <View style={styles.sectionHeader}>
           <View style={styles.sectionTitleGroup}>
-            <AppIcon
-              name={section.icon}
+            <AppIcon icon={section.icon}
               size={30}
               color={Colors.light.surface}
             />

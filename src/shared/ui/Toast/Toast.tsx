@@ -1,3 +1,4 @@
+import { XCircle } from "reicon-react-native";
 import { useCallback, useEffect, useRef } from "react";
 import { Platform, Pressable, StyleSheet, View } from "react-native";
 import Animated, {
@@ -220,7 +221,7 @@ export function Toast({ message, variant, duration, onDismiss }: ToastProps) {
             pressed && styles.dismissPressed,
           ]}
         >
-          <AppIcon name="closeRingFill" size={22} color={config.iconColor} />
+          <AppIcon icon={<XCircle weight="Filled" />} size={22} color={config.iconColor} />
         </Pressable>
       </Pressable>
     </Animated.View>

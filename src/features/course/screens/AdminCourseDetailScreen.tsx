@@ -1,3 +1,4 @@
+import { User } from "reicon-react-native";
 import { useRouter } from "expo-router";
 import { StyleSheet, View } from "react-native";
 
@@ -64,8 +65,7 @@ export function AdminCourseDetailScreen({ courseId }: CourseRouteProps) {
         </ThemedText>
         <View style={styles.coachCard}>
           <View style={styles.coachImage}>
-            <AppIcon
-              name="personOutline"
+            <AppIcon icon={<User />}
               size={48}
               color={Colors.light.textSecondary}
             />
@@ -80,7 +80,7 @@ export function AdminCourseDetailScreen({ courseId }: CourseRouteProps) {
       </SurfaceCard>
       <NavigationMenu>
         <NavigationMenuItem
-          icon="personOutline"
+          icon={<User />}
           title="Trợ giảng"
           count={course.assistantCount ?? 2}
           subtitle="Danh sách trợ giảng của khóa học"
@@ -89,7 +89,7 @@ export function AdminCourseDetailScreen({ courseId }: CourseRouteProps) {
           }
         />
         <NavigationMenuItem
-          icon="personOutline"
+          icon={<User />}
           title="Học viên"
           count={course.enrolledStudentCount ?? 0}
           subtitle="Enrollment ACTIVE của khóa học"

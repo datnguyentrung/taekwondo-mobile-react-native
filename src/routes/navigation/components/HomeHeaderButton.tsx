@@ -1,3 +1,4 @@
+import { Home } from "reicon-react-native";
 import { useRouter } from 'expo-router';
 
 import { HeaderActionButton } from './HeaderActionButton';
@@ -15,7 +16,7 @@ export function HomeHeaderButton({ color }: { color?: string }) {
 
   return (
     <HeaderActionButton
-      icon="homeOutline"
+      icon={<Home />}
       label="Trang chủ"
       color={color}
       onPress={handlePress}

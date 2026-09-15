@@ -1,3 +1,4 @@
+import { ChevronRight } from "reicon-react-native";
 import { Pressable, StyleSheet, View } from "react-native";
 
 import { AppIcon } from "@/shared/ui/AppIcon";
@@ -10,11 +11,11 @@ import {
   radii,
   typography,
 } from "@/theme";
-import type { AppIconName } from "@/theme/icons";
+import type { AppIconElement } from "@/theme/icons";
 
 export type AccountMenuItem = {
   label: string;
-  icon: AppIconName;
+  icon: AppIconElement;
   onPress?: () => void;
 };
 
@@ -44,12 +45,11 @@ export function AccountMenuSection({
               activeEffect(pressed, "pressedHighlight"),
             ]}
           >
-            <AppIcon name={item.icon} size={29} color={Colors.light.icon} />
+            <AppIcon icon={item.icon} size={29} color={Colors.light.icon} />
             <ThemedText type="body" style={styles.menuText}>
               {item.label}
             </ThemedText>
-            <AppIcon
-              name="chevronRight"
+            <AppIcon icon={<ChevronRight />}
               width={9}
               height={15}
               color={Colors.light.icon}

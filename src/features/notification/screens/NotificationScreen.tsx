@@ -1,3 +1,4 @@
+import { Bell, Check } from "reicon-react-native";
 import { useRouter, type Href } from "expo-router";
 import { useCallback, useMemo, useState } from "react";
 import {
@@ -96,7 +97,7 @@ export default function NotificationScreen() {
         <>
           {unreadCount > 0 ? (
             <HeaderActionButton
-              icon="checkRead"
+              icon={<Check />}
               label="Đánh dấu tất cả đã đọc"
               color={Colors.light.text}
               testID="notification-read-all-button"
@@ -144,7 +145,7 @@ export default function NotificationScreen() {
             <NotificationSkeletonList />
           ) : notificationsQuery.isError ? (
             <NotificationStateView
-              icon="bellOutline"
+              icon={<Bell />}
               title="Không tải được thông báo"
               description="Vui lòng thử lại sau ít phút."
               actionLabel="Thử lại"
@@ -152,7 +153,7 @@ export default function NotificationScreen() {
             />
           ) : (
             <NotificationStateView
-              icon="bellOutline"
+              icon={<Bell />}
               title="Chưa có thông báo phù hợp"
               description="Thử đổi bộ lọc hoặc quay lại sau khi hệ thống gửi thông báo mới."
             />

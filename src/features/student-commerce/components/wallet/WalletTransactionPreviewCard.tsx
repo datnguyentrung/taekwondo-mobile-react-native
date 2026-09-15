@@ -1,3 +1,4 @@
+import { Minus, Plus } from "reicon-react-native";
 import { StyleSheet, View } from "react-native";
 
 import { AppIcon } from "@/shared/ui/AppIcon";
@@ -16,6 +17,7 @@ export function WalletTransactionPreviewCard({
 }: WalletTransactionPreviewCardProps) {
   const credit = transaction.direction === "CREDIT";
   const amountColor = credit ? "#059669" : Colors.light.primary;
+  const icon = credit ? <Plus /> : <Minus />;
 
   return (
     <View style={styles.card}>
@@ -26,7 +28,7 @@ export function WalletTransactionPreviewCard({
         ]}
       >
         <AppIcon
-          name={credit ? "plus" : "minus"}
+          icon={icon}
           size={26}
           color={amountColor}
         />

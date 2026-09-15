@@ -1,3 +1,4 @@
+import { ChevronRight } from "reicon-react-native";
 import type { ReactNode } from "react";
 import { Pressable, StyleSheet, View } from "react-native";
 
@@ -9,11 +10,11 @@ import {
   hexToRgba,
   radii,
   typography,
-  type AppIconName,
+  type AppIconElement,
 } from "@/theme";
 
 type WalletSectionGroupProps = {
-  icon: AppIconName;
+  icon: AppIconElement;
   title: string;
   subtitle: string;
   count: number;
@@ -40,7 +41,7 @@ export function WalletSectionGroup({
       ]}
     >
       <View style={styles.iconBox}>
-        <AppIcon name={icon} size={29} color={Colors.light.icon} />
+        <AppIcon icon={icon} size={29} color={Colors.light.icon} />
       </View>
       <View style={styles.copy}>
         <ThemedText type="body" numberOfLines={1} style={styles.title}>
@@ -50,8 +51,7 @@ export function WalletSectionGroup({
           {subtitle}
         </ThemedText>
       </View>
-      <AppIcon
-        name="chevronRight"
+      <AppIcon icon={<ChevronRight />}
         width={9}
         height={15}
         color={Colors.light.icon}

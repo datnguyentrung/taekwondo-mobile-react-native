@@ -1,3 +1,4 @@
+import { CheckListNotes, DocText, Wallet } from "reicon-react-native";
 import { useRouter } from "expo-router";
 import { Pressable, StyleSheet, View } from "react-native";
 
@@ -51,7 +52,7 @@ export function StudentDetailScreen({ studentCode }: StudentRouteProps) {
       </View>
       <SurfaceCard>
         <View style={styles.row}>
-          <AppIcon name="wallet" size={24} color={Colors.light.primary} />
+          <AppIcon icon={<Wallet />} size={24} color={Colors.light.primary} />
           <ThemedText type="bodySmall" style={styles.blackText}>
             Ví điện tử
           </ThemedText>
@@ -75,7 +76,7 @@ export function StudentDetailScreen({ studentCode }: StudentRouteProps) {
 
       <NavigationMenu>
         <NavigationMenuItem
-          icon="docText"
+          icon={<DocText />}
           title="Khóa học đang học"
           count={activeEnrollments.length}
           onPress={() =>
@@ -83,7 +84,7 @@ export function StudentDetailScreen({ studentCode }: StudentRouteProps) {
           }
         />
         <NavigationMenuItem
-          icon="featureAttendance"
+          icon={<CheckListNotes />}
           title="Lịch sử tập luyện"
           onPress={() => router.push(asHref("/history/student"))}
         />

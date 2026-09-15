@@ -39,7 +39,7 @@ Prefer these existing building blocks before creating equivalents:
 
 - `@/theme`: colors, typography, radii, effects, gradients, spacing exports.
 - `ThemedText` for application text.
-- `AppIcon` + `assets/icons/figma` for Figma-backed icons.
+- `AppIcon` + `reicon-react-native` for app icon rendering.
 - `BottomTabScreenLayout` for root tab screens.
 - `StackScreenLayout` for pushed/detail screens.
 - `HeaderActionButton`, `DefaultHeaderActions`, `NotificationHeaderButton`, `HomeHeaderButton` for header actions.

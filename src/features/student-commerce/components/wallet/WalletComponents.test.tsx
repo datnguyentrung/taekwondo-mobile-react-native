@@ -1,3 +1,4 @@
+import { Layers } from "reicon-react-native";
 import { fireEvent, render } from "@testing-library/react-native";
 
 import { studentCommerceMock } from "../../fixtures/studentCommerce.fixtures";
@@ -32,7 +33,7 @@ describe("wallet components", () => {
     const onPress = jest.fn();
     const screen = await render(
       <WalletSectionGroup
-        icon="layersFill"
+        icon={<Layers weight="Filled" />}
         title="Khóa học đang học"
         subtitle="Xem danh sách khóa học hiện tại"
         count={2}

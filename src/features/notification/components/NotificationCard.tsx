@@ -1,3 +1,4 @@
+import { ChevronRight } from "reicon-react-native";
 import { memo } from "react";
 import { Pressable, StyleSheet, View } from "react-native";
 
@@ -58,8 +59,7 @@ function NotificationCardComponent({
 
       <View style={styles.trailing}>
         {!notification.read ? <View style={styles.unreadDot} /> : null}
-        <AppIcon
-          name="chevronRight"
+        <AppIcon icon={<ChevronRight />}
           width={9}
           height={15}
           color={Colors.light.textSecondary}

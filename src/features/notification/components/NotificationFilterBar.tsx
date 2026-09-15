@@ -1,3 +1,4 @@
+import { Filter } from "reicon-react-native";
 import { useEffect, useMemo, useState } from "react";
 import { Pressable, ScrollView, StyleSheet, TextInput, View } from "react-native";
 
@@ -65,7 +66,7 @@ export function NotificationFilterBar({
       />
 
       <View style={styles.searchBox}>
-        <AppIcon name="filter" size={18} color={Colors.light.textSecondary} />
+        <AppIcon icon={<Filter />} size={18} color={Colors.light.textSecondary} />
         <TextInput
           value={draftSearch}
           onChangeText={setDraftSearch}

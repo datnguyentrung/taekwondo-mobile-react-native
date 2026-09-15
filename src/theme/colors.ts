@@ -46,6 +46,14 @@ export const colorPrimitives = {
     400: "#4B93C9",
     500: "#1E78BC",
   },
+  green: {
+    100: "#D1F4E0",
+    200: "#A3E2B8",
+    300: "#6EE095",
+    400: "#34D399",
+    500: "#10B981",
+    700: "#059669",
+  },
   white: figmaColors.bg2,
   appBackground: figmaColors.bg1,
   lineIcon: "#33363F",
@@ -72,6 +80,8 @@ export const Colors = {
     icon: colorPrimitives.lineIcon,
     divider: figmaColors.color4,
     accent: colorPrimitives.blue[500],
+    success: colorPrimitives.green[500],
+    green: colorPrimitives.green[500],
   },
   dark: {
     text: colorPrimitives.white,
@@ -87,6 +97,8 @@ export const Colors = {
     icon: colorPrimitives.white,
     divider: colorPrimitives.neutral[400],
     accent: colorPrimitives.blue[300],
+    success: colorPrimitives.green[400],
+    green: colorPrimitives.green[400],
   },
 } as const;
 

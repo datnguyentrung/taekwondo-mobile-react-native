@@ -1,3 +1,4 @@
+import { Plus } from "reicon-react-native";
 import { useEffect, useMemo } from 'react';
 import {
   Modal,
@@ -181,7 +182,7 @@ export function BottomSheetWindow({
                   pressed ? styles.pressed : null,
                 ]}
               >
-                <AppIcon name="plus" size={18} color={Colors.light.textSecondary} />
+                <AppIcon icon={<Plus />} size={18} color={Colors.light.textSecondary} />
               </Pressable>
             </View>
             <View style={styles.body}>{children}</View>

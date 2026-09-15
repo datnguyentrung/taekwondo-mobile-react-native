@@ -1,9 +1,11 @@
+import { CheckListNotes, Teacher } from "reicon-react-native";
 import { Pressable, StyleSheet, View } from "react-native";
 
 import { AppIcon } from "@/shared/ui/AppIcon";
 import { BottomSheetWindow } from "@/shared/ui/BottomSheetWindow";
 import { ThemedText } from "@/shared/ui/ThemedText";
 import { Colors, effects, hexToRgba, radii, typography } from "@/theme";
+import type { AppIconElement } from "@/theme/icons";
 
 import type { AttendanceHistoryMode } from "../domain/historyAccess";
 
@@ -30,13 +32,13 @@ export function HistoryModePickerSheet({
         <ModeButton
           title="Học viên"
           description="Điểm danh học viên"
-          icon="featureAttendance"
+          icon={<CheckListNotes />}
           onPress={() => onSelectMode("student")}
         />
         <ModeButton
           title="HLV"
           description="Chấm công HLV"
-          icon="featureCoachList"
+          icon={<Teacher />}
           onPress={() => onSelectMode("coach")}
         />
       </View>
@@ -52,7 +54,7 @@ function ModeButton({
 }: {
   title: string;
   description: string;
-  icon: "featureAttendance" | "featureCoachList";
+  icon: AppIconElement;
   onPress: () => void;
 }) {
   return (
@@ -66,7 +68,7 @@ function ModeButton({
       ]}
     >
       <View style={styles.modeIconWrap}>
-        <AppIcon name={icon} size={34} />
+        <AppIcon icon={icon} size={34} />
       </View>
       <ThemedText type="subtitle" numberOfLines={1} style={styles.modeTitle}>
         {title}

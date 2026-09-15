@@ -1,3 +1,4 @@
+import { Layers, NoteText } from "reicon-react-native";
 import { type Href, useRouter } from "expo-router";
 import { StyleSheet } from "react-native";
 
@@ -57,7 +58,7 @@ function WalletOverview({ studentCode, context }: WalletOverviewProps) {
 
       <NavigationMenu>
         <NavigationMenuItem
-          icon="noteText"
+          icon={<NoteText />}
           // iconBox
           title="Giao dịch gần đây"
           subtitle="Xem lịch sử thu chi của ví"
@@ -65,7 +66,7 @@ function WalletOverview({ studentCode, context }: WalletOverviewProps) {
           onPress={() => router.push(asHref(transactionListPath))}
         />
         <NavigationMenuItem
-          icon="layersFill"
+          icon={<Layers weight="Filled" />}
           // iconBox
           title="Khóa học tham gia"
           subtitle="Xem danh sách khóa học hiện tại"

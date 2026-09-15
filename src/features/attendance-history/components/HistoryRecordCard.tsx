@@ -1,8 +1,10 @@
+import { Clock, Location, User } from "reicon-react-native";
 import { StyleSheet, View } from 'react-native';
 
 import { AppIcon } from '@/shared/ui/AppIcon';
 import { ThemedText } from '@/shared/ui/ThemedText';
 import { Colors, effects, hexToRgba, radii } from '@/theme';
+import type { AppIconElement } from '@/theme/icons';
 
 import type {
   HistoryRecordTone,
@@ -44,11 +46,11 @@ export function HistoryRecordCard({ record }: HistoryRecordCardProps) {
       <View style={styles.divider} />
 
       <View style={styles.metaRow}>
-        <MetaItem icon="location" label={record.branchLabel} />
+        <MetaItem icon={<Location />} label={record.branchLabel} />
         <View style={styles.verticalDivider} />
-        <MetaItem icon="clockOutline" label={record.shiftLabel} />
+        <MetaItem icon={<Clock />} label={record.shiftLabel} />
         <View style={styles.verticalDivider} />
-        <MetaItem icon="personOutline" label={record.statusLabel} />
+        <MetaItem icon={<User />} label={record.statusLabel} />
       </View>
 
       <View
@@ -72,12 +74,12 @@ function MetaItem({
   icon,
   label,
 }: {
-  icon: 'location' | 'clockOutline' | 'personOutline';
+  icon: AppIconElement;
   label: string;
 }) {
   return (
     <View style={styles.metaItem}>
-      <AppIcon name={icon} size={22} color={Colors.light.primary} />
+      <AppIcon icon={icon} size={22} color={Colors.light.primary} />
       <ThemedText type="body" numberOfLines={1} style={styles.metaText}>
         {label}
       </ThemedText>

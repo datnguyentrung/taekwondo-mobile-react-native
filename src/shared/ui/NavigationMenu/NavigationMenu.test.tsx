@@ -1,3 +1,4 @@
+import { CheckListNotes, DocText, NoteText } from "reicon-react-native";
 import { render } from "@testing-library/react-native";
 import { StyleSheet, type ViewStyle } from "react-native";
 
@@ -13,8 +14,8 @@ describe("NavigationMenu", () => {
   it("renders one-line items with count and default divider", async () => {
     const screen = await render(
       <NavigationMenu>
-        <NavigationMenuItem icon="docText" title="Khóa học đang học" count={2} />
-        <NavigationMenuItem icon="featureAttendance" title="Lịch sử tập luyện" />
+        <NavigationMenuItem icon={<DocText />} title="Khóa học đang học" count={2} />
+        <NavigationMenuItem icon={<CheckListNotes />} title="Lịch sử tập luyện" />
       </NavigationMenu>,
     );
 
@@ -31,7 +32,7 @@ describe("NavigationMenu", () => {
     const screen = await render(
       <NavigationMenu>
         <NavigationMenuItem
-          icon="noteText"
+          icon={<NoteText />}
           iconBox
           title="Giao dịch gần đây"
           subtitle="Xem lịch sử thu chi của ví"

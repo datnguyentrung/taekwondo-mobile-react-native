@@ -1,3 +1,4 @@
+import { InfoCircle } from "reicon-react-native";
 import { useRouter } from "expo-router";
 import { useMemo, useState } from "react";
 import { StyleSheet, View } from "react-native";
@@ -56,7 +57,7 @@ export function StudentListScreen() {
         </ThemedText>
       ) : null}
       <View style={styles.footerNote}>
-        <AppIcon name="fiRrInfo" size={22} color={Colors.light.textSecondary} />
+        <AppIcon icon={<InfoCircle />} size={22} color={Colors.light.textSecondary} />
         <ThemedText type="bodySmall" style={styles.helperText}>
           Chọn học viên để xem hồ sơ, ví và khóa học.
         </ThemedText>

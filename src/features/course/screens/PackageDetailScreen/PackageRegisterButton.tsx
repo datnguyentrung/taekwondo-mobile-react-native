@@ -1,3 +1,4 @@
+import { ChevronRight } from "reicon-react-native";
 import { Pressable, StyleSheet, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -28,8 +29,7 @@ export function PackageRegisterButton({ onPress }: { onPress: () => void }) {
         <ThemedText type="heading" style={styles.registerText}>
           Đăng ký
         </ThemedText>
-        <AppIcon
-          name="chevronRight"
+        <AppIcon icon={<ChevronRight />}
           width={9}
           height={16}
           color={Colors.light.surface}

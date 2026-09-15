@@ -1,7 +1,15 @@
 import type { Href } from "expo-router";
+import {
+  Calendar,
+  Database,
+  Home,
+  Qr,
+  User,
+  Widget,
+} from "reicon-react-native";
 
 import type { PermissionValue } from "@/features/authorization";
-import type { AppIconName } from "@/theme/icons";
+import type { AppIconElement } from "@/theme/icons";
 
 export type AppTabName =
   | "index"
@@ -15,8 +23,8 @@ export interface AppTabConfig {
   name: AppTabName;
   label: string;
   href: Href;
-  icon: AppIconName;
-  activeIcon?: AppIconName;
+  icon: AppIconElement;
+  activeIcon?: AppIconElement;
   /**
    * Permissions required to show this tab.
    * Empty means the tab is always visible for authenticated users.
@@ -32,8 +40,8 @@ export const APP_TABS: AppTabConfig[] = [
     name: "index",
     label: "Trang chủ",
     href: "/",
-    icon: "homeOutline",
-    activeIcon: "homeFill",
+    icon: <Home />,
+    activeIcon: <Home weight="Filled" />,
     requiredPermissions: [],
     display: true,
   },
@@ -41,8 +49,8 @@ export const APP_TABS: AppTabConfig[] = [
     name: "activities",
     label: "Tính năng",
     href: "/activities",
-    icon: "databaseOutline",
-    activeIcon: "databaseFill",
+    icon: <Database />,
+    activeIcon: <Database weight="Filled" />,
     requiredPermissions: [],
     display: true,
   },
@@ -50,7 +58,7 @@ export const APP_TABS: AppTabConfig[] = [
     name: "check-in",
     label: "Quét mã",
     href: "/check-in",
-    icon: "qrCode",
+    icon: <Qr />,
     requiredPermissions: [],
     display: true,
     centerAction: true,
@@ -59,8 +67,8 @@ export const APP_TABS: AppTabConfig[] = [
     name: "schedule",
     label: "Lịch học",
     href: "/schedule",
-    icon: "calendarOutline",
-    activeIcon: "calendarOutline",
+    icon: <Calendar />,
+    activeIcon: <Calendar />,
     requiredPermissions: [],
     display: true,
   },
@@ -68,8 +76,8 @@ export const APP_TABS: AppTabConfig[] = [
     name: "account",
     label: "Tài khoản",
     href: "/account",
-    icon: "personOutline",
-    activeIcon: "personFill",
+    icon: <User />,
+    activeIcon: <User weight="Filled" />,
     requiredPermissions: [],
     display: true,
   },
@@ -77,8 +85,8 @@ export const APP_TABS: AppTabConfig[] = [
     name: "explore",
     label: "Khám phá",
     href: "/explore",
-    icon: "dashboardOutline",
-    activeIcon: "dashboardFill",
+    icon: <Widget />,
+    activeIcon: <Widget weight="Filled" />,
     requiredPermissions: [],
     display: false,
   },

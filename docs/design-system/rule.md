@@ -109,13 +109,13 @@ Do not introduce a new visual primitive if the only difference is a local margin
 
 ## 8. Icon rules
 
-The app already has a generated Figma icon registry in `src/theme/icons.ts` and SVG assets under `assets/icons/figma`.
+The app uses `reicon-react-native` icon components through `AppIcon`.
 
 Rules:
 
-- Prefer `AppIcon` for Figma-backed screens.
-- Add new exact Figma SVG assets to the registry when necessary.
-- Do not inline arbitrary SVG path data in screen files.
+- Prefer `AppIcon` for product UI and pass a Reicon element with `icon={<SomeIcon />}`.
+- Import the needed Reicon component at the usage site.
+- Do not add new app icon SVG assets or inline arbitrary SVG path data in screen files.
 - Do not use emoji as interface icons.
 - Do not introduce Lucide simply because it is convenient when the Figma glyph already exists.
 - Direct Lucide usage in older auth/home/debug screens is legacy, not a precedent for new visual work.

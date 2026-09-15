@@ -1,3 +1,4 @@
+import { Bell } from "reicon-react-native";
 import { useAuthSession } from '@/features/authentication';
 import { useNotificationStore } from '@/features/notification/store/notification.store';
 import { useRouter, type Href } from 'expo-router';
@@ -17,7 +18,7 @@ export function NotificationHeaderButton({ color }: { color?: string }) {
 
   return (
     <HeaderActionButton
-      icon="bellOutline"
+      icon={<Bell />}
       label="Thông báo"
       badge={badge}
       color={color}

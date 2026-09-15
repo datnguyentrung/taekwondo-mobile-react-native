@@ -1,7 +1,7 @@
 import { ThemedText } from "@/shared/ui/ThemedText";
 import { getWindowDimensions } from "@/shared/utils/windowDimensions";
 import { Colors, radii, typography } from "@/theme";
-import type { AppIconName } from "@/theme/icons";
+import type { AppIconElement } from "@/theme/icons";
 import { Image } from "expo-image";
 import type { ReactNode } from "react";
 import type { StyleProp, ViewStyle } from "react-native";
@@ -17,7 +17,7 @@ import { HeaderActionButton } from "../components/HeaderActionButton";
 const { height } = getWindowDimensions();
 
 export type HeaderAction = {
-  icon: AppIconName;
+  icon: AppIconElement;
   label: string;
   badge?: string | number;
   badgeVariant?: "dot" | "count";

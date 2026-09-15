@@ -216,21 +216,19 @@ Common useful alphas in current code are around 0.04, 0.08, 0.10, 0.20 and 0.30 
 
 ## Icon system
 
-The app's Figma icon pipeline is:
+The app icon pipeline is:
 
-`assets/icons/figma/*.svg`
-→ `scripts/generate-icons.js`
-→ generated `src/theme/icons.ts`
+`reicon-react-native`
+→ usage-site JSX icon import
 → `AppIcon`
 
 Rules:
 
-- `src/theme/icons.ts` is generated; do not manually edit it.
-- Add/replace the actual SVG asset, then run the icon generator.
-- Use `AppIcon` for Figma-backed product UI.
+- Use `AppIcon` for product UI.
+- Import the needed Reicon component where the icon is configured or rendered.
+- Pass the icon as JSX, for example `icon={<Calendar />}`.
 - Keep explicit width/height when the icon is not square.
-- Tint only when the source icon supports a single-color treatment.
-- Keep artwork and multi-color images as assets rather than coercing them through tint logic.
+- Keep artwork and multi-color images as image assets rather than coercing them through app icon logic.
 
 ## Screen geometry
 

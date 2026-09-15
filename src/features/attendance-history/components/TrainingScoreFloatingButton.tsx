@@ -1,3 +1,4 @@
+import { ChevronRight } from "reicon-react-native";
 import { Image } from 'expo-image';
 import { Pressable, StyleSheet, View } from 'react-native';
 import Svg, { Defs, LinearGradient, Rect, Stop } from 'react-native-svg';
@@ -45,8 +46,7 @@ export function TrainingScoreFloatingButton({
         <ThemedText type="caption" style={styles.text}>
           Điểm{'\n'}rèn luyện
         </ThemedText>
-        <AppIcon
-          name="chevronRight"
+        <AppIcon icon={<ChevronRight />}
           width={9}
           height={15}
           color={Colors.light.primary}

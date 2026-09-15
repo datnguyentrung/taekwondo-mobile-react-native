@@ -21,3 +21,18 @@ jest.mock("lucide-react-native", () => {
     },
   );
 });
+
+jest.mock(
+  "reicon-react-native",
+  () => {
+    const React = require("react");
+    const { View } = require("react-native");
+    return new Proxy(
+      {},
+      {
+        get: () => (props: object) => React.createElement(View, props),
+      },
+    );
+  },
+  { virtual: true },
+);

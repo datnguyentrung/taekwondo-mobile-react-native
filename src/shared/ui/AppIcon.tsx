@@ -1,11 +1,11 @@
-import { memo } from 'react';
-import type { StyleProp, ViewStyle } from 'react-native';
-import { SvgXml } from 'react-native-svg';
+import { cloneElement, isValidElement, memo } from "react";
+import type { StyleProp, ViewStyle } from "react-native";
+import type { IconProps } from "reicon-react-native";
 
-import { appIcons, type AppIconName } from '@/theme/icons';
+import type { AppIconElement } from "@/theme/icons";
 
 export type AppIconProps = {
-  name: AppIconName;
+  icon: AppIconElement;
   size?: number;
   width?: number;
   height?: number;
@@ -13,39 +13,46 @@ export type AppIconProps = {
   style?: StyleProp<ViewStyle>;
 };
 
-type SvgImport = string | { default?: string };
-
-function resolveSvgXml(icon: SvgImport | undefined) {
-  if (typeof icon === 'string') return icon;
-  if (typeof icon?.default === 'string') return icon.default;
-  return null;
-}
-
-function tintSvg(svg: string, color?: string) {
-  if (!color) {
-    return svg;
-  }
-
-  return svg
-    .replace(/fill="(?!none|url\()[^"]*"/g, `fill="${color}"`)
-    .replace(/stroke="(?!none|url\()[^"]*"/g, `stroke="${color}"`);
-}
-
-function AppIconComponent({ name, size = 24, width, height, color, style }: AppIconProps) {
-  const icon = resolveSvgXml(appIcons[name] as SvgImport | undefined);
-
-  if (!icon) {
+function AppIconComponent({
+  icon,
+  size,
+  width,
+  height,
+  color,
+  style,
+}: AppIconProps) {
+  if (!isValidElement<IconProps>(icon)) {
     return null;
   }
 
-  return (
-    <SvgXml
-      xml={tintSvg(icon, color)}
-      width={width ?? size}
-      height={height ?? size}
-      style={style}
-    />
-  );
+  const resolvedSize = size ?? Math.max(width ?? 24, height ?? 24);
+
+  const overrideProps: Partial<IconProps> = {
+    size: resolvedSize,
+  };
+
+  const resolvedWidth = width ?? icon.props.width;
+  if (resolvedWidth !== undefined) {
+    overrideProps.width = resolvedWidth;
+  }
+
+  const resolvedHeight = height ?? icon.props.height;
+  if (resolvedHeight !== undefined) {
+    overrideProps.height = resolvedHeight;
+  }
+
+  const resolvedColor = color ?? icon.props.color;
+  if (resolvedColor !== undefined) {
+    overrideProps.color = resolvedColor;
+  }
+
+  if (style || icon.props.style) {
+    overrideProps.style = style
+      ? [icon.props.style, style]
+      : icon.props.style;
+  }
+
+  return cloneElement(icon, overrideProps);
 }
 
 export const AppIcon = memo(AppIconComponent);

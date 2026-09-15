@@ -1,11 +1,11 @@
 import { AppIcon } from "@/shared/ui/AppIcon";
 import { ThemedText } from "@/shared/ui/ThemedText";
 import { Colors, radii } from "@/theme";
-import type { AppIconName } from "@/theme/icons";
+import type { AppIconElement } from "@/theme/icons";
 import { Platform, Pressable, StyleSheet, View } from "react-native";
 
 export type HeaderActionButtonProps = {
-  icon: AppIconName;
+  icon: AppIconElement;
   label: string;
   badge?: string | number;
   badgeVariant?: "dot" | "count";
@@ -38,7 +38,7 @@ export function HeaderActionButton({
       testID={testID}
       style={({ pressed }) => [styles.button, pressed ? styles.pressed : null]}
     >
-      <AppIcon name={icon} size={29} color={color} />
+      <AppIcon icon={icon} size={29} color={color} />
       {hasBadge ? (
         <View
           style={[

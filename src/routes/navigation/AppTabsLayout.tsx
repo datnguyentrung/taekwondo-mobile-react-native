@@ -68,7 +68,7 @@ function TabButton({ tab, isFocused, ...props }: TabButtonProps) {
         ]}
       >
         <View style={styles.centerButton}>
-          <AppIcon name={iconName} size={32} color={Colors.light.surface} />
+          <AppIcon icon={iconName} size={40} color={Colors.light.surface} />
         </View>
       </Pressable>
     );
@@ -85,7 +85,7 @@ function TabButton({ tab, isFocused, ...props }: TabButtonProps) {
         pressed ? styles.pressed : null,
       ]}
     >
-      <AppIcon name={iconName} size={30} color={iconColor} />
+      <AppIcon icon={iconName} size={35} color={iconColor} />
       <ThemedText
         type="featureLabel"
         style={[styles.tabLabel, active ? styles.tabLabelActive : null]}
@@ -129,7 +129,7 @@ const styles = StyleSheet.create({
   },
   tabButton: {
     flex: 1,
-    minHeight: 62,
+    // minHeight: 62,
     alignItems: "center",
     justifyContent: "center",
     gap: 1,
@@ -141,8 +141,8 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   centerButton: {
-    width: 46,
-    height: 46,
+    width: 50,
+    height: 50,
     borderRadius: radii.md,
     backgroundColor: Colors.light.primary,
     alignItems: "center",

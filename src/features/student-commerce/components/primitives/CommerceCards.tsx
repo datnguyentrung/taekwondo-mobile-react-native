@@ -1,3 +1,4 @@
+import { Layers, NoteText, User } from "reicon-react-native";
 import { Pressable, StyleSheet, View } from "react-native";
 
 import { AppIcon } from "@/shared/ui/AppIcon";
@@ -20,7 +21,7 @@ export function StudentSummaryCard({
   return (
     <SurfaceCard style={styles.studentSummary}>
       <View style={styles.avatar}>
-        <AppIcon name="personFill" size={26} color={Colors.light.primary} />
+        <AppIcon icon={<User weight="Filled" />} size={26} color={Colors.light.primary} />
       </View>
       <View style={styles.flex}>
         <ThemedText type="title" numberOfLines={1} style={styles.blackText}>
@@ -38,8 +39,7 @@ export function StudentSummaryCard({
 export function CourseIconBox({ size = 40 }: { size?: number }) {
   return (
     <View style={[styles.iconBox, { width: size, height: size }]}>
-      <AppIcon
-        name="layersFill"
+      <AppIcon icon={<Layers weight="Filled" />}
         size={Math.min(size - 14, 26)}
         color={Colors.light.text}
       />
@@ -171,7 +171,7 @@ export function TransactionCard({
   return (
     <SurfaceCard soft style={styles.transactionCard}>
       <View style={styles.row}>
-        <AppIcon name="noteText" size={22} color={Colors.light.text} />
+        <AppIcon icon={<NoteText />} size={22} color={Colors.light.text} />
         <View style={styles.flex}>
           <ThemedText
             type={transaction.title.length > 12 ? "action" : "bodySmall"}

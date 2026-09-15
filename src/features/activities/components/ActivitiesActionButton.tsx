@@ -1,9 +1,10 @@
 import { Pressable, StyleSheet, View } from "react-native";
+import { AddCircle, MinusCircle } from "reicon-react-native";
 
 import { AppIcon } from "@/shared/ui/AppIcon";
 import { ThemedText } from "@/shared/ui/ThemedText";
 import { Colors, effects, figmaColors, hexToRgba, typography } from "@/theme";
-import type { ActivitiesAction } from "./activities.constants";
+import type { ActivitiesAction } from "@/features/activities/domain/activities.types";
 
 export type ActivitiesActionVariant = "quick" | "default";
 
@@ -23,8 +24,6 @@ export function ActivitiesActionButton({
   onPress,
 }: ActivitiesActionButtonProps) {
   const isQuick = variant === "quick";
-  const badgeName = isQuick ? "featureBadgeMinus" : "featureBadgePlus";
-
   return (
     <Pressable
       accessibilityRole="button"
@@ -35,14 +34,37 @@ export function ActivitiesActionButton({
       <View
         style={[styles.tile, isQuick ? styles.quickTile : styles.defaultTile]}
       >
-        <AppIcon name={action.icon} size={38} color={Colors.light.primary} />
+        <AppIcon icon={action.icon} size={35} color={Colors.light.primary} />
         {isEditingQuick ? (
-          <AppIcon
-            name={badgeName}
-            size={22}
-            style={styles.badge}
-            color={Colors.light.primary}
-          />
+          <View style={styles.badge}>
+            {isQuick ? (
+              <>
+                <AppIcon
+                  icon={<MinusCircle weight="Filled" />}
+                  size={30}
+                  color={Colors.light.primary}
+                />
+                <AppIcon
+                  icon={<MinusCircle color="white" />}
+                  size={30}
+                  style={StyleSheet.absoluteFill}
+                />
+              </>
+            ) : (
+              <>
+                <AppIcon
+                  icon={<AddCircle weight="Filled" />}
+                  size={30}
+                  color={Colors.light.success}
+                />
+                <AppIcon
+                  icon={<AddCircle color="white" />}
+                  size={30}
+                  style={StyleSheet.absoluteFill}
+                />
+              </>
+            )}
+          </View>
         ) : null}
       </View>
       <ThemedText
@@ -81,8 +103,8 @@ const styles = StyleSheet.create({
   },
   badge: {
     position: "absolute",
-    top: -5,
-    right: -8,
+    top: -10,
+    right: -12,
   },
   label: {
     width: "90%",

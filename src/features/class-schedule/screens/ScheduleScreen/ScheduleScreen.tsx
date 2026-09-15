@@ -1,3 +1,4 @@
+import { Tuning } from "reicon-react-native";
 import { useMemo, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
@@ -41,7 +42,7 @@ export default function ScheduleScreen() {
         rightActions={
           <>
             <HeaderActionButton
-              icon="sliders"
+              icon={<Tuning />}
               label="Lọc lịch học"
               badge={appliedCount || undefined}
               color={Colors.light.surface}

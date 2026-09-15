@@ -1,12 +1,13 @@
+import { Clock } from "reicon-react-native";
 import { Pressable, StyleSheet, View } from "react-native";
 
 import { AppIcon } from "@/shared/ui/AppIcon";
 import { ThemedText } from "@/shared/ui/ThemedText";
 import { Colors, hexToRgba, radii } from "@/theme";
-import type { AppIconName } from "@/theme/icons";
+import type { AppIconElement } from "@/theme/icons";
 
 export type NotificationStateViewProps = {
-  icon: AppIconName;
+  icon: AppIconElement;
   title: string;
   description: string;
   actionLabel?: string;
@@ -23,7 +24,7 @@ export function NotificationStateView({
   return (
     <View style={styles.container}>
       <View style={styles.iconWrap}>
-        <AppIcon name={icon} size={30} color={Colors.light.primary} />
+        <AppIcon icon={icon} size={30} color={Colors.light.primary} />
       </View>
       <ThemedText type="title" style={styles.title}>
         {title}
@@ -41,7 +42,7 @@ export function NotificationStateView({
             pressed ? styles.pressed : null,
           ]}
         >
-          <AppIcon name="clockOutline" size={17} color={Colors.light.surface} />
+          <AppIcon icon={<Clock />} size={17} color={Colors.light.surface} />
           <ThemedText type="action" style={styles.actionText}>
             {actionLabel}
           </ThemedText>

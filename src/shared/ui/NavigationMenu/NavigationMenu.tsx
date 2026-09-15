@@ -1,3 +1,4 @@
+import { ChevronRight } from "reicon-react-native";
 import {
   Children,
   cloneElement,
@@ -22,11 +23,11 @@ import {
   hexToRgba,
   radii,
   typography,
-  type AppIconName,
+  type AppIconElement,
 } from "@/theme";
 
 export type NavigationMenuItemProps = {
-  icon?: AppIconName;
+  icon?: AppIconElement;
   title: string;
   subtitle?: string;
   count?: number | string;
@@ -75,10 +76,10 @@ export function NavigationMenuItem({
       {icon ? (
         iconBox ? (
           <View style={styles.iconBox}>
-            <AppIcon name={icon} size={26} color={resolvedIconColor} />
+            <AppIcon icon={icon} size={26} color={resolvedIconColor} />
           </View>
         ) : (
-          <AppIcon name={icon} size={24} color={resolvedIconColor} />
+          <AppIcon icon={icon} size={24} color={resolvedIconColor} />
         )
       ) : null}
 
@@ -94,8 +95,7 @@ export function NavigationMenuItem({
       </View>
 
       {showChevron ? (
-        <AppIcon
-          name="chevronRight"
+        <AppIcon icon={<ChevronRight />}
           width={9}
           height={15}
           color={Colors.light.icon}
