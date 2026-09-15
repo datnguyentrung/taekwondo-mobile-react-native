@@ -30,18 +30,18 @@ export const ACTIVITIES_GROUPS: GroupActivitiesAction[] = [
       },
       {
         id: "student-list",
-        label: "Danh sách học viên",
+        label: "Học viên",
         icon: "listCheck",
         defaultQuick: true,
       },
       {
         id: "course-list",
         label: "Khóa học",
-        icon: "databaseFill",
+        icon: "bookOutline",
       },
       {
         id: "coach-list",
-        label: "Danh sách HLV",
+        label: "Huấn luyện viên",
         icon: "featureCoachList",
         defaultQuick: true,
       },
