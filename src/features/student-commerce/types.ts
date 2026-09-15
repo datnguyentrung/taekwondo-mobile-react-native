@@ -14,6 +14,8 @@ export type StudentSummaryView = {
   statusLabel: string;
 };
 
+export type CourseRegistrationStudentView = StudentSummaryView;
+
 export type WalletSummaryView = {
   walletId: string;
   balance: number;
@@ -53,6 +55,11 @@ export type CourseView = {
   assistantCount?: number;
   packages: CoursePackageView[];
 };
+
+export type CourseRegistrationCourseView = Pick<
+  CourseView,
+  'courseId' | 'courseName' | 'branchName' | 'scheduleLabel' | 'statusLabel'
+>;
 
 export type CourseEnrollmentView = {
   enrollmentId: string;

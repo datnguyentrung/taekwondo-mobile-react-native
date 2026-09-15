@@ -14,6 +14,10 @@ import {
   useSafeAreaInsets,
 } from "react-native-safe-area-context";
 
+import {
+  StatusBadge as SharedStatusBadge,
+  type StatusBadgeTone,
+} from "@/shared/ui/StatusBadge";
 import { ThemedText } from "@/shared/ui/ThemedText";
 import { Colors, effects, radii } from "@/theme";
 
@@ -33,14 +37,14 @@ export function SurfaceCard({
   );
 }
 
-export function StatusBadge({ label }: { label: string }) {
-  return (
-    <View style={styles.badge}>
-      <ThemedText type="featureLabel" style={styles.badgeText}>
-        {label}
-      </ThemedText>
-    </View>
-  );
+export function StatusBadge({
+  label,
+  tone = "primary",
+}: {
+  label: string;
+  tone?: StatusBadgeTone;
+}) {
+  return <SharedStatusBadge label={label} tone={tone} />;
 }
 
 export function PrimaryActionButton({
@@ -182,22 +186,8 @@ const styles = StyleSheet.create({
     shadowOpacity: 0,
     elevation: 0,
   },
-  badge: {
-    minHeight: 30,
-    alignItems: "center",
-    justifyContent: "center",
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderWidth: 1,
-    borderColor: Colors.light.divider,
-    borderRadius: radii.pill,
-    backgroundColor: Colors.light.backgroundElement,
-  },
-  badgeText: {
-    color: Colors.light.textSecondary,
-  },
   actionButton: {
-    minHeight: 48,
+    minHeight: 38,
     minWidth: 84,
     alignItems: "center",
     justifyContent: "center",

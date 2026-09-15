@@ -4,6 +4,10 @@ import { StyleSheet, View } from "react-native";
 import StackScreenLayout from "@/routes/navigation/layouts/StackScreenLayout";
 import { AppIcon } from "@/shared/ui/AppIcon";
 import { ThemedText } from "@/shared/ui/ThemedText";
+import {
+  NavigationMenu,
+  NavigationMenuItem,
+} from "@/shared/ui/NavigationMenu/NavigationMenu";
 import { Colors, radii } from "@/theme";
 
 import {
@@ -74,45 +78,26 @@ export function AdminCourseDetailScreen({ courseId }: CourseRouteProps) {
           </ThemedText>
         </View>
       </SurfaceCard>
-      <SurfaceCard>
-        <ThemedText type="title" style={styles.blackText}>
-          Trợ giảng {course.assistantCount ?? 2} người
-        </ThemedText>
-        <ThemedText type="bodySmall" style={styles.blackText}>
-          Dữ liệu hiện tại chỉ có số lượng; không tạo tên trợ giảng giả.
-        </ThemedText>
-      </SurfaceCard>
-      <SurfaceCard>
-        <ThemedText type="title" style={styles.blackText}>
-          Học viên {course.enrolledStudentCount ?? 18} học viên
-        </ThemedText>
-        <ThemedText type="bodySmall" style={styles.blackText}>
-          Danh sách hiển thị theo enrollment ACTIVE của khóa học tại thời điểm
-          hiện tại.
-        </ThemedText>
-        {state.students.map((student) => (
-          <View key={student.studentCode} style={styles.studentLine}>
-            <View style={styles.personBubble}>
-              <AppIcon
-                name="personOutline"
-                size={22}
-                color={Colors.light.text}
-              />
-            </View>
-            <View>
-              <ThemedText type="bodySmall" style={styles.blackText}>
-                {student.fullName}
-              </ThemedText>
-              <ThemedText type="bodySmall" style={styles.blackText}>
-                {student.studentCode}
-              </ThemedText>
-            </View>
-          </View>
-        ))}
-        <ThemedText type="title" style={styles.blackText}>
-          Cuộn xuống để xem tiếp danh sách học viên.
-        </ThemedText>
-      </SurfaceCard>
+      <NavigationMenu>
+        <NavigationMenuItem
+          icon="personOutline"
+          title="Trợ giảng"
+          count={course.assistantCount ?? 2}
+          subtitle="Danh sách trợ giảng của khóa học"
+          onPress={() =>
+            router.push(asHref(`/courses/${course.courseId}/assistants`))
+          }
+        />
+        <NavigationMenuItem
+          icon="personOutline"
+          title="Học viên"
+          count={course.enrolledStudentCount ?? 0}
+          subtitle="Enrollment ACTIVE của khóa học"
+          onPress={() =>
+            router.push(asHref(`/courses/${course.courseId}/students`))
+          }
+        />
+      </NavigationMenu>
       <PrimaryActionButton
         title="Đăng ký học viên"
         onPress={() =>
@@ -148,19 +133,5 @@ const styles = StyleSheet.create({
     borderRadius: radii.md,
     backgroundColor: Colors.light.surface,
   },
-  studentLine: {
-    minHeight: 60,
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 10,
-    paddingVertical: 10,
-  },
-  personBubble: {
-    width: 40,
-    height: 40,
-    alignItems: "center",
-    justifyContent: "center",
-    borderRadius: radii.pill,
-    backgroundColor: Colors.light.backgroundElement,
-  },
+
 });

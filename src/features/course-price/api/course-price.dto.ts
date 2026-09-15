@@ -22,6 +22,8 @@ export interface CoursePriceResponse {
 }
 
 export interface CoursePriceListParams {
+  courseId?: string;
+  status?: CoursePriceStatus;
   page?: number;
   size?: number;
   sort?: string | string[];

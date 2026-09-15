@@ -38,6 +38,8 @@ export interface CourseScheduleChangeResponse {
 }
 
 export interface CourseListParams {
+  search?: string;
+  status?: CourseStatus;
   page?: number;
   size?: number;
   sort?: string | string[];

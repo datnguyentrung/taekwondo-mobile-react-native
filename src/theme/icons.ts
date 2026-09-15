@@ -37,7 +37,9 @@ import fiRrArrowSmallUp from '../../assets/icons/figma/fi-rr-arrow-small-up.svg'
 import fiRrBuilding from '../../assets/icons/figma/fi-rr-building.svg';
 import fiRrInfo from '../../assets/icons/figma/fi-rr-info.svg';
 import fiRrStats from '../../assets/icons/figma/fi-rr-stats.svg';
+import fileOutline from '../../assets/icons/figma/file-outline.svg';
 import filter from '../../assets/icons/figma/filter.svg';
+import giftOutline from '../../assets/icons/figma/gift-outline.svg';
 import headphonesFill from '../../assets/icons/figma/headphones-fill.svg';
 import headphones from '../../assets/icons/figma/headphones.svg';
 import homeFill from '../../assets/icons/figma/home-fill.svg';
@@ -73,8 +75,10 @@ import profileUser from '../../assets/icons/figma/profile-user.svg';
 import profileWeight from '../../assets/icons/figma/profile-weight.svg';
 import qrCodeOutline from '../../assets/icons/figma/qr-code-outline.svg';
 import qrCode from '../../assets/icons/figma/qr-code.svg';
+import shieldCheckOutline from '../../assets/icons/figma/shield-check-outline.svg';
 import sliders from '../../assets/icons/figma/sliders.svg';
 import star from '../../assets/icons/figma/star.svg';
+import tagOutline from '../../assets/icons/figma/tag-outline.svg';
 import verified from '../../assets/icons/figma/verified.svg';
 import walletMark from '../../assets/icons/figma/wallet-mark.svg';
 import wallet from '../../assets/icons/figma/wallet.svg';
@@ -119,7 +123,9 @@ export const appIcons = {
   fiRrBuilding,
   fiRrInfo,
   fiRrStats,
+  fileOutline,
   filter,
+  giftOutline,
   headphonesFill,
   headphones,
   homeFill,
@@ -155,8 +161,10 @@ export const appIcons = {
   profileWeight,
   qrCodeOutline,
   qrCode,
+  shieldCheckOutline,
   sliders,
   star,
+  tagOutline,
   verified,
   walletMark,
   wallet,
