@@ -1,4 +1,3 @@
-import { ChevronLeft } from "reicon-react-native";
 import { AppIcon } from "@/shared/ui/AppIcon";
 import { ThemedText } from "@/shared/ui/ThemedText";
 import { getWindowDimensions } from "@/shared/utils/windowDimensions";
@@ -12,6 +11,7 @@ import {
   SafeAreaView,
   useSafeAreaInsets,
 } from "react-native-safe-area-context";
+import { ChevronLeft } from "reicon-react-native";
 import { DefaultHeaderActions } from "../components/DefaultHeaderActions";
 import { HeaderActionButton } from "../components/HeaderActionButton";
 
@@ -64,11 +64,7 @@ export default function StackScreenLayout({
               pressed ? styles.pressed : null,
             ]}
           >
-            <AppIcon icon={<ChevronLeft />}
-              width={12}
-              height={20}
-              color={actionColor}
-            />
+            <AppIcon icon={<ChevronLeft />} color={actionColor} />
           </Pressable>
           <ThemedText type="heading" style={styles.title}>
             {title}
@@ -82,7 +78,7 @@ export default function StackScreenLayout({
                     color={action.color ?? actionColor}
                   />
                 ))
-              : rightActions ?? <DefaultHeaderActions color={actionColor} />}
+              : (rightActions ?? <DefaultHeaderActions color={actionColor} />)}
           </View>
         </View>
       </View>

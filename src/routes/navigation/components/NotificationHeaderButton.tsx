@@ -1,9 +1,9 @@
+import { useAuthSession } from "@/features/authentication";
+import { useNotificationStore } from "@/features/notification/store/notification.store";
+import { useRouter, type Href } from "expo-router";
 import { Bell } from "reicon-react-native";
-import { useAuthSession } from '@/features/authentication';
-import { useNotificationStore } from '@/features/notification/store/notification.store';
-import { useRouter, type Href } from 'expo-router';
 
-import { HeaderActionButton } from './HeaderActionButton';
+import { HeaderActionButton } from "./HeaderActionButton";
 
 export function NotificationHeaderButton({ color }: { color?: string }) {
   const router = useRouter();
@@ -12,7 +12,7 @@ export function NotificationHeaderButton({ color }: { color?: string }) {
   const { isAuthenticated } = useAuthSession();
   const unreadCount = useNotificationStore((state) => state.unreadCount);
   const badge =
-    unreadCount > 99 ? '99+' : unreadCount > 0 ? unreadCount : undefined;
+    unreadCount > 99 ? "99+" : unreadCount > 0 ? unreadCount : undefined;
 
   if (!isAuthenticated) return null;
 
@@ -22,7 +22,7 @@ export function NotificationHeaderButton({ color }: { color?: string }) {
       label="Thông báo"
       badge={badge}
       color={color}
-      onPress={() => router.navigate('/notifications' as Href)}
+      onPress={() => router.navigate("/notifications" as Href)}
       testID="notification-header-button"
     />
   );
