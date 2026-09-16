@@ -1,33 +1,49 @@
-import type { HistoryRecordViewModel } from '../../domain/historyMappers';
 import {
   DEFAULT_HISTORY_YEAR,
-  type CalendarQuarter,
   getCalendarQuarterDateRange,
   getDefaultHistoryYears,
   QUARTER_OPTIONS,
-} from '../../domain/historyDateRange';
+  type CalendarQuarter,
+} from "../../domain/historyDateRange";
+import type { HistoryRecordViewModel } from "../../domain/historyMappers";
 import type {
   HistoryFilterOption,
   HistoryFilterState,
   HistoryMultiFilterGroup,
   HistorySingleFilterGroup,
-} from './historyFilter.types';
+} from "./historyFilter.types";
 
 export const emptyHistoryFilters: HistoryFilterState = {
   branchIds: [],
   shifts: [],
 };
 
+const VIETNAMESE_DAYS = [
+  "Chủ Nhật",
+  "Thứ Hai",
+  "Thứ Ba",
+  "Thứ Tư",
+  "Thứ Năm",
+  "Thứ Sáu",
+  "Thứ Bảy",
+];
+
 export type HistoryDateGroup = {
   dateLabel: string;
   formattedDateHeader: string;
+  countLabel: string;
   records: HistoryRecordViewModel[];
 };
 
 export function formatGroupDateHeader(dateLabel: string): string {
-  const parts = dateLabel.split('-');
+  const parts = dateLabel.split("-");
   if (parts.length === 3) {
     const [day, month, year] = parts;
+    const dateObj = new Date(Number(year), Number(month) - 1, Number(day));
+    if (!Number.isNaN(dateObj.getTime())) {
+      const dayOfWeek = VIETNAMESE_DAYS[dateObj.getDay()];
+      return `${dayOfWeek}, ${day}/${month}/${year}`;
+    }
     return `Ngày ${day}/${month}/${year}`;
   }
   return `Ngày ${dateLabel}`;
@@ -35,17 +51,19 @@ export function formatGroupDateHeader(dateLabel: string): string {
 
 export function groupHistoryRecordsByDate(
   records: HistoryRecordViewModel[],
+  mode: "student" | "coach" = "student",
 ): HistoryDateGroup[] {
   const groups: HistoryDateGroup[] = [];
   const map = new Map<string, HistoryDateGroup>();
 
   for (const record of records) {
-    const dateKey = record.dateLabel || 'Khác';
+    const dateKey = record.dateLabel || "Khác";
     let group = map.get(dateKey);
     if (!group) {
       group = {
         dateLabel: dateKey,
         formattedDateHeader: formatGroupDateHeader(dateKey),
+        countLabel: "",
         records: [],
       };
       map.set(dateKey, group);
@@ -54,9 +72,13 @@ export function groupHistoryRecordsByDate(
     group.records.push(record);
   }
 
+  const unit = mode === "student" ? "học viên" : "ca";
+  for (const group of groups) {
+    group.countLabel = `${group.records.length} ${unit}`;
+  }
+
   return groups;
 }
-
 
 export function countSelectedHistoryFilters(filters: HistoryFilterState) {
   return (
@@ -92,7 +114,10 @@ export function filterHistoryRecords(
       return false;
     }
 
-    if (dateRange && !isDisplayDateInRange(record.dateLabel, dateRange.from, dateRange.to)) {
+    if (
+      dateRange &&
+      !isDisplayDateInRange(record.dateLabel, dateRange.from, dateRange.to)
+    ) {
       return false;
     }
 
@@ -113,8 +138,8 @@ export function getHistoryFilterGroups(records: HistoryRecordViewModel[]): {
   return {
     multi: [
       {
-        key: 'branchIds',
-        title: 'Cơ sở',
+        key: "branchIds",
+        title: "Cơ sở",
         options: uniqueOptions(
           records.map((record) => ({
             value: getBranchId(record.branchLabel),
@@ -123,8 +148,8 @@ export function getHistoryFilterGroups(records: HistoryRecordViewModel[]): {
         ),
       },
       {
-        key: 'shifts',
-        title: 'Ca',
+        key: "shifts",
+        title: "Ca",
         options: uniqueOptions(
           records.map((record) => ({
             value: record.shiftLabel,
@@ -134,16 +159,16 @@ export function getHistoryFilterGroups(records: HistoryRecordViewModel[]): {
       },
     ],
     years: {
-      key: 'year',
-      title: 'Năm học',
+      key: "year",
+      title: "Năm học",
       options: getDefaultHistoryYears(DEFAULT_HISTORY_YEAR).map((year) => ({
         value: year,
         label: String(year),
       })),
     },
     quarters: {
-      key: 'quarter',
-      title: 'Quý',
+      key: "quarter",
+      title: "Quý",
       options: QUARTER_OPTIONS.map((quarter) => ({
         value: quarter,
         label: String(quarter),
@@ -175,7 +200,7 @@ function isDisplayDateInRange(displayDate: string, from: string, to: string) {
 }
 
 function parseDisplayDate(displayDate: string) {
-  const [day, month, year] = displayDate.split('-');
+  const [day, month, year] = displayDate.split("-");
   if (!day || !month || !year) return null;
   return `${year}-${month}-${day}`;
 }

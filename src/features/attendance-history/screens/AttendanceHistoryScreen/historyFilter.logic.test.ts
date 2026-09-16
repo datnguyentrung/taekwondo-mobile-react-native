@@ -86,18 +86,20 @@ describe('historyFilter.logic', () => {
     ]);
   });
 
-  it('groups history records by date with formatted header', () => {
-    const grouped = groupHistoryRecordsByDate(records);
+  it('groups history records by date with formatted header and count label', () => {
+    const grouped = groupHistoryRecordsByDate(records, 'student');
 
     expect(grouped).toHaveLength(2);
     expect(grouped[0]).toEqual({
       dateLabel: '09-08-2026',
-      formattedDateHeader: 'Ngày 09/08/2026',
+      formattedDateHeader: 'Chủ Nhật, 09/08/2026',
+      countLabel: '2 buổi',
       records: [records[0], records[1]],
     });
     expect(grouped[1]).toEqual({
       dateLabel: '15-04-2026',
-      formattedDateHeader: 'Ngày 15/04/2026',
+      formattedDateHeader: 'Thứ Tư, 15/04/2026',
+      countLabel: '1 buổi',
       records: [records[2]],
     });
   });

@@ -1,5 +1,11 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { ActivityIndicator, Pressable, StyleSheet, View } from "react-native";
+import {
+  ActivityIndicator,
+  Pressable,
+  SectionList,
+  StyleSheet,
+  View,
+} from "react-native";
 import { Calendar, Tuning } from "reicon-react-native";
 
 import { DefaultHeaderActions } from "@/routes/navigation/components/DefaultHeaderActions";
@@ -8,7 +14,7 @@ import StackScreenLayout from "@/routes/navigation/layouts/StackScreenLayout";
 import { AppIcon } from "@/shared/ui/AppIcon";
 import { BottomSheetWindow } from "@/shared/ui/BottomSheetWindow";
 import { ThemedText } from "@/shared/ui/ThemedText";
-import { Colors } from "@/theme";
+import { Colors, radii } from "@/theme";
 
 import { HistoryRecordCard } from "../components/HistoryRecordCard";
 import { HistorySelectSheet } from "../components/HistorySelectSheet";
@@ -73,6 +79,7 @@ export default function AttendanceHistoryScreen({
     records: visibleRecords,
     isLoading,
     isError,
+    strategy,
     refetch,
   } = useAttendanceHistoryQuery({
     mode,
@@ -81,9 +88,22 @@ export default function AttendanceHistoryScreen({
   });
 
   const groupedRecords = useMemo(
-    () => groupHistoryRecordsByDate(visibleRecords),
-    [visibleRecords],
+    () => groupHistoryRecordsByDate(visibleRecords, mode),
+    [visibleRecords, mode],
   );
+
+  const sections = useMemo(
+    () =>
+      groupedRecords.map((group) => ({
+        dateLabel: group.dateLabel,
+        formattedDateHeader: group.formattedDateHeader,
+        countLabel: group.countLabel,
+        data: group.records,
+      })),
+    [groupedRecords],
+  );
+
+  const isStickyHeaderEnabled = strategy === "server-filter";
 
   const selectedRange = hasSearched ? getHistoryFilterDateRange(filters) : null;
   const title = mode === "student" ? "Điểm danh" : "Chấm công";
@@ -173,6 +193,7 @@ export default function AttendanceHistoryScreen({
     <>
       <StackScreenLayout
         title={title}
+        scrollEnabled={!isStickyHeaderEnabled}
         rightActions={
           <>
             {hasSearched ? (
@@ -196,72 +217,162 @@ export default function AttendanceHistoryScreen({
           ) : undefined
         }
       >
-        <HistoryPeriodSearchForm
-          selectedYear={selectedYear}
-          selectedQuarter={selectedQuarter}
-          quarterError={quarterError}
-          searchEnabled={searchEnabled}
-          selectedRange={selectedRange}
-          onYearPress={handleYearPress}
-          onQuarterPress={handleQuarterPress}
-          onSearch={handleSearch}
-        />
-
-        {hasSearched ? (
-          isLoading ? (
-            <View style={styles.centerContainer}>
-              <ActivityIndicator size="large" color={Colors.light.primary} />
-              <ThemedText type="bodySmall" style={styles.loadingText}>
-                Đang tải dữ liệu...
-              </ThemedText>
-            </View>
-          ) : isError ? (
-            <View style={styles.centerContainer}>
-              <ThemedText type="body" style={styles.emptyTitle}>
-                Không thể tải dữ liệu lịch sử
-              </ThemedText>
-              <ThemedText type="bodySmall" style={styles.emptyDescription}>
-                Đã xảy ra lỗi trong quá trình tải. Vui lòng thử lại.
-              </ThemedText>
-              <Pressable style={styles.retryButton} onPress={() => refetch()}>
-                <ThemedText type="bodySmall" style={styles.retryText}>
-                  Thử lại
-                </ThemedText>
-              </Pressable>
-            </View>
-          ) : visibleRecords.length ? (
-            <View style={styles.list}>
-              {groupedRecords.map((group) => (
-                <View key={group.dateLabel} style={styles.dateGroupContainer}>
-                  <View style={styles.dateHeaderRow}>
-                    <AppIcon
-                      icon={<Calendar />}
-                      size={18}
-                      color={Colors.light.primary}
-                    />
-                    <ThemedText type="subtitle" style={styles.dateHeaderText}>
-                      {group.formattedDateHeader}
+        {isStickyHeaderEnabled ? (
+          <SectionList
+            sections={hasSearched && visibleRecords.length ? sections : []}
+            keyExtractor={(item) => item.id}
+            stickySectionHeadersEnabled
+            showsVerticalScrollIndicator={false}
+            contentContainerStyle={styles.sectionListContent}
+            ListHeaderComponent={
+              <View style={styles.formContainer}>
+                <HistoryPeriodSearchForm
+                  selectedYear={selectedYear}
+                  selectedQuarter={selectedQuarter}
+                  quarterError={quarterError}
+                  searchEnabled={searchEnabled}
+                  selectedRange={selectedRange}
+                  onYearPress={handleYearPress}
+                  onQuarterPress={handleQuarterPress}
+                  onSearch={handleSearch}
+                />
+                {hasSearched && isLoading ? (
+                  <View style={styles.centerContainer}>
+                    <ActivityIndicator size="large" color={Colors.light.primary} />
+                    <ThemedText type="bodySmall" style={styles.loadingText}>
+                      Đang tải dữ liệu...
                     </ThemedText>
                   </View>
-                  <View style={styles.dateGroupCards}>
-                    {group.records.map((record) => (
-                      <HistoryRecordCard key={record.id} record={record} />
-                    ))}
+                ) : hasSearched && isError ? (
+                  <View style={styles.centerContainer}>
+                    <ThemedText type="body" style={styles.emptyTitle}>
+                      Không thể tải dữ liệu lịch sử
+                    </ThemedText>
+                    <ThemedText type="bodySmall" style={styles.emptyDescription}>
+                      Đã xảy ra lỗi trong quá trình tải. Vui lòng thử lại.
+                    </ThemedText>
+                    <Pressable style={styles.retryButton} onPress={() => refetch()}>
+                      <ThemedText type="bodySmall" style={styles.retryText}>
+                        Thử lại
+                      </ThemedText>
+                    </Pressable>
                   </View>
+                ) : null}
+              </View>
+            }
+            renderSectionHeader={({ section }) => (
+              <View style={styles.stickySectionHeader}>
+                <View style={styles.dateHeaderLeft}>
+                  <AppIcon
+                    icon={<Calendar />}
+                    size={18}
+                    color={Colors.light.primary}
+                  />
+                  <ThemedText type="subtitle" style={styles.dateHeaderText}>
+                    {section.formattedDateHeader}
+                  </ThemedText>
                 </View>
-              ))}
-            </View>
-          ) : (
-            <View style={styles.emptyState}>
-              <ThemedText type="body" style={styles.emptyTitle}>
-                Không có lịch sử phù hợp
-              </ThemedText>
-              <ThemedText type="bodySmall" style={styles.emptyDescription}>
-                Thử đổi cơ sở, ca hoặc kỳ lọc để xem thêm kết quả.
-              </ThemedText>
-            </View>
-          )
-        ) : null}
+                <View style={styles.countBadge}>
+                  <ThemedText type="bodySmall" style={styles.countBadgeText}>
+                    {section.countLabel}
+                  </ThemedText>
+                </View>
+              </View>
+            )}
+            renderItem={({ item }) => (
+              <View style={styles.cardItemWrapper}>
+                <HistoryRecordCard record={item} />
+              </View>
+            )}
+            ListEmptyComponent={
+              hasSearched && !isLoading && !isError ? (
+                <View style={styles.emptyState}>
+                  <ThemedText type="body" style={styles.emptyTitle}>
+                    Không có lịch sử phù hợp
+                  </ThemedText>
+                  <ThemedText type="bodySmall" style={styles.emptyDescription}>
+                    Thử đổi cơ sở, ca hoặc kỳ lọc để xem thêm kết quả.
+                  </ThemedText>
+                </View>
+              ) : null
+            }
+          />
+        ) : (
+          <>
+            <HistoryPeriodSearchForm
+              selectedYear={selectedYear}
+              selectedQuarter={selectedQuarter}
+              quarterError={quarterError}
+              searchEnabled={searchEnabled}
+              selectedRange={selectedRange}
+              onYearPress={handleYearPress}
+              onQuarterPress={handleQuarterPress}
+              onSearch={handleSearch}
+            />
+
+            {hasSearched ? (
+              isLoading ? (
+                <View style={styles.centerContainer}>
+                  <ActivityIndicator size="large" color={Colors.light.primary} />
+                  <ThemedText type="bodySmall" style={styles.loadingText}>
+                    Đang tải dữ liệu...
+                  </ThemedText>
+                </View>
+              ) : isError ? (
+                <View style={styles.centerContainer}>
+                  <ThemedText type="body" style={styles.emptyTitle}>
+                    Không thể tải dữ liệu lịch sử
+                  </ThemedText>
+                  <ThemedText type="bodySmall" style={styles.emptyDescription}>
+                    Đã xảy ra lỗi trong quá trình tải. Vui lòng thử lại.
+                  </ThemedText>
+                  <Pressable style={styles.retryButton} onPress={() => refetch()}>
+                    <ThemedText type="bodySmall" style={styles.retryText}>
+                      Thử lại
+                    </ThemedText>
+                  </Pressable>
+                </View>
+              ) : visibleRecords.length ? (
+                <View style={styles.list}>
+                  {groupedRecords.map((group) => (
+                    <View key={group.dateLabel} style={styles.dateGroupContainer}>
+                      <View style={styles.dateHeaderRow}>
+                        <AppIcon
+                          icon={<Calendar />}
+                          size={18}
+                          color={Colors.light.primary}
+                        />
+                        <ThemedText type="subtitle" style={styles.dateHeaderText}>
+                          {group.formattedDateHeader}
+                        </ThemedText>
+                        <View style={styles.dateDivider} />
+                        <View style={styles.countBadge}>
+                          <ThemedText type="bodySmall" style={styles.countBadgeText}>
+                            {group.countLabel}
+                          </ThemedText>
+                        </View>
+                      </View>
+                      <View style={styles.dateGroupCards}>
+                        {group.records.map((record) => (
+                          <HistoryRecordCard key={record.id} record={record} />
+                        ))}
+                      </View>
+                    </View>
+                  ))}
+                </View>
+              ) : (
+                <View style={styles.emptyState}>
+                  <ThemedText type="body" style={styles.emptyTitle}>
+                    Không có lịch sử phù hợp
+                  </ThemedText>
+                  <ThemedText type="bodySmall" style={styles.emptyDescription}>
+                    Thử đổi cơ sở, ca hoặc kỳ lọc để xem thêm kết quả.
+                  </ThemedText>
+                </View>
+              )
+            ) : null}
+          </>
+        )}
       </StackScreenLayout>
 
       <HistorySelectSheet
@@ -334,28 +445,68 @@ export default function AttendanceHistoryScreen({
 
 const styles = StyleSheet.create({
   content: {
-    paddingTop: 32,
+    paddingTop: 24,
     paddingHorizontal: 20,
     paddingBottom: 34,
   },
+  sectionListContent: {
+    paddingBottom: 36,
+  },
+  formContainer: {
+    marginBottom: 16,
+  },
   list: {
-    gap: 24,
-    marginTop: 21,
+    gap: 28,
+    marginTop: 24,
     paddingBottom: 36,
   },
   dateGroupContainer: {
-    gap: 12,
+    gap: 14,
   },
   dateHeaderRow: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 8,
-    marginTop: 4,
+    gap: 10,
+    marginTop: 6,
     marginBottom: 2,
+  },
+  dateHeaderLeft: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
   },
   dateHeaderText: {
     color: Colors.light.text,
     fontWeight: "600",
+  },
+  dateDivider: {
+    flex: 1,
+    height: StyleSheet.hairlineWidth,
+    backgroundColor: Colors.light.divider,
+  },
+  countBadge: {
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: radii.pill,
+    backgroundColor: "#F3F4F6",
+  },
+  countBadgeText: {
+    color: Colors.light.primary,
+    fontWeight: "600",
+  },
+  stickySectionHeader: {
+    height: 46,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: 4,
+    backgroundColor: Colors.light.background,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: Colors.light.divider,
+    marginBottom: 12,
+  },
+  cardItemWrapper: {
+    marginBottom: 16,
   },
   dateGroupCards: {
     gap: 16,
@@ -364,7 +515,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     gap: 8,
-    paddingTop: 82,
+    paddingTop: 60,
     paddingHorizontal: 18,
   },
   emptyTitle: {
@@ -379,7 +530,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     gap: 12,
-    paddingTop: 82,
+    paddingTop: 60,
     paddingHorizontal: 18,
   },
   loadingText: {
@@ -398,4 +549,5 @@ const styles = StyleSheet.create({
     fontWeight: "600",
   },
 });
+
 
