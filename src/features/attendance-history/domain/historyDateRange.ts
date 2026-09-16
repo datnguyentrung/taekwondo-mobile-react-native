@@ -27,8 +27,18 @@ export function getCalendarQuarterDateRange(
   return { from, to };
 }
 
+export function getCurrentCalendarYear(now = new Date()): number {
+  return now.getFullYear();
+}
+
+export function getCurrentCalendarQuarter(now = new Date()): CalendarQuarter {
+  const month = now.getMonth();
+  return (Math.floor(month / 3) + 1) as CalendarQuarter;
+}
+
 function formatDate(year: number, zeroBasedMonth: number, day: number) {
   const month = String(zeroBasedMonth + 1).padStart(2, '0');
   const dayOfMonth = String(day).padStart(2, '0');
   return `${year}-${month}-${dayOfMonth}`;
 }
+

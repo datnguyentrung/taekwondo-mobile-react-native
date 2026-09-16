@@ -31,8 +31,8 @@ export function HistoryRecordCard({ record }: HistoryRecordCardProps) {
   return (
     <View style={styles.card}>
       <View style={styles.cardHeader}>
-        <ThemedText type="body" style={styles.dateText}>
-          {record.dateLabel}
+        <ThemedText type="body" numberOfLines={1} style={styles.nameText}>
+          {record.name}
         </ThemedText>
         <View
           style={[
@@ -59,22 +59,24 @@ export function HistoryRecordCard({ record }: HistoryRecordCardProps) {
         <MetaItem icon={<User />} label={record.statusLabel} />
       </View>
 
-      <View
-        style={[
-          styles.noteBox,
-          { borderColor: tone.text, backgroundColor: tone.background },
-        ]}
-      >
-        <ThemedText
-          type="body"
-          style={[styles.noteTitle, { color: tone.text }]}
+      {record.note && (
+        <View
+          style={[
+            styles.noteBox,
+            { borderColor: tone.text, backgroundColor: tone.background },
+          ]}
         >
-          {record.noteTitle}
-        </ThemedText>
-        <ThemedText type="bodySmall" numberOfLines={2} style={styles.note}>
-          {record.note}
-        </ThemedText>
-      </View>
+          <ThemedText
+            type="body"
+            style={[styles.noteTitle, { color: tone.text }]}
+          >
+            {record.noteTitle}
+          </ThemedText>
+          <ThemedText type="bodySmall" style={styles.note}>
+            {record.note}
+          </ThemedText>
+        </View>
+      )}
     </View>
   );
 }
@@ -92,12 +94,10 @@ function MetaItem({ icon, label }: { icon: AppIconElement; label: string }) {
 
 const styles = StyleSheet.create({
   card: {
-    minHeight: 156,
     borderRadius: radii.md,
     backgroundColor: Colors.light.surface,
     paddingHorizontal: 17,
-    // paddingTop: 10,
-    paddingBottom: 18,
+    paddingBottom: 16,
     ...effects.card,
   },
   cardHeader: {
@@ -106,6 +106,18 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "space-between",
     paddingVertical: 10,
+    gap: 8,
+  },
+  headerTitleContainer: {
+    flex: 1,
+    minWidth: 0,
+    justifyContent: "center",
+  },
+  nameText: {
+    color: Colors.light.text,
+  },
+  dateSubText: {
+    color: Colors.light.textSecondary,
   },
   dateText: {
     color: Colors.light.text,
@@ -150,7 +162,7 @@ const styles = StyleSheet.create({
     backgroundColor: hexToRgba(Colors.light.divider, 0.8),
   },
   noteBox: {
-    minHeight: 71,
+    marginTop: 8,
     borderWidth: 1,
     borderRadius: radii.md,
     paddingHorizontal: 10,

@@ -18,6 +18,46 @@ export const emptyHistoryFilters: HistoryFilterState = {
   shifts: [],
 };
 
+export type HistoryDateGroup = {
+  dateLabel: string;
+  formattedDateHeader: string;
+  records: HistoryRecordViewModel[];
+};
+
+export function formatGroupDateHeader(dateLabel: string): string {
+  const parts = dateLabel.split('-');
+  if (parts.length === 3) {
+    const [day, month, year] = parts;
+    return `Ngày ${day}/${month}/${year}`;
+  }
+  return `Ngày ${dateLabel}`;
+}
+
+export function groupHistoryRecordsByDate(
+  records: HistoryRecordViewModel[],
+): HistoryDateGroup[] {
+  const groups: HistoryDateGroup[] = [];
+  const map = new Map<string, HistoryDateGroup>();
+
+  for (const record of records) {
+    const dateKey = record.dateLabel || 'Khác';
+    let group = map.get(dateKey);
+    if (!group) {
+      group = {
+        dateLabel: dateKey,
+        formattedDateHeader: formatGroupDateHeader(dateKey),
+        records: [],
+      };
+      map.set(dateKey, group);
+      groups.push(group);
+    }
+    group.records.push(record);
+  }
+
+  return groups;
+}
+
+
 export function countSelectedHistoryFilters(filters: HistoryFilterState) {
   return (
     filters.branchIds.length +

@@ -4,6 +4,7 @@ import {
   countSelectedHistoryFilters,
   filterHistoryRecords,
   getHistoryFilterGroups,
+  groupHistoryRecordsByDate,
 } from './historyFilter.logic';
 
 const records: HistoryRecordViewModel[] = [
@@ -22,7 +23,7 @@ const records: HistoryRecordViewModel[] = [
   {
     id: 'record-2',
     mode: 'student',
-    dateLabel: '21-07-2026',
+    dateLabel: '09-08-2026',
     branchLabel: 'Cơ sở 3',
     shiftLabel: 'Ca 2',
     statusLabel: 'Vắng',
@@ -84,4 +85,21 @@ describe('historyFilter.logic', () => {
       { value: 'Ca 2', label: 'Ca 2' },
     ]);
   });
+
+  it('groups history records by date with formatted header', () => {
+    const grouped = groupHistoryRecordsByDate(records);
+
+    expect(grouped).toHaveLength(2);
+    expect(grouped[0]).toEqual({
+      dateLabel: '09-08-2026',
+      formattedDateHeader: 'Ngày 09/08/2026',
+      records: [records[0], records[1]],
+    });
+    expect(grouped[1]).toEqual({
+      dateLabel: '15-04-2026',
+      formattedDateHeader: 'Ngày 15/04/2026',
+      records: [records[2]],
+    });
+  });
 });
+

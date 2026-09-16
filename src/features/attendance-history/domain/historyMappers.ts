@@ -1,11 +1,28 @@
-﻿import type { CoachTimesheetResponse, CoachTimesheetSimpleResponse } from "@/features/coach-timesheet/api/coach-timesheet.dto";
-import type { StudentAttendanceResponse, StudentAttendanceSimpleResponse } from "@/features/session-attendance/api/session-attendance.dto";
+import type {
+  CoachTimesheetResponse,
+  CoachTimesheetSimpleResponse,
+} from "@/features/coach-timesheet/api/coach-timesheet.dto";
+import type {
+  CourseStaffAssignmentResponse,
+  CourseStaffAssignmentSimpleResponse,
+} from "@/features/course-staff-assignment/api/course-staff-assignment.dto";
+import type {
+  SessionAttendanceResponse,
+  SessionAttendanceSimpleResponse,
+  StudentAttendanceResponse,
+  StudentAttendanceSimpleResponse,
+} from "@/features/session-attendance/api/session-attendance.dto";
 import {
   AttendanceStatusLabel,
   EvaluationStatusLabel,
   type EvaluationStatus,
 } from "@/features/session-attendance/constants/session-attendance.constants";
+import type {
+  StudentEnrollmentResponse,
+  StudentEnrollmentSimpleResponse,
+} from "@/features/student-enrollment/api/student-enrollment.dto";
 
+import { formatDateDMY } from "@/shared/utils/dateTime";
 import type { AttendanceHistoryMode } from "./historyAccess";
 
 export type HistoryRecordTone = "success" | "warning" | "error" | "neutral";
@@ -13,13 +30,20 @@ export type HistoryRecordTone = "success" | "warning" | "error" | "neutral";
 export type HistoryRecordViewModel = {
   id: string;
   mode: AttendanceHistoryMode;
+  name?: string;
+  info?:
+    | StudentEnrollmentResponse
+    | StudentEnrollmentSimpleResponse
+    | CourseStaffAssignmentResponse
+    | CourseStaffAssignmentSimpleResponse
+    | null;
   dateLabel: string;
   branchLabel: string;
   shiftLabel: string;
   statusLabel: string;
   badgeLabel: string;
   noteTitle: string;
-  note: string;
+  note?: string;
   tone: HistoryRecordTone;
 };
 
@@ -33,21 +57,32 @@ export type CoachTimesheetDisplayMeta = StudentAttendanceDisplayMeta & {
 };
 
 export function mapStudentAttendanceToHistoryRecord(
-  attendance: StudentAttendanceResponse | StudentAttendanceSimpleResponse,
+  attendance:
+    | SessionAttendanceResponse
+    | SessionAttendanceSimpleResponse
+    | StudentAttendanceResponse
+    | StudentAttendanceSimpleResponse,
   meta: StudentAttendanceDisplayMeta,
 ): HistoryRecordViewModel {
   const evaluationStatus = attendance.evaluationStatus ?? "PENDING";
+  const studentEnrollment = attendance.studentEnrollment;
+  const name = studentEnrollment?.studentPerson?.fullName;
 
   return {
-    id: attendance.sessionAttendanceId ?? attendance.studentAttendanceId ?? "",
+    id:
+      attendance.sessionAttendanceId ??
+      (attendance as { studentAttendanceId?: string }).studentAttendanceId ??
+      "",
     mode: "student",
-    dateLabel: formatDisplayDate(attendance.checkInTime ?? ""),
+    name: name || undefined,
+    info: studentEnrollment,
+    dateLabel: formatDateDMY(attendance.createdAt),
     branchLabel: meta.branchLabel,
     shiftLabel: meta.shiftLabel,
     statusLabel: AttendanceStatusLabel[attendance.attendanceStatus],
     badgeLabel: EvaluationStatusLabel[evaluationStatus],
     noteTitle: "Ghi chú",
-    note: attendance.note?.trim() || "Không có ghi chú",
+    note: attendance.note?.trim() || undefined,
     tone: toneForEvaluation(evaluationStatus),
   };
 }
@@ -56,17 +91,27 @@ export function mapCoachTimesheetToHistoryRecord(
   timesheet: CoachTimesheetResponse | CoachTimesheetSimpleResponse,
   meta: CoachTimesheetDisplayMeta,
 ): HistoryRecordViewModel {
+  const staffAssignment = timesheet.courseStaffAssignment;
+  const name = staffAssignment?.staffPerson?.fullName;
+
   return {
     id: timesheet.coachTimesheetId,
     mode: "coach",
-    dateLabel: formatDisplayDate(timesheet.checkInTime ?? ""),
+    name: name || undefined,
+    info: staffAssignment,
+    dateLabel: formatDisplayDate(
+      timesheet.checkInTime ??
+        (timesheet as { createdAt?: string }).createdAt ??
+        "",
+    ),
     branchLabel: meta.branchLabel,
     shiftLabel: meta.shiftLabel,
     statusLabel: meta.statusLabel ?? formatTimesheetStatus(timesheet),
     badgeLabel: formatTimesheetDuration(timesheet),
     noteTitle: "Ghi chú",
     note: timesheet.note?.trim() || "Không có ghi chú",
-    tone: timesheet.checkInTime && timesheet.checkOutTime ? "success" : "warning",
+    tone:
+      timesheet.checkInTime && timesheet.checkOutTime ? "success" : "warning",
   };
 }
 
@@ -86,13 +131,17 @@ function toneForEvaluation(status: EvaluationStatus): HistoryRecordTone {
   return "neutral";
 }
 
-function formatTimesheetStatus(timesheet: CoachTimesheetResponse | CoachTimesheetSimpleResponse): string {
+function formatTimesheetStatus(
+  timesheet: CoachTimesheetResponse | CoachTimesheetSimpleResponse,
+): string {
   if (timesheet.checkInTime && timesheet.checkOutTime) return "Đã chấm công";
   if (timesheet.checkInTime) return "Thiếu giờ ra";
   return "Chưa chấm công";
 }
 
-function formatTimesheetDuration(timesheet: CoachTimesheetResponse | CoachTimesheetSimpleResponse): string {
+function formatTimesheetDuration(
+  timesheet: CoachTimesheetResponse | CoachTimesheetSimpleResponse,
+): string {
   if (!timesheet.checkInTime || !timesheet.checkOutTime) return "Chưa đủ";
 
   const start = new Date(timesheet.checkInTime).getTime();

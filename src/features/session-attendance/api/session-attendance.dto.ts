@@ -1,6 +1,15 @@
-import type { SessionResponse, SessionSimpleResponse } from "@/features/class-session/api/class-session.dto";
-import type { CourseStaffAssignmentResponse, CourseStaffAssignmentSimpleResponse } from "@/features/course-staff-assignment/api/course-staff-assignment.dto";
-import type { StudentEnrollmentResponse, StudentEnrollmentSimpleResponse } from "@/features/student-enrollment/api/student-enrollment.dto";
+import type {
+  SessionResponse,
+  SessionSimpleResponse,
+} from "@/features/class-session/api/class-session.dto";
+import type {
+  CourseStaffAssignmentResponse,
+  CourseStaffAssignmentSimpleResponse,
+} from "@/features/course-staff-assignment/api/course-staff-assignment.dto";
+import type {
+  StudentEnrollmentResponse,
+  StudentEnrollmentSimpleResponse,
+} from "@/features/student-enrollment/api/student-enrollment.dto";
 import type { PageResponse } from "@/infrastructure/http/pagination.types";
 import type {
   AttendanceStatus,
@@ -31,19 +40,16 @@ export interface SessionAttendanceResponse {
 }
 
 export interface SessionAttendanceSimpleResponse {
-  studentAttendanceId?: string;
   sessionAttendanceId: string;
-  classSession?: SessionSimpleResponse;
-  classSessionId?: string;
-  studentEnrollment?: StudentEnrollmentSimpleResponse | null;
-  studentEnrollmentId?: string | null;
+  classSession: SessionSimpleResponse;
+  studentEnrollment: StudentEnrollmentSimpleResponse;
   courseStaffAssignment?: CourseStaffAssignmentSimpleResponse | null;
-  courseStaffAssignmentId?: string | null;
   checkInTime: string | null;
   attendanceStatus: AttendanceStatus;
   evaluationStatus: EvaluationStatus | null;
   note: string | null;
   allowedActions: AllowedActions;
+  createdAt: Date;
 }
 
 export type StudentAttendanceResponse = SessionAttendanceResponse;

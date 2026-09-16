@@ -1,10 +1,11 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { ActivityIndicator, Pressable, StyleSheet, View } from "react-native";
-import { Tuning } from "reicon-react-native";
+import { Calendar, Tuning } from "reicon-react-native";
 
 import { DefaultHeaderActions } from "@/routes/navigation/components/DefaultHeaderActions";
 import { HeaderActionButton } from "@/routes/navigation/components/HeaderActionButton";
 import StackScreenLayout from "@/routes/navigation/layouts/StackScreenLayout";
+import { AppIcon } from "@/shared/ui/AppIcon";
 import { BottomSheetWindow } from "@/shared/ui/BottomSheetWindow";
 import { ThemedText } from "@/shared/ui/ThemedText";
 import { Colors } from "@/theme";
@@ -15,7 +16,11 @@ import { TrainingScoreFloatingButton } from "../components/TrainingScoreFloating
 import { TrainingScoreSheet } from "../components/TrainingScoreSheet";
 import { getMockHistoryRecords } from "../data/history.mock";
 import type { AttendanceHistoryMode } from "../domain/historyAccess";
-import type { CalendarQuarter } from "../domain/historyDateRange";
+import {
+  getCurrentCalendarQuarter,
+  getCurrentCalendarYear,
+  type CalendarQuarter,
+} from "../domain/historyDateRange";
 import { useAttendanceHistoryQuery } from "../hooks/useAttendanceHistoryQuery";
 import {
   HistoryFilterActions,
@@ -26,6 +31,7 @@ import {
   emptyHistoryFilters,
   getHistoryFilterDateRange,
   getHistoryFilterGroups,
+  groupHistoryRecordsByDate,
 } from "./AttendanceHistoryScreen/historyFilter.logic";
 import type { HistoryFilterState } from "./AttendanceHistoryScreen/historyFilter.types";
 
@@ -40,8 +46,8 @@ const SHEET_HANDOFF_DELAY_MS = 140;
 export default function AttendanceHistoryScreen({
   mode,
 }: AttendanceHistoryScreenProps) {
-  const [selectedYear, setSelectedYear] = useState<number>();
-  const [selectedQuarter, setSelectedQuarter] = useState<CalendarQuarter>();
+  const [selectedYear, setSelectedYear] = useState<number | undefined>(getCurrentCalendarYear);
+  const [selectedQuarter, setSelectedQuarter] = useState<CalendarQuarter | undefined>(getCurrentCalendarQuarter);
   const [picker, setPicker] = useState<PickerType>(null);
   const [quarterError, setQuarterError] = useState<string | null>(null);
   const [filters, setFilters] =
@@ -73,6 +79,12 @@ export default function AttendanceHistoryScreen({
     filters,
     enabled: hasSearched,
   });
+
+  const groupedRecords = useMemo(
+    () => groupHistoryRecordsByDate(visibleRecords),
+    [visibleRecords],
+  );
+
   const selectedRange = hasSearched ? getHistoryFilterDateRange(filters) : null;
   const title = mode === "student" ? "Điểm danh" : "Chấm công";
   const filterLabel =
@@ -219,8 +231,24 @@ export default function AttendanceHistoryScreen({
             </View>
           ) : visibleRecords.length ? (
             <View style={styles.list}>
-              {visibleRecords.map((record) => (
-                <HistoryRecordCard key={record.id} record={record} />
+              {groupedRecords.map((group) => (
+                <View key={group.dateLabel} style={styles.dateGroupContainer}>
+                  <View style={styles.dateHeaderRow}>
+                    <AppIcon
+                      icon={<Calendar />}
+                      size={18}
+                      color={Colors.light.primary}
+                    />
+                    <ThemedText type="subtitle" style={styles.dateHeaderText}>
+                      {group.formattedDateHeader}
+                    </ThemedText>
+                  </View>
+                  <View style={styles.dateGroupCards}>
+                    {group.records.map((record) => (
+                      <HistoryRecordCard key={record.id} record={record} />
+                    ))}
+                  </View>
+                </View>
               ))}
             </View>
           ) : (
@@ -311,9 +339,26 @@ const styles = StyleSheet.create({
     paddingBottom: 34,
   },
   list: {
-    gap: 20,
+    gap: 24,
     marginTop: 21,
     paddingBottom: 36,
+  },
+  dateGroupContainer: {
+    gap: 12,
+  },
+  dateHeaderRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    marginTop: 4,
+    marginBottom: 2,
+  },
+  dateHeaderText: {
+    color: Colors.light.text,
+    fontWeight: "600",
+  },
+  dateGroupCards: {
+    gap: 16,
   },
   emptyState: {
     alignItems: "center",
@@ -353,3 +398,4 @@ const styles = StyleSheet.create({
     fontWeight: "600",
   },
 });
+

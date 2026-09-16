@@ -1,6 +1,12 @@
-import type { SessionResponse, SessionSimpleResponse } from '@/features/class-session/api/class-session.dto';
-import type { CourseStaffAssignmentResponse, CourseStaffAssignmentSimpleResponse } from '@/features/course-staff-assignment/api/course-staff-assignment.dto';
-import type { PageResponse } from '@/infrastructure/http/pagination.types';
+import type {
+  SessionResponse,
+  SessionSimpleResponse,
+} from "@/features/class-session/api/class-session.dto";
+import type {
+  CourseStaffAssignmentResponse,
+  CourseStaffAssignmentSimpleResponse,
+} from "@/features/course-staff-assignment/api/course-staff-assignment.dto";
+import type { PageResponse } from "@/infrastructure/http/pagination.types";
 
 export interface AllowedActions {
   update: boolean;
@@ -36,10 +42,8 @@ export interface CoachTimesheetResponse {
 
 export interface CoachTimesheetSimpleResponse {
   coachTimesheetId: string;
-  courseStaffAssignment?: CourseStaffAssignmentSimpleResponse;
-  courseStaffAssignmentId?: string;
+  courseStaffAssignment: CourseStaffAssignmentSimpleResponse;
   classSession?: SessionSimpleResponse;
-  classSessionId?: string;
   checkInTime: string | null;
   checkOutTime: string | null;
   note: string | null;
@@ -55,4 +59,5 @@ export interface CoachTimesheetFilterRequest {
   sort?: string | string[];
 }
 
-export type CoachTimesheetListResponse = PageResponse<CoachTimesheetSimpleResponse>;
+export type CoachTimesheetListResponse =
+  PageResponse<CoachTimesheetSimpleResponse>;
