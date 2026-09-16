@@ -11,12 +11,13 @@ import type {
   WalletCreateRequest,
   WalletListParams,
   WalletResponse,
+  WalletSimpleResponse,
   WalletUpdateRequest,
 } from './wallet.dto';
 
 export const walletApi = {
-  async list(params?: WalletListParams): Promise<PageResponse<WalletResponse>> {
-    const response = await javaApi.get<PageResponse<WalletResponse>>('/wallets', { params });
+  async list(params?: WalletListParams): Promise<PageResponse<WalletSimpleResponse>> {
+    const response = await javaApi.get<PageResponse<WalletSimpleResponse>>('/wallets', { params });
     return response.data;
   },
   async get(walletId: string): Promise<WalletResponse> {

@@ -1,3 +1,5 @@
+﻿import type { UserSimpleResponse } from '@/features/user/api/user.dto';
+import type { WalletResponse, WalletSimpleResponse } from '@/features/wallet/api/wallet.dto';
 import type {
   WalletTransactionDirection,
   WalletTransactionStatus,
@@ -24,9 +26,9 @@ export interface WalletTransactionUpdateRequest extends WalletTransactionCreateR
 
 export interface WalletTransactionResponse {
   walletTransactionId: string;
-  walletId: string;
-  createdByUserId: string;
-  reviewedByUserId: string | null;
+  wallet: WalletResponse;
+  createdByUser: UserSimpleResponse | null;
+  reviewedByUser: UserSimpleResponse | null;
   type: WalletTransactionType;
   direction: WalletTransactionDirection;
   amount: number;
@@ -34,10 +36,26 @@ export interface WalletTransactionResponse {
   balanceAfter: number;
   externalReference: string;
   reviewedAt: string | null;
-  note: string;
+  note: string | null;
   status: WalletTransactionStatus;
   createdAt: string;
   updatedAt: string;
+}
+
+export interface WalletTransactionSimpleResponse {
+  walletTransactionId: string;
+  wallet: WalletSimpleResponse;
+  createdByUser: UserSimpleResponse | null;
+  reviewedByUser: UserSimpleResponse | null;
+  type: WalletTransactionType;
+  direction: WalletTransactionDirection;
+  amount: number;
+  balanceBefore: number;
+  balanceAfter: number;
+  externalReference: string;
+  reviewedAt: string | null;
+  note: string | null;
+  status: WalletTransactionStatus;
 }
 
 export interface WalletTransactionListParams {

@@ -1,16 +1,17 @@
-import { javaApi } from '@/infrastructure/http/httpClient';
+﻿import { javaApi } from '@/infrastructure/http/httpClient';
 import type { PageResponse } from '@/infrastructure/http/pagination.types';
 
 import type {
   WalletTransactionCreateRequest,
   WalletTransactionListParams,
   WalletTransactionResponse,
+  WalletTransactionSimpleResponse,
   WalletTransactionUpdateRequest,
 } from './wallet-transaction.dto';
 
 export const walletTransactionApi = {
-  async list(params?: WalletTransactionListParams): Promise<PageResponse<WalletTransactionResponse>> {
-    const response = await javaApi.get<PageResponse<WalletTransactionResponse>>('/wallet-transactions', { params });
+  async list(params?: WalletTransactionListParams): Promise<PageResponse<WalletTransactionSimpleResponse>> {
+    const response = await javaApi.get<PageResponse<WalletTransactionSimpleResponse>>('/wallet-transactions', { params });
     return response.data;
   },
   async get(walletTransactionId: string): Promise<WalletTransactionResponse> {

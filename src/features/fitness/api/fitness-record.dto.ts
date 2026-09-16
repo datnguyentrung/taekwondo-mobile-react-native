@@ -1,77 +1,54 @@
-import type { CoachSummary } from '@/features/coach/api/coach-summary.dto';
-import type { StudentSummary } from '@/features/student/api/student-summary.dto';
-import type { SkillLevel } from '../constants/fitness.constans';
+﻿import type { FitnessResponse, FitnessSimpleResponse } from './fitness.dto';
+import type { PersonResponse, PersonSimpleResponse } from '@/features/person/api/person.dto';
 
 export interface FitnessMetrics {
-  createdAt: string;
-  assessmentDate: string;
   duration: number;
   amount: number;
-  skillLevel: SkillLevel;
-  durationLevel: number;
-  amountLevel: number;
-  fitnessLevel: number;
-  isQualified: boolean;
 }
 
 export interface FitnessListMetrics {
-  assessmentDate: string;
+  fitnessId: number;
   duration: number;
   amount: number;
-  skillLevel: SkillLevel;
-  durationLevel: number;
-  amountLevel: number;
-  fitnessLevel: number;
-  isQualified: boolean;
 }
+
 export interface FitnessRecordResponse {
-  id: number;
-  fitnessRecordId?: number;
-  studentId?: string;
-  fitnessId?: number;
-  recordedByCoachId?: string;
-  recordDate?: string;
-  duration?: number;
-  createdAt?: string;
-  updatedAt?: string;
-  studentSummary: StudentSummary;
-  metrics: FitnessMetrics;
-  recordedByCoach: CoachSummary;
+  fitnessRecordId: number;
+  student: PersonResponse;
+  fitness: FitnessResponse;
+  recordedByCoach: PersonResponse;
+  recordDate: string;
+  duration: number;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface FitnessRecordListResponse {
-  id: number;
-  studentSummary: StudentSummary;
-  metrics: FitnessListMetrics;
+  fitnessRecordId: number;
+  student: PersonSimpleResponse;
+  fitness: FitnessSimpleResponse;
+  recordedByCoach: PersonSimpleResponse;
+  recordDate: string;
+  duration: number;
 }
 
 export interface FitnessRecordCreateRequest {
-  studentId?: string;
-  fitnessId?: number;
-  recordedByCoachId?: string;
-  recordDate?: string;
-  assessmentDate: string;
-  studentCode: string;
+  studentId: string;
+  fitnessId: number;
+  recordedByCoachId: string;
+  recordDate: string;
   duration: number;
-  amount: number;
-  skillLevel: SkillLevel;
-  staffCode: string;
 }
 
 export interface FitnessRecordUpdateRequest {
-  studentId?: string;
-  fitnessId?: number;
-  recordedByCoachId?: string;
-  recordDate?: string;
-  assessmentDate: string;
+  studentId: string;
+  fitnessId: number;
+  recordedByCoachId: string;
+  recordDate: string;
   duration: number;
-  amount: number;
-  skillLevel: SkillLevel;
 }
 
 export interface FitnessRecordListParams {
-  search?: string;
-  skillLevel?: SkillLevel;
   page?: number;
   size?: number;
   sort?: string | string[];

@@ -5,12 +5,13 @@ import type {
   NotificationCreateRequest,
   NotificationListParams,
   NotificationResponse,
+  NotificationSimpleResponse,
   NotificationUpdateRequest,
 } from './notification.dto';
 
 export const notificationApi = {
-  async list(params?: NotificationListParams): Promise<PageResponse<NotificationResponse>> {
-    const response = await javaApi.get<PageResponse<NotificationResponse>>(
+  async list(params?: NotificationListParams): Promise<PageResponse<NotificationSimpleResponse>> {
+    const response = await javaApi.get<PageResponse<NotificationSimpleResponse>>(
       '/notifications',
       { params },
     );

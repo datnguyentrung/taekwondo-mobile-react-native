@@ -1,9 +1,9 @@
-import type { CoachTimesheetResponse } from "@/features/coach-timesheet/api/coach-timesheet.dto";
+﻿import type { CoachTimesheetResponse } from "@/features/coach-timesheet/api/coach-timesheet.dto";
 import type { CoachDetail } from "@/features/coach/api/coach.dto";
 import type { StudentAttendanceResponse } from "@/features/session-attendance/api/session-attendance.dto";
 import type { StudentDetail } from "@/features/student/api/student.dto";
 import type { Belt, PersonStatus } from "../constants/person.constants";
-import type { PersonResponse } from "../domain/person.types";
+import type { PersonResponse, PersonSimpleResponse } from "../domain/person.types";
 
 export interface PersonCreateRequest {
   fullName: string;
@@ -56,7 +56,7 @@ export interface FaceImageUrlResponse {
   avatarUrl: string;
 }
 
-export type { PersonResponse };
+export type { PersonResponse, PersonSimpleResponse };
 
 export interface PersonSearchParams {
   search?: string;

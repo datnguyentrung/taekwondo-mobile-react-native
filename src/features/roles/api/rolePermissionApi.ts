@@ -4,14 +4,15 @@ import type { PageResponse } from '@/infrastructure/http/pagination.types';
 import type {
   RolePermissionCreateRequest,
   RolePermissionItemResponse,
+  RolePermissionSimpleResponse,
   RolePermissionListParams,
   RolePermissionReplaceRequest,
   RolePermissionResponse,
 } from './role-permission.dto';
 
 export const rolePermissionApi = {
-  async list(params?: RolePermissionListParams): Promise<PageResponse<RolePermissionItemResponse>> {
-    const response = await javaApi.get<PageResponse<RolePermissionItemResponse>>('/role-permissions', { params });
+  async list(params?: RolePermissionListParams): Promise<PageResponse<RolePermissionSimpleResponse>> {
+    const response = await javaApi.get<PageResponse<RolePermissionSimpleResponse>>('/role-permissions', { params });
     return response.data;
   },
   async get(roleCode: string, permissionId: number): Promise<RolePermissionItemResponse> {

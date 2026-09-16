@@ -1,4 +1,4 @@
-import type { BranchStatus } from '../constants/branch.constants';
+﻿import type { BranchStatus } from '../constants/branch.constants';
 
 export interface BranchCreateRequest {
   name: string;
@@ -19,6 +19,14 @@ export interface BranchResponse {
   status: BranchStatus;
   createdAt: string;
   updatedAt: string;
+}
+
+export interface BranchSimpleResponse {
+  branchId: number;
+  name: string;
+  address: string;
+  hotline: string;
+  status: BranchStatus;
 }
 
 export interface BranchListParams {

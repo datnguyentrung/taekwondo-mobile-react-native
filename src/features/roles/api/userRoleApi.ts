@@ -4,14 +4,15 @@ import type { PageResponse } from '@/infrastructure/http/pagination.types';
 import type {
   AssignUserRoleRequest,
   UserRoleItemResponse,
+  UserRoleSimpleResponse,
   UserRoleListParams,
   UserRoleReplaceRequest,
   UserRoleResponse,
 } from './user-role.dto';
 
 export const userRoleApi = {
-  async list(params?: UserRoleListParams): Promise<PageResponse<UserRoleItemResponse>> {
-    const response = await javaApi.get<PageResponse<UserRoleItemResponse>>('/user-roles', { params });
+  async list(params?: UserRoleListParams): Promise<PageResponse<UserRoleSimpleResponse>> {
+    const response = await javaApi.get<PageResponse<UserRoleSimpleResponse>>('/user-roles', { params });
     return response.data;
   },
   async get(userId: string, roleCode: string): Promise<UserRoleItemResponse> {

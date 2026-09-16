@@ -1,3 +1,4 @@
+import type { CourseResponse, CourseSimpleResponse } from '@/features/course/api/course.dto';
 import type { CoursePriceStatus } from '../constants/course-price.constants';
 
 export interface CoursePriceCreateRequest {
@@ -13,10 +14,21 @@ export type CoursePriceUpdateRequest = CoursePriceCreateRequest;
 
 export interface CoursePriceResponse {
   coursePriceId: string;
-  courseId: string;
+  course?: CourseResponse;
+  courseId?: string;
   durationMonths: number;
   sessionCount: number;
   basePrice: number;
+  finalPrice: number;
+  status: CoursePriceStatus;
+}
+
+export interface CoursePriceSimpleResponse {
+  coursePriceId: string;
+  course?: CourseSimpleResponse;
+  courseId?: string;
+  durationMonths: number;
+  sessionCount: number;
   finalPrice: number;
   status: CoursePriceStatus;
 }

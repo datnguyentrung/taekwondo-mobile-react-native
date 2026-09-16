@@ -5,12 +5,13 @@ import type {
   UserPersonCreateRequest,
   UserPersonListParams,
   UserPersonResponse,
+  UserPersonSimpleResponse,
   UserPersonUpdateRequest,
 } from './user-person.dto';
 
 export const userPersonApi = {
-  async list(params?: UserPersonListParams): Promise<PageResponse<UserPersonResponse>> {
-    const response = await javaApi.get<PageResponse<UserPersonResponse>>('/user-persons', { params });
+  async list(params?: UserPersonListParams): Promise<PageResponse<UserPersonSimpleResponse>> {
+    const response = await javaApi.get<PageResponse<UserPersonSimpleResponse>>('/user-persons', { params });
     return response.data;
   },
   async get(userPersonId: string): Promise<UserPersonResponse> {

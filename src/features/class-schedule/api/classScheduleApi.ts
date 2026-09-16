@@ -5,18 +5,19 @@ import type {
   ClassScheduleCreateRequest,
   ClassScheduleDetail,
   ClassScheduleResponse,
+  ClassScheduleSimpleResponse,
   ClassScheduleUpdateRequest,
   GetClassSchedulesParams,
 } from './class-schedule.dto';
 
 export const classScheduleApi = {
-  async list(params?: GetClassSchedulesParams): Promise<PageResponse<ClassScheduleResponse>> {
-    const response = await javaApi.get<PageResponse<ClassScheduleResponse>>('/class-schedules', { params });
+  async list(params?: GetClassSchedulesParams): Promise<PageResponse<ClassScheduleSimpleResponse>> {
+    const response = await javaApi.get<PageResponse<ClassScheduleSimpleResponse>>('/class-schedules', { params });
     return response.data;
   },
 
-  async getList(params?: GetClassSchedulesParams): Promise<PageResponse<ClassScheduleDetail>> {
-    const response = await javaApi.get<PageResponse<ClassScheduleDetail>>('/class-schedules', { params });
+  async getList(params?: GetClassSchedulesParams): Promise<PageResponse<ClassScheduleSimpleResponse>> {
+    const response = await javaApi.get<PageResponse<ClassScheduleSimpleResponse>>('/class-schedules', { params });
     return response.data;
   },
 

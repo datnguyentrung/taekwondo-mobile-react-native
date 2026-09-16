@@ -6,13 +6,14 @@ import type {
   FitnessCreateRequest,
   FitnessListParams,
   FitnessResponse,
+  FitnessSimpleResponse,
   FitnessThreshold,
   FitnessUpdateRequest,
 } from './fitness.dto';
 
 export const fitnessApi = {
-  async list(params?: FitnessListParams): Promise<PageResponse<FitnessResponse>> {
-    const response = await javaApi.get<PageResponse<FitnessResponse>>('/fitness', { params });
+  async list(params?: FitnessListParams): Promise<PageResponse<FitnessSimpleResponse>> {
+    const response = await javaApi.get<PageResponse<FitnessSimpleResponse>>('/fitness', { params });
     return response.data;
   },
   async get(fitnessId: number): Promise<FitnessResponse> {

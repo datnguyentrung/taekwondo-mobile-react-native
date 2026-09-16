@@ -5,12 +5,13 @@ import type {
   RoleCreateRequest,
   RoleListParams,
   RoleResponse,
+  RoleSimpleResponse,
   RoleUpdateRequest,
 } from './role.dto';
 
 export const roleApi = {
-  async list(params?: RoleListParams): Promise<PageResponse<RoleResponse>> {
-    const response = await javaApi.get<PageResponse<RoleResponse>>('/roles', { params });
+  async list(params?: RoleListParams): Promise<PageResponse<RoleSimpleResponse>> {
+    const response = await javaApi.get<PageResponse<RoleSimpleResponse>>('/roles', { params });
     return response.data;
   },
   async get(roleCode: string): Promise<RoleResponse> {

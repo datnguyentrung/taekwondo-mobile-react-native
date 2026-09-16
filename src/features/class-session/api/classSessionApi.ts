@@ -6,18 +6,19 @@ import type {
   ReopenAttendanceRequest,
   SessionCreateRequest,
   SessionResponse,
+  SessionSimpleResponse,
   SessionUpdateRequest,
 } from './class-session.dto';
 
 export const classSessionApi = {
-  async list(params?: ClassSessionFilterParams): Promise<PageResponse<SessionResponse>> {
+  async list(params?: ClassSessionFilterParams): Promise<PageResponse<SessionSimpleResponse>> {
     return classSessionApi.getList(params);
   },
   async get(sessionId: string): Promise<SessionResponse> {
     return classSessionApi.getDetail(sessionId);
   },
-  async getList(params?: ClassSessionFilterParams): Promise<PageResponse<SessionResponse>> {
-    const response = await javaApi.get<PageResponse<SessionResponse>>('/class-sessions', { params });
+  async getList(params?: ClassSessionFilterParams): Promise<PageResponse<SessionSimpleResponse>> {
+    const response = await javaApi.get<PageResponse<SessionSimpleResponse>>('/class-sessions', { params });
     return response.data;
   },
   async getDetail(sessionId: string): Promise<SessionResponse> {

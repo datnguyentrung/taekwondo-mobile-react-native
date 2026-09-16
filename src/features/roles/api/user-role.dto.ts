@@ -1,4 +1,4 @@
-export interface AssignUserRoleRequest {
+﻿export interface AssignUserRoleRequest {
   userId: string;
   roleCode: string;
 }
@@ -16,6 +16,11 @@ export interface UserRoleResponse {
 }
 
 export interface UserRoleItemResponse {
+  userId: string;
+  roleCode: string;
+}
+
+export interface UserRoleSimpleResponse {
   userId: string;
   roleCode: string;
 }

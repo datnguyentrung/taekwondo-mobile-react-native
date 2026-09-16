@@ -5,12 +5,13 @@ import type {
   BeltExamCreateRequest,
   BeltExamListParams,
   BeltExamResponse,
+  BeltExamSimpleResponse,
   BeltExamUpdateRequest,
 } from './belt-exam.dto';
 
 export const beltExamApi = {
-  async list(params?: BeltExamListParams): Promise<PageResponse<BeltExamResponse>> {
-    const response = await javaApi.get<PageResponse<BeltExamResponse>>('/belt-exams', { params });
+  async list(params?: BeltExamListParams): Promise<PageResponse<BeltExamSimpleResponse>> {
+    const response = await javaApi.get<PageResponse<BeltExamSimpleResponse>>('/belt-exams', { params });
     return response.data;
   },
   async get(beltExamId: string): Promise<BeltExamResponse> {

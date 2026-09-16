@@ -1,4 +1,4 @@
-import type { ScheduleLevel } from '@/features/class-schedule/constants/class-schedule.constants';
+﻿import type { ScheduleLevel } from '@/features/class-schedule/constants/class-schedule.constants';
 
 export interface FitnessThreshold {
   fitnessLevel: number;
@@ -22,6 +22,8 @@ export interface FitnessResponse {
   amount: number;
   duration: number;
 }
+
+export type FitnessSimpleResponse = FitnessResponse;
 
 export interface FitnessListParams {
   page?: number;

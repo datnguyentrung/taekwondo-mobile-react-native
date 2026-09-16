@@ -5,12 +5,13 @@ import type {
   AuthSessionCreateRequest,
   AuthSessionListParams,
   AuthSessionResponse,
+  AuthSessionSimpleResponse,
   AuthSessionUpdateRequest,
 } from './auth-session.dto';
 
 export const authSessionApi = {
-  async list(params?: AuthSessionListParams): Promise<PageResponse<AuthSessionResponse>> {
-    const response = await javaApi.get<PageResponse<AuthSessionResponse>>('/auth-sessions', { params });
+  async list(params?: AuthSessionListParams): Promise<PageResponse<AuthSessionSimpleResponse>> {
+    const response = await javaApi.get<PageResponse<AuthSessionSimpleResponse>>('/auth-sessions', { params });
     return response.data;
   },
   async get(authSessionId: string): Promise<AuthSessionResponse> {

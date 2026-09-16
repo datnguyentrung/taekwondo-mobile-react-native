@@ -1,3 +1,5 @@
+﻿import type { CourseResponse, CourseSimpleResponse } from '@/features/course/api/course.dto';
+import type { PersonResponse, PersonSimpleResponse } from '@/features/person/api/person.dto';
 import type { PageResponse } from '@/infrastructure/http/pagination.types';
 import type {
   AssignmentType,
@@ -18,8 +20,8 @@ export type CourseStaffAssignmentUpdateRequest = CourseStaffAssignmentCreateRequ
 
 export interface CourseStaffAssignmentResponse {
   courseStaffAssignmentId: string;
-  staffPersonId: string;
-  courseId: string;
+  staffPerson: PersonResponse;
+  course: CourseResponse;
   assignmentType: AssignmentType;
   startDate: string;
   endDate: string | null;
@@ -29,6 +31,16 @@ export interface CourseStaffAssignmentResponse {
   updatedAt: string;
 }
 
+export interface CourseStaffAssignmentSimpleResponse {
+  courseStaffAssignmentId: string;
+  staffPerson: PersonSimpleResponse;
+  course: CourseSimpleResponse;
+  assignmentType: AssignmentType;
+  startDate: string;
+  endDate: string | null;
+  assignmentStatus: CourseStaffAssignmentStatus;
+}
+
 export interface CourseStaffAssignmentListParams {
   page?: number;
   size?: number;
@@ -36,4 +48,4 @@ export interface CourseStaffAssignmentListParams {
 }
 
 export type CourseStaffAssignmentListResponse =
-  PageResponse<CourseStaffAssignmentResponse>;
+  PageResponse<CourseStaffAssignmentSimpleResponse>;

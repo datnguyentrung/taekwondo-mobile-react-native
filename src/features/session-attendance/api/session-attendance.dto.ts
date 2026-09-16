@@ -1,3 +1,6 @@
+import type { SessionResponse, SessionSimpleResponse } from "@/features/class-session/api/class-session.dto";
+import type { CourseStaffAssignmentResponse, CourseStaffAssignmentSimpleResponse } from "@/features/course-staff-assignment/api/course-staff-assignment.dto";
+import type { StudentEnrollmentResponse, StudentEnrollmentSimpleResponse } from "@/features/student-enrollment/api/student-enrollment.dto";
 import type { PageResponse } from "@/infrastructure/http/pagination.types";
 import type {
   AttendanceStatus,
@@ -12,9 +15,12 @@ export interface AllowedActions {
 export interface SessionAttendanceResponse {
   sessionAttendanceId: string;
   studentAttendanceId?: string;
-  classSessionId: string;
-  studentEnrollmentId: string | null;
-  courseStaffAssignmentId: string | null;
+  classSession?: SessionResponse;
+  classSessionId?: string;
+  studentEnrollment?: StudentEnrollmentResponse | null;
+  studentEnrollmentId?: string | null;
+  courseStaffAssignment?: CourseStaffAssignmentResponse | null;
+  courseStaffAssignmentId?: string | null;
   checkInTime: string | null;
   attendanceStatus: AttendanceStatus;
   evaluationStatus: EvaluationStatus | null;
@@ -24,7 +30,24 @@ export interface SessionAttendanceResponse {
   updatedAt: string;
 }
 
+export interface SessionAttendanceSimpleResponse {
+  studentAttendanceId?: string;
+  sessionAttendanceId: string;
+  classSession?: SessionSimpleResponse;
+  classSessionId?: string;
+  studentEnrollment?: StudentEnrollmentSimpleResponse | null;
+  studentEnrollmentId?: string | null;
+  courseStaffAssignment?: CourseStaffAssignmentSimpleResponse | null;
+  courseStaffAssignmentId?: string | null;
+  checkInTime: string | null;
+  attendanceStatus: AttendanceStatus;
+  evaluationStatus: EvaluationStatus | null;
+  note: string | null;
+  allowedActions: AllowedActions;
+}
+
 export type StudentAttendanceResponse = SessionAttendanceResponse;
+export type StudentAttendanceSimpleResponse = SessionAttendanceSimpleResponse;
 
 export interface SessionAttendanceCreateRequest {
   classSessionId: string;
@@ -61,5 +84,5 @@ export interface AttendanceFilterParams {
 export type SessionAttendanceFilterParams = AttendanceFilterParams;
 
 export type SessionAttendanceListResponse =
-  PageResponse<SessionAttendanceResponse>;
+  PageResponse<SessionAttendanceSimpleResponse>;
 export type StudentAttendanceListResponse = SessionAttendanceListResponse;

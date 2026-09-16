@@ -5,12 +5,13 @@ import type {
   CoursePurchaseCreateRequest,
   CoursePurchaseListParams,
   CoursePurchaseResponse,
+  CoursePurchaseSimpleResponse,
   CoursePurchaseUpdateRequest,
 } from './course-purchase.dto';
 
 export const coursePurchaseApi = {
-  async list(params?: CoursePurchaseListParams): Promise<PageResponse<CoursePurchaseResponse>> {
-    const response = await javaApi.get<PageResponse<CoursePurchaseResponse>>('/course-purchases', { params });
+  async list(params?: CoursePurchaseListParams): Promise<PageResponse<CoursePurchaseSimpleResponse>> {
+    const response = await javaApi.get<PageResponse<CoursePurchaseSimpleResponse>>('/course-purchases', { params });
     return response.data;
   },
   async get(coursePurchaseId: string): Promise<CoursePurchaseResponse> {

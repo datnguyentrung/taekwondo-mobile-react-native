@@ -1,4 +1,4 @@
-export interface RolePermissionCreateRequest {
+﻿export interface RolePermissionCreateRequest {
   roleCode: string;
   permissionId: number;
 }
@@ -16,6 +16,12 @@ export interface RolePermissionResponse {
 }
 
 export interface RolePermissionItemResponse {
+  roleCode: string;
+  permissionId: number;
+  permissionCode: string;
+}
+
+export interface RolePermissionSimpleResponse {
   roleCode: string;
   permissionId: number;
   permissionCode: string;

@@ -5,12 +5,13 @@ import type {
   LeaveRequestCreateRequest,
   LeaveRequestListParams,
   LeaveRequestResponse,
+  LeaveRequestSimpleResponse,
   LeaveRequestReviewCommand,
 } from './leave-request.dto';
 
 export const leaveRequestApi = {
-  async list(params?: LeaveRequestListParams): Promise<PageResponse<LeaveRequestResponse>> {
-    const response = await javaApi.get<PageResponse<LeaveRequestResponse>>('/leave-requests', { params });
+  async list(params?: LeaveRequestListParams): Promise<PageResponse<LeaveRequestSimpleResponse>> {
+    const response = await javaApi.get<PageResponse<LeaveRequestSimpleResponse>>('/leave-requests', { params });
     return response.data;
   },
   async get(leaveRequestId: string): Promise<LeaveRequestResponse> {

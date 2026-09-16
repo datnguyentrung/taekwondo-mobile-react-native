@@ -1,4 +1,4 @@
-export interface RoleCreateRequest {
+﻿export interface RoleCreateRequest {
   code: string;
   name: string;
   description: string;
@@ -15,6 +15,12 @@ export interface RoleResponse {
   code: string;
   name: string;
   description: string;
+  permissionVersion: number;
+}
+
+export interface RoleSimpleResponse {
+  code: string;
+  name: string;
   permissionVersion: number;
 }
 

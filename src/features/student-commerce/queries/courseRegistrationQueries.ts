@@ -1,10 +1,10 @@
 import { useMutation, useQuery } from '@tanstack/react-query';
 
 import { courseApi } from '@/features/course/api/courseApi';
-import type { CourseResponse } from '@/features/course/api/course.dto';
+import type { CourseSimpleResponse } from '@/features/course/api/course.dto';
 import { CourseStatusLabel } from '@/features/course/constants/course.constants';
 import { coursePriceApi } from '@/features/course-price/api/coursePriceApi';
-import type { CoursePriceResponse } from '@/features/course-price/api/course-price.dto';
+import type { CoursePriceSimpleResponse } from '@/features/course-price/api/course-price.dto';
 import { studentApi } from '@/features/student/api/studentApi';
 import type { StudentOverview } from '@/features/student/api/student.dto';
 import { StudentStatusLabel } from '@/features/student/constants/student.constants';
@@ -46,19 +46,25 @@ export function mapStudentOverviewToRegistrationStudent(
 }
 
 export function mapCourseResponseToRegistrationCourse(
-  course: CourseResponse,
+  course: CourseSimpleResponse,
 ): CourseRegistrationCourseView {
+  const schedule = course.classSchedule;
+  const branchName = schedule?.branch?.name ?? '';
+  const scheduleLabel = [schedule?.weekday, schedule?.level, schedule?.location]
+    .filter(Boolean)
+    .join(' · ');
+
   return {
     courseId: course.courseId,
     courseName: course.name,
-    branchName: '',
-    scheduleLabel: course.classScheduleId,
+    branchName,
+    scheduleLabel: scheduleLabel || schedule?.scheduleId || course.classScheduleId || '',
     statusLabel: CourseStatusLabel[course.status],
   };
 }
 
 export function mapCoursePriceToPackage(
-  price: CoursePriceResponse,
+  price: CoursePriceSimpleResponse,
 ): CoursePackageView {
   const durationLabel = `${price.durationMonths} tháng`;
   return {

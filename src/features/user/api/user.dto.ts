@@ -1,4 +1,4 @@
-import type { Belt } from '@/features/person/constants/person.constants';
+﻿import type { Belt } from '@/features/person/constants/person.constants';
 import type { RelationshipType } from '@/features/authentication/domain/auth.types';
 import type { UserStatus } from '../constants/user.constants';
 
@@ -14,7 +14,7 @@ export interface UserCreateRequest {
   personId?: string | null;
   person?: unknown;
   relationshipType?: RelationshipType;
-  roleCodes: string[];
+  roleCodes?: string[];
 }
 
 export interface UserUpdateRequest {
@@ -46,18 +46,20 @@ export interface UserResponse {
 
 export interface UserDetail {
   userId: string;
-  birthDate: string | null;
   phoneNumber: string | null;
-  belt: Belt | null;
+  passwordHash?: string | null;
   status: UserStatus | null;
+  authorizationVersion?: number;
+  lastLoginAt: string | null;
   createdAt: string | null;
   updatedAt: string | null;
+}
+
+export interface UserSimpleResponse {
+  userId: string;
+  phoneNumber: string | null;
+  status: UserStatus | null;
   lastLoginAt: string | null;
-  roles: string[] | null;
-  fullName: string | null;
-  relationshipType: RelationshipType | null;
-  active: boolean | null;
-  gender: boolean | null;
 }
 
 export interface UserListParams {

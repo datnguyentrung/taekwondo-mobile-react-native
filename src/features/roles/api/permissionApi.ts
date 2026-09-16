@@ -5,12 +5,13 @@ import type {
   PermissionCreateRequest,
   PermissionListParams,
   PermissionResponse,
+  PermissionSimpleResponse,
   PermissionUpdateRequest,
 } from './permission.dto';
 
 export const permissionApi = {
-  async list(params?: PermissionListParams): Promise<PageResponse<PermissionResponse>> {
-    const response = await javaApi.get<PageResponse<PermissionResponse>>('/permissions', { params });
+  async list(params?: PermissionListParams): Promise<PageResponse<PermissionSimpleResponse>> {
+    const response = await javaApi.get<PageResponse<PermissionSimpleResponse>>('/permissions', { params });
     return response.data;
   },
   async get(permissionId: number): Promise<PermissionResponse> {

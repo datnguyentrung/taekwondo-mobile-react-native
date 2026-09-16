@@ -5,14 +5,15 @@ import type {
   CourseCreateRequest,
   CourseListParams,
   CourseResponse,
+  CourseSimpleResponse,
   CourseScheduleChangeRequest,
   CourseScheduleChangeResponse,
   CourseUpdateRequest,
 } from './course.dto';
 
 export const courseApi = {
-  async list(params?: CourseListParams): Promise<PageResponse<CourseResponse>> {
-    const response = await javaApi.get<PageResponse<CourseResponse>>('/courses', { params });
+  async list(params?: CourseListParams): Promise<PageResponse<CourseSimpleResponse>> {
+    const response = await javaApi.get<PageResponse<CourseSimpleResponse>>('/courses', { params });
     return response.data;
   },
   async get(courseId: string): Promise<CourseResponse> {

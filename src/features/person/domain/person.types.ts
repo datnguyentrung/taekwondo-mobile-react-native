@@ -1,3 +1,4 @@
+﻿import type { PositionSimpleResponse } from '@/features/position/api/position.dto';
 import type { Belt, PersonStatus } from '../constants/person.constants';
 
 export interface PersonResponse {
@@ -5,18 +6,27 @@ export interface PersonResponse {
   fullName: string;
   gender: boolean | null;
   birthDate: string;
-  nationalCode: string | null;
   email: string | null;
-  positionId?: string | null;
-  belt: Belt;
-  currentBelt?: Belt;
-  personCode?: string | null;
-  status?: PersonStatus;
-  startDate?: string | null;
+  nationalCode: string | null;
+  personCode: string | null;
+  currentBelt: Belt;
+  status: PersonStatus;
+  startDate: string;
+  position: PositionSimpleResponse | null;
   faceImagePath: string | null;
-  avatarUrl: string | null;
-  createdAt?: string;
-  updatedAt?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface PersonSimpleResponse {
+  personId: string;
+  fullName: string;
+  gender: boolean | null;
+  birthDate: string;
+  personCode: string | null;
+  currentBelt: Belt;
+  status: PersonStatus;
+  faceImagePath: string | null;
 }
 
 export interface PersonSearchItem {

@@ -1,4 +1,6 @@
+﻿import type { PersonResponse, PersonSimpleResponse } from '@/features/person/api/person.dto';
 import type { Belt } from '@/features/person/constants/person.constants';
+import type { UserSimpleResponse } from '@/features/user/api/user.dto';
 import type { BeltExamResult, BeltExamType } from '../constants/belt-exam.constants';
 
 export interface BeltExamCreateRequest {
@@ -20,7 +22,7 @@ export interface BeltExamUpdateRequest extends BeltExamCreateRequest {
 
 export interface BeltExamResponse {
   beltExamId: string;
-  personId: string;
+  person: PersonResponse;
   fromBelt: Belt;
   targetBelt: Belt;
   year: number;
@@ -28,9 +30,21 @@ export interface BeltExamResponse {
   examDate: string | null;
   result: BeltExamResult | null;
   note: string | null;
-  createdByUserId: string;
+  createdByUser: UserSimpleResponse | null;
   createdAt: string;
   updatedAt: string;
+  type: BeltExamType;
+}
+
+export interface BeltExamSimpleResponse {
+  beltExamId: string;
+  person: PersonSimpleResponse;
+  fromBelt: Belt;
+  targetBelt: Belt;
+  year: number;
+  quarter: number;
+  examDate: string | null;
+  result: BeltExamResult | null;
   type: BeltExamType;
 }
 

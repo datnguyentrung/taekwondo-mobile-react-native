@@ -5,12 +5,13 @@ import type {
   BranchCreateRequest,
   BranchListParams,
   BranchResponse,
+  BranchSimpleResponse,
   BranchUpdateRequest,
 } from './branch.dto';
 
 export const branchApi = {
-  async list(params?: BranchListParams): Promise<PageResponse<BranchResponse>> {
-    const response = await javaApi.get<PageResponse<BranchResponse>>('/branches', { params });
+  async list(params?: BranchListParams): Promise<PageResponse<BranchSimpleResponse>> {
+    const response = await javaApi.get<PageResponse<BranchSimpleResponse>>('/branches', { params });
     return response.data;
   },
   async get(branchId: number): Promise<BranchResponse> {

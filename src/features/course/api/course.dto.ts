@@ -1,3 +1,4 @@
+import type { ClassScheduleResponse, ClassScheduleSimpleResponse } from '@/features/class-schedule/api/class-schedule.dto';
 import type { CourseStatus } from '../constants/course.constants';
 
 export interface CourseCreateRequest {
@@ -15,8 +16,10 @@ export interface CourseUpdateRequest {
 
 export interface CourseResponse {
   courseId: string;
-  classScheduleId: string;
-  nextClassScheduleId: string | null;
+  classSchedule?: ClassScheduleResponse;
+  classScheduleId?: string;
+  nextClassSchedule?: ClassScheduleSimpleResponse | null;
+  nextClassScheduleId?: string | null;
   nextScheduleEffectiveFrom: string | null;
   name: string;
   capacity: number;
@@ -24,6 +27,18 @@ export interface CourseResponse {
   classSessionGeneratedUntil: string | null;
   createdAt: string;
   updatedAt: string;
+}
+
+export interface CourseSimpleResponse {
+  courseId: string;
+  classSchedule?: ClassScheduleSimpleResponse;
+  classScheduleId?: string;
+  nextClassSchedule?: ClassScheduleSimpleResponse | null;
+  nextClassScheduleId?: string | null;
+  nextScheduleEffectiveFrom: string | null;
+  name: string;
+  capacity: number;
+  status: CourseStatus;
 }
 
 export interface CourseScheduleChangeRequest {

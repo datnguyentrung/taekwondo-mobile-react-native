@@ -24,7 +24,7 @@ function NotificationCardComponent({
   return (
     <Pressable
       accessibilityRole="button"
-      accessibilityLabel={notification.title}
+      accessibilityLabel={notification.title ?? undefined}
       onPress={() => onPress(notification)}
       style={({ pressed }) => [
         styles.card,
@@ -38,10 +38,10 @@ function NotificationCardComponent({
 
       <View style={styles.content}>
         <ThemedText type="title" numberOfLines={2} style={styles.title}>
-          {notification.title}
+          {notification.title ?? undefined}
         </ThemedText>
         <ThemedText type="bodySmall" numberOfLines={2} style={styles.body}>
-          {notification.body}
+          {notification.body ?? undefined}
         </ThemedText>
 
         <View style={styles.meta}>
@@ -52,7 +52,7 @@ function NotificationCardComponent({
             {formatNotificationDate(notification.createdAt)}
           </NotificationPill>
           {!notification.read ? (
-            <NotificationPill tone="primary">Chưa đọc</NotificationPill>
+            <NotificationPill tone="primary">ChÆ°a Ä‘á»c</NotificationPill>
           ) : null}
         </View>
       </View>

@@ -1,4 +1,4 @@
-import type { BranchResponse } from '@/features/branch/api/branch.dto';
+﻿import type { BranchResponse, BranchSimpleResponse } from '@/features/branch/api/branch.dto';
 import type { CoachSummary } from '@/features/coach/api/coach-summary.dto';
 import type {
   ScheduleLevel,
@@ -35,19 +35,11 @@ export interface ClassScheduleCreateRequest {
   endTime: string;
 }
 
-export interface ClassScheduleUpdateRequest {
-  branchId: number;
-  weekday: Weekday;
-  level: ScheduleLevel;
-  location: ScheduleLocation;
-  status: ScheduleStatus;
-  startTime: string;
-  endTime: string;
-}
+export type ClassScheduleUpdateRequest = ClassScheduleCreateRequest;
 
 export interface ClassScheduleResponse {
   scheduleId: string;
-  branchId: number;
+  branch: BranchResponse;
   weekday: Weekday;
   level: ScheduleLevel;
   location: ScheduleLocation;
@@ -56,8 +48,16 @@ export interface ClassScheduleResponse {
   endTime: string;
 }
 
+export interface ClassScheduleSimpleResponse {
+  scheduleId: string;
+  branch: BranchSimpleResponse;
+  weekday: Weekday;
+  level: ScheduleLevel;
+  location: ScheduleLocation;
+  status: ScheduleStatus;
+}
+
 export interface ClassScheduleDetail extends ClassScheduleResponse {
-  branch?: BranchResponse;
   branchName?: string;
   coaches?: CoachSummary[];
   scheduleLevel?: ScheduleLevel;

@@ -1,16 +1,17 @@
-import { javaApi } from '@/infrastructure/http/httpClient';
+﻿import { javaApi } from '@/infrastructure/http/httpClient';
 import type { PageResponse } from '@/infrastructure/http/pagination.types';
 
 import type {
   CoursePriceCreateRequest,
   CoursePriceListParams,
   CoursePriceResponse,
+  CoursePriceSimpleResponse,
   CoursePriceUpdateRequest,
 } from './course-price.dto';
 
 export const coursePriceApi = {
-  async list(params?: CoursePriceListParams): Promise<PageResponse<CoursePriceResponse>> {
-    const response = await javaApi.get<PageResponse<CoursePriceResponse>>('/course-prices', { params });
+  async list(params?: CoursePriceListParams): Promise<PageResponse<CoursePriceSimpleResponse>> {
+    const response = await javaApi.get<PageResponse<CoursePriceSimpleResponse>>('/course-prices', { params });
     return response.data;
   },
   async get(coursePriceId: string): Promise<CoursePriceResponse> {
