@@ -1,3 +1,4 @@
+import { useActiveQueriesRefresh } from "@/infrastructure/query/useActiveQueriesRefresh";
 import { ThemedText } from "@/shared/ui/ThemedText";
 import { getWindowDimensions } from "@/shared/utils/windowDimensions";
 import { Colors, radii, typography } from "@/theme";
@@ -5,7 +6,7 @@ import type { AppIconElement } from "@/theme/icons";
 import { Image } from "expo-image";
 import type { ReactNode } from "react";
 import type { StyleProp, ViewStyle } from "react-native";
-import { ScrollView, StyleSheet, View } from "react-native";
+import { RefreshControl, ScrollView, StyleSheet, View } from "react-native";
 import {
   SafeAreaView,
   useSafeAreaInsets,
@@ -32,6 +33,7 @@ export type BottomTabScreenLayoutProps = {
   children: ReactNode;
   rightActions?: ReactNode | HeaderAction[];
   contentContainerStyle?: StyleProp<ViewStyle>;
+  refreshEnabled?: boolean;
 };
 
 const BOTTOM_TAB_SPACE = 92;
@@ -42,9 +44,11 @@ export default function BottomTabScreenLayout({
   children,
   rightActions,
   contentContainerStyle,
+  refreshEnabled = true,
 }: BottomTabScreenLayoutProps) {
   const insets = useSafeAreaInsets();
   const actionColor = Colors.light.surface;
+  const { refreshing, onRefresh } = useActiveQueriesRefresh();
 
   return (
     <SafeAreaView edges={["left", "right"]} style={styles.safeArea}>
@@ -68,7 +72,7 @@ export default function BottomTabScreenLayout({
                     color={action.color ?? actionColor}
                   />
                 ))
-              : rightActions ?? <DefaultHeaderActions color={actionColor} />}
+              : (rightActions ?? <DefaultHeaderActions color={actionColor} />)}
           </View>
         </View>
       </View>
@@ -82,6 +86,16 @@ export default function BottomTabScreenLayout({
           { paddingBottom: BOTTOM_TAB_SPACE + Math.max(insets.bottom, 10) },
           contentContainerStyle,
         ]}
+        refreshControl={
+          refreshEnabled ? (
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={onRefresh}
+              tintColor={Colors.light.primary}
+              colors={[Colors.light.primary]}
+            />
+          ) : undefined
+        }
       >
         {children}
       </ScrollView>

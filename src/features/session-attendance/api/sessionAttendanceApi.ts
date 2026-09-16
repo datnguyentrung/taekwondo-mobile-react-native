@@ -6,7 +6,7 @@ import type {
   SessionAttendanceListResponse,
   SessionAttendanceResponse,
   SessionAttendanceUpdateRequest,
-} from './student-attendance.dto';
+} from './session-attendance.dto';
 
 export const sessionAttendanceApi = {
   async list(params?: AttendanceFilterParams): Promise<SessionAttendanceListResponse> {

@@ -1,5 +1,8 @@
-import type { PageResponse } from '@/infrastructure/http/pagination.types';
-import type { AttendanceStatus, EvaluationStatus } from '../constants/student-attendance.constants';
+import type { PageResponse } from "@/infrastructure/http/pagination.types";
+import type {
+  AttendanceStatus,
+  EvaluationStatus,
+} from "../constants/session-attendance.constants";
 
 export interface AllowedActions {
   update: boolean;
@@ -57,5 +60,6 @@ export interface AttendanceFilterParams {
 
 export type SessionAttendanceFilterParams = AttendanceFilterParams;
 
-export type SessionAttendanceListResponse = PageResponse<SessionAttendanceResponse>;
+export type SessionAttendanceListResponse =
+  PageResponse<SessionAttendanceResponse>;
 export type StudentAttendanceListResponse = SessionAttendanceListResponse;

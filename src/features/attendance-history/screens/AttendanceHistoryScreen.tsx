@@ -1,6 +1,6 @@
-import { Tuning } from "reicon-react-native";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { StyleSheet, View } from "react-native";
+import { ActivityIndicator, Pressable, StyleSheet, View } from "react-native";
+import { Tuning } from "reicon-react-native";
 
 import { DefaultHeaderActions } from "@/routes/navigation/components/DefaultHeaderActions";
 import { HeaderActionButton } from "@/routes/navigation/components/HeaderActionButton";
@@ -16,6 +16,7 @@ import { TrainingScoreSheet } from "../components/TrainingScoreSheet";
 import { getMockHistoryRecords } from "../data/history.mock";
 import type { AttendanceHistoryMode } from "../domain/historyAccess";
 import type { CalendarQuarter } from "../domain/historyDateRange";
+import { useAttendanceHistoryQuery } from "../hooks/useAttendanceHistoryQuery";
 import {
   HistoryFilterActions,
   HistoryFilterContent,
@@ -23,7 +24,6 @@ import {
 import { HistoryPeriodSearchForm } from "./AttendanceHistoryScreen/HistoryPeriodSearchForm";
 import {
   emptyHistoryFilters,
-  filterHistoryRecords,
   getHistoryFilterDateRange,
   getHistoryFilterGroups,
 } from "./AttendanceHistoryScreen/historyFilter.logic";
@@ -55,14 +55,24 @@ export default function AttendanceHistoryScreen({
   const handoffTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const records = useMemo(() => getMockHistoryRecords(mode), [mode]);
-  const filterGroups = useMemo(() => getHistoryFilterGroups(records), [records]);
+  const filterGroups = useMemo(
+    () => getHistoryFilterGroups(records),
+    [records],
+  );
   const appliedCount = filters.branchIds.length + filters.shifts.length;
   const canSearch = Boolean(selectedYear && selectedQuarter);
   const searchEnabled = canSearch && !hasSearched;
-  const visibleRecords = useMemo(
-    () => (hasSearched ? filterHistoryRecords(records, filters) : []),
-    [filters, hasSearched, records],
-  );
+
+  const {
+    records: visibleRecords,
+    isLoading,
+    isError,
+    refetch,
+  } = useAttendanceHistoryQuery({
+    mode,
+    filters,
+    enabled: hasSearched,
+  });
   const selectedRange = hasSearched ? getHistoryFilterDateRange(filters) : null;
   const title = mode === "student" ? "Điểm danh" : "Chấm công";
   const filterLabel =
@@ -168,7 +178,9 @@ export default function AttendanceHistoryScreen({
         contentContainerStyle={styles.content}
         floatingContent={
           hasSearched && mode === "student" ? (
-            <TrainingScoreFloatingButton onPress={() => setScoreVisible(true)} />
+            <TrainingScoreFloatingButton
+              onPress={() => setScoreVisible(true)}
+            />
           ) : undefined
         }
       >
@@ -184,7 +196,28 @@ export default function AttendanceHistoryScreen({
         />
 
         {hasSearched ? (
-          visibleRecords.length ? (
+          isLoading ? (
+            <View style={styles.centerContainer}>
+              <ActivityIndicator size="large" color={Colors.light.primary} />
+              <ThemedText type="bodySmall" style={styles.loadingText}>
+                Đang tải dữ liệu...
+              </ThemedText>
+            </View>
+          ) : isError ? (
+            <View style={styles.centerContainer}>
+              <ThemedText type="body" style={styles.emptyTitle}>
+                Không thể tải dữ liệu lịch sử
+              </ThemedText>
+              <ThemedText type="bodySmall" style={styles.emptyDescription}>
+                Đã xảy ra lỗi trong quá trình tải. Vui lòng thử lại.
+              </ThemedText>
+              <Pressable style={styles.retryButton} onPress={() => refetch()}>
+                <ThemedText type="bodySmall" style={styles.retryText}>
+                  Thử lại
+                </ThemedText>
+              </Pressable>
+            </View>
+          ) : visibleRecords.length ? (
             <View style={styles.list}>
               {visibleRecords.map((record) => (
                 <HistoryRecordCard key={record.id} record={record} />
@@ -296,5 +329,27 @@ const styles = StyleSheet.create({
   emptyDescription: {
     color: Colors.light.textSecondary,
     textAlign: "center",
+  },
+  centerContainer: {
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 12,
+    paddingTop: 82,
+    paddingHorizontal: 18,
+  },
+  loadingText: {
+    color: Colors.light.textSecondary,
+    textAlign: "center",
+  },
+  retryButton: {
+    marginTop: 8,
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    backgroundColor: Colors.light.primary,
+    borderRadius: 8,
+  },
+  retryText: {
+    color: "#FFFFFF",
+    fontWeight: "600",
   },
 });

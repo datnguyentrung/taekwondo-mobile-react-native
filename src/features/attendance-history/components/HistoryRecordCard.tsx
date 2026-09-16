@@ -1,25 +1,28 @@
+import { StyleSheet, View } from "react-native";
 import { Clock, Location, User } from "reicon-react-native";
-import { StyleSheet, View } from 'react-native';
 
-import { AppIcon } from '@/shared/ui/AppIcon';
-import { ThemedText } from '@/shared/ui/ThemedText';
-import { Colors, effects, hexToRgba, radii } from '@/theme';
-import type { AppIconElement } from '@/theme/icons';
+import { AppIcon } from "@/shared/ui/AppIcon";
+import { ThemedText } from "@/shared/ui/ThemedText";
+import { Colors, effects, hexToRgba, radii } from "@/theme";
+import type { AppIconElement } from "@/theme/icons";
 
 import type {
   HistoryRecordTone,
   HistoryRecordViewModel,
-} from '../domain/historyMappers';
+} from "../domain/historyMappers";
 
 type HistoryRecordCardProps = {
   record: HistoryRecordViewModel;
 };
 
-const toneColors: Record<HistoryRecordTone, { text: string; background: string }> = {
-  success: { text: '#16A34A', background: '#EAFCF1' },
-  warning: { text: '#D97706', background: '#FEEFDD' },
-  error: { text: '#DC2626', background: '#FCDEDE' },
-  neutral: { text: Colors.light.textSecondary, background: '#F3F4F6' },
+const toneColors: Record<
+  HistoryRecordTone,
+  { text: string; background: string }
+> = {
+  success: { text: "#16A34A", background: "#EAFCF1" },
+  warning: { text: "#D97706", background: "#FEEFDD" },
+  error: { text: "#DC2626", background: "#FCDEDE" },
+  neutral: { text: Colors.light.textSecondary, background: "#F3F4F6" },
 };
 
 export function HistoryRecordCard({ record }: HistoryRecordCardProps) {
@@ -37,7 +40,10 @@ export function HistoryRecordCard({ record }: HistoryRecordCardProps) {
             { borderColor: tone.text, backgroundColor: tone.background },
           ]}
         >
-          <ThemedText type="body" style={[styles.badgeText, { color: tone.text }]}>
+          <ThemedText
+            type="body"
+            style={[styles.badgeText, { color: tone.text }]}
+          >
             {record.badgeLabel}
           </ThemedText>
         </View>
@@ -59,7 +65,10 @@ export function HistoryRecordCard({ record }: HistoryRecordCardProps) {
           { borderColor: tone.text, backgroundColor: tone.background },
         ]}
       >
-        <ThemedText type="body" style={[styles.noteTitle, { color: tone.text }]}>
+        <ThemedText
+          type="body"
+          style={[styles.noteTitle, { color: tone.text }]}
+        >
           {record.noteTitle}
         </ThemedText>
         <ThemedText type="bodySmall" numberOfLines={2} style={styles.note}>
@@ -70,13 +79,7 @@ export function HistoryRecordCard({ record }: HistoryRecordCardProps) {
   );
 }
 
-function MetaItem({
-  icon,
-  label,
-}: {
-  icon: AppIconElement;
-  label: string;
-}) {
+function MetaItem({ icon, label }: { icon: AppIconElement; label: string }) {
   return (
     <View style={styles.metaItem}>
       <AppIcon icon={icon} size={22} color={Colors.light.primary} />
@@ -93,15 +96,16 @@ const styles = StyleSheet.create({
     borderRadius: radii.md,
     backgroundColor: Colors.light.surface,
     paddingHorizontal: 17,
-    paddingTop: 10,
+    // paddingTop: 10,
     paddingBottom: 18,
     ...effects.card,
   },
   cardHeader: {
     minHeight: 41,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingVertical: 10,
   },
   dateText: {
     color: Colors.light.text,
@@ -109,14 +113,14 @@ const styles = StyleSheet.create({
   badge: {
     minWidth: 84,
     height: 34,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
     borderWidth: 1,
     borderRadius: radii.pill,
     paddingHorizontal: 14,
   },
   badgeText: {
-    textAlign: 'center',
+    textAlign: "center",
   },
   divider: {
     height: StyleSheet.hairlineWidth,
@@ -124,14 +128,14 @@ const styles = StyleSheet.create({
   },
   metaRow: {
     height: 46,
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
   },
   metaItem: {
     flex: 1,
     minWidth: 0,
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: 8,
   },
   metaText: {

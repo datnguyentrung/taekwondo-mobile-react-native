@@ -3,10 +3,17 @@ import { ThemedText } from "@/shared/ui/ThemedText";
 import { getWindowDimensions } from "@/shared/utils/windowDimensions";
 import { Colors, effects, typography } from "@/theme";
 import type { AppIconElement } from "@/theme/icons";
+import { useActiveQueriesRefresh } from "@/infrastructure/query/useActiveQueriesRefresh";
 import { useRouter } from "expo-router";
 import type { ReactNode } from "react";
 import type { StyleProp, ViewStyle } from "react-native";
-import { Pressable, ScrollView, StyleSheet, View } from "react-native";
+import {
+  Pressable,
+  RefreshControl,
+  ScrollView,
+  StyleSheet,
+  View,
+} from "react-native";
 import {
   SafeAreaView,
   useSafeAreaInsets,
@@ -34,6 +41,7 @@ export type StackScreenLayoutProps = {
   contentContainerStyle?: StyleProp<ViewStyle>;
   floatingContent?: ReactNode;
   scrollEnabled?: boolean;
+  refreshEnabled?: boolean;
 };
 
 export default function StackScreenLayout({
@@ -43,10 +51,12 @@ export default function StackScreenLayout({
   contentContainerStyle,
   floatingContent,
   scrollEnabled = true,
+  refreshEnabled = true,
 }: StackScreenLayoutProps) {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const actionColor = Colors.light.text;
+  const { refreshing, onRefresh } = useActiveQueriesRefresh();
 
   return (
     <SafeAreaView edges={["left", "right"]} style={styles.safeArea}>
@@ -89,6 +99,16 @@ export default function StackScreenLayout({
           contentInsetAdjustmentBehavior="never"
           showsVerticalScrollIndicator={false}
           contentContainerStyle={[styles.content, contentContainerStyle]}
+          refreshControl={
+            refreshEnabled ? (
+              <RefreshControl
+                refreshing={refreshing}
+                onRefresh={onRefresh}
+                tintColor={Colors.light.primary}
+                colors={[Colors.light.primary]}
+              />
+            ) : undefined
+          }
         >
           {children}
         </ScrollView>
