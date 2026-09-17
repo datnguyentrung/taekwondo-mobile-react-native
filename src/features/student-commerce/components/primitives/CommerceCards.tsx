@@ -10,8 +10,15 @@ import type {
   StudentSummaryView,
   WalletTransactionView,
 } from "../../types";
-import { formatVnd } from "../../utils/studentCommerceUtils";
-import { InfoRow, PrimaryActionButton, StatusBadge, SurfaceCard } from "./CommerceLayoutPrimitives";
+import {
+  formatCourseStartingPrice,
+  formatVnd,
+} from "../../utils/studentCommerceUtils";
+import {
+  InfoRow,
+  StatusBadge,
+  SurfaceCard,
+} from "./CommerceLayoutPrimitives";
 
 export function StudentSummaryCard({
   student,
@@ -39,7 +46,8 @@ export function StudentSummaryCard({
 export function CourseIconBox({ size = 40 }: { size?: number }) {
   return (
     <View style={[styles.iconBox, { width: size, height: size }]}>
-      <AppIcon icon={<Layers weight="Filled" />}
+      <AppIcon
+        icon={<Layers weight="Filled" />}
         size={Math.min(size - 14, 26)}
         color={Colors.light.text}
       />
@@ -49,55 +57,36 @@ export function CourseIconBox({ size = 40 }: { size?: number }) {
 
 export function CourseCatalogCard({
   course,
-  mode,
   onPress,
-  onPackagePress,
 }: {
   course: CourseView;
-  mode: "registration" | "active" | "ended";
   onPress?: () => void;
-  onPackagePress?: () => void;
 }) {
   return (
     <Pressable
-      accessibilityRole={mode === "registration" ? undefined : "button"}
-      onPress={mode === "registration" ? undefined : onPress}
+      accessibilityRole="button"
+      accessibilityLabel={`Xem chi tiết ${course.courseName}`}
+      onPress={onPress}
       style={({ pressed }) => [pressed ? styles.pressed : null]}
     >
       <SurfaceCard>
         <View style={styles.row}>
           <CourseIconBox size={36} />
           <View style={styles.flex}>
-            <ThemedText type="title" style={styles.blackText}>
+            <ThemedText type="title" numberOfLines={2} style={styles.blackText}>
               {course.courseName}
             </ThemedText>
-            <ThemedText type="bodySmall" style={styles.blackText}>
-              {course.branchName} · {course.scheduleLabel}
+            <ThemedText type="bodySmall" numberOfLines={1} style={styles.blackText}>
+              Cơ sở {course.branchName}
+            </ThemedText>
+            <ThemedText type="bodySmall" numberOfLines={2} style={styles.secondaryText}>
+              {course.scheduleLabel}
+            </ThemedText>
+            <ThemedText type="title" style={styles.priceText}>
+              {formatCourseStartingPrice(course)}
             </ThemedText>
           </View>
-          {mode === "registration" ? (
-            <PrimaryActionButton
-              title="Xem gói"
-              variant="outline"
-              onPress={onPackagePress}
-            />
-          ) : (
-            <StatusBadge
-              label={course.statusLabel}
-              tone={mode === "ended" ? "neutral" : "primary"}
-            />
-          )}
         </View>
-        {mode === "active" ? (
-          <ThemedText type="bodySmall" style={styles.secondaryText}>
-            {course.enrolledStudentCount} / {course.capacity} học viên
-          </ThemedText>
-        ) : null}
-        {mode === "ended" && course.endedAtLabel ? (
-          <ThemedText type="bodySmall" style={styles.secondaryText}>
-            {course.endedAtLabel}
-          </ThemedText>
-        ) : null}
       </SurfaceCard>
     </Pressable>
   );
@@ -224,7 +213,6 @@ export function PurchaseSummary({
   );
 }
 
-
 const styles = StyleSheet.create({
   studentSummary: {
     minHeight: 88,
@@ -277,5 +265,8 @@ const styles = StyleSheet.create({
   },
   secondaryText: {
     color: Colors.light.textSecondary,
+  },
+  priceText: {
+    color: Colors.light.text,
   },
 });

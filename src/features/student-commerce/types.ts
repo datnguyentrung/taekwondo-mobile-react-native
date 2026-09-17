@@ -40,9 +40,19 @@ export type CoursePackageView = {
   amount: number;
 };
 
+export type CourseStaffMemberView = {
+  id: string;
+  fullName: string;
+  roleLabel: string;
+};
+
 export type CourseView = {
   courseId: string;
   courseName: string;
+  subtitle?: string;
+  description?: string;
+  benefits?: string;
+  curriculum?: string;
   branchName: string;
   levelLabel: string;
   scheduleLabel: string;
@@ -51,7 +61,9 @@ export type CourseView = {
   capacity?: number;
   enrolledStudentCount?: number;
   endedAtLabel?: string;
+  manager?: CourseStaffMemberView;
   coachName: string;
+  coaches?: CourseStaffMemberView[];
   assistantCount?: number;
   packages: CoursePackageView[];
 };

@@ -8,6 +8,7 @@ jest.mock('@/shared/ui/BottomSheetWindow', () => ({
 }));
 
 import {
+  CourseCatalogCard,
   PackageSheet,
   SegmentedTabs,
   StudentSummaryCard,
@@ -34,6 +35,22 @@ describe('StudentCommercePrimitives', () => {
 
     expect(screen.getByText('+2.000.000đ')).toBeTruthy();
     expect(screen.getByText('-3.000.000đ')).toBeTruthy();
+  });
+
+  it('renders one pressable course catalog card without package action', async () => {
+    const onPress = jest.fn();
+    const screen = await render(
+      <CourseCatalogCard course={studentCommerceMock.courses[0]} onPress={onPress} />,
+    );
+
+    expect(screen.getByText('Taekwondo Cơ bản')).toBeTruthy();
+    expect(screen.getByText('Cơ sở Văn Quán')).toBeTruthy();
+    expect(screen.getByText('Thứ 3, 5, 7 · 18:00–19:30')).toBeTruthy();
+    expect(screen.getByText('Từ 500.000đ/tháng')).toBeTruthy();
+    expect(screen.queryByText('Xem gói')).toBeNull();
+
+    fireEvent.press(screen.getByLabelText('Xem chi tiết Taekwondo Cơ bản'));
+    expect(onPress).toHaveBeenCalledTimes(1);
   });
 
   it('exposes selected state for segmented tabs', async () => {
@@ -64,7 +81,7 @@ describe('StudentCommercePrimitives', () => {
       />,
     );
 
-    fireEvent.press(screen.getAllByText('Xem chi tiết →')[1]);
+    fireEvent.press(screen.getByLabelText('Xem chi tiết gói 3 tháng'));
     expect(onOpenPackage).toHaveBeenCalledWith('advanced-3m');
   });
 });

@@ -87,11 +87,13 @@ function createClient() {
   });
 }
 
-async function renderWithClient() {
+async function renderWithClient(
+  props: React.ComponentProps<typeof StudentCourseRegistrationScreen> = {},
+) {
   const queryClient = createClient();
   const screen = await render(
     <QueryClientProvider client={queryClient}>
-      <StudentCourseRegistrationScreen />
+      <StudentCourseRegistrationScreen {...props} />
     </QueryClientProvider>,
   );
 
@@ -135,7 +137,7 @@ const secondCourse: CourseResponse = {
 
 const coursePrice: CoursePriceResponse = {
   coursePriceId: 'price-3m',
-  courseId: 'course-basic',
+  course,
   durationMonths: 3,
   sessionCount: 24,
   basePrice: 3000000,
@@ -207,6 +209,19 @@ describe('StudentCourseRegistrationScreen', () => {
     expect(screen.getByText('Chọn khóa học')).toBeTruthy();
     expect(screen.getAllByText('--')).toHaveLength(2);
     expect(walletPurchaseCourseMock).not.toHaveBeenCalled();
+
+    screen.queryClient.clear();
+  });
+
+  it('preselects course and package from route params', async () => {
+    const screen = await renderWithClient({
+      initialCourseId: 'basic',
+      initialPackageId: 'basic-6m',
+    });
+
+    expect(screen.getByText('Taekwondo Cơ bản · Văn Quán')).toBeTruthy();
+    expect(screen.getByText('6 tháng · 48 buổi')).toBeTruthy();
+    expect(screen.getByText('Đã chọn')).toBeTruthy();
 
     screen.queryClient.clear();
   });

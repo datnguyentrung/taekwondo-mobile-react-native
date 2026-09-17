@@ -7,7 +7,7 @@ export default function AdminCourseRegisterRoute() {
   return (
     <StudentCourseRegistrationScreen
       initialCourseId={courseId ?? 'basic'}
-      initialPackageId={packageId ?? 'basic-1m'}
+      initialPackageId={packageId}
     />
   );
 }

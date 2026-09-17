@@ -35,6 +35,25 @@ export function formatVnd(amount: number) {
   return `${new Intl.NumberFormat('vi-VN').format(amount)}đ`;
 }
 
+function getPackageDurationMonths(coursePackage: CoursePackageView) {
+  const durationMatch = coursePackage.durationLabel.match(/\d+/);
+  return durationMatch ? Math.max(Number(durationMatch[0]), 1) : 1;
+}
+
+export function getMonthlyPackagePrice(coursePackage: CoursePackageView) {
+  return Math.round(coursePackage.amount / getPackageDurationMonths(coursePackage));
+}
+
+export function getCourseStartingMonthlyPrice(course: CourseView) {
+  if (course.packages.length === 0) return undefined;
+  return Math.min(...course.packages.map(getMonthlyPackagePrice));
+}
+
+export function formatCourseStartingPrice(course: CourseView) {
+  const amount = getCourseStartingMonthlyPrice(course);
+  return amount ? `Từ ${formatVnd(amount)}/tháng` : 'Chưa có học phí';
+}
+
 export function filterTransactions(
   transactions: WalletTransactionView[],
   filter: TransactionFilter,
@@ -49,9 +68,6 @@ export function calculateBalanceAfterTopUp(wallet: WalletSummaryView, amount: nu
 }
 
 export function filterCoursesByCatalogTab(courses: CourseView[], tab: CourseCatalogTab) {
-  if (tab === 'registration') {
-    return courses.filter((course) => course.catalogStatus === 'registration' || course.courseId === 'basic');
-  }
   return courses.filter((course) => course.catalogStatus === tab);
 }
 

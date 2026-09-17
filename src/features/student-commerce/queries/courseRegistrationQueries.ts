@@ -58,7 +58,7 @@ export function mapCourseResponseToRegistrationCourse(
     courseId: course.courseId,
     courseName: course.name,
     branchName,
-    scheduleLabel: scheduleLabel || schedule?.scheduleId || course.classScheduleId || '',
+    scheduleLabel: scheduleLabel || schedule?.scheduleId || '',
     statusLabel: CourseStatusLabel[course.status],
   };
 }

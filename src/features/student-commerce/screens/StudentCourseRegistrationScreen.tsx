@@ -38,6 +38,8 @@ import type {
 import {
   formatVnd,
   getCommerceState,
+  getPackage,
+  getSelectedCourse,
 } from "../utils/studentCommerceUtils";
 import {
   usePurchaseCourseRegistration,
@@ -63,13 +65,14 @@ type RegistrationSearchSheetProps<T> = {
 
 export function StudentCourseRegistrationScreen({
   studentCode: _studentCode,
-  initialCourseId: _initialCourseId,
-  initialPackageId: _initialPackageId,
+  initialCourseId,
+  initialPackageId,
 }: StudentRouteProps & {
   initialCourseId?: string;
   initialPackageId?: string;
 }) {
   const state = getCommerceState();
+  const initialCourse = getSelectedCourse(state.courses, initialCourseId);
   const [studentSheetVisible, setStudentSheetVisible] = useState(false);
   const [courseSheetVisible, setCourseSheetVisible] = useState(false);
   const [studentSearch, setStudentSearch] = useState("");
@@ -77,8 +80,10 @@ export function StudentCourseRegistrationScreen({
   const [selectedStudent, setSelectedStudent] =
     useState<CourseRegistrationStudentView>();
   const [selectedCourse, setSelectedCourse] =
-    useState<CourseRegistrationCourseView>();
-  const [selectedPackage, setSelectedPackage] = useState<CoursePackageView>();
+    useState<CourseRegistrationCourseView | undefined>(() => initialCourse);
+  const [selectedPackage, setSelectedPackage] = useState<CoursePackageView | undefined>(
+    () => (initialPackageId ? getPackage(initialCourse, initialPackageId) : undefined),
+  );
 
   const studentsQuery = useRegistrationStudentSearch(
     studentSearch,
@@ -91,7 +96,10 @@ export function StudentCourseRegistrationScreen({
   const pricesQuery = useRegistrationCoursePrices(selectedCourse?.courseId);
   const purchaseMutation = usePurchaseCourseRegistration();
 
-  const packageOptions = selectedCourse ? pricesQuery.data ?? [] : [];
+  const fallbackPackages = selectedCourse
+    ? getSelectedCourse(state.courses, selectedCourse.courseId)?.packages ?? []
+    : [];
+  const packageOptions = selectedCourse ? pricesQuery.data ?? fallbackPackages : [];
   const selectedPrice = selectedPackage?.amount ?? 0;
   const balance = state.wallet.balance;
   const canConfirm = Boolean(
@@ -126,7 +134,7 @@ export function StudentCourseRegistrationScreen({
           <PackageGrid
             packages={packageOptions}
             selectedPackageId={selectedPackage?.id}
-            loading={pricesQuery.isLoading}
+            loading={pricesQuery.isLoading && packageOptions.length === 0}
             disabled={!selectedCourse}
             onSelect={setSelectedPackage}
           />

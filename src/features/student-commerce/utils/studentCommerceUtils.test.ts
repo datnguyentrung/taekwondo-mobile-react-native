@@ -4,6 +4,7 @@ import {
   canConfirmCourseRegistration,
   filterCoursesByCatalogTab,
   filterTransactions,
+  formatCourseStartingPrice,
   formatVnd,
   getCourse,
   getPackage,
@@ -33,10 +34,9 @@ describe('student commerce utils', () => {
   it('filters catalog tabs from course status', () => {
     expect(filterCoursesByCatalogTab(studentCommerceMock.courses, 'registration').map((item) => item.courseId)).toEqual([
       'basic',
-      'advanced',
     ]);
     expect(filterCoursesByCatalogTab(studentCommerceMock.courses, 'active').map((item) => item.courseId)).toEqual([
-      'basic',
+      'advanced',
       'expert',
     ]);
     expect(filterCoursesByCatalogTab(studentCommerceMock.courses, 'ended').map((item) => item.courseId)).toEqual([
@@ -50,10 +50,14 @@ describe('student commerce utils', () => {
     const packageOption = getPackage(course, 'advanced-3m');
 
     expect(getSelectedCourse(studentCommerceMock.courses, 'advanced')?.courseName).toBe('Taekwondo Nâng cao');
-    expect(getSelectedPrice(studentCommerceMock.courses, 'advanced', 'advanced-3m')?.amount).toBe(3000000);
+    expect(getSelectedPrice(studentCommerceMock.courses, 'advanced', 'advanced-3m')?.amount).toBe(2400000);
     expect(packageOption?.sessions).toBe(24);
     expect(canConfirmCourseRegistration('advanced', 'advanced-3m')).toBe(true);
     expect(canConfirmCourseRegistration('advanced')).toBe(false);
-    expect(getRegistrationSummary(studentCommerceMock.wallet, course, packageOption).balanceAfter).toBe(-500000);
+    expect(getRegistrationSummary(studentCommerceMock.wallet, course, packageOption).balanceAfter).toBe(100000);
+  });
+
+  it('formats starting monthly price from the cheapest package', () => {
+    expect(formatCourseStartingPrice(studentCommerceMock.courses[0])).toBe('Từ 500.000đ/tháng');
   });
 });

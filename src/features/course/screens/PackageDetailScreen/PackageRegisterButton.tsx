@@ -4,7 +4,17 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { ThemedText } from "@/shared/ui/ThemedText";
 import { Colors, activeEffect, hexToRgba, radii } from "@/theme";
 
-export function PackageRegisterButton({ onPress }: { onPress: () => void }) {
+export function PackageRegisterButton({
+  title = "Đăng ký",
+  accessibilityLabel = "Đăng ký gói học",
+  disabled = false,
+  onPress,
+}: {
+  title?: string;
+  accessibilityLabel?: string;
+  disabled?: boolean;
+  onPress: () => void;
+}) {
   const insets = useSafeAreaInsets();
 
   return (
@@ -17,15 +27,21 @@ export function PackageRegisterButton({ onPress }: { onPress: () => void }) {
     >
       <Pressable
         accessibilityRole="button"
-        accessibilityLabel="Đăng ký gói học"
+        accessibilityLabel={accessibilityLabel}
+        accessibilityState={{ disabled }}
+        disabled={disabled}
         onPress={onPress}
         style={({ pressed }) => [
           styles.registerButton,
-          activeEffect(pressed, "pressedScale"),
+          disabled ? styles.registerButtonDisabled : null,
+          !disabled ? activeEffect(pressed, "pressedScale") : null,
         ]}
       >
-        <ThemedText type="heading" style={styles.registerText}>
-          Đăng ký
+        <ThemedText
+          type="heading"
+          style={[styles.registerText, disabled ? styles.registerTextDisabled : null]}
+        >
+          {title}
         </ThemedText>
         {/* <AppIcon
           icon={<ChevronRight size={20} />}
@@ -57,7 +73,13 @@ const styles = StyleSheet.create({
     borderRadius: radii.xl,
     backgroundColor: Colors.light.primary,
   },
+  registerButtonDisabled: {
+    backgroundColor: Colors.light.divider,
+  },
   registerText: {
     color: Colors.light.surface,
+  },
+  registerTextDisabled: {
+    color: Colors.light.textSecondary,
   },
 });

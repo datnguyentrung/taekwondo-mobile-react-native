@@ -5,8 +5,11 @@ import { ThemedText } from "@/shared/ui/ThemedText";
 import { Colors } from "@/theme";
 
 import type { CourseView } from "../../types";
-import { formatVnd, getCommerceState } from "../../utils/studentCommerceUtils";
-import { CourseIconBox } from "./CommerceCards";
+import {
+  formatVnd,
+  getCommerceState,
+  getMonthlyPackagePrice,
+} from "../../utils/studentCommerceUtils";
 import { StatusBadge, SurfaceCard } from "./CommerceLayoutPrimitives";
 
 export function PackageSheet({
@@ -21,43 +24,42 @@ export function PackageSheet({
   onOpenPackage: (packageId: string) => void;
 }) {
   if (!course) return null;
+
   return (
     <BottomSheetWindow
       visible={visible}
-      title={`Gói học - ${course.courseName}`}
+      title="Gói học"
       heightRatio={0.55}
       onClose={onClose}
     >
       <View style={styles.sheetBody}>
-        <ThemedText type="bodySmall" style={styles.blackText}>
-          Chọn gói phù hợp. Số buổi được ưu tiên hiển thị trước giá.
-        </ThemedText>
         {course.packages.map((item) => (
-          <SurfaceCard key={item.id}>
-            <View style={styles.row}>
-              <CourseIconBox size={88} />
-              <View style={styles.flex}>
-                <ThemedText type="bodySmall" style={styles.blackText}>
-                  {item.sessions} BUỔI
-                </ThemedText>
-                <ThemedText type="bodySmall" style={styles.blackText}>
-                  {item.durationLabel}
-                </ThemedText>
-                <ThemedText type="bodySmall" style={styles.blackText}>
-                  {formatVnd(item.amount)}
-                </ThemedText>
-                <Pressable onPress={() => onOpenPackage(item.id)}>
-                  <ThemedText type="action" style={styles.primaryText}>
-                    Xem chi tiết →
+          <Pressable
+            key={item.id}
+            accessibilityRole="button"
+            accessibilityLabel={`Xem chi tiết gói ${item.durationLabel}`}
+            onPress={() => onOpenPackage(item.id)}
+            style={({ pressed }) => [pressed ? styles.pressed : null]}
+          >
+            <SurfaceCard>
+              <View style={styles.packageRow}>
+                <View style={styles.flex}>
+                  <ThemedText type="title" style={styles.blackText}>
+                    {item.durationLabel}
                   </ThemedText>
-                </Pressable>
+                  <ThemedText type="heading" style={styles.blackText}>
+                    {formatVnd(item.amount)}
+                  </ThemedText>
+                  {getMonthlyPackagePrice(item) !== item.amount ? (
+                    <ThemedText type="bodySmall" style={styles.secondaryText}>
+                      {formatVnd(getMonthlyPackagePrice(item))}/tháng
+                    </ThemedText>
+                  ) : null}
+                </View>
               </View>
-            </View>
-          </SurfaceCard>
+            </SurfaceCard>
+          </Pressable>
         ))}
-        <ThemedText type="bodySmall" style={styles.blackText}>
-          Hiện có {course.packages.length} gói đang áp dụng: 1 tháng và 3 tháng.
-        </ThemedText>
       </View>
     </BottomSheetWindow>
   );
@@ -127,6 +129,12 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: 10,
   },
+  packageRow: {
+    minHeight: 82,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+  },
   flex: {
     flex: 1,
     minWidth: 0,
@@ -134,8 +142,8 @@ const styles = StyleSheet.create({
   blackText: {
     color: Colors.light.text,
   },
-  primaryText: {
-    color: Colors.light.primary,
+  secondaryText: {
+    color: Colors.light.textSecondary,
   },
   pressed: {
     opacity: 0.75,
