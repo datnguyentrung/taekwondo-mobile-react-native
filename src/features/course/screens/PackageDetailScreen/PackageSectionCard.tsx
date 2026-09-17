@@ -1,6 +1,6 @@
-import { Check } from "reicon-react-native";
 import type { ReactNode } from "react";
 import { StyleSheet, View } from "react-native";
+import { CheckRead } from "reicon-react-native";
 
 import { AppIcon } from "@/shared/ui/AppIcon";
 import { ThemedText } from "@/shared/ui/ThemedText";
@@ -34,7 +34,7 @@ export function PackageSectionCard({
 export function BenefitLine({ children }: { children: ReactNode }) {
   return (
     <View style={styles.benefitLine}>
-      <AppIcon icon={<Check />} size={20} color={Colors.light.primary} />
+      <AppIcon icon={<CheckRead />} size={20} color={Colors.light.primary} />
       <ThemedText type="bodySmall" style={styles.benefitText}>
         {children}
       </ThemedText>

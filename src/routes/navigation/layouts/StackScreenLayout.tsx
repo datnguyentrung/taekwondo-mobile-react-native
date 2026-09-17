@@ -1,9 +1,9 @@
+import { useActiveQueriesRefresh } from "@/infrastructure/query/useActiveQueriesRefresh";
 import { AppIcon } from "@/shared/ui/AppIcon";
 import { ThemedText } from "@/shared/ui/ThemedText";
 import { getWindowDimensions } from "@/shared/utils/windowDimensions";
 import { Colors, effects, typography } from "@/theme";
 import type { AppIconElement } from "@/theme/icons";
-import { useActiveQueriesRefresh } from "@/infrastructure/query/useActiveQueriesRefresh";
 import { useRouter } from "expo-router";
 import type { ReactNode } from "react";
 import type { StyleProp, ViewStyle } from "react-native";
@@ -162,7 +162,7 @@ const styles = StyleSheet.create({
   },
   content: {
     paddingHorizontal: 20,
-    paddingBottom: 24,
+    // paddingBottom: 24,
   },
   pressed: {
     opacity: 0.75,

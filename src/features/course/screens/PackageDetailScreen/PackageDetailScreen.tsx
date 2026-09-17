@@ -1,6 +1,6 @@
-import { File, Gift, ShieldCheck } from "reicon-react-native";
 import { useRouter } from "expo-router";
 import { StyleSheet, View } from "react-native";
+import { File, Gift, ShieldCheck } from "reicon-react-native";
 
 import StackScreenLayout from "@/routes/navigation/layouts/StackScreenLayout";
 import { ThemedText } from "@/shared/ui/ThemedText";
@@ -73,15 +73,14 @@ export function PackageDetailScreen({ courseId, packageId }: CourseRouteProps) {
         </View>
       </PackageSectionCard>
 
-      <PackageSectionCard
-        icon={<ShieldCheck />}
-        title="Điều kiện & chính sách"
-      >
-        <ThemedText type="bodySmall" style={styles.policyText}>
-          Áp dụng khi khóa học đang mở đăng ký.{"\n"}
-          Thời hạn sử dụng được tính theo kỳ học sau khi đăng ký.{"\n"}
+      <PackageSectionCard icon={<ShieldCheck />} title="Điều kiện & chính sách">
+        <BenefitLine>Áp dụng khi khóa học đang mở đăng ký.</BenefitLine>
+        <BenefitLine>
+          Thời hạn sử dụng được tính theo kỳ học sau khi đăng ký.
+        </BenefitLine>
+        <BenefitLine>
           Các chính sách khác áp dụng theo quy định hiện hành của trung tâm.
-        </ThemedText>
+        </BenefitLine>
       </PackageSectionCard>
     </StackScreenLayout>
   );

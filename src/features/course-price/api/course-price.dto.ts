@@ -15,7 +15,6 @@ export type CoursePriceUpdateRequest = CoursePriceCreateRequest;
 export interface CoursePriceResponse {
   coursePriceId: string;
   course?: CourseResponse;
-  courseId?: string;
   durationMonths: number;
   sessionCount: number;
   basePrice: number;
@@ -26,7 +25,6 @@ export interface CoursePriceResponse {
 export interface CoursePriceSimpleResponse {
   coursePriceId: string;
   course?: CourseSimpleResponse;
-  courseId?: string;
   durationMonths: number;
   sessionCount: number;
   finalPrice: number;

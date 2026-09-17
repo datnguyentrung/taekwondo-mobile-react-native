@@ -1,8 +1,6 @@
-import { ChevronRight } from "reicon-react-native";
 import { Pressable, StyleSheet, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-import { AppIcon } from "@/shared/ui/AppIcon";
 import { ThemedText } from "@/shared/ui/ThemedText";
 import { Colors, activeEffect, hexToRgba, radii } from "@/theme";
 
@@ -29,11 +27,12 @@ export function PackageRegisterButton({ onPress }: { onPress: () => void }) {
         <ThemedText type="heading" style={styles.registerText}>
           Đăng ký
         </ThemedText>
-        <AppIcon icon={<ChevronRight />}
-          width={9}
-          height={16}
+        {/* <AppIcon
+          icon={<ChevronRight size={20} />}
+          // width={9}
+          // height={16}
           color={Colors.light.surface}
-        />
+        /> */}
       </Pressable>
     </View>
   );

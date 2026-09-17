@@ -1,5 +1,8 @@
-import type { ClassScheduleResponse, ClassScheduleSimpleResponse } from '@/features/class-schedule/api/class-schedule.dto';
-import type { CourseStatus } from '../constants/course.constants';
+import type {
+  ClassScheduleResponse,
+  ClassScheduleSimpleResponse,
+} from "@/features/class-schedule/api/class-schedule.dto";
+import type { CourseStatus } from "../constants/course.constants";
 
 export interface CourseCreateRequest {
   classScheduleId: string;
@@ -32,7 +35,6 @@ export interface CourseResponse {
 export interface CourseSimpleResponse {
   courseId: string;
   classSchedule?: ClassScheduleSimpleResponse;
-  classScheduleId?: string;
   nextClassSchedule?: ClassScheduleSimpleResponse | null;
   nextClassScheduleId?: string | null;
   nextScheduleEffectiveFrom: string | null;
