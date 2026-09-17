@@ -52,8 +52,12 @@ const SHEET_HANDOFF_DELAY_MS = 140;
 export default function AttendanceHistoryScreen({
   mode,
 }: AttendanceHistoryScreenProps) {
-  const [selectedYear, setSelectedYear] = useState<number | undefined>(getCurrentCalendarYear);
-  const [selectedQuarter, setSelectedQuarter] = useState<CalendarQuarter | undefined>(getCurrentCalendarQuarter);
+  const [selectedYear, setSelectedYear] = useState<number | undefined>(
+    getCurrentCalendarYear,
+  );
+  const [selectedQuarter, setSelectedQuarter] = useState<
+    CalendarQuarter | undefined
+  >(getCurrentCalendarQuarter);
   const [picker, setPicker] = useState<PickerType>(null);
   const [quarterError, setQuarterError] = useState<string | null>(null);
   const [filters, setFilters] =
@@ -238,7 +242,10 @@ export default function AttendanceHistoryScreen({
                 />
                 {hasSearched && isLoading ? (
                   <View style={styles.centerContainer}>
-                    <ActivityIndicator size="large" color={Colors.light.primary} />
+                    <ActivityIndicator
+                      size="large"
+                      color={Colors.light.primary}
+                    />
                     <ThemedText type="bodySmall" style={styles.loadingText}>
                       Đang tải dữ liệu...
                     </ThemedText>
@@ -248,10 +255,16 @@ export default function AttendanceHistoryScreen({
                     <ThemedText type="body" style={styles.emptyTitle}>
                       Không thể tải dữ liệu lịch sử
                     </ThemedText>
-                    <ThemedText type="bodySmall" style={styles.emptyDescription}>
+                    <ThemedText
+                      type="bodySmall"
+                      style={styles.emptyDescription}
+                    >
                       Đã xảy ra lỗi trong quá trình tải. Vui lòng thử lại.
                     </ThemedText>
-                    <Pressable style={styles.retryButton} onPress={() => refetch()}>
+                    <Pressable
+                      style={styles.retryButton}
+                      onPress={() => refetch()}
+                    >
                       <ThemedText type="bodySmall" style={styles.retryText}>
                         Thử lại
                       </ThemedText>
@@ -313,7 +326,10 @@ export default function AttendanceHistoryScreen({
             {hasSearched ? (
               isLoading ? (
                 <View style={styles.centerContainer}>
-                  <ActivityIndicator size="large" color={Colors.light.primary} />
+                  <ActivityIndicator
+                    size="large"
+                    color={Colors.light.primary}
+                  />
                   <ThemedText type="bodySmall" style={styles.loadingText}>
                     Đang tải dữ liệu...
                   </ThemedText>
@@ -326,7 +342,10 @@ export default function AttendanceHistoryScreen({
                   <ThemedText type="bodySmall" style={styles.emptyDescription}>
                     Đã xảy ra lỗi trong quá trình tải. Vui lòng thử lại.
                   </ThemedText>
-                  <Pressable style={styles.retryButton} onPress={() => refetch()}>
+                  <Pressable
+                    style={styles.retryButton}
+                    onPress={() => refetch()}
+                  >
                     <ThemedText type="bodySmall" style={styles.retryText}>
                       Thử lại
                     </ThemedText>
@@ -335,19 +354,28 @@ export default function AttendanceHistoryScreen({
               ) : visibleRecords.length ? (
                 <View style={styles.list}>
                   {groupedRecords.map((group) => (
-                    <View key={group.dateLabel} style={styles.dateGroupContainer}>
+                    <View
+                      key={group.dateLabel}
+                      style={styles.dateGroupContainer}
+                    >
                       <View style={styles.dateHeaderRow}>
                         <AppIcon
                           icon={<Calendar />}
                           size={18}
                           color={Colors.light.primary}
                         />
-                        <ThemedText type="subtitle" style={styles.dateHeaderText}>
+                        <ThemedText
+                          type="subtitle"
+                          style={styles.dateHeaderText}
+                        >
                           {group.formattedDateHeader}
                         </ThemedText>
                         <View style={styles.dateDivider} />
                         <View style={styles.countBadge}>
-                          <ThemedText type="bodySmall" style={styles.countBadgeText}>
+                          <ThemedText
+                            type="bodySmall"
+                            style={styles.countBadgeText}
+                          >
                             {group.countLabel}
                           </ThemedText>
                         </View>
@@ -445,12 +473,13 @@ export default function AttendanceHistoryScreen({
 
 const styles = StyleSheet.create({
   content: {
-    paddingTop: 24,
-    paddingHorizontal: 20,
+    // paddingTop: 24,
+    // marginHorizontal: 20,
     paddingBottom: 34,
   },
   sectionListContent: {
     paddingBottom: 36,
+    paddingTop: 24,
   },
   formContainer: {
     marginBottom: 16,
@@ -549,5 +578,3 @@ const styles = StyleSheet.create({
     fontWeight: "600",
   },
 });
-
-

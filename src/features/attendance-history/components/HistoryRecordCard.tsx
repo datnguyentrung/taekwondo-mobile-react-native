@@ -98,7 +98,7 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.light.surface,
     paddingHorizontal: 17,
     paddingBottom: 16,
-    ...effects.card,
+    ...effects.soft,
   },
   cardHeader: {
     minHeight: 41,

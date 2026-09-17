@@ -1,4 +1,3 @@
-import { ChevronRight, InfoCircle } from "reicon-react-native";
 import {
   Pressable,
   StyleSheet,
@@ -6,6 +5,7 @@ import {
   type StyleProp,
   type ViewStyle,
 } from "react-native";
+import { ChevronRight, InfoCircle } from "reicon-react-native";
 
 import { AppIcon } from "@/shared/ui/AppIcon";
 import { ThemedText } from "@/shared/ui/ThemedText";
@@ -107,7 +107,8 @@ function SelectField({
         >
           {value}
         </ThemedText>
-        <AppIcon icon={<ChevronRight />}
+        <AppIcon
+          icon={<ChevronRight />}
           width={9}
           height={15}
           color={error ? Colors.light.primary : Colors.light.text}
@@ -116,7 +117,11 @@ function SelectField({
       </Pressable>
       {error ? (
         <View style={styles.errorHint}>
-          <AppIcon icon={<InfoCircle />} size={14} color={Colors.light.primary} />
+          <AppIcon
+            icon={<InfoCircle />}
+            size={14}
+            color={Colors.light.primary}
+          />
           <ThemedText type="bodySmall" style={styles.errorHintText}>
             {error}
           </ThemedText>
@@ -142,7 +147,7 @@ const styles = StyleSheet.create({
     borderRadius: radii.md,
     backgroundColor: Colors.light.surface,
     paddingHorizontal: 20,
-    ...effects.card,
+    ...effects.soft,
   },
   selectBoxError: {
     borderWidth: 1.5,
