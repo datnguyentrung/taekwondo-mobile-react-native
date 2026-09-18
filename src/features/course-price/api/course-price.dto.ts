@@ -27,6 +27,7 @@ export interface CoursePriceSimpleResponse {
   course?: CourseSimpleResponse;
   durationMonths: number;
   sessionCount: number;
+  basePrice?: number;
   finalPrice: number;
   status: CoursePriceStatus;
 }

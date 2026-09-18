@@ -67,12 +67,18 @@ export function mapCoursePriceToPackage(
   price: CoursePriceSimpleResponse,
 ): CoursePackageView {
   const durationLabel = `${price.durationMonths} tháng`;
+  const originalAmount =
+    price.basePrice && price.basePrice > price.finalPrice
+      ? price.basePrice
+      : undefined;
+
   return {
     id: price.coursePriceId,
     label: `${durationLabel} · ${price.sessionCount} buổi`,
     durationLabel,
     sessions: price.sessionCount,
     amount: price.finalPrice,
+    originalAmount,
   };
 }
 

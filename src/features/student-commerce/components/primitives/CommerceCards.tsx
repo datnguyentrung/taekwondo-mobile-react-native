@@ -1,9 +1,17 @@
-import { Layers, NoteText, User } from "reicon-react-native";
+import {
+  Calendar,
+  ChevronRight,
+  Layers,
+  Location,
+  NoteText,
+  User,
+} from "reicon-react-native";
 import { Pressable, StyleSheet, View } from "react-native";
 
 import { AppIcon } from "@/shared/ui/AppIcon";
 import { ThemedText } from "@/shared/ui/ThemedText";
-import { Colors, radii } from "@/theme";
+import { Colors, effects, hexToRgba, radii } from "@/theme";
+import type { AppIconElement } from "@/theme/icons";
 
 import type {
   CourseView,
@@ -49,7 +57,7 @@ export function CourseIconBox({ size = 40 }: { size?: number }) {
       <AppIcon
         icon={<Layers weight="Filled" />}
         size={Math.min(size - 14, 26)}
-        color={Colors.light.text}
+        color={Colors.light.primary}
       />
     </View>
   );
@@ -69,26 +77,62 @@ export function CourseCatalogCard({
       onPress={onPress}
       style={({ pressed }) => [pressed ? styles.pressed : null]}
     >
-      <SurfaceCard>
-        <View style={styles.row}>
-          <CourseIconBox size={36} />
-          <View style={styles.flex}>
-            <ThemedText type="title" numberOfLines={2} style={styles.blackText}>
+      <SurfaceCard style={styles.courseCatalogCard}>
+        <View pointerEvents="none" style={styles.courseArc} />
+        <View style={styles.courseHeaderRow}>
+          <CourseIconBox size={60} />
+          <View style={styles.courseInfo}>
+            <ThemedText
+              type="subtitle"
+              numberOfLines={2}
+              style={styles.courseTitle}
+            >
               {course.courseName}
             </ThemedText>
-            <ThemedText type="bodySmall" numberOfLines={1} style={styles.blackText}>
-              Cơ sở {course.branchName}
-            </ThemedText>
-            <ThemedText type="bodySmall" numberOfLines={2} style={styles.secondaryText}>
-              {course.scheduleLabel}
-            </ThemedText>
-            <ThemedText type="title" style={styles.priceText}>
-              {formatCourseStartingPrice(course)}
-            </ThemedText>
+            <CourseMetaRow icon={<Location />} label={`Cơ sở ${course.branchName}`} />
+            <CourseMetaRow icon={<Calendar />} label={course.scheduleLabel} />
           </View>
+          <View style={styles.courseChevron}>
+            <AppIcon
+              icon={<ChevronRight />}
+              width={10}
+              height={18}
+              color={Colors.light.text}
+            />
+          </View>
+        </View>
+        <View style={styles.courseDivider} />
+        <View style={styles.coursePriceBlock}>
+          <ThemedText type="bodySmall" style={styles.secondaryText}>
+            Học phí từ
+          </ThemedText>
+          <ThemedText type="heading" style={styles.priceText}>
+            {formatCourseStartingPrice(course).replace(/^Từ\s*/i, "")}
+          </ThemedText>
         </View>
       </SurfaceCard>
     </Pressable>
+  );
+}
+
+function CourseMetaRow({
+  icon,
+  label,
+}: {
+  icon: AppIconElement;
+  label: string;
+}) {
+  return (
+    <View style={styles.courseMetaRow}>
+      <AppIcon icon={icon} size={22} color={Colors.light.textSecondary} />
+      <ThemedText
+        type="bodySmall"
+        numberOfLines={2}
+        style={styles.secondaryText}
+      >
+        {label}
+      </ThemedText>
+    </View>
   );
 }
 
@@ -240,8 +284,60 @@ const styles = StyleSheet.create({
   iconBox: {
     alignItems: "center",
     justifyContent: "center",
-    borderRadius: radii.md,
+    borderRadius: radii.lg,
+    backgroundColor: hexToRgba(Colors.light.primary, 0.08),
+  },
+  courseCatalogCard: {
+    minHeight: 168,
+    overflow: "hidden",
+    borderWidth: 0,
+    borderRadius: radii.xl,
+    padding: 16,
+    ...effects.soft,
+  },
+  courseArc: {
+    position: "absolute",
+    right: -106,
+    bottom: -122,
+    width: 256,
+    height: 256,
+    borderRadius: 128,
+    backgroundColor: hexToRgba(Colors.light.primary, 0.08),
+  },
+  courseHeaderRow: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: 16,
+  },
+  courseInfo: {
+    flex: 1,
+    minWidth: 0,
+    gap: 6,
+  },
+  courseTitle: {
+    color: Colors.light.text,
+  },
+  courseMetaRow: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: 8,
+  },
+  courseChevron: {
+    width: 40,
+    height: 40,
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: radii.pill,
     backgroundColor: Colors.light.backgroundElement,
+  },
+  courseDivider: {
+    height: StyleSheet.hairlineWidth,
+    backgroundColor: Colors.light.divider,
+    marginTop: 16,
+  },
+  coursePriceBlock: {
+    gap: 3,
+    paddingTop: 12,
   },
   progressTrack: {
     height: 6,
@@ -267,6 +363,6 @@ const styles = StyleSheet.create({
     color: Colors.light.textSecondary,
   },
   priceText: {
-    color: Colors.light.text,
+    color: Colors.light.primary,
   },
 });

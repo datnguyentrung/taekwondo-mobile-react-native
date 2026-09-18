@@ -1,10 +1,13 @@
+import { useMemo, useState } from "react";
 import { Pressable, StyleSheet, View } from "react-native";
+import { ChevronRight, Fire, Leaf } from "reicon-react-native";
 
 import { BottomSheetWindow } from "@/shared/ui/BottomSheetWindow";
+import { AppIcon } from "@/shared/ui/AppIcon";
 import { ThemedText } from "@/shared/ui/ThemedText";
-import { Colors } from "@/theme";
+import { Colors, hexToRgba, radii } from "@/theme";
 
-import type { CourseView } from "../../types";
+import type { CoursePackageView, CourseView } from "../../types";
 import {
   formatVnd,
   getCommerceState,
@@ -23,45 +26,162 @@ export function PackageSheet({
   onClose: () => void;
   onOpenPackage: (packageId: string) => void;
 }) {
+  const selectedDefaultId = useMemo(
+    () =>
+      course?.packages.find((item) => item.badge?.tone === "popular")?.id ??
+      course?.packages[0]?.id,
+    [course],
+  );
+  const [prevVisible, setPrevVisible] = useState(visible);
+  const [prevDefaultId, setPrevDefaultId] = useState(selectedDefaultId);
+  const [selectedPackageId, setSelectedPackageId] = useState<string | undefined>(
+    selectedDefaultId,
+  );
+
+  if (visible !== prevVisible || selectedDefaultId !== prevDefaultId) {
+    setPrevVisible(visible);
+    setPrevDefaultId(selectedDefaultId);
+    if (visible) {
+      setSelectedPackageId(selectedDefaultId);
+    }
+  }
+
   if (!course) return null;
+
+  const selectedPackage = course.packages.find(
+    (item) => item.id === selectedPackageId,
+  );
 
   return (
     <BottomSheetWindow
       visible={visible}
       title="Gói học"
-      heightRatio={0.55}
+      heightRatio={0.68}
       onClose={onClose}
+      footer={
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="Chọn gói này"
+          accessibilityState={{ disabled: !selectedPackage }}
+          disabled={!selectedPackage}
+          onPress={() => {
+            if (selectedPackage) {
+              onOpenPackage(selectedPackage.id);
+            }
+          }}
+          style={({ pressed }) => [
+            styles.packageCta,
+            !selectedPackage ? styles.disabled : null,
+            pressed ? styles.pressed : null,
+          ]}
+        >
+          <ThemedText type="heading" style={styles.packageCtaText}>
+            Chọn gói này
+          </ThemedText>
+          <AppIcon
+            icon={<ChevronRight />}
+            width={10}
+            height={18}
+            color={Colors.light.surface}
+          />
+        </Pressable>
+      }
     >
-      <View style={styles.sheetBody}>
-        {course.packages.map((item) => (
-          <Pressable
-            key={item.id}
-            accessibilityRole="button"
-            accessibilityLabel={`Xem chi tiết gói ${item.durationLabel}`}
-            onPress={() => onOpenPackage(item.id)}
-            style={({ pressed }) => [pressed ? styles.pressed : null]}
-          >
-            <SurfaceCard>
-              <View style={styles.packageRow}>
-                <View style={styles.flex}>
-                  <ThemedText type="title" style={styles.blackText}>
-                    {item.durationLabel}
-                  </ThemedText>
-                  <ThemedText type="heading" style={styles.blackText}>
-                    {formatVnd(item.amount)}
-                  </ThemedText>
-                  {getMonthlyPackagePrice(item) !== item.amount ? (
-                    <ThemedText type="bodySmall" style={styles.secondaryText}>
-                      {formatVnd(getMonthlyPackagePrice(item))}/tháng
-                    </ThemedText>
-                  ) : null}
-                </View>
-              </View>
-            </SurfaceCard>
-          </Pressable>
-        ))}
+      <View style={styles.packageSheetBody}>
+        {course.packages.map((item) => {
+          const selected = item.id === selectedPackageId;
+          return (
+            <PackageOptionCard
+              key={item.id}
+              item={item}
+              selected={selected}
+              onPress={() => setSelectedPackageId(item.id)}
+            />
+          );
+        })}
       </View>
     </BottomSheetWindow>
+  );
+}
+
+function PackageOptionCard({
+  item,
+  selected,
+  onPress,
+}: {
+  item: CoursePackageView;
+  selected: boolean;
+  onPress: () => void;
+}) {
+  const monthlyPrice = getMonthlyPackagePrice(item);
+
+  return (
+    <Pressable
+      accessibilityRole="radio"
+      accessibilityLabel={`Chọn gói ${item.durationLabel}`}
+      accessibilityState={{ selected }}
+      onPress={onPress}
+      style={({ pressed }) => [pressed ? styles.pressed : null]}
+    >
+      <SurfaceCard
+        soft
+        style={[styles.packageCard, selected ? styles.packageCardSelected : null]}
+      >
+        <View style={[styles.radio, selected ? styles.radioSelected : null]}>
+          {selected ? <View style={styles.radioDot} /> : null}
+        </View>
+        <View style={styles.packageContent}>
+          <View style={styles.packageTopRow}>
+            <View style={styles.flex}>
+              <ThemedText type="heading" style={styles.blackText}>
+                {item.durationLabel}
+              </ThemedText>
+              <View style={styles.priceRow}>
+                <ThemedText
+                  type="heading"
+                  style={selected ? styles.selectedPackagePrice : styles.blackText}
+                >
+                  {formatVnd(item.amount)}
+                </ThemedText>
+                {item.originalAmount ? (
+                  <ThemedText type="bodySmall" style={styles.originalPrice}>
+                    {formatVnd(item.originalAmount)}
+                  </ThemedText>
+                ) : null}
+              </View>
+              <ThemedText type="bodySmall" style={styles.secondaryText}>
+                {formatVnd(monthlyPrice)}/tháng
+              </ThemedText>
+            </View>
+            {item.badge ? <PackageBadge badge={item.badge} /> : null}
+          </View>
+        </View>
+      </SurfaceCard>
+    </Pressable>
+  );
+}
+
+function PackageBadge({
+  badge,
+}: {
+  badge: NonNullable<CoursePackageView["badge"]>;
+}) {
+  const popular = badge.tone === "popular";
+  return (
+    <View style={[styles.badge, popular ? styles.popularBadge : styles.savingBadge]}>
+      <AppIcon
+        icon={popular ? <Fire weight="Filled" /> : <Leaf weight="Filled" />}
+        size={16}
+        color={popular ? Colors.light.primary : Colors.light.success}
+      />
+      <ThemedText
+        type="action"
+        numberOfLines={1}
+        style={popular ? styles.popularBadgeText : styles.savingBadgeText}
+      >
+        {badge.label}
+      </ThemedText>
+    </View>
   );
 }
 
@@ -124,16 +244,110 @@ const styles = StyleSheet.create({
     gap: 12,
     padding: 20,
   },
+  packageSheetBody: {
+    gap: 12,
+    paddingHorizontal: 16,
+    paddingTop: 12,
+    paddingBottom: 104,
+  },
   row: {
     flexDirection: "row",
     alignItems: "center",
     gap: 10,
   },
-  packageRow: {
-    minHeight: 82,
+  packageCard: {
+    minHeight: 116,
     flexDirection: "row",
     alignItems: "center",
+    gap: 18,
+    borderWidth: 1,
+    borderColor: Colors.light.divider,
+    borderRadius: radii.lg,
+    paddingHorizontal: 16,
+    paddingVertical: 18,
+  },
+  packageCardSelected: {
+    borderColor: Colors.light.primary,
+    backgroundColor: hexToRgba(Colors.light.primary, 0.05),
+  },
+  packageContent: {
+    flex: 1,
+    minWidth: 0,
+  },
+  packageTopRow: {
+    flexDirection: "row",
+    alignItems: "flex-start",
     gap: 10,
+  },
+  priceRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    flexWrap: "wrap",
+    gap: 8,
+  },
+  selectedPackagePrice: {
+    color: Colors.light.primary,
+    fontSize: 28,
+    lineHeight: 34,
+  },
+  originalPrice: {
+    color: Colors.light.textSecondary,
+    textDecorationLine: "line-through",
+  },
+  radio: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    borderWidth: 1.5,
+    borderColor: Colors.light.textSecondary,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  radioSelected: {
+    borderWidth: 2,
+    borderColor: Colors.light.primary,
+  },
+  radioDot: {
+    width: 14,
+    height: 14,
+    borderRadius: 7,
+    backgroundColor: Colors.light.primary,
+  },
+  badge: {
+    minHeight: 34,
+    maxWidth: 168,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    borderRadius: radii.pill,
+    paddingHorizontal: 12,
+  },
+  popularBadge: {
+    backgroundColor: hexToRgba(Colors.light.primary, 0.1),
+  },
+  savingBadge: {
+    backgroundColor: hexToRgba(Colors.light.success, 0.14),
+  },
+  popularBadgeText: {
+    color: Colors.light.primary,
+  },
+  savingBadgeText: {
+    color: Colors.light.success,
+  },
+  packageCta: {
+    minHeight: 56,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 16,
+    borderRadius: radii.xl,
+    backgroundColor: Colors.light.primary,
+  },
+  packageCtaText: {
+    color: Colors.light.surface,
+  },
+  disabled: {
+    opacity: 0.45,
   },
   flex: {
     flex: 1,

@@ -467,14 +467,18 @@ function RegistrationSearchSheet<T>({
   onClose,
   onRetry,
 }: RegistrationSearchSheetProps<T>) {
+  const [prevVisible, setPrevVisible] = useState(visible);
+  const [prevSearchValue, setPrevSearchValue] = useState(searchValue);
   const [draftSearch, setDraftSearch] = useState(searchValue);
   const debouncedSearch = useDebounce(draftSearch, 400);
 
-  useEffect(() => {
+  if (visible !== prevVisible || searchValue !== prevSearchValue) {
+    setPrevVisible(visible);
+    setPrevSearchValue(searchValue);
     if (visible) {
       setDraftSearch(searchValue);
     }
-  }, [searchValue, visible]);
+  }
 
   useEffect(() => {
     if (visible) {

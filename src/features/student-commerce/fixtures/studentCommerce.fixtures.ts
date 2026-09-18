@@ -169,8 +169,8 @@ export const studentCommerceMock: StudentCommerceState = {
       assistantCount: 2,
       packages: [
         { id: 'basic-1m', label: '1 tháng · 8 buổi', durationLabel: '1 tháng', sessions: 8, amount: 600000 },
-        { id: 'basic-3m', label: '3 tháng · 24 buổi', durationLabel: '3 tháng', sessions: 24, amount: 1650000 },
-        { id: 'basic-6m', label: '6 tháng · 48 buổi', durationLabel: '6 tháng', sessions: 48, amount: 3000000 },
+        { id: 'basic-3m', label: '3 tháng · 24 buổi', durationLabel: '3 tháng', sessions: 24, amount: 1650000, originalAmount: 1800000, badge: { label: 'Phổ biến', tone: 'popular' } },
+        { id: 'basic-6m', label: '6 tháng · 48 buổi', durationLabel: '6 tháng', sessions: 48, amount: 3000000, badge: { label: 'Tiết kiệm 600.000đ', tone: 'saving' } },
       ],
     },
     {
@@ -206,7 +206,8 @@ export const studentCommerceMock: StudentCommerceState = {
       assistantCount: 1,
       packages: [
         { id: 'advanced-1m', label: '1 tháng · 8 buổi', durationLabel: '1 tháng', sessions: 8, amount: 900000 },
-        { id: 'advanced-3m', label: '3 tháng · 24 buổi', durationLabel: '3 tháng', sessions: 24, amount: 2400000 },
+        { id: 'advanced-3m', label: '3 tháng · 24 buổi', durationLabel: '3 tháng', sessions: 24, amount: 2400000, originalAmount: 2700000, badge: { label: 'Phổ biến', tone: 'popular' } },
+        { id: 'advanced-6m', label: '6 tháng · 48 buổi', durationLabel: '6 tháng', sessions: 48, amount: 4500000, badge: { label: 'Tiết kiệm 900.000đ', tone: 'saving' } },
       ],
     },
     {
@@ -242,7 +243,7 @@ export const studentCommerceMock: StudentCommerceState = {
       assistantCount: 2,
       packages: [
         { id: 'expert-1m', label: '1 tháng · 8 buổi', durationLabel: '1 tháng', sessions: 8, amount: 1200000 },
-        { id: 'expert-3m', label: '3 tháng · 24 buổi', durationLabel: '3 tháng', sessions: 24, amount: 3300000 },
+        { id: 'expert-3m', label: '3 tháng · 24 buổi', durationLabel: '3 tháng', sessions: 24, amount: 3300000, originalAmount: 3600000, badge: { label: 'Phổ biến', tone: 'popular' } },
       ],
     },
     {

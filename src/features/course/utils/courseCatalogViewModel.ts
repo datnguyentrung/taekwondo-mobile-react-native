@@ -4,14 +4,17 @@ import type {
 } from "@/features/student-commerce/types";
 import { filterCoursesByCatalogTab } from "@/features/student-commerce/utils/studentCommerceUtils";
 
-export const COURSE_CATALOG_TABS: { value: CourseCatalogTab; label: string }[] = [
-  { value: "registration", label: "Đăng ký" },
-  { value: "active", label: "Đang diễn ra" },
-  { value: "ended", label: "Đã kết thúc" },
-];
+export const COURSE_CATALOG_TABS: { value: CourseCatalogTab; label: string }[] =
+  [
+    { value: "registration", label: "Dự kiến" },
+    { value: "active", label: "Đang mở" },
+    { value: "ended", label: "Đã kết thúc" },
+  ];
 
 export function getCourseSearchPlaceholder(tab: CourseCatalogTab) {
-  return tab === "registration" ? "Tên khóa học, cơ sở..." : "Tên khóa học, HLV...";
+  return tab === "registration"
+    ? "Tên khóa học, cơ sở..."
+    : "Tên khóa học, HLV...";
 }
 
 export function getCoursesForCatalogTab(

@@ -1,9 +1,17 @@
-import { fireEvent, render } from '@testing-library/react-native';
+import { fireEvent, render, waitFor } from '@testing-library/react-native';
 
 jest.mock('@/shared/ui/BottomSheetWindow', () => ({
-  BottomSheetWindow: ({ visible, children }: { visible: boolean; children: React.ReactNode }) => {
+  BottomSheetWindow: ({
+    visible,
+    children,
+    footer,
+  }: {
+    visible: boolean;
+    children: React.ReactNode;
+    footer?: React.ReactNode;
+  }) => {
     const { View } = require('react-native');
-    return visible ? <View>{children}</View> : null;
+    return visible ? <View>{children}{footer}</View> : null;
   },
 }));
 
@@ -46,7 +54,7 @@ describe('StudentCommercePrimitives', () => {
     expect(screen.getByText('Taekwondo Cơ bản')).toBeTruthy();
     expect(screen.getByText('Cơ sở Văn Quán')).toBeTruthy();
     expect(screen.getByText('Thứ 3, 5, 7 · 18:00–19:30')).toBeTruthy();
-    expect(screen.getByText('Từ 500.000đ/tháng')).toBeTruthy();
+    expect(screen.getByText('500.000đ/tháng')).toBeTruthy();
     expect(screen.queryByText('Xem gói')).toBeNull();
 
     fireEvent.press(screen.getByLabelText('Xem chi tiết Taekwondo Cơ bản'));
@@ -70,7 +78,7 @@ describe('StudentCommercePrimitives', () => {
     expect(onChange).toHaveBeenCalledWith('active');
   });
 
-  it('opens package detail callback from package sheet', async () => {
+  it('selects package before opening package detail from package sheet CTA', async () => {
     const onOpenPackage = jest.fn();
     const screen = await render(
       <PackageSheet
@@ -81,7 +89,33 @@ describe('StudentCommercePrimitives', () => {
       />,
     );
 
-    fireEvent.press(screen.getByLabelText('Xem chi tiết gói 3 tháng'));
+    expect(screen.getByText('Phổ biến')).toBeTruthy();
+    expect(screen.getByText('2.700.000đ')).toBeTruthy();
+
+    fireEvent.press(screen.getByLabelText('Chọn gói 6 tháng'));
+    expect(onOpenPackage).not.toHaveBeenCalled();
+    await waitFor(() => {
+      expect(screen.getByLabelText('Chọn gói 6 tháng').props.accessibilityState).toEqual({
+        selected: true,
+      });
+    });
+
+    fireEvent.press(screen.getByLabelText('Chọn gói này'));
+    expect(onOpenPackage).toHaveBeenCalledWith('advanced-6m');
+  });
+
+  it('opens default popular package from package sheet CTA', async () => {
+    const onOpenPackage = jest.fn();
+    const screen = await render(
+      <PackageSheet
+        visible
+        course={studentCommerceMock.courses[1]}
+        onClose={jest.fn()}
+        onOpenPackage={onOpenPackage}
+      />,
+    );
+
+    fireEvent.press(screen.getByLabelText('Chọn gói này'));
     expect(onOpenPackage).toHaveBeenCalledWith('advanced-3m');
   });
 });

@@ -38,6 +38,11 @@ export type CoursePackageView = {
   durationLabel: string;
   sessions: number;
   amount: number;
+  originalAmount?: number;
+  badge?: {
+    label: string;
+    tone: "popular" | "saving";
+  };
 };
 
 export type CourseStaffMemberView = {
