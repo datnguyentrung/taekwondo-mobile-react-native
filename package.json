@@ -61,7 +61,6 @@
   },
   "scripts": {
     "postinstall": "node ./scripts/patch-reicon.js",
-    "generate-icons": "node ./scripts/generate-icons.js",
     "start": "expo start",
     "typecheck": "tsc --noEmit",
     "test": "jest --runInBand",
