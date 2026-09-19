@@ -118,4 +118,19 @@ describe('StudentCommercePrimitives', () => {
     fireEvent.press(screen.getByLabelText('Chọn gói này'));
     expect(onOpenPackage).toHaveBeenCalledWith('advanced-3m');
   });
+
+  it('renders complete badge label without truncation and footer social proof motif', async () => {
+    const screen = await render(
+      <PackageSheet
+        visible
+        course={studentCommerceMock.courses[0]}
+        onClose={jest.fn()}
+        onOpenPackage={jest.fn()}
+      />,
+    );
+
+    expect(screen.getByText('Tiết kiệm 600.000đ')).toBeTruthy();
+    expect(screen.getAllByText(/Đã đồng hành cùng hơn/).length).toBeGreaterThan(0);
+    expect(screen.getAllByText('85+ học viên').length).toBeGreaterThan(0);
+  });
 });

@@ -39,6 +39,7 @@ export type CoursePackageView = {
   sessions: number;
   amount: number;
   originalAmount?: number;
+  footerText?: string;
   badge?: {
     label: string;
     tone: "popular" | "saving";

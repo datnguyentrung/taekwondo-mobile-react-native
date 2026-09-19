@@ -30,9 +30,9 @@ jest.mock('@/routes/navigation/layouts/StackScreenLayout', () => ({
 }));
 
 jest.mock('@/shared/ui/BottomSheetWindow', () => ({
-  BottomSheetWindow: ({ visible, children }: { visible: boolean; children: React.ReactNode }) => {
+  BottomSheetWindow: ({ visible, children, footer }: { visible: boolean; children: React.ReactNode; footer?: React.ReactNode }) => {
     const { View } = require('react-native');
-    return visible ? <View>{children}</View> : null;
+    return visible ? <View>{children}{footer}</View> : null;
   },
 }));
 
@@ -58,9 +58,13 @@ describe('AdminCourseDetailScreen', () => {
 
     fireEvent.press(screen.getByLabelText('Xem gói học'));
     await waitFor(() =>
-      expect(screen.getByLabelText('Xem chi tiết gói 6 tháng')).toBeTruthy(),
+      expect(screen.getByLabelText('Chọn gói 6 tháng')).toBeTruthy(),
     );
-    fireEvent.press(screen.getByLabelText('Xem chi tiết gói 6 tháng'));
+    fireEvent.press(screen.getByLabelText('Chọn gói 6 tháng'));
+    await waitFor(() =>
+      expect(screen.getByLabelText('Chọn gói 6 tháng').props.accessibilityState).toEqual({ selected: true }),
+    );
+    fireEvent.press(screen.getByLabelText('Chọn gói này'));
 
     expect(mockPush).toHaveBeenCalledWith('/courses/basic/packages/basic-6m');
   });

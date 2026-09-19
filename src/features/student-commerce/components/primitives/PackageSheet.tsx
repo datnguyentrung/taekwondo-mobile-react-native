@@ -1,9 +1,9 @@
 import { useMemo, useState } from "react";
 import { Pressable, StyleSheet, View } from "react-native";
-import { ChevronRight, Fire, Leaf } from "reicon-react-native";
+import { ChevronRight, Fire, Leaf, Users2 } from "reicon-react-native";
 
-import { BottomSheetWindow } from "@/shared/ui/BottomSheetWindow";
 import { AppIcon } from "@/shared/ui/AppIcon";
+import { BottomSheetWindow } from "@/shared/ui/BottomSheetWindow";
 import { ThemedText } from "@/shared/ui/ThemedText";
 import { Colors, hexToRgba, radii } from "@/theme";
 
@@ -34,9 +34,9 @@ export function PackageSheet({
   );
   const [prevVisible, setPrevVisible] = useState(visible);
   const [prevDefaultId, setPrevDefaultId] = useState(selectedDefaultId);
-  const [selectedPackageId, setSelectedPackageId] = useState<string | undefined>(
-    selectedDefaultId,
-  );
+  const [selectedPackageId, setSelectedPackageId] = useState<
+    string | undefined
+  >(selectedDefaultId);
 
   if (visible !== prevVisible || selectedDefaultId !== prevDefaultId) {
     setPrevVisible(visible);
@@ -56,7 +56,7 @@ export function PackageSheet({
     <BottomSheetWindow
       visible={visible}
       title="Gói học"
-      heightRatio={0.68}
+      heightRatio={0.72}
       onClose={onClose}
       footer={
         <Pressable
@@ -125,39 +125,88 @@ function PackageOptionCard({
     >
       <SurfaceCard
         soft
-        style={[styles.packageCard, selected ? styles.packageCardSelected : null]}
+        style={[
+          styles.packageCard,
+          selected ? styles.packageCardSelected : null,
+        ]}
       >
-        <View style={[styles.radio, selected ? styles.radioSelected : null]}>
-          {selected ? <View style={styles.radioDot} /> : null}
-        </View>
-        <View style={styles.packageContent}>
-          <View style={styles.packageTopRow}>
-            <View style={styles.flex}>
-              <ThemedText type="heading" style={styles.blackText}>
-                {item.durationLabel}
-              </ThemedText>
-              <View style={styles.priceRow}>
-                <ThemedText
-                  type="heading"
-                  style={selected ? styles.selectedPackagePrice : styles.blackText}
-                >
-                  {formatVnd(item.amount)}
+        <View style={styles.cardMainRow}>
+          <View style={[styles.radio, selected ? styles.radioSelected : null]}>
+            {selected ? <View style={styles.radioDot} /> : null}
+          </View>
+          <View style={styles.packageContent}>
+            <View style={styles.packageTopRow}>
+              <View style={styles.flex}>
+                <ThemedText type="heading" style={styles.blackText}>
+                  {item.durationLabel}
                 </ThemedText>
-                {item.originalAmount ? (
-                  <ThemedText type="bodySmall" style={styles.originalPrice}>
-                    {formatVnd(item.originalAmount)}
+                <View style={styles.priceRow}>
+                  <ThemedText
+                    type="heading"
+                    style={
+                      selected ? styles.selectedPackagePrice : styles.blackText
+                    }
+                  >
+                    {formatVnd(item.amount)}
                   </ThemedText>
-                ) : null}
+                  {item.originalAmount ? (
+                    <ThemedText type="bodySmall" style={styles.originalPrice}>
+                      {formatVnd(item.originalAmount)}
+                    </ThemedText>
+                  ) : null}
+                </View>
+                <ThemedText type="bodySmall" style={styles.secondaryText}>
+                  {formatVnd(monthlyPrice)}/tháng
+                </ThemedText>
               </View>
-              <ThemedText type="bodySmall" style={styles.secondaryText}>
-                {formatVnd(monthlyPrice)}/tháng
-              </ThemedText>
+              {item.badge ? <PackageBadge badge={item.badge} /> : null}
             </View>
-            {item.badge ? <PackageBadge badge={item.badge} /> : null}
+
+            <View style={styles.cardDivider} />
+
+            <PackageCardFooter text={item.footerText} />
           </View>
         </View>
       </SurfaceCard>
     </Pressable>
+  );
+}
+
+function PackageCardFooter({ text }: { text?: string }) {
+  const content = text ?? "Đã đồng hành cùng hơn 85+ học viên";
+  const highlightKey = "85+ học viên";
+
+  if (content.includes(highlightKey)) {
+    const parts = content.split(highlightKey);
+    return (
+      <View style={styles.cardFooter}>
+        <AppIcon
+          icon={<Users2 />}
+          size={16}
+          color={Colors.light.textSecondary}
+        />
+        <ThemedText type="bodySmall" style={styles.footerText}>
+          {parts[0]}
+          <ThemedText type="bodySmall" style={styles.footerHighlight}>
+            {highlightKey}
+          </ThemedText>
+          {parts[1]}
+        </ThemedText>
+      </View>
+    );
+  }
+
+  return (
+    <View style={styles.cardFooter}>
+      <AppIcon
+        icon={<Users2 />}
+        size={16}
+        color={Colors.light.textSecondary}
+      />
+      <ThemedText type="bodySmall" style={styles.footerText}>
+        {content}
+      </ThemedText>
+    </View>
   );
 }
 
@@ -168,7 +217,9 @@ function PackageBadge({
 }) {
   const popular = badge.tone === "popular";
   return (
-    <View style={[styles.badge, popular ? styles.popularBadge : styles.savingBadge]}>
+    <View
+      style={[styles.badge, popular ? styles.popularBadge : styles.savingBadge]}
+    >
       <AppIcon
         icon={popular ? <Fire weight="Filled" /> : <Leaf weight="Filled" />}
         size={16}
@@ -176,7 +227,6 @@ function PackageBadge({
       />
       <ThemedText
         type="action"
-        numberOfLines={1}
         style={popular ? styles.popularBadgeText : styles.savingBadgeText}
       >
         {badge.label}
@@ -256,19 +306,20 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   packageCard: {
-    minHeight: 116,
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 18,
     borderWidth: 1,
     borderColor: Colors.light.divider,
     borderRadius: radii.lg,
     paddingHorizontal: 16,
-    paddingVertical: 18,
+    paddingVertical: 16,
   },
   packageCardSelected: {
     borderColor: Colors.light.primary,
     backgroundColor: hexToRgba(Colors.light.primary, 0.05),
+  },
+  cardMainRow: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: 14,
   },
   packageContent: {
     flex: 1,
@@ -287,8 +338,8 @@ const styles = StyleSheet.create({
   },
   selectedPackagePrice: {
     color: Colors.light.primary,
-    fontSize: 28,
-    lineHeight: 34,
+    fontSize: 25,
+    lineHeight: 28,
   },
   originalPrice: {
     color: Colors.light.textSecondary,
@@ -302,6 +353,7 @@ const styles = StyleSheet.create({
     borderColor: Colors.light.textSecondary,
     alignItems: "center",
     justifyContent: "center",
+    marginTop: 2,
   },
   radioSelected: {
     borderWidth: 2,
@@ -315,12 +367,12 @@ const styles = StyleSheet.create({
   },
   badge: {
     minHeight: 34,
-    maxWidth: 168,
     flexDirection: "row",
     alignItems: "center",
     gap: 6,
     borderRadius: radii.pill,
     paddingHorizontal: 12,
+    flexShrink: 0,
   },
   popularBadge: {
     backgroundColor: hexToRgba(Colors.light.primary, 0.1),
@@ -333,6 +385,29 @@ const styles = StyleSheet.create({
   },
   savingBadgeText: {
     color: Colors.light.success,
+  },
+  cardDivider: {
+    height: 1,
+    backgroundColor: Colors.light.divider,
+    marginTop: 12,
+    marginBottom: 10,
+  },
+  cardFooter: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
+  footerText: {
+    color: Colors.light.textSecondary,
+    fontSize: 13,
+    lineHeight: 18,
+    flex: 1,
+  },
+  footerHighlight: {
+    color: Colors.light.text,
+    fontWeight: "700",
+    fontSize: 13,
+    lineHeight: 18,
   },
   packageCta: {
     minHeight: 56,

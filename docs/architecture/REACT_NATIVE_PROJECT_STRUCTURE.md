@@ -524,8 +524,8 @@ project-root/
 - `src/infrastructure/*` contains global technical capabilities.
 - `src/native/*` is for **cross-feature TS-facing native capability abstractions**, not every native use case.
 - Feature-specific native code stays under the feature.
-- `app/` at repository root exists only for Expo Router projects.
-- `src/navigation/` is primarily for React Navigation projects.
+- `src/app/` (or `app/` at repository root) contains thin Expo Router filesystem route entrypoints. A route file must remain minimal and delegate screen rendering to `src/features/` or `src/routes/`.
+- `src/routes/` contains navigation layout chrome (`StackScreenLayout`, `BottomTabScreenLayout`), navigation tab configuration (`appTabs.config.tsx`), and shared header action controls (`HomeHeaderButton`, `NotificationHeaderButton`).
 - Do not maintain duplicate routing systems unless migration requires it.
 
 ---
@@ -535,21 +535,17 @@ project-root/
 ## `src/app/`
 
 ### Purpose
-Composition root for application lifecycle and global providers.
+Expo Router filesystem routing root and composition entrypoints.
 
 ### Put here
-- root `App.tsx`;
-- bootstrap sequencing;
-- provider composition;
-- application-wide error boundary;
-- application lifecycle wiring.
+- Route layout files (`_layout.tsx`);
+- Thin route entrypoints (`index.tsx`) delegating to feature screens;
+- Route group parameters and route parameter validation wrappers.
 
 ### Do NOT put here
-- feature screens;
-- feature API clients;
-- domain calculations;
-- generic UI primitives;
-- feature-specific device code.
+- Heavy feature screens or inline business calculations;
+- Feature API clients or DTO mappers;
+- Generic UI primitives.
 
 ### Naming convention
 Folders: `kebab-case`. React files: `PascalCase.tsx`.
@@ -959,10 +955,15 @@ Business constants.
 ## `src/theme/`
 
 ### Purpose
-Global visual design system values.
+Global visual design system values and icon registry contracts.
 
 ### Put here
-Colors, spacing, typography, radii, shadows/elevation tokens, theme contracts.
+Colors, spacing, typography, radii, shadows/elevation tokens, theme contracts, and app icon element type contracts (`src/theme/icons.ts`).
+
+### Icon System Standard
+- All app icons MUST use `AppIcon` (from `@/shared/ui/AppIcon`) combined with `reicon-react-native`.
+- Do NOT generate custom SVG icon components or run SVG icon transformation scripts. Icon generation scripts have been retired.
+- Individual `.svg` assets are forbidden for general UI icons; only decorative background mask SVGs (e.g. `feature-quick-mask-primary.svg`) may be stored in `assets/` and rendered via `SvgXml`.
 
 ### Do NOT put here
 Feature-specific component layout values unless they are real design tokens.
@@ -1000,10 +1001,10 @@ Every unit test. Unit/component tests should normally colocate with source.
 Bundled static resources.
 
 ### Put here
-Global images, fonts, icons, globally owned ML models.
+Global images, fonts, logo assets, and decorative background SVGs.
 
 ### Do NOT put here
-Feature-only assets when feature colocation is practical and bundler supports it.
+Individual UI SVG icons (use `reicon-react-native` + `AppIcon` instead).
 
 ---
 
