@@ -23,6 +23,13 @@ export const effects = {
     shadowRadius: 4,
     elevation: 2,
   },
+  floating: {
+    shadowColor: '#111827',
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.12,
+    shadowRadius: 30,
+    elevation: 12,
+  },
   // Reusable press & interaction effects
   pressed: {
     opacity: 0.75,

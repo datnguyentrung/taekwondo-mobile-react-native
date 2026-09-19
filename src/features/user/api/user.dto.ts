@@ -10,11 +10,10 @@ export interface ChangePasswordRequest {
 
 export interface UserCreateRequest {
   phoneNumber: string;
-  passwordHash?: string;
+  passwordHash: string;
   personId?: string | null;
   person?: unknown;
-  relationshipType?: RelationshipType;
-  roleCodes?: string[];
+  relationshipType: RelationshipType;
 }
 
 export interface UserUpdateRequest {

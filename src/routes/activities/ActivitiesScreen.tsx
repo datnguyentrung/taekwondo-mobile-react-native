@@ -45,14 +45,20 @@ export default function ActivitiesScreen() {
     null,
   );
 
+  const allowedGroups = useMemo(() => ACTIVITIES_GROUPS.map((group) => ({
+    ...group,
+    actions: group.actions.filter((action) => !action.requiredPermissions?.length || action.requiredPermissions.some((permission) => permissions?.includes(permission))),
+  })), [permissions]);
+  const allowedActivities = useMemo(() => allowedGroups.flatMap((group) => group.actions), [allowedGroups]);
+
   const quickActions = useMemo(
-    () => getQuickActions(quickActionIds, ALL_ACTIVITIES),
-    [quickActionIds],
+    () => getQuickActions(quickActionIds, allowedActivities),
+    [allowedActivities, quickActionIds],
   );
 
   const catalogGroups = useMemo(
-    () => getAvailableCatalogGroups(ACTIVITIES_GROUPS, quickActionIds),
-    [quickActionIds],
+    () => getAvailableCatalogGroups(allowedGroups, quickActionIds),
+    [allowedGroups, quickActionIds],
   );
 
   useEffect(() => {
@@ -125,6 +131,21 @@ export default function ActivitiesScreen() {
         return;
       }
 
+      if (action.id === 'role-permission-admin') {
+        router.push('/admin/roles' as Href);
+        return;
+      }
+
+      if (action.id === 'position-admin') {
+        router.push('/admin/positions' as Href);
+        return;
+      }
+
+      if (action.id === 'user-admin') {
+        router.push('/admin/users' as Href);
+        return;
+      }
+
       if (action.id !== "attendance-history") return;
 
       const decision = getAttendanceHistoryNavigationDecision(permissions);
@@ -136,7 +157,7 @@ export default function ActivitiesScreen() {
         navigateToHistoryMode(decision.mode);
       }
     },
-    [navigateToHistoryMode, permissions],
+    [navigateToHistoryMode, permissions, router],
   );
 
   return (
