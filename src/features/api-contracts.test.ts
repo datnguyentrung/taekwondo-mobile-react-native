@@ -18,7 +18,7 @@ import { notificationRecipientApi } from "./notification/api/notificationRecipie
 import { personApi } from "./person/api/personApi";
 import { userPersonApi } from "./person/api/userPersonApi";
 import { positionApi } from "./position/api/positionApi";
-import { permissionApi } from "./roles/api/permissionApi";
+import { permissionApi } from "./permissions/api/permissionApi";
 import { roleApi } from "./roles/api/roleApi";
 import { rolePermissionApi } from "./roles/api/rolePermissionApi";
 import { userRoleApi } from "./roles/api/userRoleApi";

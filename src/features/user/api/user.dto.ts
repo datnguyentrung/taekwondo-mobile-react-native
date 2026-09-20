@@ -1,6 +1,7 @@
-﻿import type { Belt } from '@/features/person/constants/person.constants';
-import type { RelationshipType } from '@/features/authentication/domain/auth.types';
-import type { UserStatus } from '../constants/user.constants';
+import type { RelationshipType } from "@/features/authentication/domain/auth.types";
+import type { PersonSimpleResponse } from "@/features/person";
+import type { Belt } from "@/features/person/constants/person.constants";
+import type { UserStatus } from "../constants/user.constants";
 
 export interface ChangePasswordRequest {
   oldPassword: string;
@@ -56,13 +57,15 @@ export interface UserDetail {
 
 export interface UserSimpleResponse {
   userId: string;
-  phoneNumber: string | null;
+  phoneNumber: string;
   status: UserStatus | null;
   lastLoginAt: string | null;
+  persons: PersonSimpleResponse[];
 }
 
 export interface UserListParams {
   page?: number;
   size?: number;
   sort?: string | string[];
+  search?: string;
 }

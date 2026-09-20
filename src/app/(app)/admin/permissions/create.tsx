@@ -1,1 +1,1 @@
-export { PermissionCreateScreen as default } from '@/features/system-administration';
+export { PermissionCreateScreen as default } from "@/features/permissions";

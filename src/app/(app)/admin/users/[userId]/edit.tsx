@@ -1,1 +1,1 @@
-export { UserEditScreen as default } from '@/features/system-administration';
+export { UserEditScreen as default } from "@/features/user";

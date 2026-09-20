@@ -1,1 +1,1 @@
-export { UserRolesScreen as default } from '@/features/system-administration';
+export { UserRolesScreen as default } from "@/features/user";

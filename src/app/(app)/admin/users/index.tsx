@@ -1,1 +1,1 @@
-export { UserListScreen as default } from '@/features/system-administration';
+export { UserListScreen as default } from "@/features/user";

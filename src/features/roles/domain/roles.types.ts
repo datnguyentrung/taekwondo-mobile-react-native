@@ -1,4 +1,4 @@
-export type { PermissionResponse as Permission } from '../api/permission.dto';
+export type { PermissionResponse as Permission } from "@/features/permissions";
 export type { RoleResponse as Role } from '../api/role.dto';
 export type {
   RolePermissionItemResponse as RolePermissionItem,

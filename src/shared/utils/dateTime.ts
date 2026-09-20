@@ -6,6 +6,18 @@ export const formatDateDMY = (dateString: string | number | Date) => {
   return `${day}-${month}-${year}`;
 };
 
+export function formatDateTime(value?: string | null) {
+  if (!value) return "Chưa có";
+
+  const date = new Date(value);
+  return Number.isNaN(date.getTime())
+    ? value
+    : new Intl.DateTimeFormat("vi-VN", {
+        dateStyle: "short",
+        timeStyle: "short",
+      }).format(date);
+}
+
 export const formatDateDMYHM = (dateString: string | number | Date) => {
   const date = new Date(dateString);
   const day = date.getDate().toString().padStart(2, "0");

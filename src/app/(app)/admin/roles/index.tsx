@@ -1,1 +1,1 @@
-export { RoleListScreen as default } from '@/features/system-administration';
+export { RoleListScreen as default } from "@/features/roles";

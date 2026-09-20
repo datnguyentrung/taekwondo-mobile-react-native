@@ -3,7 +3,7 @@ import { StyleSheet, View } from 'react-native';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useLocalSearchParams, useRouter, type Href } from 'expo-router';
 
-import { positionApi } from '@/features/position';
+import { positionApi } from '../api/positionApi';
 import StackScreenLayout from '@/routes/navigation/layouts/StackScreenLayout';
 import { ThemedText } from '@/shared/ui/ThemedText';
 import { useToast } from '@/shared/ui/Toast';
@@ -23,9 +23,10 @@ import {
   AdminSectionHeader,
   AdminSwitchField,
   adminStyles,
-} from '../components/AdministrationPrimitives';
-import { containsSearch, formatDateTime, initials } from '../domain/administrationViewModel';
-import { administrationKeys, usePosition, usePositionPeople, usePositions } from '../queries/administrationQueries';
+} from '@/shared/ui/admin/AdministrationPrimitives';
+import { positionKeys, usePosition, usePositionPeople, usePositions } from '../queries/positionQueries';
+import { formatDateTime } from '@/shared/utils/dateTime';
+import { containsSearch, initials } from '@/shared/utils/string';
 
 function usePositionId() {
   const { positionId } = useLocalSearchParams<{ positionId: string }>();
@@ -71,7 +72,7 @@ export function PositionDetailScreen() {
   const [confirming, setConfirming] = useState(false);
   const remove = useMutation({
     mutationFn: () => positionApi.remove(positionId as string),
-    onSuccess: async () => { await queryClient.invalidateQueries({ queryKey: administrationKeys.positions }); toast.show({ message: 'Đã xóa chức vụ', variant: 'success' }); router.replace('/admin/positions' as Href); },
+    onSuccess: async () => { await queryClient.invalidateQueries({ queryKey: positionKeys.lists() }); toast.show({ message: 'Đã xóa chức vụ', variant: 'success' }); router.replace('/admin/positions' as Href); },
     onError: () => toast.show({ message: 'Không thể xóa chức vụ đang có nhân sự', variant: 'error' }),
   });
   return (
@@ -126,10 +127,10 @@ function PositionFormScreen({ mode }: { mode: 'create' | 'edit' }) {
   }, [position.data]);
   const save = useMutation({
     mutationFn: () => mode === 'create' ? positionApi.create({ code: code.trim().toUpperCase(), name: name.trim(), description: description.trim() || null, active }) : positionApi.update(positionId as string, { code: code.trim().toUpperCase(), name: name.trim(), description: description.trim() || null, active }),
-    onSuccess: async (saved) => { await queryClient.invalidateQueries({ queryKey: administrationKeys.positions }); toast.show({ message: mode === 'create' ? 'Đã tạo chức vụ' : 'Đã cập nhật chức vụ', variant: 'success' }); setConfirming(false); router.replace(`/admin/positions/${saved.positionId}` as Href); },
+    onSuccess: async (saved) => { await queryClient.invalidateQueries({ queryKey: positionKeys.lists() }); toast.show({ message: mode === 'create' ? 'Đã tạo chức vụ' : 'Đã cập nhật chức vụ', variant: 'success' }); setConfirming(false); router.replace(`/admin/positions/${saved.positionId}` as Href); },
     onError: () => toast.show({ message: 'Không thể lưu chức vụ', variant: 'error' }),
   });
-  const remove = useMutation({ mutationFn: () => positionApi.remove(positionId as string), onSuccess: async () => { await queryClient.invalidateQueries({ queryKey: administrationKeys.positions }); router.replace('/admin/positions' as Href); }, onError: () => toast.show({ message: 'Không thể xóa chức vụ đang có nhân sự', variant: 'error' }) });
+  const remove = useMutation({ mutationFn: () => positionApi.remove(positionId as string), onSuccess: async () => { await queryClient.invalidateQueries({ queryKey: positionKeys.lists() }); router.replace('/admin/positions' as Href); }, onError: () => toast.show({ message: 'Không thể xóa chức vụ đang có nhân sự', variant: 'error' }) });
   const valid = code.trim().length > 1 && name.trim().length > 1;
   return (
     <StackScreenLayout title={mode === 'create' ? 'Tạo chức vụ' : 'Sửa chức vụ'} contentContainerStyle={adminStyles.screen}>

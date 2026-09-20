@@ -1,1 +1,1 @@
-export { PositionDetailScreen as default } from '@/features/system-administration';
+export { PositionDetailScreen as default } from "@/features/position";

@@ -1,4 +1,4 @@
-﻿import type { PermissionAction } from '../constants/roles.constants';
+import type { PermissionAction } from '../constants/permissions.constants';
 
 export interface PermissionCreateRequest {
   code: string;
