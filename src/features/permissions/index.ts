@@ -5,4 +5,5 @@ export {
   PermissionCreateScreen,
   PermissionEditScreen,
   PermissionListScreen,
+  PermissionsTabContent,
 } from "./screens/PermissionAdministrationScreens";

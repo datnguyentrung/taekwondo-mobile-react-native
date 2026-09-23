@@ -53,7 +53,7 @@ function usePermissionId() {
   return Number.isFinite(id) ? id : undefined;
 }
 
-export function PermissionListScreen() {
+export function PermissionsTabContent() {
   const router = useRouter();
   const permissions = usePermissionsCatalog();
   const [search, setSearch] = useState("");
@@ -63,20 +63,7 @@ export function PermissionListScreen() {
   const groups = groupPermissions(filtered);
 
   return (
-    <StackScreenLayout
-      title="Vai trò & quyền"
-      contentContainerStyle={adminStyles.screen}
-    >
-      <AdminIntro>
-        Danh mục quyền kỹ thuật được dùng để cấu hình các vai trò.
-      </AdminIntro>
-      <AdminTabs
-        items={tabs}
-        value="permissions"
-        onChange={(value) =>
-          value === "roles" && router.replace("/admin/roles" as Href)
-        }
-      />
+    <>
       <AdminSearchField
         value={search}
         onChangeText={setSearch}
@@ -110,6 +97,20 @@ export function PermissionListScreen() {
           </AdminCard>
         ))
       )}
+    </>
+  );
+}
+
+export function PermissionListScreen() {
+  return (
+    <StackScreenLayout
+      title="Vai trò & quyền"
+      contentContainerStyle={adminStyles.screen}
+    >
+      <AdminIntro>
+        Danh mục quyền kỹ thuật được dùng để cấu hình các vai trò.
+      </AdminIntro>
+      <PermissionsTabContent />
     </StackScreenLayout>
   );
 }
