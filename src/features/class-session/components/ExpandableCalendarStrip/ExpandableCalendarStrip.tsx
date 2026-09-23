@@ -80,7 +80,7 @@ export function ExpandableCalendarStrip({
         { damping: 22, stiffness: 200, mass: 0.8 },
         (finished) => {
           if (finished) {
-            scheduleOnRN(() => onToggleExpanded(nextState));
+            scheduleOnRN(onToggleExpanded, nextState);
           }
         },
       ),
@@ -125,7 +125,7 @@ export function ExpandableCalendarStrip({
             },
             (finished) => {
               if (finished) {
-                scheduleOnRN(() => onToggleExpanded(shouldExpand));
+                scheduleOnRN(onToggleExpanded, shouldExpand);
               }
             },
           ),
