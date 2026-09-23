@@ -1,7 +1,6 @@
-import { useQueries, useQuery } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 
-import { personApi, type PersonResponse } from "@/features/person";
-import { personKeys, usePeople } from "@/features/person/queries/personQueries";
+import { usePeopleByPosition } from "@/features/person/queries/personQueries";
 import { positionApi } from "../api/positionApi";
 
 export const POSITION_ADMIN_PAGE_SIZE = 200;
@@ -33,24 +32,12 @@ export function usePosition(id?: string) {
 }
 
 export function usePositionPeople(positionId?: string) {
-  const people = usePeople();
-  const details = useQueries({
-    queries: (people.data?.content ?? []).map((person) => ({
-      queryKey: personKeys.detail(person.personId),
-      queryFn: () => personApi.get(person.personId) as Promise<PersonResponse>,
-      enabled: Boolean(positionId),
-      staleTime: 60_000,
-    })),
-  });
+  const query = usePeopleByPosition(positionId);
 
   return {
-    people: details
-      .map((query) => query.data)
-      .filter(
-        (person): person is PersonResponse =>
-          Boolean(person && person.position?.positionId === positionId),
-      ),
-    isPending: people.isPending || details.some((query) => query.isPending),
-    isError: people.isError || details.some((query) => query.isError),
+    people: query.data?.content ?? [],
+    isPending: query.isPending,
+    isError: query.isError,
+    refetch: query.refetch,
   };
 }

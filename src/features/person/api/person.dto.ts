@@ -1,4 +1,4 @@
-﻿import type { CoachTimesheetResponse } from "@/features/coach-timesheet/api/coach-timesheet.dto";
+import type { CoachTimesheetResponse } from "@/features/coach-timesheet/api/coach-timesheet.dto";
 import type { CoachDetail } from "@/features/coach/api/coach.dto";
 import type { StudentAttendanceResponse } from "@/features/session-attendance/api/session-attendance.dto";
 import type { StudentDetail } from "@/features/student/api/student.dto";
@@ -60,6 +60,7 @@ export type { PersonResponse, PersonSimpleResponse };
 
 export interface PersonSearchParams {
   search?: string;
+  positionId?: string;
   page?: number;
   size?: number;
   sortBy?: string;

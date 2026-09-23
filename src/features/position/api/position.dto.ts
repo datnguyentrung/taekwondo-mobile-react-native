@@ -1,4 +1,4 @@
-﻿import type { PageResponse } from '@/infrastructure/http/pagination.types';
+import type { PageResponse } from '@/infrastructure/http/pagination.types';
 
 export interface PositionCreateRequest {
   code: string;
@@ -20,6 +20,7 @@ export interface PositionResponse {
   name: string;
   description: string | null;
   active: boolean;
+  personCount?: number;
   createdAt: string;
   updatedAt: string;
 }
@@ -29,6 +30,7 @@ export interface PositionSimpleResponse {
   code: string;
   name: string;
   active: boolean;
+  personCount?: number;
 }
 
 export interface PositionSearchParams {
