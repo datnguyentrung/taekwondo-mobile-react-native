@@ -72,6 +72,35 @@ export const colorPrimitives = {
   mutedBorder: figmaColors.color4,
 } as const;
 
+export const calendarColors = {
+  cardBackground: "#F0F6FE",
+  cyan: {
+    accent: "#0891B2",
+    title: "#0891B2",
+    icon: "#0891B2",
+  },
+  royalBlue: {
+    accent: "#2563EB",
+    title: "#1D4ED8",
+    icon: "#2563EB",
+  },
+  teal: {
+    accent: "#0D9488",
+    title: "#0F766E",
+    icon: "#0D9488",
+  },
+  skyBlue: {
+    accent: "#0284C7",
+    title: "#0369A1",
+    icon: "#0284C7",
+  },
+  muted: {
+    accent: "#94A3B8",
+    title: "#64748B",
+    icon: "#94A3B8",
+  },
+} as const;
+
 export const Gradients = {
   /** Màu 0: Linear 0% #FD9956 100% -> 100% #C2A5FD 100% (Opacity 50%) */
   gradient0: figmaColors.linear0,

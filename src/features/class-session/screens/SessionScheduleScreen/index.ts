@@ -1,2 +1,1 @@
-export { default } from './SessionScheduleScreen';
-export * from './SessionScheduleScreen';
+export { default, default as SessionScheduleScreen } from './SessionScheduleScreen';

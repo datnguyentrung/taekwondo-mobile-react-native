@@ -5,4 +5,5 @@ export * from './domain/calendarDate';
 export * from './hooks/useClassSessionCalendarQuery';
 export * from './components/ExpandableCalendarStrip';
 export * from './components/SessionCalendarCard';
+export * from './components/SessionDetailSheet';
 export { default as SessionScheduleScreen } from './screens/SessionScheduleScreen';

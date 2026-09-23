@@ -37,7 +37,7 @@ export type BottomTabScreenLayoutProps = {
   refreshEnabled?: boolean;
 };
 
-const BOTTOM_TAB_SPACE = 92;
+export const BOTTOM_TAB_SPACE = 92;
 
 export default function BottomTabScreenLayout({
   title,
@@ -107,7 +107,6 @@ export default function BottomTabScreenLayout({
           style={[
             styles.scroll,
             styles.content,
-            { paddingBottom: BOTTOM_TAB_SPACE + Math.max(insets.bottom, 10) },
             contentContainerStyle,
           ]}
         >

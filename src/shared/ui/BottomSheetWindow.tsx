@@ -1,8 +1,10 @@
 import { Plus } from "reicon-react-native";
 import { useEffect, useMemo } from 'react';
+import type { StyleProp, ViewStyle } from 'react-native';
 import {
   Modal,
   Pressable,
+  ScrollView,
   StyleSheet,
   useWindowDimensions,
   View,
@@ -32,17 +34,14 @@ export type BottomSheetWindowProps = {
   closeAccessibilityLabel?: string;
   children: React.ReactNode;
   footer?: React.ReactNode;
+  scrollable?: boolean;
+  contentContainerStyle?: StyleProp<ViewStyle>;
   onClose: () => void;
 };
 
 function project(velocity: number, decelerationRate = 0.998) {
   'worklet';
   return ((velocity / 1000) * decelerationRate) / (1 - decelerationRate);
-}
-
-function rubberband(overshoot: number, dimension: number, constant = 0.55) {
-  'worklet';
-  return (overshoot * dimension * constant) / (dimension + constant * Math.abs(overshoot));
 }
 
 function clampHeightRatio(heightRatio: number) {
@@ -58,6 +57,8 @@ export function BottomSheetWindow({
   closeAccessibilityLabel = 'Đóng',
   children,
   footer,
+  scrollable = true,
+  contentContainerStyle,
   onClose,
 }: BottomSheetWindowProps) {
   const reducedMotion = useReducedMotion();
@@ -86,19 +87,20 @@ export function BottomSheetWindow({
   const pan = useMemo(
     () =>
       Gesture.Pan()
-        .activeOffsetY([-10, 10])
+        .activeOffsetY([-5, 10])
         .onStart(() => {
           context.set(translateY.get());
         })
         .onUpdate((event) => {
           const next = context.get() + event.translationY;
-          translateY.set(next >= 0 ? next : rubberband(next, sheetHeight.get()));
+          // Clamp translateY >= 0: only allow dragging down to dismiss, never lift upwards
+          translateY.set(Math.max(0, next));
         })
         .onEnd((event) => {
           const heightValue = sheetHeight.get();
           const projected = translateY.get() + project(event.velocityY);
 
-          if (projected > heightValue * 0.4) {
+          if (projected > heightValue * 0.4 || event.velocityY > 500) {
             translateY.set(
               withSpring(
                 heightValue,
@@ -185,7 +187,31 @@ export function BottomSheetWindow({
                 <AppIcon icon={<Plus />} size={18} color={Colors.light.textSecondary} />
               </Pressable>
             </View>
-            <View style={styles.body}>{children}</View>
+            {scrollable ? (
+              <ScrollView
+                style={styles.body}
+                contentContainerStyle={[
+                  styles.scrollContent,
+                  footer ? styles.scrollContentWithFooter : null,
+                  contentContainerStyle,
+                ]}
+                showsVerticalScrollIndicator={false}
+                keyboardShouldPersistTaps="handled"
+                bounces={false}
+              >
+                {children}
+              </ScrollView>
+            ) : (
+              <View
+                style={[
+                  styles.body,
+                  footer ? styles.scrollContentWithFooter : null,
+                  contentContainerStyle,
+                ]}
+              >
+                {children}
+              </View>
+            )}
             {footer ? <View style={styles.footer}>{footer}</View> : null}
           </Animated.View>
         </GestureDetector>
@@ -251,6 +277,12 @@ const styles = StyleSheet.create({
   },
   body: {
     flex: 1,
+  },
+  scrollContent: {
+    paddingBottom: 20,
+  },
+  scrollContentWithFooter: {
+    paddingBottom: 90,
   },
   footer: {
     position: 'absolute',

@@ -1,27 +1,35 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
-import { ActivityIndicator, ScrollView, StyleSheet, View } from 'react-native';
+import { useEffect, useMemo, useRef, useState } from "react";
+import { ActivityIndicator, ScrollView, StyleSheet, View } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-import { DefaultHeaderActions } from '@/routes/navigation/components/DefaultHeaderActions';
-import BottomTabScreenLayout from '@/routes/navigation/layouts/BottomTabScreenLayout';
-import { ThemedText } from '@/shared/ui/ThemedText';
-import { Colors } from '@/theme';
-import type { ClassSessionCalendarResponse } from '../../api/class-session.dto';
-import { ExpandableCalendarStrip } from '../../components/ExpandableCalendarStrip';
-import { SessionCalendarCard } from '../../components/SessionCalendarCard';
+import { DefaultHeaderActions } from "@/routes/navigation/components/DefaultHeaderActions";
+import BottomTabScreenLayout, {
+  BOTTOM_TAB_SPACE,
+} from "@/routes/navigation/layouts/BottomTabScreenLayout";
+import { ThemedText } from "@/shared/ui/ThemedText";
+import { Colors } from "@/theme";
+import type { ClassSessionCalendarResponse } from "../../api/class-session.dto";
+import { ExpandableCalendarStrip } from "../../components/ExpandableCalendarStrip";
+import { SessionCalendarCard } from "../../components/SessionCalendarCard";
+import { SessionDetailSheet } from "../../components/SessionDetailSheet";
 import {
   formatToDateString,
   formatVietnameseDayHeader,
   getDaysOfMonth,
   getDaysOfWeek,
   parseDateString,
-} from '../../domain/calendarDate';
-import { useClassSessionCalendarQuery } from '../../hooks/useClassSessionCalendarQuery';
+} from "../../domain/calendarDate";
+import { useClassSessionCalendarQuery } from "../../hooks/useClassSessionCalendarQuery";
 
 export default function SessionScheduleScreen() {
+  const insets = useSafeAreaInsets();
   const [selectedDate, setSelectedDate] = useState<string>(() =>
     formatToDateString(new Date()),
   );
   const [isExpanded, setIsExpanded] = useState<boolean>(false);
+  const [selectedSessionDetail, setSelectedSessionDetail] =
+    useState<ClassSessionCalendarResponse | null>(null);
+
   const scrollViewRef = useRef<ScrollView>(null);
   const datePositions = useRef<Record<string, number>>({});
 
@@ -47,9 +55,11 @@ export default function SessionScheduleScreen() {
     }
   }, [selectedDate, isExpanded]);
 
-  const { data: calendarSessions, isLoading, error } = useClassSessionCalendarQuery(
-    queryRange,
-  );
+  const {
+    data: calendarSessions,
+    isLoading,
+    error,
+  } = useClassSessionCalendarQuery(queryRange);
 
   // Create session count map for calendar dots
   const sessionCountMap = useMemo(() => {
@@ -64,11 +74,14 @@ export default function SessionScheduleScreen() {
   // Group sessions to display
   const groupedSessions = useMemo(() => {
     if (!calendarSessions) return [];
-    
+
     // Group all returned sessions by date
-    const groups: { dateString: string; sessions: ClassSessionCalendarResponse[] }[] = [];
+    const groups: {
+      dateString: string;
+      sessions: ClassSessionCalendarResponse[];
+    }[] = [];
     const dateMap = new Map<string, ClassSessionCalendarResponse[]>();
-    
+
     for (const session of calendarSessions) {
       if (!dateMap.has(session.sessionDate)) {
         dateMap.set(session.sessionDate, []);
@@ -78,7 +91,7 @@ export default function SessionScheduleScreen() {
 
     // Sort dates chronologically
     const sortedDates = Array.from(dateMap.keys()).sort();
-    
+
     for (const dateStr of sortedDates) {
       groups.push({
         dateString: dateStr,
@@ -112,76 +125,88 @@ export default function SessionScheduleScreen() {
   }, [selectedDate, groupedSessions]);
 
   return (
-    <BottomTabScreenLayout
-      title="Thời khoá biểu"
-      activeTab="schedule"
-      rightActions={<DefaultHeaderActions color={Colors.light.surface} />}
-      contentContainerStyle={styles.layoutContent}
-      scrollEnabled={false}
-    >
-      <View style={styles.fixedHeader}>
-        <ExpandableCalendarStrip
-          selectedDate={selectedDate}
-          onSelectDate={handleSelectDate}
-          isExpanded={isExpanded}
-          onToggleExpanded={setIsExpanded}
-          sessionCountMap={sessionCountMap}
-        />
-      </View>
-
-      <ScrollView
-        ref={scrollViewRef}
-        style={styles.scrollList}
-        contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}
+    <>
+      <BottomTabScreenLayout
+        title="Thời khoá biểu"
+        activeTab="schedule"
+        rightActions={<DefaultHeaderActions color={Colors.light.surface} />}
+        contentContainerStyle={styles.layoutContent}
+        scrollEnabled={false}
       >
-        {isLoading ? (
-          <View style={styles.centerContainer}>
-            <ActivityIndicator size="large" color={Colors.light.primary} />
-          </View>
-        ) : error ? (
-          <View style={styles.centerContainer}>
-            <ThemedText style={styles.errorText}>
-              Không thể tải lịch học. Vui lòng thử lại sau.
-            </ThemedText>
-          </View>
-        ) : groupedSessions.length === 0 ? (
-          <View style={styles.emptyContainer}>
-            <ThemedText style={styles.emptyDayHeader}>
-              {formatVietnameseDayHeader(selectedDate)}
-            </ThemedText>
-            <ThemedText style={styles.emptyText}>
-              Không có buổi học nào trong khoảng thời gian này.
-            </ThemedText>
-          </View>
-        ) : (
-          <View style={styles.list}>
-            {groupedSessions.map((group) => (
-              <View
-                key={group.dateString}
-                style={styles.dateGroup}
-                onLayout={(event) => {
-                  datePositions.current[group.dateString] =
-                    event.nativeEvent.layout.y;
-                }}
-              >
-                <ThemedText style={styles.dayHeader}>
-                  {formatVietnameseDayHeader(group.dateString)}
-                </ThemedText>
-                <View style={styles.sessionCards}>
-                  {group.sessions.map((session) => (
-                    <SessionCalendarCard
-                      key={session.classSessionId}
-                      session={session}
-                    />
-                  ))}
+        <View style={styles.fixedHeader}>
+          <ExpandableCalendarStrip
+            selectedDate={selectedDate}
+            onSelectDate={handleSelectDate}
+            isExpanded={isExpanded}
+            onToggleExpanded={setIsExpanded}
+            sessionCountMap={sessionCountMap}
+          />
+        </View>
+
+        <ScrollView
+          ref={scrollViewRef}
+          style={styles.scrollList}
+          contentContainerStyle={[
+            styles.scrollContent,
+            { paddingBottom: BOTTOM_TAB_SPACE + Math.max(insets.bottom, 10) },
+          ]}
+          showsVerticalScrollIndicator={false}
+        >
+          {isLoading ? (
+            <View style={styles.centerContainer}>
+              <ActivityIndicator size="large" color={Colors.light.primary} />
+            </View>
+          ) : error ? (
+            <View style={styles.centerContainer}>
+              <ThemedText style={styles.errorText}>
+                Không thể tải lịch học. Vui lòng thử lại sau.
+              </ThemedText>
+            </View>
+          ) : groupedSessions.length === 0 ? (
+            <View style={styles.emptyContainer}>
+              <ThemedText style={styles.emptyDayHeader}>
+                {formatVietnameseDayHeader(selectedDate)}
+              </ThemedText>
+              <ThemedText style={styles.emptyText}>
+                Không có buổi học nào trong khoảng thời gian này.
+              </ThemedText>
+            </View>
+          ) : (
+            <View style={styles.list}>
+              {groupedSessions.map((group) => (
+                <View
+                  key={group.dateString}
+                  style={styles.dateGroup}
+                  onLayout={(event) => {
+                    datePositions.current[group.dateString] =
+                      event.nativeEvent.layout.y;
+                  }}
+                >
+                  <ThemedText style={styles.dayHeader}>
+                    {formatVietnameseDayHeader(group.dateString)}
+                  </ThemedText>
+                  <View style={styles.sessionCards}>
+                    {group.sessions.map((session) => (
+                      <SessionCalendarCard
+                        key={session.classSessionId}
+                        session={session}
+                        onPress={() => setSelectedSessionDetail(session)}
+                      />
+                    ))}
+                  </View>
                 </View>
-              </View>
-            ))}
-          </View>
-        )}
-      </ScrollView>
-    </BottomTabScreenLayout>
+              ))}
+            </View>
+          )}
+        </ScrollView>
+      </BottomTabScreenLayout>
+
+      <SessionDetailSheet
+        session={selectedSessionDetail}
+        visible={!!selectedSessionDetail}
+        onClose={() => setSelectedSessionDetail(null)}
+      />
+    </>
   );
 }
 
@@ -199,30 +224,30 @@ const styles = StyleSheet.create({
   scrollContent: {
     paddingHorizontal: 20,
     paddingTop: 16,
-    paddingBottom: 40,
   },
   list: {
     gap: 20,
   },
   dateGroup: {
-    gap: 12,
+    gap: 10,
   },
   dayHeader: {
-    fontSize: 17,
-    fontWeight: '700',
-    color: Colors.light.text,
+    fontSize: 18,
+    fontWeight: "700",
+    color: "#000000",
+    marginBottom: 2,
   },
   sessionCards: {
-    gap: 16,
+    gap: 10,
   },
   centerContainer: {
     paddingVertical: 40,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
   },
   errorText: {
     color: Colors.light.error,
-    textAlign: 'center',
+    textAlign: "center",
   },
   emptyContainer: {
     paddingVertical: 20,
@@ -230,7 +255,7 @@ const styles = StyleSheet.create({
   },
   emptyDayHeader: {
     fontSize: 17,
-    fontWeight: '700',
+    fontWeight: "700",
     color: Colors.light.text,
   },
   emptyText: {
