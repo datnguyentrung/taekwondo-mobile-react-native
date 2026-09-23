@@ -2,6 +2,8 @@ import { javaApi } from '@/infrastructure/http/httpClient';
 import type { PageResponse } from '@/infrastructure/http/pagination.types';
 
 import type {
+  ClassSessionCalendarParams,
+  ClassSessionCalendarResponse,
   ClassSessionFilterParams,
   ReopenAttendanceRequest,
   SessionCreateRequest,
@@ -19,6 +21,12 @@ export const classSessionApi = {
   },
   async getList(params?: ClassSessionFilterParams): Promise<PageResponse<SessionSimpleResponse>> {
     const response = await javaApi.get<PageResponse<SessionSimpleResponse>>('/class-sessions', { params });
+    return response.data;
+  },
+  async getCalendar(params: ClassSessionCalendarParams): Promise<ClassSessionCalendarResponse[]> {
+    const response = await javaApi.get<ClassSessionCalendarResponse[]>('/class-sessions/calendar', {
+      params,
+    });
     return response.data;
   },
   async getDetail(sessionId: string): Promise<SessionResponse> {

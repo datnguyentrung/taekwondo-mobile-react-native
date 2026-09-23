@@ -1,4 +1,5 @@
-﻿import type { CourseResponse, CourseSimpleResponse } from '@/features/course/api/course.dto';
+import type { CourseResponse, CourseSimpleResponse } from '@/features/course/api/course.dto';
+import type { PersonSimpleResponse } from '@/features/person/domain/person.types';
 import type { SessionStatus } from '../constants/class-session.constants';
 
 export interface SessionCreateRequest {
@@ -37,6 +38,24 @@ export interface SessionSimpleResponse {
   attendanceReopenedUntil: string | null;
   startTime: string;
   endTime: string;
+  primaryCoach?: PersonSimpleResponse | null;
+}
+
+export interface ClassSessionCalendarResponse {
+  classSessionId: string;
+  courseId: string;
+  courseName: string;
+  sessionDate: string;
+  startTime: string;
+  endTime: string;
+  status: SessionStatus;
+  attendanceClosed: boolean;
+  primaryCoach?: PersonSimpleResponse | null;
+}
+
+export interface ClassSessionCalendarParams {
+  fromDate: string;
+  toDate: string;
 }
 
 export interface ClassSessionFilterParams {

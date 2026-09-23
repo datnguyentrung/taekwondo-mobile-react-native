@@ -1,1 +1,1 @@
-export { default } from '@/features/class-schedule/screens/ScheduleScreen';
+export { default } from '@/features/class-session/screens/SessionScheduleScreen';

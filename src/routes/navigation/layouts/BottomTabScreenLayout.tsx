@@ -33,6 +33,7 @@ export type BottomTabScreenLayoutProps = {
   children: ReactNode;
   rightActions?: ReactNode | HeaderAction[];
   contentContainerStyle?: StyleProp<ViewStyle>;
+  scrollEnabled?: boolean;
   refreshEnabled?: boolean;
 };
 
@@ -44,6 +45,7 @@ export default function BottomTabScreenLayout({
   children,
   rightActions,
   contentContainerStyle,
+  scrollEnabled = true,
   refreshEnabled = true,
 }: BottomTabScreenLayoutProps) {
   const insets = useSafeAreaInsets();
@@ -77,28 +79,41 @@ export default function BottomTabScreenLayout({
         </View>
       </View>
 
-      <ScrollView
-        style={styles.scroll}
-        contentInsetAdjustmentBehavior="never"
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={[
-          styles.content,
-          { paddingBottom: BOTTOM_TAB_SPACE + Math.max(insets.bottom, 10) },
-          contentContainerStyle,
-        ]}
-        refreshControl={
-          refreshEnabled ? (
-            <RefreshControl
-              refreshing={refreshing}
-              onRefresh={onRefresh}
-              tintColor={Colors.light.primary}
-              colors={[Colors.light.primary]}
-            />
-          ) : undefined
-        }
-      >
-        {children}
-      </ScrollView>
+      {scrollEnabled ? (
+        <ScrollView
+          style={styles.scroll}
+          contentInsetAdjustmentBehavior="never"
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={[
+            styles.content,
+            { paddingBottom: BOTTOM_TAB_SPACE + Math.max(insets.bottom, 10) },
+            contentContainerStyle,
+          ]}
+          refreshControl={
+            refreshEnabled ? (
+              <RefreshControl
+                refreshing={refreshing}
+                onRefresh={onRefresh}
+                tintColor={Colors.light.primary}
+                colors={[Colors.light.primary]}
+              />
+            ) : undefined
+          }
+        >
+          {children}
+        </ScrollView>
+      ) : (
+        <View
+          style={[
+            styles.scroll,
+            styles.content,
+            { paddingBottom: BOTTOM_TAB_SPACE + Math.max(insets.bottom, 10) },
+            contentContainerStyle,
+          ]}
+        >
+          {children}
+        </View>
+      )}
     </SafeAreaView>
   );
 }

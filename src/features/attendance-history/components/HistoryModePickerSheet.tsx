@@ -1,5 +1,5 @@
-import { CheckListNotes, Teacher } from "reicon-react-native";
 import { Pressable, StyleSheet, View } from "react-native";
+import { CheckListNotes, Teacher } from "reicon-react-native";
 
 import { AppIcon } from "@/shared/ui/AppIcon";
 import { BottomSheetWindow } from "@/shared/ui/BottomSheetWindow";
@@ -24,23 +24,25 @@ export function HistoryModePickerSheet({
     <BottomSheetWindow
       visible={visible}
       title="Chọn lịch sử"
-      heightRatio={1 / 3}
+      heightRatio={3 / 10}
       accessibilityLabel="Chọn loại lịch sử điểm danh"
       onClose={onClose}
     >
-      <View style={styles.modeGrid}>
-        <ModeButton
-          title="Học viên"
-          description="Điểm danh học viên"
-          icon={<CheckListNotes />}
-          onPress={() => onSelectMode("student")}
-        />
-        <ModeButton
-          title="HLV"
-          description="Chấm công HLV"
-          icon={<Teacher />}
-          onPress={() => onSelectMode("coach")}
-        />
+      <View style={styles.container}>
+        <View style={styles.modeGrid}>
+          <ModeButton
+            title="Học viên"
+            description="Điểm danh học viên"
+            icon={<CheckListNotes color={Colors.light.primary} />}
+            onPress={() => onSelectMode("student")}
+          />
+          <ModeButton
+            title="HLV"
+            description="Chấm công HLV"
+            icon={<Teacher color={Colors.light.primary} />}
+            onPress={() => onSelectMode("coach")}
+          />
+        </View>
       </View>
     </BottomSheetWindow>
   );
@@ -85,18 +87,22 @@ function ModeButton({
 }
 
 const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    justifyContent: "center",
+    paddingBottom: 36,
+  },
   modeGrid: {
     flexDirection: "row",
     gap: 12,
     paddingHorizontal: 20,
-    paddingTop: 24,
   },
   modeButton: {
     flex: 1,
     minHeight: 132,
     alignItems: "center",
     justifyContent: "center",
-    gap: 8,
+    gap: 3,
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: hexToRgba(Colors.light.primary, 0.22),
     borderRadius: radii.md,

@@ -112,7 +112,7 @@ const contracts = [
   [beltExamApi, ["list", "get", "create", "update", "remove"]],
   [
     classSessionApi,
-    ["list", "get", "create", "update", "reopenAttendance", "remove"],
+    ["list", "get", "getCalendar", "create", "update", "reopenAttendance", "remove"],
   ],
   [courseStaffAssignmentApi, ["list", "get", "create", "update", "remove"]],
   [coachTimesheetApi, ["list", "get", "create", "update", "remove"]],
