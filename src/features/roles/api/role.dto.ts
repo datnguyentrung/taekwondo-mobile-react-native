@@ -1,4 +1,9 @@
-﻿export interface RoleCreateRequest {
+import type {
+  PermissionResponse,
+  PermissionSimpleResponse,
+} from "@/features/permissions/api/permission.dto";
+
+export interface RoleCreateRequest {
   code: string;
   name: string;
   description: string;
@@ -16,12 +21,14 @@ export interface RoleResponse {
   name: string;
   description: string;
   permissionVersion: number;
+  permissions?: PermissionResponse[];
 }
 
 export interface RoleSimpleResponse {
   code: string;
   name: string;
   permissionVersion: number;
+  permissions?: PermissionSimpleResponse[];
 }
 
 export interface RoleListParams {

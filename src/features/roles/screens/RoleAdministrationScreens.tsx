@@ -1,9 +1,13 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useLocalSearchParams, useRouter, type Href } from "expo-router";
-import { useEffect, useState } from "react";
+import { useMemo, useState } from "react";
 import { StyleSheet, View } from "react-native";
 
 import { PermissionsTabContent } from "@/features/permissions";
+import type {
+  PermissionResponse,
+  PermissionSimpleResponse,
+} from "@/features/permissions/api/permission.dto";
 import { groupPermissions } from "@/features/permissions/domain/permissionViewModel";
 import { usePermissionsCatalog } from "@/features/permissions/queries/permissionQueries";
 import StackScreenLayout from "@/routes/navigation/layouts/StackScreenLayout";
@@ -27,15 +31,10 @@ import { ThemedText } from "@/shared/ui/ThemedText";
 import { useToast } from "@/shared/ui/Toast";
 import { containsSearch } from "@/shared/utils/string";
 import { Colors, radii } from "@/theme";
+import type { RoleResponse } from "../api/role.dto";
 import { roleApi } from "../api/roleApi";
 import { rolePermissionApi } from "../api/rolePermissionApi";
-import { permissionCodesForRole } from "../domain/roleViewModel";
-import {
-  roleKeys,
-  useRole,
-  useRolePermissions,
-  useRoles,
-} from "../queries/roleQueries";
+import { roleKeys, useRole, useRoles } from "../queries/roleQueries";
 
 const tabs = [
   { value: "roles", label: "Vai trò" },
@@ -54,7 +53,6 @@ function useRoleCode() {
 function RolesTabContent() {
   const router = useRouter();
   const roles = useRoles();
-  const assignments = useRolePermissions();
   const [search, setSearch] = useState("");
   const visibleRoles = (roles.data?.content ?? []).filter((role) =>
     containsSearch(search, role.name, role.code),
@@ -72,16 +70,14 @@ function RolesTabContent() {
         actionLabel="Tạo vai trò"
         onAction={() => go(router, "/admin/roles/create")}
       />
-      {roles.isPending || assignments.isPending ? (
+      {roles.isPending ? (
         <AdminLoadingState />
       ) : visibleRoles.length === 0 ? (
         <AdminEmptyState message="Không tìm thấy vai trò phù hợp" />
       ) : (
         <View style={styles.list}>
           {visibleRoles.map((role) => {
-            const count = (assignments.data?.content ?? []).filter(
-              (item) => item.roleCode === role.code,
-            ).length;
+            const count = role.permissions?.length ?? 0;
             return (
               <AdminListRow
                 key={role.code}
@@ -131,8 +127,6 @@ export function RoleDetailScreen() {
   const router = useRouter();
   const roleCode = useRoleCode();
   const role = useRole(roleCode);
-  const assignments = useRolePermissions();
-  const permissions = usePermissionsCatalog();
   const queryClient = useQueryClient();
   const toast = useToast();
   const [confirming, setConfirming] = useState(false);
@@ -150,13 +144,8 @@ export function RoleDetailScreen() {
         variant: "error",
       }),
   });
-  const codes = permissionCodesForRole(
-    roleCode ?? "",
-    assignments.data?.content ?? [],
-  );
-  const assigned = (permissions.data?.content ?? []).filter((permission) =>
-    codes.includes(permission.code),
-  );
+
+  const assigned = role.data?.permissions ?? [];
   const grouped = groupPermissions(assigned);
 
   return (
@@ -248,12 +237,8 @@ export function RoleDetailScreen() {
   );
 }
 
-type RoleFormProps = { mode: "create" | "edit" };
-
-function RoleFormScreen({ mode }: RoleFormProps) {
+function RoleCreateForm() {
   const router = useRouter();
-  const roleCodeParam = useRoleCode();
-  const role = useRole(mode === "edit" ? roleCodeParam : undefined);
   const queryClient = useQueryClient();
   const toast = useToast();
   const [code, setCode] = useState("");
@@ -261,44 +246,23 @@ function RoleFormScreen({ mode }: RoleFormProps) {
   const [description, setDescription] = useState("");
   const [version, setVersion] = useState("0");
   const [confirming, setConfirming] = useState(false);
-  const [confirmDelete, setConfirmDelete] = useState(false);
-
-  useEffect(() => {
-    if (!role.data) return;
-    // Async server state seeds an editable draft when the record arrives.
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    setCode(role.data.code);
-    setName(role.data.name);
-    setDescription(role.data.description);
-    setVersion(String(role.data.permissionVersion));
-  }, [role.data]);
 
   const save = useMutation({
     mutationFn: async () =>
-      mode === "create"
-        ? roleApi.create({
-            code: code.trim().toUpperCase(),
-            name: name.trim(),
-            description: description.trim(),
-            permissionVersion: Number(version) || 0,
-          })
-        : roleApi.update(roleCodeParam as string, {
-            name: name.trim(),
-            description: description.trim(),
-            permissionVersion: Number(version) || 0,
-          }),
+      roleApi.create({
+        code: code.trim().toUpperCase(),
+        name: name.trim(),
+        description: description.trim(),
+        permissionVersion: Number(version) || 0,
+      }),
     onSuccess: async (saved) => {
       await queryClient.invalidateQueries({ queryKey: roleKeys.lists() });
       toast.show({
-        message: mode === "create" ? "Đã tạo vai trò" : "Đã cập nhật vai trò",
+        message: "Đã tạo vai trò",
         variant: "success",
       });
       setConfirming(false);
-      router.replace(
-        (mode === "create"
-          ? `/admin/roles/${saved.code}/permissions`
-          : `/admin/roles/${saved.code}`) as Href,
-      );
+      router.replace(`/admin/roles/${saved.code}/permissions` as Href);
     },
     onError: () =>
       toast.show({
@@ -306,33 +270,17 @@ function RoleFormScreen({ mode }: RoleFormProps) {
         variant: "error",
       }),
   });
-  const remove = useMutation({
-    mutationFn: () => roleApi.remove(roleCodeParam as string),
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: roleKeys.lists() });
-      router.replace("/admin/roles" as Href);
-    },
-    onError: () =>
-      toast.show({ message: "Không thể xóa vai trò", variant: "error" }),
-  });
+
   const valid = code.trim().length > 1 && name.trim().length > 1;
 
   return (
-    <StackScreenLayout
-      title={mode === "create" ? "Tạo vai trò" : "Sửa vai trò"}
-      contentContainerStyle={adminStyles.screen}
-    >
+    <>
       <AdminField
         label="Mã vai trò"
         value={code}
         onChangeText={setCode}
-        editable={mode === "create"}
         placeholder="Ví dụ: ROLE_MANAGER"
-        helper={
-          mode === "edit"
-            ? "Mã vai trò không thể thay đổi."
-            : "Dùng chữ in hoa và dấu gạch dưới."
-        }
+        helper="Dùng chữ in hoa và dấu gạch dưới."
       />
       <AdminField
         label="Tên vai trò"
@@ -354,39 +302,121 @@ function RoleFormScreen({ mode }: RoleFormProps) {
         keyboardType="number-pad"
         helper="Tăng phiên bản để buộc phiên đăng nhập làm mới quyền."
       />
-      {mode === "edit" ? (
-        <AdminInfoBanner>
-          Mọi thay đổi quyền cần được kiểm tra với các tài khoản đang mang vai
-          trò này.
-        </AdminInfoBanner>
-      ) : null}
       <AdminButton
-        label={mode === "create" ? "Tạo vai trò" : "Lưu thay đổi"}
+        label="Tạo vai trò"
         disabled={!valid}
         onPress={() => setConfirming(true)}
       />
-      {mode === "edit" ? (
-        <AdminButton
-          label="Xóa vai trò"
-          variant="text"
-          onPress={() => setConfirmDelete(true)}
-        />
-      ) : (
-        <AdminButton
-          label="Hủy"
-          variant="secondary"
-          onPress={() => router.back()}
-        />
-      )}
+      <AdminButton
+        label="Hủy"
+        variant="secondary"
+        onPress={() => router.back()}
+      />
       <AdminConfirmDialog
         confirming={confirming}
-        title={mode === "create" ? "Tạo vai trò mới?" : "Lưu thay đổi?"}
-        message={
-          mode === "create"
-            ? `Vai trò “${name}” sẽ được tạo và chuyển sang bước phân quyền.`
-            : "Thông tin vai trò sẽ được cập nhật ngay."
-        }
-        confirmLabel={mode === "create" ? "Tạo mới" : "Lưu"}
+        title="Tạo vai trò mới?"
+        message={`Vai trò “${name}” sẽ được tạo và chuyển sang bước phân quyền.`}
+        confirmLabel="Tạo mới"
+        loading={save.isPending}
+        onCancel={() => setConfirming(false)}
+        onConfirm={() => save.mutate()}
+      />
+    </>
+  );
+}
+
+function RoleEditForm({ role }: { role: RoleResponse }) {
+  const router = useRouter();
+  const queryClient = useQueryClient();
+  const toast = useToast();
+  const [name, setName] = useState(role.name);
+  const [description, setDescription] = useState(role.description);
+  const [version, setVersion] = useState(String(role.permissionVersion));
+  const [confirming, setConfirming] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
+
+  const save = useMutation({
+    mutationFn: async () =>
+      roleApi.update(role.code, {
+        name: name.trim(),
+        description: description.trim(),
+        permissionVersion: Number(version) || 0,
+      }),
+    onSuccess: async (saved) => {
+      await queryClient.invalidateQueries({ queryKey: roleKeys.all });
+      toast.show({
+        message: "Đã cập nhật vai trò",
+        variant: "success",
+      });
+      setConfirming(false);
+      router.replace(`/admin/roles/${saved.code}` as Href);
+    },
+    onError: () =>
+      toast.show({
+        message: "Không thể lưu vai trò. Vui lòng kiểm tra dữ liệu.",
+        variant: "error",
+      }),
+  });
+
+  const remove = useMutation({
+    mutationFn: () => roleApi.remove(role.code),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: roleKeys.lists() });
+      router.replace("/admin/roles" as Href);
+    },
+    onError: () =>
+      toast.show({ message: "Không thể xóa vai trò", variant: "error" }),
+  });
+
+  const valid = name.trim().length > 1;
+
+  return (
+    <>
+      <AdminField
+        label="Mã vai trò"
+        value={role.code}
+        editable={false}
+        helper="Mã vai trò không thể thay đổi."
+      />
+      <AdminField
+        label="Tên vai trò"
+        value={name}
+        onChangeText={setName}
+        placeholder="Nhập tên hiển thị"
+      />
+      <AdminField
+        label="Mô tả"
+        value={description}
+        onChangeText={setDescription}
+        multiline
+        placeholder="Mô tả phạm vi trách nhiệm"
+      />
+      <AdminField
+        label="Phiên bản quyền"
+        value={version}
+        onChangeText={setVersion}
+        keyboardType="number-pad"
+        helper="Tăng phiên bản để buộc phiên đăng nhập làm mới quyền."
+      />
+      <AdminInfoBanner>
+        Mọi thay đổi quyền cần được kiểm tra với các tài khoản đang mang vai trò
+        này.
+      </AdminInfoBanner>
+      <AdminButton
+        label="Lưu thay đổi"
+        disabled={!valid}
+        onPress={() => setConfirming(true)}
+      />
+      <AdminButton
+        label="Xóa vai trò"
+        variant="text"
+        onPress={() => setConfirmDelete(true)}
+      />
+      <AdminConfirmDialog
+        confirming={confirming}
+        title="Lưu thay đổi?"
+        message="Thông tin vai trò sẽ được cập nhật ngay."
+        confirmLabel="Lưu"
         loading={save.isPending}
         onCancel={() => setConfirming(false)}
         onConfirm={() => save.mutate()}
@@ -401,50 +431,79 @@ function RoleFormScreen({ mode }: RoleFormProps) {
         onCancel={() => setConfirmDelete(false)}
         onConfirm={() => remove.mutate()}
       />
-    </StackScreenLayout>
+    </>
   );
 }
 
 export function RoleCreateScreen() {
-  return <RoleFormScreen mode="create" />;
-}
-export function RoleEditScreen() {
-  return <RoleFormScreen mode="edit" />;
+  return (
+    <StackScreenLayout
+      title="Tạo vai trò"
+      contentContainerStyle={adminStyles.screen}
+    >
+      <RoleCreateForm />
+    </StackScreenLayout>
+  );
 }
 
-export function RolePermissionsScreen() {
-  const router = useRouter();
+export function RoleEditScreen() {
   const roleCode = useRoleCode();
   const role = useRole(roleCode);
-  const permissions = usePermissionsCatalog();
-  const assignments = useRolePermissions();
+
+  return (
+    <StackScreenLayout
+      title="Sửa vai trò"
+      contentContainerStyle={adminStyles.screen}
+    >
+      {role.isPending ? (
+        <AdminLoadingState />
+      ) : !role.data ? (
+        <AdminEmptyState message="Không tìm thấy vai trò" />
+      ) : (
+        <RoleEditForm key={role.data.code} role={role.data} />
+      )}
+    </StackScreenLayout>
+  );
+}
+
+function RolePermissionsForm({
+  role,
+  catalog
+}: {
+  role: RoleResponse;
+  catalog: PermissionSimpleResponse[];
+}) {
+  const router = useRouter();
   const queryClient = useQueryClient();
   const toast = useToast();
   const [search, setSearch] = useState("");
-  const [selected, setSelected] = useState<string[]>([]);
-  useEffect(() => {
-    // The selection draft is initialized from the separately loaded assignment resource.
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    setSelected(
-      permissionCodesForRole(roleCode ?? "", assignments.data?.content ?? []),
-    );
-  }, [assignments.data, roleCode]);
-  const filtered = (permissions.data?.content ?? []).filter((item) =>
-    containsSearch(search, item.code, item.model, item.action),
+  const initialCodes = useMemo(
+    () => role.permissions?.map((p) => p.code) ?? [],
+    [role.permissions],
   );
-  const groups = groupPermissions(filtered);
+  const [selected, setSelected] = useState<string[]>(initialCodes);
+
+  const filtered = useMemo(
+    () =>
+      catalog.filter((item) =>
+        containsSearch(search, item.code, item.model, item.action),
+      ),
+    [catalog, search],
+  );
+  const groups = useMemo(() => groupPermissions(filtered), [filtered]);
+
   const save = useMutation({
     mutationFn: () =>
-      rolePermissionApi.replaceForRole(roleCode as string, {
+      rolePermissionApi.replaceForRole(role.code, {
         permissionCodes: selected,
       }),
     onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: roleKeys.permissions });
+      await queryClient.invalidateQueries({ queryKey: roleKeys.all });
       toast.show({
         message: "Đã cập nhật quyền của vai trò",
         variant: "success",
       });
-      router.replace(`/admin/roles/${roleCode}` as Href);
+      router.replace(`/admin/roles/${role.code}` as Href);
     },
     onError: () =>
       toast.show({
@@ -452,6 +511,7 @@ export function RolePermissionsScreen() {
         variant: "error",
       }),
   });
+
   const toggle = (code: string) =>
     setSelected((current) =>
       current.includes(code)
@@ -460,12 +520,9 @@ export function RolePermissionsScreen() {
     );
 
   return (
-    <StackScreenLayout
-      title="Phân quyền"
-      contentContainerStyle={adminStyles.screen}
-    >
+    <>
       <AdminCard>
-        <ThemedText type="title">{role.data?.name ?? roleCode}</ThemedText>
+        <ThemedText type="title">{role.name}</ThemedText>
         <ThemedText type="bodySmall" style={adminStyles.muted}>
           {selected.length} quyền được chọn
         </ThemedText>
@@ -475,37 +532,26 @@ export function RolePermissionsScreen() {
         onChangeText={setSearch}
         placeholder="Tìm quyền hoặc phân hệ"
       />
-      {permissions.isPending || assignments.isPending ? (
-        <AdminLoadingState />
-      ) : (
-        Object.entries(groups).map(([model, items]) => (
-          <AdminCard key={model} style={adminStyles.gap}>
-            <ThemedText type="title">{model}</ThemedText>
-            <View style={adminStyles.chips}>
-              {items.map((permission) => (
-                <AdminChip
-                  key={permission.code}
-                  label={permission.action}
-                  selected={selected.includes(permission.code)}
-                  onPress={() => toggle(permission.code)}
-                />
-              ))}
-            </View>
-          </AdminCard>
-        ))
-      )}
+      {Object.entries(groups).map(([model, items]) => (
+        <AdminCard key={model} style={adminStyles.gap}>
+          <ThemedText type="title">{model}</ThemedText>
+          <View style={adminStyles.chips}>
+            {items.map((permission) => (
+              <AdminChip
+                key={permission.code}
+                label={permission.action}
+                selected={selected.includes(permission.code)}
+                onPress={() => toggle(permission.code)}
+              />
+            ))}
+          </View>
+        </AdminCard>
+      ))}
       <View style={adminStyles.actions}>
         <AdminButton
           label="Đặt lại"
           variant="secondary"
-          onPress={() =>
-            setSelected(
-              permissionCodesForRole(
-                roleCode ?? "",
-                assignments.data?.content ?? [],
-              ),
-            )
-          }
+          onPress={() => setSelected(initialCodes)}
           style={adminStyles.grow}
         />
         <AdminButton
@@ -515,6 +561,31 @@ export function RolePermissionsScreen() {
           style={adminStyles.grow}
         />
       </View>
+    </>
+  );
+}
+
+export function RolePermissionsScreen() {
+  const roleCode = useRoleCode();
+  const role = useRole(roleCode);
+  const permissions = usePermissionsCatalog();
+
+  return (
+    <StackScreenLayout
+      title="Phân quyền"
+      contentContainerStyle={adminStyles.screen}
+    >
+      {role.isPending || permissions.isPending ? (
+        <AdminLoadingState />
+      ) : !role.data ? (
+        <AdminEmptyState message="Không tìm thấy vai trò" />
+      ) : (
+        <RolePermissionsForm
+          key={role.data.code}
+          role={role.data}
+          catalog={permissions.data?.content ?? []}
+        />
+      )}
     </StackScreenLayout>
   );
 }

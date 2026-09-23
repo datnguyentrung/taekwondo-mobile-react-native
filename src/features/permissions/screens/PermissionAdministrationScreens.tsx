@@ -1,13 +1,10 @@
-import { useEffect, useMemo, useState } from "react";
-import { StyleSheet, View } from "react-native";
+import { useEffect, useState } from "react";
+import { StyleSheet } from "react-native";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useLocalSearchParams, useRouter, type Href } from "expo-router";
 
+import type { PermissionResponse } from "../api/permission.dto";
 import { permissionApi } from "../api/permissionApi";
-import {
-  PermissionActionValues,
-  type PermissionAction,
-} from "../constants/permissions.constants";
 import { groupPermissions } from "../domain/permissionViewModel";
 import {
   permissionKeys,
@@ -21,26 +18,17 @@ import {
   AdminConfirmDialog,
   AdminEmptyState,
   AdminField,
-  AdminInfoBanner,
   AdminIntro,
   AdminListRow,
   AdminLoadingState,
-  AdminPickerField,
-  AdminPickerSheet,
   AdminSearchField,
   AdminSectionHeader,
-  AdminTabs,
   adminStyles,
 } from "@/shared/ui/admin/AdministrationPrimitives";
 import { ThemedText } from "@/shared/ui/ThemedText";
 import { useToast } from "@/shared/ui/Toast";
 import { containsSearch } from "@/shared/utils/string";
 import { Colors, radii } from "@/theme";
-
-const tabs = [
-  { value: "roles", label: "Vai trò" },
-  { value: "permissions", label: "Quyền" },
-] as const;
 
 function go(router: ReturnType<typeof useRouter>, path: string) {
   router.push(path as Href);
@@ -69,11 +57,7 @@ export function PermissionsTabContent() {
         onChangeText={setSearch}
         placeholder="Tìm theo mã, phân hệ hoặc hành động"
       />
-      <AdminSectionHeader
-        title={`${filtered.length} quyền`}
-        actionLabel="Tạo quyền"
-        onAction={() => go(router, "/admin/permissions/create")}
-      />
+      <AdminSectionHeader title={`${filtered.length} quyền`} />
       {permissions.isPending ? (
         <AdminLoadingState />
       ) : Object.entries(groups).length === 0 ? (
@@ -115,95 +99,58 @@ export function PermissionListScreen() {
   );
 }
 
-function PermissionFormScreen({ mode }: { mode: "create" | "edit" }) {
+function PermissionEditForm({
+  permission,
+}: {
+  permission: PermissionResponse;
+}) {
   const router = useRouter();
-  const permissionId = usePermissionId();
-  const permission = usePermission(mode === "edit" ? permissionId : undefined);
   const queryClient = useQueryClient();
   const toast = useToast();
-  const [code, setCode] = useState("");
-  const [model, setModel] = useState("");
-  const [action, setAction] = useState<PermissionAction>("READ");
-  const [description, setDescription] = useState("");
-  const [sheetVisible, setSheetVisible] = useState(false);
+  const [description, setDescription] = useState(permission.description ?? "");
   const [confirming, setConfirming] = useState(false);
-  const [confirmDelete, setConfirmDelete] = useState(false);
-
-  useEffect(() => {
-    if (!permission.data) return;
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    setCode(permission.data.code);
-    setModel(permission.data.model);
-    setAction(permission.data.action);
-    setDescription(permission.data.description);
-  }, [permission.data]);
 
   const save = useMutation({
     mutationFn: () =>
-      mode === "create"
-        ? permissionApi.create({
-            code: code.trim().toUpperCase(),
-            model: model.trim().toUpperCase(),
-            action,
-            description: description.trim(),
-          })
-        : permissionApi.update(permissionId as number, {
-            code: code.trim().toUpperCase(),
-            model: model.trim().toUpperCase(),
-            action,
-            description: description.trim(),
-          }),
+      permissionApi.update(permission.permissionId, {
+        code: permission.code,
+        model: permission.model,
+        action: permission.action,
+        description: description.trim(),
+      }),
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: permissionKeys.lists() });
+      await queryClient.invalidateQueries({
+        queryKey: permissionKeys.detail(permission.permissionId),
+      });
       toast.show({
-        message: mode === "create" ? "Đã tạo quyền" : "Đã cập nhật quyền",
+        message: "Đã cập nhật quyền",
         variant: "success",
       });
       setConfirming(false);
       router.replace("/admin/permissions" as Href);
     },
-    onError: () => toast.show({ message: "Không thể lưu quyền", variant: "error" }),
-  });
-  const remove = useMutation({
-    mutationFn: () => permissionApi.remove(permissionId as number),
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: permissionKeys.lists() });
-      router.replace("/admin/permissions" as Href);
-    },
     onError: () =>
-      toast.show({
-        message: "Không thể xóa quyền đang được sử dụng",
-        variant: "error",
-      }),
+      toast.show({ message: "Không thể lưu quyền", variant: "error" }),
   });
-  const valid = code.trim().length > 2 && model.trim().length > 1;
-  const options = useMemo(
-    () => PermissionActionValues.map((value) => ({ value, label: value })),
-    [],
-  );
 
   return (
-    <StackScreenLayout
-      title={mode === "create" ? "Tạo quyền" : "Sửa quyền"}
-      contentContainerStyle={adminStyles.screen}
-    >
+    <>
       <AdminField
         label="Mã quyền"
-        value={code}
-        onChangeText={setCode}
-        placeholder="Ví dụ: USER_READ"
+        value={permission.code}
+        editable={false}
+        helper="Mã quyền kỹ thuật cố định của hệ thống."
       />
       <AdminField
         label="Phân hệ"
-        value={model}
-        onChangeText={setModel}
-        placeholder="Ví dụ: USER"
+        value={permission.model}
+        editable={false}
       />
-      <AdminPickerField
+      <AdminField
         label="Hành động"
-        valueLabel={action}
-        placeholder="Chọn hành động"
-        onPress={() => setSheetVisible(true)}
+        value={permission.action}
+        editable={false}
       />
       <AdminField
         label="Mô tả"
@@ -212,63 +159,49 @@ function PermissionFormScreen({ mode }: { mode: "create" | "edit" }) {
         multiline
         placeholder="Mô tả phạm vi quyền"
       />
-      <AdminInfoBanner tone="warning">
-        Mã quyền phải trùng với authority ở backend. Thay đổi mã có thể làm mất
-        quyền truy cập hiện tại.
-      </AdminInfoBanner>
       <AdminButton
-        label={mode === "create" ? "Tạo quyền" : "Lưu thay đổi"}
-        disabled={!valid}
+        label="Lưu thay đổi"
         onPress={() => setConfirming(true)}
       />
-      {mode === "edit" ? (
-        <AdminButton
-          label="Xóa quyền"
-          variant="text"
-          onPress={() => setConfirmDelete(true)}
-        />
-      ) : (
-        <AdminButton label="Hủy" variant="secondary" onPress={() => router.back()} />
-      )}
-      <AdminPickerSheet
-        visible={sheetVisible}
-        title="Chọn hành động"
-        options={options}
-        selectedValue={action}
-        onSelect={(value) => setAction(value as PermissionAction)}
-        onClose={() => setSheetVisible(false)}
+      <AdminButton
+        label="Hủy"
+        variant="secondary"
+        onPress={() => router.back()}
       />
       <AdminConfirmDialog
         confirming={confirming}
-        title={mode === "create" ? "Tạo quyền mới?" : "Lưu thay đổi?"}
-        message={`Quyền ${code || "mới"} sẽ được ${
-          mode === "create" ? "tạo" : "cập nhật"
-        } trong danh mục hệ thống.`}
-        confirmLabel={mode === "create" ? "Tạo mới" : "Lưu"}
+        title="Lưu thay đổi?"
+        message="Thông tin mô tả quyền sẽ được cập nhật."
+        confirmLabel="Lưu"
         loading={save.isPending}
         onCancel={() => setConfirming(false)}
         onConfirm={() => save.mutate()}
       />
-      <AdminConfirmDialog
-        confirming={confirmDelete}
-        title="Xóa quyền?"
-        message="Quyền sẽ bị gỡ khỏi danh mục và các vai trò liên quan."
-        confirmLabel="Xóa"
-        destructive
-        loading={remove.isPending}
-        onCancel={() => setConfirmDelete(false)}
-        onConfirm={() => remove.mutate()}
-      />
-    </StackScreenLayout>
+    </>
   );
 }
 
-export function PermissionCreateScreen() {
-  return <PermissionFormScreen mode="create" />;
-}
-
 export function PermissionEditScreen() {
-  return <PermissionFormScreen mode="edit" />;
+  const permissionId = usePermissionId();
+  const permission = usePermission(permissionId);
+
+  return (
+    <StackScreenLayout
+      title="Sửa quyền"
+      contentContainerStyle={adminStyles.screen}
+    >
+      {permission.isPending ? (
+        <AdminLoadingState />
+      ) : !permission.data ? (
+        <AdminEmptyState message="Không tìm thấy quyền" />
+      ) : (
+        <PermissionEditForm
+          key={permission.data.permissionId}
+          permission={permission.data}
+        />
+      )}
+    </StackScreenLayout>
+  );
 }
 
 const styles = StyleSheet.create({
@@ -281,3 +214,4 @@ const styles = StyleSheet.create({
     borderTopRightRadius: radii.md,
   },
 });
+
