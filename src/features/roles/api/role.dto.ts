@@ -24,6 +24,12 @@ export interface RoleResponse {
   permissions?: PermissionResponse[];
 }
 
+export interface RoleBriefResponse {
+  code: string;
+  name: string;
+  permissionVersion?: number;
+}
+
 export interface RoleSimpleResponse {
   code: string;
   name: string;

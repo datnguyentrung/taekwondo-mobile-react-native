@@ -42,6 +42,8 @@ export type StackScreenLayoutProps = {
   floatingContent?: ReactNode;
   scrollEnabled?: boolean;
   refreshEnabled?: boolean;
+  refreshing?: boolean;
+  onRefresh?: () => Promise<void> | void;
 };
 
 export default function StackScreenLayout({
@@ -52,11 +54,15 @@ export default function StackScreenLayout({
   floatingContent,
   scrollEnabled = true,
   refreshEnabled = true,
+  refreshing: controlledRefreshing,
+  onRefresh: customOnRefresh,
 }: StackScreenLayoutProps) {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const actionColor = Colors.light.text;
-  const { refreshing, onRefresh } = useActiveQueriesRefresh();
+  const defaultRefresh = useActiveQueriesRefresh();
+  const refreshing = controlledRefreshing ?? defaultRefresh.refreshing;
+  const onRefresh = customOnRefresh ?? defaultRefresh.onRefresh;
 
   return (
     <SafeAreaView edges={["left", "right"]} style={styles.safeArea}>

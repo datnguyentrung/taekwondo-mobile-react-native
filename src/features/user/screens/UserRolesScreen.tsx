@@ -7,6 +7,7 @@ import { userRoleApi } from "@/features/roles";
 import { useRoles } from "@/features/roles/queries/roleQueries";
 import { roleCodesForUser } from "../domain/userViewModel";
 import { userKeys, useUser, useUserRoles } from "../queries/userQueries";
+import { useScreenRefresh } from "@/infrastructure/query/useScreenRefresh";
 import StackScreenLayout from "@/routes/navigation/layouts/StackScreenLayout";
 import {
   AdminButton,
@@ -29,6 +30,7 @@ export function UserRolesScreen() {
   const queryClient = useQueryClient();
   const toast = useToast();
   const [selected, setSelected] = useState<string[]>([]);
+  const { refreshing, onRefresh } = useScreenRefresh([user, roles, assignments]);
 
   useEffect(() => {
     // The selection draft is initialized from the separately loaded assignment resource.
@@ -55,7 +57,12 @@ export function UserRolesScreen() {
     );
 
   return (
-    <StackScreenLayout title="Gán vai trò" contentContainerStyle={adminStyles.screen}>
+    <StackScreenLayout
+      title="Gán vai trò"
+      contentContainerStyle={adminStyles.screen}
+      refreshing={refreshing}
+      onRefresh={onRefresh}
+    >
       <AdminCard>
         <ThemedText type="title">{user.data?.phoneNumber ?? "Người dùng"}</ThemedText>
         <ThemedText type="bodySmall" style={adminStyles.muted}>

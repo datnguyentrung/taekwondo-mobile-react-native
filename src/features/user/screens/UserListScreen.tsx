@@ -3,6 +3,7 @@ import { useMemo, useState } from "react";
 import { View } from "react-native";
 
 import StackScreenLayout from "@/routes/navigation/layouts/StackScreenLayout";
+import { useScreenRefresh } from "@/infrastructure/query/useScreenRefresh";
 import { useDebounce } from "@/shared/hooks/useDebounce";
 import {
   AdminChip,
@@ -37,6 +38,7 @@ export function UserListScreen() {
     [debouncedSearch],
   );
   const users = useUsers(queryParams);
+  const { refreshing, onRefresh } = useScreenRefresh([users]);
 
   const visible = (users.data?.content ?? []).filter(
     (user: UserSimpleResponse) =>
@@ -47,6 +49,8 @@ export function UserListScreen() {
     <StackScreenLayout
       title="Người dùng"
       contentContainerStyle={adminStyles.screen}
+      refreshing={refreshing}
+      onRefresh={onRefresh}
     >
       <AdminIntro>
         Quản lý tài khoản, hồ sơ liên kết và vai trò truy cập.

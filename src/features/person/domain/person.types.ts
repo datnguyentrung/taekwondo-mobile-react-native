@@ -1,4 +1,4 @@
-﻿import type { PositionSimpleResponse } from '@/features/position/api/position.dto';
+import type { PositionSimpleResponse } from '@/features/position/api/position.dto';
 import type { Belt, PersonStatus } from '../constants/person.constants';
 
 export interface PersonResponse {
@@ -27,6 +27,15 @@ export interface PersonSimpleResponse {
   currentBelt: Belt;
   status: PersonStatus;
   faceImagePath: string | null;
+}
+
+export interface PersonBriefResponse {
+  personId: string;
+  fullName: string;
+  personCode: string | null;
+  currentBelt: Belt | null;
+  status: PersonStatus | null;
+  faceImagePath?: string | null;
 }
 
 export interface PersonSearchItem {

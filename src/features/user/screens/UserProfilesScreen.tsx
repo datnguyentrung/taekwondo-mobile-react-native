@@ -3,12 +3,12 @@ import { useState } from "react";
 import { View } from "react-native";
 
 import type { RelationshipType } from "@/features/authentication/domain/auth.types";
-import type { PersonSimpleResponse } from "@/features/person";
+import type { PersonBriefResponse, PersonSimpleResponse } from "@/features/person";
 import { userPersonApi } from "@/features/person";
 import { relationshipLabel } from "@/features/person/domain/personViewModel";
 import { usePeople } from "@/features/person/queries/personQueries";
-import type { UserSimpleResponse } from "../api/user.dto";
-import { userKeys, useUsers } from "../queries/userQueries";
+import { userKeys, useUser } from "../queries/userQueries";
+import { useScreenRefresh } from "@/infrastructure/query/useScreenRefresh";
 import StackScreenLayout from "@/routes/navigation/layouts/StackScreenLayout";
 import {
   AdminButton,
@@ -34,13 +34,12 @@ import {
 
 export function UserProfilesScreen() {
   const userId = useUserId();
-  const users = useUsers();
+  const user = useUser(userId);
   const people = usePeople();
   const queryClient = useQueryClient();
   const toast = useToast();
-  const linked = (users.data?.content ?? []).find(
-    (item: UserSimpleResponse) => item.userId === userId,
-  )?.persons ?? [];
+  const linked: PersonBriefResponse[] = user.data?.persons ?? [];
+  const { refreshing, onRefresh } = useScreenRefresh([user, people]);
   const [personId, setPersonId] = useState<string>();
   const [relationship, setRelationship] =
     useState<RelationshipType>("GUARDIAN");
@@ -48,7 +47,7 @@ export function UserProfilesScreen() {
   const [relationshipSheet, setRelationshipSheet] = useState(false);
   const [confirming, setConfirming] = useState(false);
   const available = (people.data?.content ?? []).filter(
-    (person: PersonSimpleResponse) => !linked.some((item: PersonSimpleResponse) => item.personId === person.personId),
+    (person: PersonSimpleResponse) => !linked.some((item) => item.personId === person.personId),
   );
   const selectedPerson = available.find(
     (person) => person.personId === personId,
@@ -76,9 +75,14 @@ export function UserProfilesScreen() {
   });
 
   return (
-    <StackScreenLayout title="Hồ sơ liên kết" contentContainerStyle={adminStyles.screen}>
+    <StackScreenLayout
+      title="Hồ sơ liên kết"
+      contentContainerStyle={adminStyles.screen}
+      refreshing={refreshing}
+      onRefresh={onRefresh}
+    >
       <AdminSectionHeader title={`${linked.length} hồ sơ đã liên kết`} />
-      {users.isPending ? (
+      {user.isPending ? (
         <AdminLoadingState />
       ) : linked.length === 0 ? (
         <AdminEmptyState message="Chưa có hồ sơ liên kết" />

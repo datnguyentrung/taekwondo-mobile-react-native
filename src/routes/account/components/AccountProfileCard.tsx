@@ -15,12 +15,12 @@ import {
 export function AccountProfileCard({
   displayName,
   profileLabel,
-  canSwitchAccount,
+  canSwitchAccount = true,
   onSwitchAccount,
 }: {
   displayName: string;
   profileLabel: string;
-  canSwitchAccount: boolean;
+  canSwitchAccount?: boolean;
   onSwitchAccount: () => void;
 }) {
   return (
@@ -42,7 +42,6 @@ export function AccountProfileCard({
         <Pressable
           accessibilityRole="button"
           accessibilityLabel="Chuyển tài khoản"
-          disabled={!canSwitchAccount}
           onPress={onSwitchAccount}
           style={({ pressed }) => [
             styles.switchAccount,

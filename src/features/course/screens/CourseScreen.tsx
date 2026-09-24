@@ -17,6 +17,7 @@ import {
 } from "@/features/student-commerce/utils/studentCommerceUtils";
 import StackScreenLayout from "@/routes/navigation/layouts/StackScreenLayout";
 import { useGetQuery } from "@/shared/hooks/useCrud";
+import { useScreenRefresh } from "@/infrastructure/query/useScreenRefresh";
 import { Colors } from "@/theme";
 
 import { mapCourseApiToView } from "@/features/course/domain/course.mappers";
@@ -31,7 +32,9 @@ export function CourseCatalogScreen({
   const [tab, setTab] = useState<CourseCatalogTab>(initialTab);
 
   // Gọi API danh sách khóa học qua useGetQuery
-  const { data, isLoading } = useGetQuery(["courses"], () => courseApi.list());
+  const coursesQuery = useGetQuery(["courses"], () => courseApi.list());
+  const { data, isLoading } = coursesQuery;
+  const { refreshing, onRefresh } = useScreenRefresh([coursesQuery]);
 
   const courses = useMemo(() => {
     const rawList: CourseView[] =
@@ -45,7 +48,12 @@ export function CourseCatalogScreen({
   const showInitialLoading = isLoading && !data;
 
   return (
-    <StackScreenLayout title="Khóa học" contentContainerStyle={styles.content}>
+    <StackScreenLayout
+      title="Khóa học"
+      contentContainerStyle={styles.content}
+      refreshing={refreshing}
+      onRefresh={onRefresh}
+    >
       <SegmentedTabs value={tab} tabs={COURSE_CATALOG_TABS} onChange={setTab} />
       <CourseCatalogSearchField tab={tab} />
       {showInitialLoading ? (

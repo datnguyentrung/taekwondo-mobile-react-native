@@ -1,5 +1,6 @@
 import type { RelationshipType } from "@/features/authentication/domain/auth.types";
-import type { PersonSimpleResponse } from "@/features/person";
+import type { PersonBriefResponse } from "@/features/person";
+import type { RoleBriefResponse } from "@/features/roles";
 import type { Belt } from "@/features/person/constants/person.constants";
 import type { UserStatus } from "../constants/user.constants";
 
@@ -40,19 +41,27 @@ export interface UserProfileSummary {
 }
 
 export interface UserResponse {
-  userInfo: UserInfo;
-  userProfile: UserProfileSummary;
+  userId: string;
+  phoneNumber: string;
+  status: UserStatus;
+  authorizationVersion: number;
+  lastLoginAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+  persons: PersonBriefResponse[];
+  roles: RoleBriefResponse[];
 }
 
 export interface UserDetail {
   userId: string;
   phoneNumber: string | null;
-  passwordHash?: string | null;
   status: UserStatus | null;
   authorizationVersion?: number;
   lastLoginAt: string | null;
-  createdAt: string | null;
-  updatedAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+  persons: PersonBriefResponse[];
+  roles: RoleBriefResponse[];
 }
 
 export interface UserSimpleResponse {
@@ -60,7 +69,7 @@ export interface UserSimpleResponse {
   phoneNumber: string;
   status: UserStatus | null;
   lastLoginAt: string | null;
-  persons: PersonSimpleResponse[];
+  persons: PersonBriefResponse[];
 }
 
 export interface UserListParams {

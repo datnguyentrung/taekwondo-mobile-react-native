@@ -3,17 +3,8 @@ import { useRouter, type Href } from "expo-router";
 import { useState } from "react";
 import { View } from "react-native";
 
-import type { PersonSimpleResponse } from "@/features/person";
-import { useRoles } from "@/features/roles/queries/roleQueries";
-import { userApi } from "../api/userApi";
-import type { UserSimpleResponse } from "../api/user.dto";
-import { roleCodesForUser } from "../domain/userViewModel";
-import {
-  userKeys,
-  useUser,
-  useUserRoles,
-  useUsers,
-} from "../queries/userQueries";
+import type { PersonBriefResponse } from "@/features/person";
+import { useScreenRefresh } from "@/infrastructure/query/useScreenRefresh";
 import StackScreenLayout from "@/routes/navigation/layouts/StackScreenLayout";
 import {
   AdminButton,
@@ -28,37 +19,32 @@ import {
 } from "@/shared/ui/admin/AdministrationPrimitives";
 import { ThemedText } from "@/shared/ui/ThemedText";
 import { useToast } from "@/shared/ui/Toast";
-import { formatDateTime } from "@/shared/utils/dateTime";
+import { formatDateDMY, formatDateTime } from "@/shared/utils/dateTime";
+import { userApi } from "../api/userApi";
+import { userKeys, useUser } from "../queries/userQueries";
 
 import {
   Avatar,
   getPrimaryPerson,
   navigate,
   StatusChip,
-  useUserId,
   userAdminStyles,
+  useUserId,
 } from "./userAdministrationShared";
 
 export function UserDetailScreen() {
   const router = useRouter();
   const userId = useUserId();
   const user = useUser(userId);
-  const users = useUsers();
-  const assignments = useUserRoles();
-  const roles = useRoles();
   const queryClient = useQueryClient();
   const toast = useToast();
   const [confirming, setConfirming] = useState(false);
 
-  const userListItem = (users.data?.content ?? []).find(
-    (item: UserSimpleResponse) => item.userId === userId,
-  );
-  const primaryPerson = getPrimaryPerson(userListItem);
-  const linkedPeople = userListItem?.persons ?? [];
-  const codes = roleCodesForUser(userId ?? "", assignments.data?.content ?? []);
-  const assignedRoles = (roles.data?.content ?? []).filter((role) =>
-    codes.includes(role.code),
-  );
+  const { refreshing, onRefresh } = useScreenRefresh([user]);
+
+  const primaryPerson = getPrimaryPerson(user.data);
+  const linkedPeople: PersonBriefResponse[] = user.data?.persons ?? [];
+  const assignedRoles = user.data?.roles ?? [];
 
   const remove = useMutation({
     mutationFn: () => userApi.remove(userId as string),
@@ -75,8 +61,10 @@ export function UserDetailScreen() {
     <StackScreenLayout
       title="Chi tiết người dùng"
       contentContainerStyle={adminStyles.screen}
+      refreshing={refreshing}
+      onRefresh={onRefresh}
     >
-      {user.isPending || users.isPending ? (
+      {user.isPending ? (
         <AdminLoadingState />
       ) : !user.data ? (
         <AdminEmptyState message="Không tìm thấy người dùng" />
@@ -84,13 +72,11 @@ export function UserDetailScreen() {
         <>
           <AdminCard style={adminStyles.gap}>
             <View style={userAdminStyles.titleRow}>
-              <Avatar name={primaryPerson?.fullName ?? user.data.phoneNumber} />
+              <Avatar name={user.data.phoneNumber?.substring(8)} />
               <View style={adminStyles.grow}>
-                <ThemedText type="heading">
-                  {primaryPerson?.fullName ?? user.data.phoneNumber ?? "Người dùng"}
-                </ThemedText>
+                <ThemedText type="heading">{user.data.phoneNumber}</ThemedText>
                 <ThemedText type="bodySmall" style={adminStyles.muted}>
-                  {user.data.phoneNumber}
+                  Được tạo: {formatDateDMY(user.data.createdAt)}
                 </ThemedText>
               </View>
               <StatusChip status={user.data.status} />
@@ -130,7 +116,7 @@ export function UserDetailScreen() {
             <AdminEmptyState message="Chưa liên kết hồ sơ" />
           ) : (
             <AdminCard style={userAdminStyles.zeroPadding}>
-              {linkedPeople.map((person: PersonSimpleResponse) => (
+              {linkedPeople.map((person: PersonBriefResponse) => (
                 <AdminListRow
                   key={person.personId}
                   leading={<Avatar name={person.fullName} />}
@@ -138,7 +124,11 @@ export function UserDetailScreen() {
                   subtitle={person.personCode}
                   meta={
                     <AdminChip
-                      label={person.status === "ACTIVE" ? "Hoạt động" : "Ngừng hoạt động"}
+                      label={
+                        person.status === "ACTIVE"
+                          ? "Hoạt động"
+                          : "Ngừng hoạt động"
+                      }
                       tone={person.status === "ACTIVE" ? "success" : "neutral"}
                     />
                   }
@@ -146,15 +136,37 @@ export function UserDetailScreen() {
               ))}
             </AdminCard>
           )}
-          <AdminSectionHeader title="Vai trò được gán" />
+          <AdminSectionHeader
+            title="Vai trò được gán"
+            actionLabel="Quản lý"
+            onAction={() => navigate(router, `/admin/users/${userId}/roles`)}
+          />
           {assignedRoles.length === 0 ? (
             <AdminEmptyState message="Chưa được gán vai trò" />
           ) : (
-            <View style={adminStyles.chips}>
+            <AdminCard style={userAdminStyles.zeroPadding}>
               {assignedRoles.map((role) => (
-                <AdminChip key={role.code} label={role.name} tone="info" />
+                <AdminListRow
+                  key={role.code}
+                  leading={<Avatar name={role.name} />}
+                  title={role.name}
+                  subtitle={role.code}
+                  meta={
+                    role.permissionVersion !== undefined ? (
+                      <AdminChip
+                        label={`v${role.permissionVersion}`}
+                        tone="info"
+                      />
+                    ) : (
+                      <AdminChip label="Vai trò" tone="info" />
+                    )
+                  }
+                  onPress={() =>
+                    navigate(router, `/admin/users/${userId}/roles`)
+                  }
+                />
               ))}
-            </View>
+            </AdminCard>
           )}
           <AdminButton
             label="Xóa người dùng"

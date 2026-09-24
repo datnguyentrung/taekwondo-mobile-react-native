@@ -2,7 +2,7 @@ import { useLocalSearchParams, useRouter, type Href } from "expo-router";
 import { StyleSheet, View } from "react-native";
 
 import type { RelationshipType } from "@/features/authentication/domain/auth.types";
-import type { UserSimpleResponse } from "@/features/user/api/user.dto";
+import type { UserDetail, UserSimpleResponse } from "@/features/user/api/user.dto";
 import type { UserStatus } from "@/features/user/constants/user.constants";
 import { userStatusLabel } from "@/features/user/domain/userViewModel";
 import { AdminChip } from "@/shared/ui/admin/AdministrationPrimitives";
@@ -32,8 +32,17 @@ export function navigate(router: ReturnType<typeof useRouter>, path: string) {
   router.push(path as Href);
 }
 
-export function getPrimaryPerson(user?: UserSimpleResponse | null) {
-  return user?.persons?.[0] ?? null;
+export function getPrimaryPerson(
+  user?: UserSimpleResponse | UserDetail | null,
+) {
+  if (!user) return null;
+  if ("persons" in user && Array.isArray(user.persons)) {
+    return user.persons[0] ?? null;
+  }
+  if ("person" in user && Array.isArray(user.person)) {
+    return user.person[0] ?? null;
+  }
+  return null;
 }
 
 export function userMatchesSearch(user: UserSimpleResponse, search: string) {

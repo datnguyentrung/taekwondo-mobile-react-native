@@ -7,6 +7,7 @@ import type { UserStatus } from "../constants/user.constants";
 import { userApi } from "../api/userApi";
 import { userStatusLabel } from "../domain/userViewModel";
 import { userKeys, useUser } from "../queries/userQueries";
+import { useScreenRefresh } from "@/infrastructure/query/useScreenRefresh";
 import StackScreenLayout from "@/routes/navigation/layouts/StackScreenLayout";
 import {
   AdminButton,
@@ -31,9 +32,12 @@ export function UserEditScreen() {
   const queryClient = useQueryClient();
   const toast = useToast();
   const [phone, setPhone] = useState("");
+  const [newPassword, setNewPassword] = useState("");
   const [status, setStatus] = useState<UserStatus>("ACTIVE");
   const [confirming, setConfirming] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
+
+  const { refreshing, onRefresh } = useScreenRefresh([user]);
 
   useEffect(() => {
     if (!user.data) return;
@@ -47,7 +51,7 @@ export function UserEditScreen() {
     mutationFn: () =>
       userApi.update(userId as string, {
         phoneNumber: phone.trim(),
-        passwordHash: user.data?.passwordHash ?? "",
+        passwordHash: newPassword.trim(),
         status,
         lastLoginAt: user.data?.lastLoginAt ?? "1970-01-01T00:00:00",
         authorizationVersion: user.data?.authorizationVersion ?? 0,
@@ -72,13 +76,27 @@ export function UserEditScreen() {
       toast.show({ message: "Không thể xóa người dùng", variant: "error" }),
   });
 
+  const isFormValid = phone.trim().length >= 9 && (!newPassword || newPassword.length >= 6);
+
   return (
-    <StackScreenLayout title="Sửa người dùng" contentContainerStyle={adminStyles.screen}>
+    <StackScreenLayout
+      title="Sửa người dùng"
+      contentContainerStyle={adminStyles.screen}
+      refreshing={refreshing}
+      onRefresh={onRefresh}
+    >
       <AdminField
         label="Số điện thoại"
         value={phone}
         onChangeText={setPhone}
         keyboardType="phone-pad"
+      />
+      <AdminField
+        label="Mật khẩu mới"
+        value={newPassword}
+        onChangeText={setNewPassword}
+        secureTextEntry
+        placeholder="Nhập mật khẩu mới (nếu muốn đổi)"
       />
       <AdminSectionHeader title="Trạng thái" />
       <View style={adminStyles.chips}>
@@ -110,14 +128,9 @@ export function UserEditScreen() {
       </AdminInfoBanner>
       <AdminButton
         label="Lưu thay đổi"
-        disabled={phone.trim().length < 9 || !user.data?.passwordHash}
+        disabled={!isFormValid || save.isPending}
         onPress={() => setConfirming(true)}
       />
-      {!user.data?.passwordHash && user.isSuccess ? (
-        <AdminInfoBanner tone="warning">
-          API không trả về dữ liệu mật khẩu cần thiết cho hợp đồng cập nhật hiện tại, nên thao tác lưu đã được khóa để tránh ghi đè mật khẩu.
-        </AdminInfoBanner>
-      ) : null}
       <AdminButton label="Xóa người dùng" variant="text" onPress={() => setConfirmDelete(true)} />
       <AdminConfirmDialog
         confirming={confirming}

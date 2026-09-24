@@ -35,6 +35,8 @@ export type BottomTabScreenLayoutProps = {
   contentContainerStyle?: StyleProp<ViewStyle>;
   scrollEnabled?: boolean;
   refreshEnabled?: boolean;
+  refreshing?: boolean;
+  onRefresh?: () => Promise<void> | void;
 };
 
 export const BOTTOM_TAB_SPACE = 92;
@@ -47,10 +49,14 @@ export default function BottomTabScreenLayout({
   contentContainerStyle,
   scrollEnabled = true,
   refreshEnabled = true,
+  refreshing: controlledRefreshing,
+  onRefresh: customOnRefresh,
 }: BottomTabScreenLayoutProps) {
   const insets = useSafeAreaInsets();
   const actionColor = Colors.light.surface;
-  const { refreshing, onRefresh } = useActiveQueriesRefresh();
+  const defaultRefresh = useActiveQueriesRefresh();
+  const refreshing = controlledRefreshing ?? defaultRefresh.refreshing;
+  const onRefresh = customOnRefresh ?? defaultRefresh.onRefresh;
 
   return (
     <SafeAreaView edges={["left", "right"]} style={styles.safeArea}>

@@ -99,7 +99,7 @@ export default function AccountScreen() {
       <AccountProfileCard
         displayName={displayName}
         profileLabel={profileLabel}
-        canSwitchAccount={availableContextCount > 1}
+        canSwitchAccount={true}
         onSwitchAccount={switchAccount}
       />
 
