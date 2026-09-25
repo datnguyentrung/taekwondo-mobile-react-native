@@ -1,1 +1,2 @@
-export { default } from "@/routes/home/HomeScreen";
+export { CheckInScreen as default } from "@/features/check-in";
+

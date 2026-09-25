@@ -1,11 +1,12 @@
 import { Bell, ChevronRight, Headphones, LockOpen, Logout, User, Verified, Wallet } from "reicon-react-native";
 import { type Href, useRouter } from "expo-router";
 import { useMemo, useState } from "react";
-import { ActivityIndicator, Modal, Pressable, StyleSheet } from "react-native";
+import { ActivityIndicator, Pressable, StyleSheet } from "react-native";
 
 import { useAuthSession, useLogout } from "@/features/authentication";
 import BottomTabScreenLayout from "@/routes/navigation/layouts/BottomTabScreenLayout";
 import { AppIcon } from "@/shared/ui/AppIcon";
+import { ConfirmationDialog } from "@/shared/ui/ConfirmationDialog";
 import { useToast } from "@/shared/ui/Toast";
 import { ThemedText } from "@/shared/ui/ThemedText";
 import { showComingSoon } from "@/shared/utils/comingSoon";
@@ -17,7 +18,6 @@ import {
 } from "./components/AccountMenuSection";
 import { AccountProfileCard } from "./components/AccountProfileCard";
 import { AccountRatingCard } from "./components/AccountRatingCard";
-import { LogoutConfirmModal } from "./components/LogoutConfirmModal";
 
 function contextRoleLabel(personCode?: string | null) {
   if (personCode?.startsWith("VQ_")) return "Học viên";
@@ -139,18 +139,16 @@ export default function AccountScreen() {
         )}
       </Pressable>
 
-      <Modal
+      <ConfirmationDialog
         visible={confirmingLogout}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setConfirmingLogout(false)}
-      >
-        <LogoutConfirmModal
-          pending={logout.isPending}
-          onCancel={() => setConfirmingLogout(false)}
-          onConfirm={confirmLogout}
-        />
-      </Modal>
+        title="Bạn có chắc muốn đăng xuất?"
+        description="Phiên hiện tại trên thiết bị này sẽ kết thúc."
+        confirmLabel="Đăng xuất"
+        pending={logout.isPending}
+        confirmVariant="danger"
+        onCancel={() => setConfirmingLogout(false)}
+        onConfirm={confirmLogout}
+      />
     </BottomTabScreenLayout>
   );
 }
