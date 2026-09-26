@@ -36,8 +36,11 @@ export const personApi = {
     const response = await javaApi.put<PersonResponse>(`/persons/${personId}`, request);
     return response.data;
   },
-  async remove(personId: string): Promise<void> {
+  async delete(personId: string): Promise<void> {
     await javaApi.delete(`/persons/${personId}`);
+  },
+  async remove(personId: string): Promise<void> {
+    return this.delete(personId);
   },
   async identify(file?: MobileUploadFile, personCode?: string): Promise<PersonResponse> {
     const response = await javaApi.post<PersonResponse>(

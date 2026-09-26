@@ -1,7 +1,6 @@
 import { ConfirmationDialog } from "@/shared/ui/ConfirmationDialog";
 import { ThemedText } from "@/shared/ui/ThemedText";
 import { Colors, radii } from "@/theme";
-import { CameraView } from "expo-camera";
 import { router, useFocusEffect } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { useCallback, useEffect, useState } from "react";
@@ -11,6 +10,7 @@ import {
   StyleSheet,
   View,
 } from "react-native";
+import { Camera } from "react-native-vision-camera";
 import { CheckInHeader } from "../components/CheckInHeader";
 import { CheckInResultSheet } from "../components/CheckInResultSheet";
 import { CheckInSessionHistorySheet } from "../components/CheckInSessionHistorySheet";
@@ -18,7 +18,7 @@ import { CheckInSideControls } from "../components/CheckInSideControls";
 import { CheckInViewfinder } from "../components/CheckInViewfinder";
 import { useCheckInCamera } from "../hooks/useCheckInCamera";
 import { useCheckInCameraLayout } from "../hooks/useCheckInCameraLayout";
-import { useContinuousFaceScan } from "../hooks/useContinuousFaceScan";
+import { useFaceCheckIn } from "../hooks/useFaceCheckIn";
 
 const CAMERA_PERMISSION_DESCRIPTION =
   "Camera được dùng để nhận diện khuôn mặt và điểm danh học viên/HLV.";
@@ -33,6 +33,7 @@ export default function CheckInScreen() {
   const [isCameraReady, setIsCameraReady] = useState(false);
   const [cameraMountError, setCameraMountError] = useState<string | null>(null);
   const [cameraReloadKey, setCameraReloadKey] = useState(0);
+
   const {
     handlePermissionAction,
     refreshPermission,
@@ -104,12 +105,15 @@ export default function CheckInScreen() {
     setIsCameraReady(true);
   }, []);
 
-  const handleCameraMountError = useCallback((event: { message?: string }) => {
-    setIsCameraReady(false);
-    setCameraMountError(
-      event.message || "Camera chưa khởi động được. Vui lòng thử lại.",
-    );
-  }, []);
+  const handleCameraMountError = useCallback(
+    (event: Error | { message?: string }) => {
+      setIsCameraReady(false);
+      setCameraMountError(
+        event.message || "Camera chưa khởi động được. Vui lòng thử lại.",
+      );
+    },
+    [],
+  );
 
   const handleRetryCamera = useCallback(() => {
     setCameraMountError(null);
@@ -129,22 +133,29 @@ export default function CheckInScreen() {
     toggleFacing();
   }, [toggleFacing]);
 
+  const isCameraActive =
+    isFocused && isPermissionGranted && !cameraMountError;
+
   const {
-    scanState,
+    scannerState,
+    feedbackMessage,
     currentResult,
     sessionHistory,
     isResultSheetVisible,
     isHistorySheetVisible,
+    device,
+    photoOutput,
+    faceDetectorOutput,
     handleNextScan,
     closeResultSheet,
     openHistorySheet,
     closeHistorySheet,
-  } = useContinuousFaceScan(
-    isFocused && isPermissionGranted && isCameraReady && !cameraMountError,
-  );
+  } = useFaceCheckIn({
+    facing,
+    isActive: isCameraActive && isCameraReady,
+  });
 
-  const shouldRenderCamera =
-    isFocused && isPermissionGranted && !cameraMountError;
+  const shouldRenderCamera = isCameraActive && device;
   const shouldShowPermissionDialog =
     isFocused && !isPermissionLoading && !isPermissionGranted;
   const permissionDialogDescription =
@@ -160,22 +171,23 @@ export default function CheckInScreen() {
     <View style={styles.container}>
       <StatusBar style="light" />
 
-      {/* Camera Layer */}
+      {/* VisionCamera Layer */}
       {shouldRenderCamera ? (
-        <CameraView
+        <Camera
           key={cameraKey}
           style={StyleSheet.absoluteFill}
-          active={isFocused && isPermissionGranted}
-          facing={facing}
-          enableTorch={isTorchAvailable && torch}
-          onCameraReady={handleCameraReady}
-          onMountError={handleCameraMountError}
+          device={device}
+          isActive={isCameraActive}
+          outputs={[photoOutput, faceDetectorOutput]}
+          torchMode={isTorchAvailable && torch ? "on" : "off"}
+          onStarted={handleCameraReady}
+          onError={handleCameraMountError}
         />
       ) : (
         <View style={[StyleSheet.absoluteFill, styles.fallbackBackground]} />
       )}
 
-      {/* Dark tint overlay for better contrast */}
+      {/* Dark tint overlay for contrast */}
       <View
         style={[
           StyleSheet.absoluteFill,
@@ -217,8 +229,9 @@ export default function CheckInScreen() {
                 </View>
               ) : null}
               <CheckInViewfinder
-                scanState={scanState}
+                scanState={scannerState}
                 scanAreaHeight={layout.scanAreaHeight}
+                feedbackMessage={feedbackMessage}
               />
             </>
           ) : null}
@@ -235,7 +248,7 @@ export default function CheckInScreen() {
         ) : null}
       </View>
 
-      {/* Result Bottom Sheet (uses BottomSheetWindow) */}
+      {/* Result Bottom Sheet */}
       <CheckInResultSheet
         visible={isResultSheetVisible}
         record={currentResult}
@@ -243,7 +256,7 @@ export default function CheckInScreen() {
         onClose={closeResultSheet}
       />
 
-      {/* Session History Bottom Sheet (uses BottomSheetWindow) */}
+      {/* Session History Bottom Sheet */}
       <CheckInSessionHistorySheet
         visible={isHistorySheetVisible}
         history={sessionHistory}

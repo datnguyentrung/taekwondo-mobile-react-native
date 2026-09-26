@@ -3,3 +3,5 @@ export * from './api/personApi';
 export * from './api/user-person.dto';
 export * from './api/userPersonApi';
 export * from './constants/person.constants';
+export * from './queries/personQueries';
+

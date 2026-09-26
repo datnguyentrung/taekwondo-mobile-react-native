@@ -3,7 +3,12 @@ import type { CoachDetail } from "@/features/coach/api/coach.dto";
 import type { StudentAttendanceResponse } from "@/features/session-attendance/api/session-attendance.dto";
 import type { StudentDetail } from "@/features/student/api/student.dto";
 import type { Belt, PersonStatus } from "../constants/person.constants";
-import type { PersonBriefResponse, PersonResponse, PersonSimpleResponse } from "../domain/person.types";
+import type {
+  PersonBriefResponse,
+  PersonResponse,
+  PersonSearchItem,
+  PersonSimpleResponse,
+} from "../domain/person.types";
 
 export interface PersonCreateRequest {
   fullName: string;
@@ -23,16 +28,6 @@ export interface PersonUpdateRequest extends PersonCreateRequest {
   positionId?: string | null;
 }
 
-export interface PersonSearchItem {
-  personId: string;
-  fullName: string;
-  birthDate: string;
-  belt: string;
-  personType: string;
-  code: string;
-  status: string;
-}
-
 export interface FaceCheckInResult {
   personType: string;
   checkInSuccess: boolean;
@@ -43,6 +38,7 @@ export interface FaceCheckInResult {
   studentAttendance: StudentAttendanceResponse | null;
   coachTimesheet: CoachTimesheetResponse | null;
 }
+
 export interface FaceEmbeddingUpdateResponse {
   personId: string;
   dimension: number;
@@ -53,10 +49,16 @@ export interface FaceEmbeddingUpdateResponse {
 }
 
 export interface FaceImageUrlResponse {
-  avatarUrl: string;
+  url: string;
+  avatarUrl?: string;
 }
 
-export type { PersonBriefResponse, PersonResponse, PersonSimpleResponse };
+export type {
+  PersonBriefResponse,
+  PersonResponse,
+  PersonSearchItem,
+  PersonSimpleResponse,
+};
 
 export interface PersonSearchParams {
   search?: string;

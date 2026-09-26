@@ -10,7 +10,7 @@ const mockRequestPermission = jest.fn();
 const mockHandlePermissionAction = jest.fn();
 const mockRefreshPermission = jest.fn();
 const mockUseCheckInCamera = jest.fn();
-const mockUseContinuousFaceScan = jest.fn();
+const mockUseFaceCheckIn = jest.fn();
 
 jest.mock("expo-router", () => {
   const React = require("react");
@@ -27,18 +27,26 @@ jest.mock("expo-router", () => {
   };
 });
 
-jest.mock("expo-camera", () => {
+jest.mock("react-native-vision-camera", () => {
   const React = require("react");
   const { View: NativeView } = require("react-native");
 
   return {
-    CameraView: (props: object) =>
+    Camera: (props: object) =>
       React.createElement(NativeView, {
         ...props,
         accessibilityLabel: "Camera preview",
       }),
+    useCameraDevice: () => ({ id: "front-camera" }),
+    usePhotoOutput: () => ({
+      capturePhotoToFile: jest.fn(),
+    }),
   };
 });
+
+jest.mock("react-native-vision-camera-face-detector", () => ({
+  useFaceDetectorOutput: () => ({}),
+}));
 
 jest.mock("expo-status-bar", () => ({ StatusBar: () => null }));
 jest.mock("react-native-safe-area-context", () => ({
@@ -49,9 +57,9 @@ jest.mock("../hooks/useCheckInCamera", () => ({
   useCheckInCamera: () => mockUseCheckInCamera(),
 }));
 
-jest.mock("../hooks/useContinuousFaceScan", () => ({
-  useContinuousFaceScan: (enabled: boolean) =>
-    mockUseContinuousFaceScan(enabled),
+jest.mock("../hooks/useFaceCheckIn", () => ({
+  useFaceCheckIn: (props: { facing: string; isActive: boolean }) =>
+    mockUseFaceCheckIn(props),
 }));
 
 jest.mock("../components/CheckInHeader", () => {
@@ -96,16 +104,23 @@ jest.mock("../components/CheckInSessionHistorySheet", () => ({
   CheckInSessionHistorySheet: () => null,
 }));
 
-const scanState = {
-  scanState: "scanning",
+const checkInState = {
+  scannerState: "scanning",
+  feedbackMessage: "Đang nhận diện...",
+  qualityReason: "NO_FACE",
   currentResult: null,
   sessionHistory: [],
   isResultSheetVisible: false,
   isHistorySheetVisible: false,
+  device: { id: "front-camera" },
+  photoOutput: {},
+  faceDetectorOutput: {},
   handleNextScan: jest.fn(),
   closeResultSheet: jest.fn(),
   openHistorySheet: jest.fn(),
   closeHistorySheet: jest.fn(),
+  resumeScanner: jest.fn(),
+  pauseScanner: jest.fn(),
 };
 
 function cameraState(overrides: Record<string, unknown> = {}) {
@@ -147,7 +162,7 @@ describe("CheckInScreen camera permission flow", () => {
     });
     mockRefreshPermission.mockResolvedValue(undefined);
     mockUseCheckInCamera.mockReturnValue(cameraState());
-    mockUseContinuousFaceScan.mockReturnValue(scanState);
+    mockUseFaceCheckIn.mockReturnValue(checkInState);
     jest.spyOn(AppState, "addEventListener").mockImplementation(
       (_type, listener) => {
         appStateListener = listener as (state: string) => void;
@@ -251,12 +266,16 @@ describe("CheckInScreen camera permission flow", () => {
 
     const camera = await screen.findByLabelText("Camera preview");
     expect(screen.queryByText("Cho phép sử dụng Camera")).toBeNull();
-    expect(mockUseContinuousFaceScan).toHaveBeenLastCalledWith(false);
+    expect(mockUseFaceCheckIn).toHaveBeenLastCalledWith(
+      expect.objectContaining({ isActive: false }),
+    );
 
-    await act(async () => camera.props.onCameraReady());
+    await act(async () => camera.props.onStarted());
 
     await waitFor(() => {
-      expect(mockUseContinuousFaceScan).toHaveBeenLastCalledWith(true);
+      expect(mockUseFaceCheckIn).toHaveBeenLastCalledWith(
+        expect.objectContaining({ isActive: true }),
+      );
     });
     expect(screen.getByLabelText("Check-in viewfinder")).toBeTruthy();
   });

@@ -1,4 +1,3 @@
-import { Plus } from "reicon-react-native";
 import { useEffect, useMemo } from 'react';
 import type { StyleProp, ViewStyle } from 'react-native';
 import {
@@ -20,6 +19,7 @@ import Animated, {
   withSpring,
 } from 'react-native-reanimated';
 import { scheduleOnRN } from 'react-native-worklets';
+import { Plus } from "reicon-react-native";
 
 import { Colors, effects, radii } from '@/theme';
 import { AppIcon } from './AppIcon';
@@ -45,7 +45,7 @@ function project(velocity: number, decelerationRate = 0.998) {
 }
 
 function clampHeightRatio(heightRatio: number) {
-  return Math.min(Math.max(heightRatio, 0.25), 0.95);
+  return Math.min(Math.max(heightRatio, 0.25), 0.8);
 }
 
 export function BottomSheetWindow({
@@ -63,12 +63,14 @@ export function BottomSheetWindow({
 }: BottomSheetWindowProps) {
   const reducedMotion = useReducedMotion();
   const { height } = useWindowDimensions();
-  const sheetHeight = useSharedValue(Math.max(height - 110, 480));
+  const sheetHeight = useSharedValue(Math.round(height * 0.5));
   const translateY = useSharedValue(0);
   const context = useSharedValue(0);
   const sheetSizingStyle = useMemo(() => {
     if (!heightRatio) {
-      return styles.defaultSheetSizing;
+      return {
+        maxHeight: Math.round(height * 0.8),
+      };
     }
 
     const heightValue = Math.round(height * clampHeightRatio(heightRatio));
@@ -224,7 +226,7 @@ const styles = StyleSheet.create({
   root: {
     flex: 1,
     justifyContent: 'flex-end',
-  },
+    },
   backdrop: {
     position: 'absolute',
     top: 0,
@@ -238,6 +240,7 @@ const styles = StyleSheet.create({
     borderTopLeftRadius: radii.md,
     borderTopRightRadius: radii.md,
     overflow: 'hidden',
+    paddingBottom: 24,
     ...effects.glass,
   },
   defaultSheetSizing: {
@@ -276,7 +279,7 @@ const styles = StyleSheet.create({
     transform: [{ rotate: '45deg' }],
   },
   body: {
-    flex: 1,
+    flexShrink: 1,
   },
   scrollContent: {
     paddingBottom: 20,

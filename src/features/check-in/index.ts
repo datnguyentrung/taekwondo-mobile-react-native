@@ -1,1 +1,10 @@
 export { default as CheckInScreen } from './screens/CheckInScreen';
+export * from './constants/faceScannerConfig';
+export * from './hooks/useCheckInCamera';
+export * from './hooks/useCheckInCameraLayout';
+export * from './hooks/useContinuousFaceScan';
+export * from './hooks/useFaceCheckIn';
+export * from './hooks/useFaceScanner';
+export * from './services/faceCheckInApi';
+export * from './types/faceScanner.types';
+export * from './utils/faceQuality';
