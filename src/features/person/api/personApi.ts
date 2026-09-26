@@ -4,7 +4,6 @@ import { createFileMultipartFormData } from '@/infrastructure/http/multipart';
 import type { PageResponse } from '@/infrastructure/http/pagination.types';
 
 import type {
-  FaceCheckInResult,
   FaceEmbeddingUpdateResponse,
   FaceImageUrlResponse,
   PersonCreateRequest,
@@ -47,13 +46,6 @@ export const personApi = {
       '/persons/identify',
       createFileMultipartFormData(file),
       { params: personCode ? { personCode } : undefined },
-    );
-    return response.data;
-  },
-  async checkInByFace(file: MobileUploadFile): Promise<FaceCheckInResult> {
-    const response = await javaApi.post<FaceCheckInResult>(
-      '/persons/face-check-in',
-      createFileMultipartFormData(file),
     );
     return response.data;
   },

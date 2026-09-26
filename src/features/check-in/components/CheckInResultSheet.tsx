@@ -23,12 +23,20 @@ function CheckInResultSheetComponent({
   if (!record) return null;
 
   const isStudent = record.role === "STUDENT";
+  const isAlreadyCheckedIn = record.status === "ALREADY_CHECKED_IN";
+  const isAlreadyCheckedOut = record.status === "ALREADY_CHECKED_OUT";
+
+  const sheetTitle = isAlreadyCheckedIn
+    ? "Đã điểm danh trước đó"
+    : isAlreadyCheckedOut
+      ? "Đã kết ca trước đó"
+      : "Điểm danh thành công";
 
   return (
     <BottomSheetWindow
       visible={visible}
-      title="Điểm danh thành công"
-      heightRatio={0.52}
+      title={sheetTitle}
+      heightRatio={0.56}
       onClose={onClose}
     >
       <View style={styles.content}>
@@ -38,10 +46,20 @@ function CheckInResultSheetComponent({
             <AppIcon
               icon={<CheckCircle weight="Filled" />}
               size={24}
-              color={Colors.light.success}
+              color={
+                isAlreadyCheckedIn || isAlreadyCheckedOut
+                  ? "#F59E0B"
+                  : Colors.light.success
+              }
             />
-            <ThemedText type="heading" style={styles.successTitle}>
-              Điểm danh thành công
+            <ThemedText
+              type="heading"
+              style={[
+                styles.successTitle,
+                (isAlreadyCheckedIn || isAlreadyCheckedOut) && styles.warningTitle,
+              ]}
+            >
+              {sheetTitle}
             </ThemedText>
           </View>
           <ThemedText type="caption" style={styles.timeAgo}>
@@ -87,6 +105,17 @@ function CheckInResultSheetComponent({
               {isStudent ? `Mã HV: ${record.code}` : `Mã NV: ${record.code}`}
             </ThemedText>
 
+            {record.courseName ? (
+              <ThemedText
+                type="caption"
+                style={styles.courseText}
+                numberOfLines={1}
+              >
+                📚 {record.courseName}
+                {record.sessionTime ? ` • ${record.sessionTime}` : ""}
+              </ThemedText>
+            ) : null}
+
             <View style={styles.metaRow}>
               <View style={styles.timeMeta}>
                 <AppIcon
@@ -99,8 +128,20 @@ function CheckInResultSheetComponent({
                 </ThemedText>
               </View>
 
-              <View style={styles.statusTag}>
-                <ThemedText style={styles.statusTagText}>
+              <View
+                style={[
+                  styles.statusTag,
+                  (isAlreadyCheckedIn || isAlreadyCheckedOut) &&
+                    styles.statusTagWarning,
+                ]}
+              >
+                <ThemedText
+                  style={[
+                    styles.statusTagText,
+                    (isAlreadyCheckedIn || isAlreadyCheckedOut) &&
+                      styles.statusTagWarningText,
+                  ]}
+                >
                   {record.statusLabel}
                 </ThemedText>
               </View>
@@ -152,6 +193,9 @@ const styles = StyleSheet.create({
     color: Colors.light.success,
     fontSize: 16,
     fontWeight: "700",
+  },
+  warningTitle: {
+    color: "#D97706",
   },
   timeAgo: {
     color: Colors.light.textSecondary,
@@ -212,6 +256,11 @@ const styles = StyleSheet.create({
     color: Colors.light.textSecondary,
     fontSize: 13,
   },
+  courseText: {
+    color: Colors.light.primary,
+    fontSize: 12,
+    fontWeight: "500",
+  },
   metaRow: {
     flexDirection: "row",
     alignItems: "center",
@@ -237,6 +286,12 @@ const styles = StyleSheet.create({
     color: "#15803D",
     fontSize: 11,
     fontWeight: "600",
+  },
+  statusTagWarning: {
+    backgroundColor: "#FEF3C7",
+  },
+  statusTagWarningText: {
+    color: "#B45309",
   },
   nextButton: {
     backgroundColor: Colors.light.primary,

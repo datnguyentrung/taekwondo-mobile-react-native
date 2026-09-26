@@ -30,9 +30,8 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   android: {
     package: APP_ID,
 
-    googleServicesFile:
-      process.env.GOOGLE_SERVICES_JSON ?? "./android/app/google-services.json",
-
+    // Firebase native hiện chưa được bật. Khi bật lại FCM/Crashlytics,
+    // cấu hình googleServicesFile bằng file nguồn nằm ngoài thư mục android/.
     permissions: ["android.permission.POST_NOTIFICATIONS"],
 
     adaptiveIcon: {

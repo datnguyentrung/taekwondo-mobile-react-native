@@ -13,7 +13,13 @@ export type ScanState = ScannerState | 'SCANNING' | 'ANALYZING' | 'SUCCESS' | 'E
 
 export type CheckInPersonType = 'STUDENT' | 'COACH';
 
-export type CheckInStatus = 'ON_TIME' | 'LATE' | 'EXCUSED';
+export type CheckInStatus =
+  | 'ON_TIME'
+  | 'LATE'
+  | 'EXCUSED'
+  | 'SUCCESS'
+  | 'ALREADY_CHECKED_IN'
+  | 'ALREADY_CHECKED_OUT';
 
 export type FaceQualityReason =
   | 'NO_FACE'
@@ -41,6 +47,47 @@ export type FaceDetectionRecord = {
   trackingId?: number;
 };
 
+// --- Backend Training DTO: FaceCheckInResponse ---
+export type BackendFaceCheckInStatus =
+  | 'SUCCESS'
+  | 'ALREADY_CHECKED_IN'
+  | 'ALREADY_CHECKED_OUT';
+
+export type BackendFaceCheckInAction =
+  | 'STUDENT_CHECK_IN'
+  | 'STAFF_TIMESHEET_CHECKED_IN'
+  | 'STAFF_TIMESHEET_CHECKED_OUT'
+  | 'COACH_CHECKED_IN'
+  | 'COACH_CHECKED_OUT';
+
+export interface BackendFaceCheckInPersonSummary {
+  personId: string;
+  fullName: string;
+  personCode: string;
+  faceImagePath?: string | null;
+}
+
+export interface BackendFaceCheckInSessionSummary {
+  classSessionId: string;
+  courseName: string;
+  sessionDate: string;
+  startTime: string;
+  endTime: string;
+}
+
+export interface BackendFaceCheckInResponse {
+  status: BackendFaceCheckInStatus;
+  action: BackendFaceCheckInAction;
+  person: BackendFaceCheckInPersonSummary;
+  session: BackendFaceCheckInSessionSummary;
+  recordId: string;
+  checkInTime?: string | null;
+  checkOutTime?: string | null;
+  attendanceStatus?: string | null;
+  message?: string | null;
+}
+
+// --- Frontend View Model ---
 export type CheckInRecord = {
   id: string;
   personId: string;
@@ -52,6 +99,8 @@ export type CheckInRecord = {
   dateLabel: string;
   status: CheckInStatus;
   statusLabel: string;
+  courseName?: string;
+  sessionTime?: string;
   timestamp: number;
   message?: string;
 };
@@ -63,6 +112,7 @@ export type CheckInApiResult = {
     | 'NO_FACE'
     | 'PERSON_NOT_FOUND'
     | 'ALREADY_CHECKED_IN'
+    | 'ALREADY_CHECKED_OUT'
     | 'NO_ACTIVE_SESSION'
     | 'NETWORK_ERROR'
     | 'UNKNOWN';
@@ -70,3 +120,4 @@ export type CheckInApiResult = {
 };
 
 export type CameraFacing = 'front' | 'back';
+

@@ -92,7 +92,7 @@ export function isFaceStable(
   history: FaceDetectionRecord[],
   minDurationMs: number = FACE_SCANNER_CONFIG.STABILITY_DURATION_MS,
   minFrames: number = FACE_SCANNER_CONFIG.STABILITY_MIN_FRAMES,
-  maxDrift: number = FACE_SCANNER_CONFIG.MAX_POSITION_DRIFT_RATIO,
+  maxDriftRatio: number = FACE_SCANNER_CONFIG.MAX_POSITION_DRIFT_RATIO,
 ): boolean {
   if (history.length < minFrames) {
     return false;
@@ -115,11 +115,13 @@ export function isFaceStable(
     return false;
   }
 
-  // Check position drift between the first and latest frame
-  const dx = Math.abs(newest.centerX - oldest.centerX);
-  const dy = Math.abs(newest.centerY - oldest.centerY);
+  // Check position drift normalized by the face's own dimensions (robust against device orientation / camera resolution)
+  const baseWidth = (oldest.width + newest.width) / 2 || 1;
+  const baseHeight = (oldest.height + newest.height) / 2 || 1;
+  const dx = Math.abs(newest.centerX - oldest.centerX) / baseWidth;
+  const dy = Math.abs(newest.centerY - oldest.centerY) / baseHeight;
 
-  return dx <= maxDrift && dy <= maxDrift;
+  return dx <= maxDriftRatio && dy <= maxDriftRatio;
 }
 
 /**
@@ -146,33 +148,6 @@ export function evaluateFaceQuality(
   }
 
   const face = faces[0];
-
-  if (!isFaceLargeEnough(face)) {
-    return {
-      isValid: false,
-      reason: 'FACE_TOO_SMALL',
-      feedbackText: FACE_QUALITY_MESSAGES.FACE_TOO_SMALL,
-      face,
-    };
-  }
-
-  if (!isFaceSmallEnough(face)) {
-    return {
-      isValid: false,
-      reason: 'FACE_TOO_LARGE',
-      feedbackText: FACE_QUALITY_MESSAGES.FACE_TOO_LARGE,
-      face,
-    };
-  }
-
-  if (!isFaceInsideScanRegion(face)) {
-    return {
-      isValid: false,
-      reason: 'FACE_OUT_OF_BOUNDS',
-      feedbackText: FACE_QUALITY_MESSAGES.FACE_OUT_OF_BOUNDS,
-      face,
-    };
-  }
 
   if (!isFaceAngleAcceptable(face)) {
     return {
@@ -204,15 +179,17 @@ export function evaluateFaceQuality(
  * Helper to convert Face into a detection record for stability tracking.
  */
 export function createDetectionRecord(face: Face): FaceDetectionRecord {
-  const frameWidth = face.frameWidth || 1;
-  const frameHeight = face.frameHeight || 1;
+  const width = Math.max(face.bounds?.width || 1, 1);
+  const height = Math.max(face.bounds?.height || 1, 1);
+  const centerX = (face.bounds?.x || 0) + width / 2;
+  const centerY = (face.bounds?.y || 0) + height / 2;
 
   return {
     timestamp: Date.now(),
-    centerX: (face.bounds.x + face.bounds.width / 2) / frameWidth,
-    centerY: (face.bounds.y + face.bounds.height / 2) / frameHeight,
-    width: face.bounds.width / frameWidth,
-    height: face.bounds.height / frameHeight,
+    centerX,
+    centerY,
+    width,
+    height,
     trackingId: face.trackingId,
   };
 }

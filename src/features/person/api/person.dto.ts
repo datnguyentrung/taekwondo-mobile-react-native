@@ -1,7 +1,3 @@
-import type { CoachTimesheetResponse } from "@/features/coach-timesheet/api/coach-timesheet.dto";
-import type { CoachDetail } from "@/features/coach/api/coach.dto";
-import type { StudentAttendanceResponse } from "@/features/session-attendance/api/session-attendance.dto";
-import type { StudentDetail } from "@/features/student/api/student.dto";
 import type { Belt, PersonStatus } from "../constants/person.constants";
 import type {
   PersonBriefResponse,
@@ -26,17 +22,6 @@ export interface PersonCreateRequest {
 export interface PersonUpdateRequest extends PersonCreateRequest {
   personCode?: string | null;
   positionId?: string | null;
-}
-
-export interface FaceCheckInResult {
-  personType: string;
-  checkInSuccess: boolean;
-  checkInErrorCode: string | null;
-  checkInErrorMessage: string | null;
-  studentDetail: StudentDetail | null;
-  coachDetail: CoachDetail | null;
-  studentAttendance: StudentAttendanceResponse | null;
-  coachTimesheet: CoachTimesheetResponse | null;
 }
 
 export interface FaceEmbeddingUpdateResponse {

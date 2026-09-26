@@ -3,7 +3,7 @@ import { ThemedText } from "@/shared/ui/ThemedText";
 import { Colors, radii } from "@/theme";
 import { router, useFocusEffect } from "expo-router";
 import { StatusBar } from "expo-status-bar";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   ActivityIndicator,
   AppState,
@@ -165,7 +165,14 @@ export default function CheckInScreen() {
       : isPermissionDenied && !isPermissionUndetermined
         ? CAMERA_PERMISSION_DENIED_DESCRIPTION
         : CAMERA_PERMISSION_DESCRIPTION);
+  const isFlashSupported = Boolean(device?.hasFlash);
+  const effectiveTorchAvailable = isTorchAvailable && isFlashSupported;
   const cameraKey = `check-in-camera-${facing}-${cameraReloadKey}-${isPermissionGranted ? "granted" : "blocked"}`;
+
+  const cameraOutputs = useMemo(
+    () => [photoOutput, faceDetectorOutput],
+    [photoOutput, faceDetectorOutput],
+  );
 
   return (
     <View style={styles.container}>
@@ -178,8 +185,10 @@ export default function CheckInScreen() {
           style={StyleSheet.absoluteFill}
           device={device}
           isActive={isCameraActive}
-          outputs={[photoOutput, faceDetectorOutput]}
-          torchMode={isTorchAvailable && torch ? "on" : "off"}
+          outputs={cameraOutputs}
+          torchMode={
+            effectiveTorchAvailable ? (torch ? "on" : "off") : undefined
+          }
           onStarted={handleCameraReady}
           onError={handleCameraMountError}
         />
@@ -203,7 +212,7 @@ export default function CheckInScreen() {
         <CheckInHeader
           torch={torch}
           onToggleTorch={toggleTorch}
-          isTorchAvailable={isTorchAvailable}
+          isTorchAvailable={effectiveTorchAvailable}
           topInset={layout.topInset}
           onBack={leaveCheckInScreen}
         />

@@ -93,10 +93,10 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     alignItems: "center",
     justifyContent: "center",
-    ...effects.card,
   },
   quickTile: {
     backgroundColor: Colors.light.surface,
+    ...effects.card,
   },
   defaultTile: {
     backgroundColor: hexToRgba(figmaColors.color1, 0.1),

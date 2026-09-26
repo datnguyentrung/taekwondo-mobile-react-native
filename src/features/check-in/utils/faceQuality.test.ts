@@ -75,10 +75,10 @@ describe('faceQuality utils', () => {
 
     it('returns false when face center is outside region', () => {
       const face = createMockFace({
-        bounds: { x: 10, y: 10, width: 50, height: 50 },
+        bounds: { x: -200, y: 10, width: 50, height: 50 },
         frameWidth: 1000,
         frameHeight: 1000,
-      }); // Center at 35/1000 = 0.035 (< 0.10)
+      }); // Center at -175/1000 = -0.175 (< 0.0)
       expect(isFaceInsideScanRegion(face)).toBe(false);
     });
   });
@@ -140,8 +140,9 @@ describe('faceQuality utils', () => {
       });
       const now = Date.now();
       const history = [
-        { timestamp: now - 400, centerX: 0.5, centerY: 0.5, width: 0.33, height: 0.33 },
-        { timestamp: now, centerX: 0.5, centerY: 0.5, width: 0.33, height: 0.33 },
+        { timestamp: now - 1200, centerX: 300, centerY: 300, width: 200, height: 200 },
+        { timestamp: now - 600, centerX: 300, centerY: 300, width: 200, height: 200 },
+        { timestamp: now, centerX: 300, centerY: 300, width: 200, height: 200 },
       ];
 
       const result = evaluateFaceQuality([face], history);

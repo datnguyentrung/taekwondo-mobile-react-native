@@ -66,7 +66,7 @@ export default function StackScreenLayout({
 
   return (
     <SafeAreaView edges={["left", "right"]} style={styles.safeArea}>
-      <View style={[styles.header, { paddingTop: Math.max(insets.top, 59) }]}>
+      <View style={[styles.header, { paddingTop: Math.max(insets.top, 16) }]}>
         <View style={styles.headerContent}>
           <Pressable
             accessibilityRole="button"
