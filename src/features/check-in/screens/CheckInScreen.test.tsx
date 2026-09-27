@@ -97,6 +97,36 @@ jest.mock("../components/CheckInSideControls", () => {
       }),
   };
 });
+jest.mock("../components/CheckInProcessingBanner", () => {
+  const React = require("react");
+  const { Pressable, Text, View } = require("react-native");
+
+  return {
+    CheckInProcessingBanner: ({
+      visible,
+      onCancel,
+    }: {
+      visible: boolean;
+      onCancel: () => void;
+    }) =>
+      visible
+        ? React.createElement(
+            View,
+            null,
+            React.createElement(Text, null, "Đang xử lý điểm danh..."),
+            React.createElement(
+              Pressable,
+              {
+                accessibilityLabel: "Hủy điểm danh",
+                accessibilityRole: "button",
+                onPress: onCancel,
+              },
+              React.createElement(Text, null, "Hủy"),
+            ),
+          )
+        : null,
+  };
+});
 jest.mock("../components/CheckInResultSheet", () => ({
   CheckInResultSheet: () => null,
 }));
@@ -109,6 +139,8 @@ const checkInState = {
   feedbackMessage: "Đang nhận diện...",
   qualityReason: "NO_FACE",
   currentResult: null,
+  currentFailure: null,
+  isPending: false,
   sessionHistory: [],
   isResultSheetVisible: false,
   isHistorySheetVisible: false,
@@ -117,6 +149,7 @@ const checkInState = {
   faceDetectorOutput: {},
   handleNextScan: jest.fn(),
   closeResultSheet: jest.fn(),
+  cancelCheckIn: jest.fn(),
   openHistorySheet: jest.fn(),
   closeHistorySheet: jest.fn(),
   resumeScanner: jest.fn(),
@@ -285,5 +318,24 @@ describe("CheckInScreen camera permission flow", () => {
 
     await fireEvent.press(await screen.findByLabelText("Check-in back"));
     expect(mockBack).toHaveBeenCalledTimes(1);
+  });
+
+  it("renders the processing banner with cancel button when isPending is true", async () => {
+    const mockCancel = jest.fn();
+    mockUseFaceCheckIn.mockReturnValue({
+      ...checkInState,
+      isPending: true,
+      scannerState: "processing",
+      cancelCheckIn: mockCancel,
+    });
+
+    const screen = await render(<CheckInScreen />);
+
+    expect(await screen.findByText("Đang xử lý điểm danh...")).toBeTruthy();
+    const cancelBtn = screen.getByLabelText("Hủy điểm danh");
+    expect(cancelBtn).toBeTruthy();
+
+    fireEvent.press(cancelBtn);
+    expect(mockCancel).toHaveBeenCalledTimes(1);
   });
 });

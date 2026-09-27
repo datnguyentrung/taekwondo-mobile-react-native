@@ -6,6 +6,7 @@ import {
   type TabListProps,
   type TabTriggerSlotProps,
 } from "expo-router/ui";
+import { usePathname } from "expo-router";
 import { Pressable, StyleSheet, View } from "react-native";
 
 import { canAll, usePermissions } from "@/features/authorization";
@@ -21,6 +22,10 @@ type TabButtonProps = TabTriggerSlotProps & {
 
 export default function AppTabsLayout() {
   const permissions = usePermissions();
+  const pathname = usePathname();
+  const isCheckInScreen =
+    pathname === "/check-in" || pathname.startsWith("/check-in");
+
   const visibleTabs = VISIBLE_APP_TABS.filter((tab) => {
     const required = tab.requiredPermissions ?? [];
     return required.length === 0 || canAll(permissions, required);
@@ -30,7 +35,7 @@ export default function AppTabsLayout() {
     <Tabs>
       <TabSlot style={styles.slot} />
       <TabList asChild>
-        <CustomTabList>
+        <CustomTabList isHidden={isCheckInScreen}>
           {visibleTabs.map((tab) => (
             <TabTrigger key={tab.name} name={tab.name} href={tab.href} asChild>
               <TabButton tab={tab} />
@@ -42,9 +47,18 @@ export default function AppTabsLayout() {
   );
 }
 
-function CustomTabList({ children, style: _style, ...props }: TabListProps) {
+function CustomTabList({
+  children,
+  isHidden,
+  style: _style,
+  ...props
+}: TabListProps & { isHidden?: boolean }) {
   return (
-    <View {...props} pointerEvents="box-none" style={styles.tabListContainer}>
+    <View
+      {...props}
+      pointerEvents={isHidden ? "none" : "box-none"}
+      style={[styles.tabListContainer, isHidden && styles.hidden]}
+    >
       <View style={styles.tabList}>{children}</View>
     </View>
   );
@@ -158,5 +172,8 @@ const styles = StyleSheet.create({
   },
   pressed: {
     opacity: 0.75,
+  },
+  hidden: {
+    display: "none",
   },
 });

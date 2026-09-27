@@ -6,6 +6,7 @@ export type ScannerState =
   | 'face-ready'
   | 'capturing'
   | 'submitting'
+  | 'processing'
   | 'result'
   | 'error';
 
@@ -18,6 +19,7 @@ export type CheckInStatus =
   | 'LATE'
   | 'EXCUSED'
   | 'SUCCESS'
+  | 'FAILED'
   | 'ALREADY_CHECKED_IN'
   | 'ALREADY_CHECKED_OUT';
 
@@ -51,7 +53,9 @@ export type FaceDetectionRecord = {
 export type BackendFaceCheckInStatus =
   | 'SUCCESS'
   | 'ALREADY_CHECKED_IN'
-  | 'ALREADY_CHECKED_OUT';
+  | 'ALREADY_CHECKED_OUT'
+  | 'FAILED'
+  | 'PENDING';
 
 export type BackendFaceCheckInAction =
   | 'STUDENT_CHECK_IN'
@@ -77,14 +81,39 @@ export interface BackendFaceCheckInSessionSummary {
 
 export interface BackendFaceCheckInResponse {
   status: BackendFaceCheckInStatus;
-  action: BackendFaceCheckInAction;
+  requestId?: string | null;
+  action?: BackendFaceCheckInAction | null;
   person: BackendFaceCheckInPersonSummary;
-  session: BackendFaceCheckInSessionSummary;
-  recordId: string;
+  session?: BackendFaceCheckInSessionSummary | null;
+  recordId?: string | null;
   checkInTime?: string | null;
   checkOutTime?: string | null;
+  confidence?: number | null;
   attendanceStatus?: string | null;
   message?: string | null;
+  error?: {
+    code?: string | null;
+    title?: string | null;
+    detail?: string | null;
+  } | null;
+}
+
+// --- Attendance Command Async Poll Types ---
+export type AttendanceCommandStatus =
+  | 'QUEUED'
+  | 'PROCESSING'
+  | 'SUCCEEDED'
+  | 'FAILED';
+
+export interface AttendanceCommandResponse {
+  requestId: string;
+  status: AttendanceCommandStatus;
+  result?: BackendFaceCheckInResponse | null;
+  error?: {
+    code?: string | null;
+    title?: string | null;
+    detail?: string | null;
+  } | null;
 }
 
 // --- Frontend View Model ---
@@ -102,22 +131,55 @@ export type CheckInRecord = {
   courseName?: string;
   sessionTime?: string;
   timestamp: number;
+  confidence?: number;
   message?: string;
+  requestId?: string;
+};
+
+export type CheckInErrorType =
+  | 'NO_FACE'
+  | 'MULTIPLE_FACES'
+  | 'INVALID_IMAGE'
+  | 'PERSON_NOT_FOUND'
+  | 'ALREADY_CHECKED_IN'
+  | 'ALREADY_CHECKED_OUT'
+  | 'NO_ACTIVE_SESSION'
+  | 'AMBIGUOUS_CONTEXT'
+  | 'UNSUPPORTED_CONTEXT'
+  | 'ATTENDANCE_CLOSED'
+  | 'ACCESS_DENIED'
+  | 'SERVICE_UNAVAILABLE'
+  | 'NETWORK_ERROR'
+  | 'UNKNOWN';
+
+export type CheckInFailure = {
+  errorType: CheckInErrorType;
+  title: string;
+  message: string;
+  detail?: string;
+  correlationId?: string;
+  ctaLabel: string;
 };
 
 export type CheckInApiResult = {
   success: boolean;
+  isPending?: boolean;
+  requestId?: string;
   record?: CheckInRecord;
-  errorType?:
-    | 'NO_FACE'
-    | 'PERSON_NOT_FOUND'
-    | 'ALREADY_CHECKED_IN'
-    | 'ALREADY_CHECKED_OUT'
-    | 'NO_ACTIVE_SESSION'
-    | 'NETWORK_ERROR'
-    | 'UNKNOWN';
+  failure?: CheckInFailure;
+  errorType?: CheckInErrorType;
+  errorMessage?: string;
+};
+
+export type AttendanceCommandApiResult = {
+  success: boolean;
+  isPending: boolean;
+  status: AttendanceCommandStatus;
+  requestId: string;
+  record?: CheckInRecord;
+  failure?: CheckInFailure;
+  errorType?: CheckInErrorType;
   errorMessage?: string;
 };
 
 export type CameraFacing = 'front' | 'back';
-

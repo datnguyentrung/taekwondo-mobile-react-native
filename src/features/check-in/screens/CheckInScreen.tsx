@@ -12,6 +12,7 @@ import {
 } from "react-native";
 import { Camera } from "react-native-vision-camera";
 import { CheckInHeader } from "../components/CheckInHeader";
+import { CheckInProcessingBanner } from "../components/CheckInProcessingBanner";
 import { CheckInResultSheet } from "../components/CheckInResultSheet";
 import { CheckInSessionHistorySheet } from "../components/CheckInSessionHistorySheet";
 import { CheckInSideControls } from "../components/CheckInSideControls";
@@ -140,6 +141,8 @@ export default function CheckInScreen() {
     scannerState,
     feedbackMessage,
     currentResult,
+    currentFailure,
+    isPending,
     sessionHistory,
     isResultSheetVisible,
     isHistorySheetVisible,
@@ -148,12 +151,18 @@ export default function CheckInScreen() {
     faceDetectorOutput,
     handleNextScan,
     closeResultSheet,
+    cancelCheckIn,
     openHistorySheet,
     closeHistorySheet,
   } = useFaceCheckIn({
     facing,
     isActive: isCameraActive && isCameraReady,
   });
+
+  const isSubmittingOrProcessing =
+    scannerState === "submitting" ||
+    scannerState === "processing" ||
+    isPending;
 
   const shouldRenderCamera = isCameraActive && device;
   const shouldShowPermissionDialog =
@@ -217,6 +226,12 @@ export default function CheckInScreen() {
           onBack={leaveCheckInScreen}
         />
 
+        {/* Processing / Loading floating banner with Cancel button */}
+        <CheckInProcessingBanner
+          visible={isSubmittingOrProcessing}
+          onCancel={cancelCheckIn}
+        />
+
         <View
           style={[
             styles.scanArea,
@@ -260,9 +275,12 @@ export default function CheckInScreen() {
       {/* Result Bottom Sheet */}
       <CheckInResultSheet
         visible={isResultSheetVisible}
+        isPending={isPending}
         record={currentResult}
+        failure={currentFailure}
         onNextScan={handleNextScan}
         onClose={closeResultSheet}
+        onCancel={cancelCheckIn}
       />
 
       {/* Session History Bottom Sheet */}
