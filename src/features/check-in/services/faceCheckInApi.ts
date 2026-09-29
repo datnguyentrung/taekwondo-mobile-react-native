@@ -4,7 +4,6 @@ import { createFileMultipartFormData } from '@/infrastructure/http/multipart';
 import { isAxiosError } from 'axios';
 import type {
   AttendanceCommandApiResult,
-  AttendanceCommandResponse,
   BackendFaceCheckInResponse,
   CheckInApiResult,
   CheckInFailure,
@@ -59,14 +58,11 @@ function mapStatusAndLabel(
   if (status === 'PENDING') {
     return { status: 'ON_TIME', statusLabel: 'Đang xử lý' };
   }
-  if (status === 'FAILED') {
+  if (status === 'PROCESSING') {
+    return { status: 'ON_TIME', statusLabel: 'Đang xử lý' };
+  }
+  if (status === 'REJECTED' || status === 'FAILED' || status === 'EXPIRED') {
     return { status: 'FAILED', statusLabel: 'Không thể điểm danh' };
-  }
-  if (status === 'ALREADY_CHECKED_IN') {
-    return { status: 'ALREADY_CHECKED_IN', statusLabel: 'Đã điểm danh' };
-  }
-  if (status === 'ALREADY_CHECKED_OUT') {
-    return { status: 'ALREADY_CHECKED_OUT', statusLabel: 'Đã kết ca' };
   }
   if (action === 'STAFF_TIMESHEET_CHECKED_OUT' || action === 'COACH_CHECKED_OUT') {
     return { status: 'SUCCESS', statusLabel: 'Kết ca' };
@@ -154,8 +150,8 @@ function errorCopy(
     case 'FACE_CHECK_IN_NO_ACTIVE_CONTEXT':
       return {
         errorType: 'NO_ACTIVE_SESSION',
-        title: 'Chưa có buổi điểm danh phù hợp',
-        message: 'Không tìm thấy lớp hoặc ca làm đang mở cho người này.',
+        title: 'Không có lịch phù hợp',
+        message: detail || 'Không có lịch điểm danh hoặc chấm công phù hợp tại thời điểm này.',
         ctaLabel: 'Quét người khác',
       };
     case 'FACE_CHECK_IN_AMBIGUOUS_CONTEXT':
@@ -194,6 +190,13 @@ function errorCopy(
         title: 'Đã kết ca trước đó',
         message: detail || 'HLV này đã kết ca trong buổi học hôm nay.',
         ctaLabel: 'Quét người khác',
+      };
+    case 'FACE_CHECK_IN_EXPIRED':
+      return {
+        errorType: 'UNKNOWN',
+        title: 'Yêu cầu đã hết hạn',
+        message: detail || 'Yêu cầu điểm danh đã hết thời gian xử lý. Vui lòng quét lại.',
+        ctaLabel: 'Quét lại',
       };
     case 'ACCESS_DENIED':
     case 'UNAUTHORIZED':
@@ -332,7 +335,7 @@ export const faceCheckInApi = {
         };
       }
 
-      if (raw.status === 'FAILED') {
+      if (raw.status === 'REJECTED' || raw.status === 'FAILED' || raw.status === 'EXPIRED') {
         const failure = failureFromFaceCheckInResponse(raw);
         return {
           success: false,
@@ -378,73 +381,44 @@ export const faceCheckInApi = {
   },
 
   /**
-   * Poll attendance command status: GET /attendance-commands/{requestId}
+   * Poll face check-in request status: GET /training/face-check-ins/{requestId}
    */
   async getAttendanceCommand(requestId: string): Promise<AttendanceCommandApiResult> {
     try {
-      const response = await javaApi.get<AttendanceCommandResponse>(
-        `/attendance-commands/${requestId}`,
+      const response = await javaApi.get<BackendFaceCheckInResponse>(
+        `/training/face-check-ins/${requestId}`,
       );
 
       const raw = response.data;
-      console.log('[FaceCheckInApi] 📥 Poll attendance command', requestId, raw.status);
+      console.log('[FaceCheckInApi] 📥 Poll face check-in', requestId, raw.status);
 
-      if (raw.status === 'SUCCEEDED') {
-        if (raw.result) {
-          const record = mapBackendResponseToRecord(raw.result);
-          if (raw.result.status === 'FAILED') {
-            const failure = failureFromFaceCheckInResponse(raw.result);
-            return {
-              success: false,
-              isPending: false,
-              status: 'SUCCEEDED',
-              requestId,
-              record,
-              failure,
-              errorType: failure.errorType,
-              errorMessage: failure.message,
-            };
-          }
-          return {
-            success: true,
-            isPending: false,
-            status: 'SUCCEEDED',
-            requestId,
-            record,
-          };
-        }
-
+      if (raw.status === 'SUCCESS') {
+        const record = mapBackendResponseToRecord(raw);
         return {
           success: true,
           isPending: false,
           status: 'SUCCEEDED',
           requestId,
+          record,
         };
       }
 
-      if (raw.status === 'FAILED') {
-        const backend: BackendProblemDetail = {
-          code: raw.error?.code ?? undefined,
-          title: raw.error?.title ?? undefined,
-          detail: raw.error?.detail ?? undefined,
-        };
-        const copy = errorCopy(backend.code, undefined, backend);
-        const failure: CheckInFailure = {
-          ...copy,
-        };
-
+      if (raw.status === 'REJECTED' || raw.status === 'FAILED' || raw.status === 'EXPIRED') {
+        const record = mapBackendResponseToRecord(raw);
+        const failure = failureFromFaceCheckInResponse(raw);
         return {
           success: false,
           isPending: false,
-          status: 'FAILED',
+          status: raw.status,
           requestId,
+          record,
           failure,
           errorType: failure.errorType,
           errorMessage: failure.message,
         };
       }
 
-      // QUEUED or PROCESSING
+      // PENDING or PROCESSING
       return {
         success: true,
         isPending: true,

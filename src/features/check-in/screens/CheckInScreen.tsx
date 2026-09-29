@@ -3,23 +3,37 @@ import { ThemedText } from "@/shared/ui/ThemedText";
 import { Colors, radii } from "@/theme";
 import { router, useFocusEffect } from "expo-router";
 import { StatusBar } from "expo-status-bar";
-import { useCallback, useEffect, useMemo, useState } from "react";
 import {
-  ActivityIndicator,
-  AppState,
-  StyleSheet,
-  View,
-} from "react-native";
-import { Camera } from "react-native-vision-camera";
+  type ComponentType,
+  useCallback,
+  useEffect,
+  useState,
+} from "react";
+import { ActivityIndicator, AppState, StyleSheet, View } from "react-native";
+
+import type {
+  CheckInCameraMode,
+  VisionCameraModule,
+  VisionCheckInCameraProps,
+  VisionFallbackReason,
+} from "../camera/cameraAdapters.types";
+import { loadVisionCamera } from "../camera/visionCameraLoader";
 import { CheckInHeader } from "../components/CheckInHeader";
 import { CheckInProcessingBanner } from "../components/CheckInProcessingBanner";
 import { CheckInResultSheet } from "../components/CheckInResultSheet";
 import { CheckInSessionHistorySheet } from "../components/CheckInSessionHistorySheet";
 import { CheckInSideControls } from "../components/CheckInSideControls";
 import { CheckInViewfinder } from "../components/CheckInViewfinder";
+import { ManualCameraBanner } from "../components/ManualCameraBanner";
+import { ManualExpoCheckInCamera } from "../components/ManualExpoCheckInCamera";
+import { VisionCameraErrorBoundary } from "../components/VisionCameraErrorBoundary";
 import { useCheckInCamera } from "../hooks/useCheckInCamera";
 import { useCheckInCameraLayout } from "../hooks/useCheckInCameraLayout";
-import { useFaceCheckIn } from "../hooks/useFaceCheckIn";
+import { useFaceCheckInSession } from "../hooks/useFaceCheckInSession";
+import type {
+  FaceQualityReason,
+  ScannerState,
+} from "../types/faceScanner.types";
 
 const CAMERA_PERMISSION_DESCRIPTION =
   "Camera được dùng để nhận diện khuôn mặt và điểm danh học viên/HLV.";
@@ -28,12 +42,44 @@ const CAMERA_PERMISSION_DENIED_DESCRIPTION =
 const CAMERA_PERMISSION_LOCKED_DESCRIPTION =
   "Thiết bị không cho hỏi lại quyền Camera. Vui lòng bật quyền trong phần Cài đặt của hệ thống.";
 
+type ScannerPresentation = {
+  state: ScannerState;
+  message: string;
+  qualityReason: FaceQualityReason;
+};
+
+const DEFAULT_SCANNER_PRESENTATION: ScannerPresentation = {
+  state: "initializing",
+  message: "Đang khởi động camera...",
+  qualityReason: "NO_FACE",
+};
+
 export default function CheckInScreen() {
   const layout = useCheckInCameraLayout();
+  const session = useFaceCheckInSession();
+  const [initialVisionLoad] = useState(loadVisionCamera);
   const [isFocused, setIsFocused] = useState(false);
   const [isCameraReady, setIsCameraReady] = useState(false);
-  const [cameraMountError, setCameraMountError] = useState<string | null>(null);
-  const [cameraReloadKey, setCameraReloadKey] = useState(0);
+  const [manualCameraError, setManualCameraError] = useState<string | null>(null);
+  const [cameraMode, setCameraMode] =
+    useState<CheckInCameraMode>(
+      initialVisionLoad.available ? "vision-auto" : "manual",
+    );
+  const [fallbackReason, setFallbackReason] =
+    useState<VisionFallbackReason | null>(
+      initialVisionLoad.available ? null : initialVisionLoad.reason,
+    );
+  const [VisionCameraAdapter, setVisionCameraAdapter] =
+    useState<ComponentType<VisionCheckInCameraProps> | null>(() =>
+      initialVisionLoad.available
+        ? initialVisionLoad.module.VisionCheckInCamera
+        : null,
+    );
+  const [visionAttemptKey, setVisionAttemptKey] = useState(0);
+  const [visionFlashAvailable, setVisionFlashAvailable] = useState(false);
+  const [manualReviewVisible, setManualReviewVisible] = useState(false);
+  const [scannerPresentation, setScannerPresentation] =
+    useState<ScannerPresentation>(DEFAULT_SCANNER_PRESENTATION);
 
   const {
     handlePermissionAction,
@@ -52,26 +98,44 @@ export default function CheckInScreen() {
     toggleTorch,
   } = useCheckInCamera();
 
-  const leaveCheckInScreen = useCallback(() => {
-    if (router.canGoBack()) {
-      router.back();
-      return;
+  const activateVisionModule = useCallback((module: VisionCameraModule) => {
+    setVisionCameraAdapter(() => module.VisionCheckInCamera);
+    setFallbackReason(null);
+    setManualReviewVisible(false);
+    setManualCameraError(null);
+    setIsCameraReady(false);
+    setCameraMode("vision-auto");
+  }, []);
+
+  const activateManualMode = useCallback(
+    (reason: VisionFallbackReason, error?: unknown) => {
+      if (error) console.warn("[CheckInCamera] Chuyển sang camera thủ công:", error);
+      setFallbackReason(reason);
+      setCameraMode("manual");
+      setVisionFlashAvailable(false);
+      setManualReviewVisible(false);
+      setIsCameraReady(false);
+    },
+    [],
+  );
+
+  const tryLoadVisionCamera = useCallback(() => {
+    setCameraMode("vision-loading");
+    setIsCameraReady(false);
+    setScannerPresentation(DEFAULT_SCANNER_PRESENTATION);
+    const result = loadVisionCamera();
+    if (result.available) {
+      activateVisionModule(result.module);
+    } else {
+      activateManualMode(result.reason, result.error);
     }
-
-    router.replace("/");
-  }, []);
-
-  const goHome = useCallback(() => {
-    router.replace("/");
-  }, []);
+  }, [activateManualMode, activateVisionModule]);
 
   useFocusEffect(
     useCallback(() => {
       setIsFocused(true);
       void refreshPermission().then((result) => {
-        if (!result?.granted) {
-          setIsCameraReady(false);
-        }
+        if (!result?.granted) setIsCameraReady(false);
       });
 
       return () => {
@@ -82,89 +146,67 @@ export default function CheckInScreen() {
   );
 
   useEffect(() => {
-    if (!isFocused) {
-      return;
-    }
-
+    if (!isFocused) return;
     const subscription = AppState.addEventListener("change", (nextState) => {
       if (nextState === "active") {
         void refreshPermission().then((result) => {
-          if (!result?.granted) {
-            setIsCameraReady(false);
-          }
+          if (!result?.granted) setIsCameraReady(false);
         });
       }
     });
-
-    return () => {
-      subscription.remove();
-    };
+    return () => subscription.remove();
   }, [isFocused, refreshPermission]);
 
+  const leaveCheckInScreen = useCallback(() => {
+    if (router.canGoBack()) router.back();
+    else router.replace("/");
+  }, []);
+  const goHome = useCallback(() => router.replace("/"), []);
+
   const handleCameraReady = useCallback(() => {
-    setCameraMountError(null);
+    setManualCameraError(null);
     setIsCameraReady(true);
   }, []);
 
-  const handleCameraMountError = useCallback(
-    (event: Error | { message?: string }) => {
-      setIsCameraReady(false);
-      setCameraMountError(
-        event.message || "Camera chưa khởi động được. Vui lòng thử lại.",
-      );
-    },
-    [],
-  );
-
-  const handleRetryCamera = useCallback(() => {
-    setCameraMountError(null);
-    setIsCameraReady(false);
-    setCameraReloadKey((value) => value + 1);
-  }, []);
-
   const handleAllowPermission = useCallback(async () => {
-    setCameraMountError(null);
+    setManualCameraError(null);
     setIsCameraReady(false);
     await handlePermissionAction();
   }, [handlePermissionAction]);
 
   const handleToggleFacing = useCallback(() => {
-    setCameraMountError(null);
+    setManualCameraError(null);
     setIsCameraReady(false);
+    setManualReviewVisible(false);
     toggleFacing();
   }, [toggleFacing]);
 
+  const handleRetryVision = useCallback(() => {
+    setVisionAttemptKey((value) => value + 1);
+    tryLoadVisionCamera();
+  }, [tryLoadVisionCamera]);
+
+  const handleScannerPresentationChange = useCallback(
+    (
+      state: ScannerState,
+      message: string,
+      qualityReason: FaceQualityReason,
+    ) => setScannerPresentation({ state, message, qualityReason }),
+    [],
+  );
+
   const isCameraActive =
-    isFocused && isPermissionGranted && !cameraMountError;
-
-  const {
-    scannerState,
-    feedbackMessage,
-    currentResult,
-    currentFailure,
-    isPending,
-    sessionHistory,
-    isResultSheetVisible,
-    isHistorySheetVisible,
-    device,
-    photoOutput,
-    faceDetectorOutput,
-    handleNextScan,
-    closeResultSheet,
-    cancelCheckIn,
-    openHistorySheet,
-    closeHistorySheet,
-  } = useFaceCheckIn({
-    facing,
-    isActive: isCameraActive && isCameraReady,
-  });
-
+    isFocused && isPermissionGranted && !manualCameraError;
   const isSubmittingOrProcessing =
-    scannerState === "submitting" ||
-    scannerState === "processing" ||
-    isPending;
-
-  const shouldRenderCamera = isCameraActive && device;
+    session.status === "submitting" ||
+    session.status === "processing" ||
+    session.isPending;
+  const isCameraSuspended =
+    session.isResultSheetVisible ||
+    session.isHistorySheetVisible ||
+    isSubmittingOrProcessing;
+  const scannerEnabled =
+    isCameraActive && isCameraReady && !isCameraSuspended;
   const shouldShowPermissionDialog =
     isFocused && !isPermissionLoading && !isPermissionGranted;
   const permissionDialogDescription =
@@ -174,50 +216,71 @@ export default function CheckInScreen() {
       : isPermissionDenied && !isPermissionUndetermined
         ? CAMERA_PERMISSION_DENIED_DESCRIPTION
         : CAMERA_PERMISSION_DESCRIPTION);
-  const isFlashSupported = Boolean(device?.hasFlash);
-  const effectiveTorchAvailable = isTorchAvailable && isFlashSupported;
-  const cameraKey = `check-in-camera-${facing}-${cameraReloadKey}-${isPermissionGranted ? "granted" : "blocked"}`;
+  const effectiveTorchAvailable =
+    facing === "back" &&
+    (cameraMode === "manual"
+      ? isTorchAvailable
+      : cameraMode === "vision-auto" && visionFlashAvailable);
+  const canRetryVision =
+    fallbackReason === "vision-runtime-error" || fallbackReason === "mlkit-error";
 
-  const cameraOutputs = useMemo(
-    () => [photoOutput, faceDetectorOutput],
-    [photoOutput, faceDetectorOutput],
-  );
+  const manualScannerState: ScannerState =
+    session.status === "submitting"
+      ? "submitting"
+      : session.status === "processing"
+        ? "processing"
+        : session.status === "result"
+          ? "result"
+          : session.status === "error"
+            ? "error"
+            : "scanning";
 
   return (
     <View style={styles.container}>
       <StatusBar style="light" />
 
-      {/* VisionCamera Layer */}
-      {shouldRenderCamera ? (
-        <Camera
-          key={cameraKey}
-          style={StyleSheet.absoluteFill}
-          device={device}
-          isActive={isCameraActive}
-          outputs={cameraOutputs}
-          torchMode={
-            effectiveTorchAvailable ? (torch ? "on" : "off") : undefined
+      {cameraMode === "vision-auto" && VisionCameraAdapter ? (
+        <VisionCameraErrorBoundary
+          resetKey={visionAttemptKey}
+          onError={(error) =>
+            activateManualMode("vision-runtime-error", error)
           }
-          onStarted={handleCameraReady}
-          onError={handleCameraMountError}
+        >
+          <VisionCameraAdapter
+            key={`vision-${facing}-${visionAttemptKey}`}
+            facing={facing}
+            torch={torch}
+            isActive={isCameraActive && !isCameraSuspended}
+            scannerEnabled={scannerEnabled}
+            sessionStatus={session.status}
+            resetToken={session.resetToken}
+            onReady={handleCameraReady}
+            onFlashAvailabilityChange={setVisionFlashAvailable}
+            onScannerPresentationChange={handleScannerPresentationChange}
+            onPhotoCaptured={session.submitPhoto}
+            onUnavailable={activateManualMode}
+          />
+        </VisionCameraErrorBoundary>
+      ) : cameraMode === "manual" ? (
+        <ManualExpoCheckInCamera
+          key={`manual-${facing}-${session.resetToken}`}
+          facing={facing}
+          torch={torch}
+          isActive={isCameraActive && !isCameraSuspended}
+          busy={isSubmittingOrProcessing}
+          bottomClearance={layout.bottomClearance}
+          onReady={handleCameraReady}
+          onReviewStateChange={setManualReviewVisible}
+          onSubmitPhoto={session.submitPhoto}
+          onError={setManualCameraError}
         />
       ) : (
         <View style={[StyleSheet.absoluteFill, styles.fallbackBackground]} />
       )}
 
-      {/* Dark tint overlay for contrast */}
-      <View
-        style={[
-          StyleSheet.absoluteFill,
-          styles.darkOverlay,
-          !shouldRenderCamera ? styles.fallbackOverlay : null,
-        ]}
-        pointerEvents="none"
-      />
+      <View style={[StyleSheet.absoluteFill, styles.darkOverlay]} pointerEvents="none" />
 
-      {/* UI Overlay Content */}
-      <View style={styles.overlayContainer}>
-        {/* Transparent Header */}
+      <View style={styles.overlayContainer} pointerEvents="box-none">
         <CheckInHeader
           torch={torch}
           onToggleTorch={toggleTorch}
@@ -226,68 +289,88 @@ export default function CheckInScreen() {
           onBack={leaveCheckInScreen}
         />
 
-        {/* Processing / Loading floating banner with Cancel button */}
         <CheckInProcessingBanner
           visible={isSubmittingOrProcessing}
-          onCancel={cancelCheckIn}
+          onCancel={session.cancelCheckIn}
         />
+
+        {cameraMode === "manual" && fallbackReason ? (
+          <ManualCameraBanner
+            reason={fallbackReason}
+            top={layout.headerHeight + 8}
+            onRetryVision={canRetryVision ? handleRetryVision : undefined}
+          />
+        ) : null}
 
         <View
           style={[
             styles.scanArea,
-            {
-              top: layout.headerHeight,
-              bottom: layout.bottomClearance,
-            },
+            { top: layout.headerHeight, bottom: layout.bottomClearance },
           ]}
           pointerEvents="box-none"
         >
-          {shouldRenderCamera ? (
-            <>
-              {!isCameraReady ? (
-                <View style={styles.cameraLoadingBadge}>
-                  <ActivityIndicator color={Colors.light.surface} />
-                  <ThemedText type="bodySmall" style={styles.cameraLoadingText}>
-                    Đang mở camera...
-                  </ThemedText>
-                </View>
-              ) : null}
-              <CheckInViewfinder
-                scanState={scannerState}
-                scanAreaHeight={layout.scanAreaHeight}
-                feedbackMessage={feedbackMessage}
-              />
-            </>
+          {isCameraActive && !isCameraReady ? (
+            <View
+              style={[
+                styles.cameraLoadingBadge,
+                cameraMode === "manual" && fallbackReason != null
+                  ? styles.cameraLoadingBadgeBelowBanner
+                  : null,
+              ]}
+            >
+              <ActivityIndicator color={Colors.light.surface} />
+              <ThemedText type="bodySmall" style={styles.cameraLoadingText}>
+                Đang mở camera...
+              </ThemedText>
+            </View>
+          ) : null}
+
+          {isCameraActive && isCameraReady && !manualReviewVisible ? (
+            <CheckInViewfinder
+              scanState={
+                cameraMode === "manual"
+                  ? manualScannerState
+                  : scannerPresentation.state
+              }
+              scanAreaHeight={layout.scanAreaHeight}
+              feedbackMessage={
+                cameraMode === "manual"
+                  ? session.errorMessage ||
+                    "Căn khuôn mặt vào khung rồi nhấn nút chụp"
+                  : session.errorMessage || scannerPresentation.message
+              }
+              qualityReason={
+                cameraMode === "manual"
+                  ? "NO_FACE"
+                  : scannerPresentation.qualityReason
+              }
+            />
           ) : null}
         </View>
 
-        {/* Side Floating Controls */}
-        {shouldRenderCamera ? (
+        {isCameraActive && !manualReviewVisible ? (
           <CheckInSideControls
             onToggleFacing={handleToggleFacing}
-            onOpenHistory={openHistorySheet}
-            historyCount={sessionHistory.length}
+            onOpenHistory={session.openHistorySheet}
+            historyCount={session.sessionHistory.length}
             top={layout.controlsTop}
           />
         ) : null}
       </View>
 
-      {/* Result Bottom Sheet */}
       <CheckInResultSheet
-        visible={isResultSheetVisible}
-        isPending={isPending}
-        record={currentResult}
-        failure={currentFailure}
-        onNextScan={handleNextScan}
-        onClose={closeResultSheet}
-        onCancel={cancelCheckIn}
+        visible={session.isResultSheetVisible}
+        isPending={session.isPending}
+        record={session.currentResult}
+        failure={session.currentFailure}
+        onNextScan={session.handleNextScan}
+        onClose={session.closeResultSheet}
+        onCancel={session.cancelCheckIn}
       />
-
-      {/* Session History Bottom Sheet */}
       <CheckInSessionHistorySheet
-        visible={isHistorySheetVisible}
-        history={sessionHistory}
-        onClose={closeHistorySheet}
+        visible={session.isHistorySheetVisible}
+        history={session.sessionHistory}
+        onClose={session.closeHistorySheet}
       />
 
       <ConfirmationDialog
@@ -301,17 +384,17 @@ export default function CheckInScreen() {
         onCancel={goHome}
         onConfirm={() => void handleAllowPermission()}
       />
-
       <ConfirmationDialog
-        visible={Boolean(cameraMountError)}
+        visible={Boolean(manualCameraError)}
         title="Không mở được Camera"
-        description={
-          cameraMountError || "Camera chưa khởi động được. Vui lòng thử lại."
-        }
+        description={manualCameraError || "Camera chưa khởi động được."}
         cancelLabel="Quay lại"
         confirmLabel="Thử lại"
         onCancel={leaveCheckInScreen}
-        onConfirm={handleRetryCamera}
+        onConfirm={() => {
+          setManualCameraError(null);
+          setIsCameraReady(false);
+        }}
       />
     </View>
   );
@@ -327,9 +410,6 @@ const styles = StyleSheet.create({
   },
   darkOverlay: {
     backgroundColor: "rgba(0, 0, 0, 0.15)",
-  },
-  fallbackOverlay: {
-    backgroundColor: "rgba(0, 0, 0, 0.35)",
   },
   overlayContainer: {
     position: "absolute",
@@ -359,6 +439,8 @@ const styles = StyleSheet.create({
   },
   cameraLoadingText: {
     color: Colors.light.surface,
-    fontWeight: "600",
+  },
+  cameraLoadingBadgeBelowBanner: {
+    top: 76,
   },
 });

@@ -2,13 +2,14 @@ import { useEffect, useMemo } from 'react';
 import type { StyleProp, ViewStyle } from 'react-native';
 import {
   Modal,
+  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
   useWindowDimensions,
   View,
 } from 'react-native';
-import { Gesture, GestureDetector } from 'react-native-gesture-handler';
+import { Gesture, GestureDetector, GestureHandlerRootView } from 'react-native-gesture-handler';
 import Animated, {
   Extrapolation,
   interpolate,
@@ -47,6 +48,8 @@ function project(velocity: number, decelerationRate = 0.998) {
 function clampHeightRatio(heightRatio: number) {
   return Math.min(Math.max(heightRatio, 0.25), 0.8);
 }
+
+const ModalRootView = Platform.OS === 'android' ? GestureHandlerRootView : View;
 
 export function BottomSheetWindow({
   visible,
@@ -145,6 +148,72 @@ export function BottomSheetWindow({
     ),
   }));
 
+  const headerContent = (
+    <View style={styles.header}>
+      <View style={styles.handle} />
+      <ThemedText type="body" style={styles.title}>
+        {title}
+      </ThemedText>
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel={closeAccessibilityLabel}
+        hitSlop={10}
+        onPress={onClose}
+        style={({ pressed }) => [
+          styles.closeButton,
+          pressed ? styles.pressed : null,
+        ]}
+      >
+        <AppIcon icon={<Plus />} size={18} color={Colors.light.textSecondary} />
+      </Pressable>
+    </View>
+  );
+
+  const sheetContent = (
+    <Animated.View
+      accessibilityLabel={accessibilityLabel ?? title}
+      accessibilityViewIsModal
+      style={[styles.sheet, sheetSizingStyle, sheetStyle]}
+      onLayout={(event) => {
+        sheetHeight.set(event.nativeEvent.layout.height);
+      }}
+    >
+      {scrollable ? (
+        <GestureDetector gesture={pan}>
+          {headerContent}
+        </GestureDetector>
+      ) : (
+        headerContent
+      )}
+      {scrollable ? (
+        <ScrollView
+          style={styles.body}
+          contentContainerStyle={[
+            styles.scrollContent,
+            footer ? styles.scrollContentWithFooter : null,
+            contentContainerStyle,
+          ]}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+          bounces={false}
+        >
+          {children}
+        </ScrollView>
+      ) : (
+        <View
+          style={[
+            styles.body,
+            footer ? styles.scrollContentWithFooter : null,
+            contentContainerStyle,
+          ]}
+        >
+          {children}
+        </View>
+      )}
+      {footer ? <View style={styles.footer}>{footer}</View> : null}
+    </Animated.View>
+  );
+
   return (
     <Modal
       visible={visible}
@@ -153,7 +222,7 @@ export function BottomSheetWindow({
       statusBarTranslucent
       onRequestClose={onClose}
     >
-      <View style={styles.root}>
+      <ModalRootView style={styles.root}>
         <Animated.View style={[styles.backdrop, backdropStyle]}>
           <Pressable
             accessibilityRole="button"
@@ -162,62 +231,8 @@ export function BottomSheetWindow({
             onPress={onClose}
           />
         </Animated.View>
-        <GestureDetector gesture={pan}>
-          <Animated.View
-            accessibilityLabel={accessibilityLabel ?? title}
-            accessibilityViewIsModal
-            style={[styles.sheet, sheetSizingStyle, sheetStyle]}
-            onLayout={(event) => {
-              sheetHeight.set(event.nativeEvent.layout.height);
-            }}
-          >
-            <View style={styles.header}>
-              <View style={styles.handle} />
-              <ThemedText type="body" style={styles.title}>
-                {title}
-              </ThemedText>
-              <Pressable
-                accessibilityRole="button"
-                accessibilityLabel={closeAccessibilityLabel}
-                hitSlop={10}
-                onPress={onClose}
-                style={({ pressed }) => [
-                  styles.closeButton,
-                  pressed ? styles.pressed : null,
-                ]}
-              >
-                <AppIcon icon={<Plus />} size={18} color={Colors.light.textSecondary} />
-              </Pressable>
-            </View>
-            {scrollable ? (
-              <ScrollView
-                style={styles.body}
-                contentContainerStyle={[
-                  styles.scrollContent,
-                  footer ? styles.scrollContentWithFooter : null,
-                  contentContainerStyle,
-                ]}
-                showsVerticalScrollIndicator={false}
-                keyboardShouldPersistTaps="handled"
-                bounces={false}
-              >
-                {children}
-              </ScrollView>
-            ) : (
-              <View
-                style={[
-                  styles.body,
-                  footer ? styles.scrollContentWithFooter : null,
-                  contentContainerStyle,
-                ]}
-              >
-                {children}
-              </View>
-            )}
-            {footer ? <View style={styles.footer}>{footer}</View> : null}
-          </Animated.View>
-        </GestureDetector>
-      </View>
+        {scrollable ? sheetContent : <GestureDetector gesture={pan}>{sheetContent}</GestureDetector>}
+      </ModalRootView>
     </Modal>
   );
 }

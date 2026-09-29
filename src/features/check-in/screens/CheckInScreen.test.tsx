@@ -1,20 +1,36 @@
 /* eslint-disable @typescript-eslint/no-require-imports */
-import { act, fireEvent, render, waitFor } from "@testing-library/react-native";
-import { AppState } from "react-native";
+import { fireEvent, render, waitFor } from "@testing-library/react-native";
+import { AppState, Pressable, View } from "react-native";
 
 import CheckInScreen from "./CheckInScreen";
 
 const mockReplace = jest.fn();
 const mockBack = jest.fn();
-const mockRequestPermission = jest.fn();
 const mockHandlePermissionAction = jest.fn();
 const mockRefreshPermission = jest.fn();
 const mockUseCheckInCamera = jest.fn();
-const mockUseFaceCheckIn = jest.fn();
+const mockUseFaceCheckInSession = jest.fn();
+const mockLoadVisionCamera = jest.fn();
+
+function MockVisionCamera(props: {
+  onReady: () => void;
+  onUnavailable: (reason: "vision-runtime-error", error: Error) => void;
+}) {
+  return (
+    <View accessibilityLabel="Vision camera preview">
+      <Pressable accessibilityLabel="Mark Vision ready" onPress={props.onReady} />
+      <Pressable
+        accessibilityLabel="Trigger Vision error"
+        onPress={() =>
+          props.onUnavailable("vision-runtime-error", new Error("vision failed"))
+        }
+      />
+    </View>
+  );
+}
 
 jest.mock("expo-router", () => {
   const React = require("react");
-
   return {
     router: {
       replace: (...args: unknown[]) => mockReplace(...args),
@@ -27,106 +43,74 @@ jest.mock("expo-router", () => {
   };
 });
 
-jest.mock("react-native-vision-camera", () => {
-  const React = require("react");
-  const { View: NativeView } = require("react-native");
-
-  return {
-    Camera: (props: object) =>
-      React.createElement(NativeView, {
-        ...props,
-        accessibilityLabel: "Camera preview",
-      }),
-    useCameraDevice: () => ({ id: "front-camera" }),
-    usePhotoOutput: () => ({
-      capturePhotoToFile: jest.fn(),
-    }),
-  };
-});
-
-jest.mock("react-native-vision-camera-face-detector", () => ({
-  useFaceDetectorOutput: () => ({}),
+jest.mock("../camera/visionCameraLoader", () => ({
+  loadVisionCamera: () => mockLoadVisionCamera(),
 }));
-
 jest.mock("expo-status-bar", () => ({ StatusBar: () => null }));
 jest.mock("react-native-safe-area-context", () => ({
   useSafeAreaInsets: () => ({ top: 24, right: 0, bottom: 20, left: 0 }),
 }));
-
 jest.mock("../hooks/useCheckInCamera", () => ({
   useCheckInCamera: () => mockUseCheckInCamera(),
 }));
-
-jest.mock("../hooks/useFaceCheckIn", () => ({
-  useFaceCheckIn: (props: { facing: string; isActive: boolean }) =>
-    mockUseFaceCheckIn(props),
+jest.mock("../hooks/useFaceCheckInSession", () => ({
+  useFaceCheckInSession: () => mockUseFaceCheckInSession(),
 }));
-
-jest.mock("../components/CheckInHeader", () => {
-  const React = require("react");
-  const { Pressable } = require("react-native");
-
-  return {
-    CheckInHeader: ({ onBack }: { onBack: () => void }) =>
-      React.createElement(Pressable, {
-        accessibilityLabel: "Check-in back",
-        accessibilityRole: "button",
-        onPress: onBack,
-      }),
-  };
-});
-jest.mock("../components/CheckInViewfinder", () => {
-  const React = require("react");
-  const { View: NativeView } = require("react-native");
-
-  return {
-    CheckInViewfinder: () =>
-      React.createElement(NativeView, {
-        accessibilityLabel: "Check-in viewfinder",
-      }),
-  };
-});
-jest.mock("../components/CheckInSideControls", () => {
-  const React = require("react");
-  const { View: NativeView } = require("react-native");
-
-  return {
-    CheckInSideControls: () =>
-      React.createElement(NativeView, {
-        accessibilityLabel: "Check-in controls",
-      }),
-  };
-});
-jest.mock("../components/CheckInProcessingBanner", () => {
-  const React = require("react");
-  const { Pressable, Text, View } = require("react-native");
-
-  return {
-    CheckInProcessingBanner: ({
-      visible,
-      onCancel,
-    }: {
-      visible: boolean;
-      onCancel: () => void;
-    }) =>
-      visible
-        ? React.createElement(
-            View,
-            null,
-            React.createElement(Text, null, "Đang xử lý điểm danh..."),
-            React.createElement(
-              Pressable,
-              {
-                accessibilityLabel: "Hủy điểm danh",
-                accessibilityRole: "button",
-                onPress: onCancel,
-              },
-              React.createElement(Text, null, "Hủy"),
-            ),
-          )
-        : null,
-  };
-});
+jest.mock("../components/ManualExpoCheckInCamera", () => ({
+  ManualExpoCheckInCamera: () => {
+    const React = require("react");
+    const { View: NativeView } = require("react-native");
+    return React.createElement(NativeView, {
+      accessibilityLabel: "Manual camera preview",
+    });
+  },
+}));
+jest.mock("../components/CheckInHeader", () => ({
+  CheckInHeader: ({ onBack }: { onBack: () => void }) => {
+    const React = require("react");
+    const { Pressable: NativePressable } = require("react-native");
+    return React.createElement(NativePressable, {
+      accessibilityLabel: "Check-in back",
+      accessibilityRole: "button",
+      onPress: onBack,
+    });
+  },
+}));
+jest.mock("../components/CheckInViewfinder", () => ({
+  CheckInViewfinder: () => {
+    const React = require("react");
+    const { View: NativeView } = require("react-native");
+    return React.createElement(NativeView, {
+      accessibilityLabel: "Check-in viewfinder",
+    });
+  },
+}));
+jest.mock("../components/CheckInSideControls", () => ({
+  CheckInSideControls: () => {
+    const React = require("react");
+    const { View: NativeView } = require("react-native");
+    return React.createElement(NativeView, {
+      accessibilityLabel: "Check-in controls",
+    });
+  },
+}));
+jest.mock("../components/CheckInProcessingBanner", () => ({
+  CheckInProcessingBanner: ({
+    visible,
+    onCancel,
+  }: {
+    visible: boolean;
+    onCancel: () => void;
+  }) => {
+    if (!visible) return null;
+    const React = require("react");
+    const { Pressable: NativePressable } = require("react-native");
+    return React.createElement(NativePressable, {
+      accessibilityLabel: "Hủy điểm danh",
+      onPress: onCancel,
+    });
+  },
+}));
 jest.mock("../components/CheckInResultSheet", () => ({
   CheckInResultSheet: () => null,
 }));
@@ -134,39 +118,33 @@ jest.mock("../components/CheckInSessionHistorySheet", () => ({
   CheckInSessionHistorySheet: () => null,
 }));
 
-const checkInState = {
-  scannerState: "scanning",
-  feedbackMessage: "Đang nhận diện...",
-  qualityReason: "NO_FACE",
+const sessionState = {
+  status: "idle",
   currentResult: null,
   currentFailure: null,
   isPending: false,
   sessionHistory: [],
   isResultSheetVisible: false,
   isHistorySheetVisible: false,
-  device: { id: "front-camera" },
-  photoOutput: {},
-  faceDetectorOutput: {},
+  errorMessage: null,
+  resetToken: 0,
+  submitPhoto: jest.fn(),
   handleNextScan: jest.fn(),
   closeResultSheet: jest.fn(),
   cancelCheckIn: jest.fn(),
   openHistorySheet: jest.fn(),
   closeHistorySheet: jest.fn(),
-  resumeScanner: jest.fn(),
-  pauseScanner: jest.fn(),
 };
 
 function cameraState(overrides: Record<string, unknown> = {}) {
   return {
-    requestPermission: mockRequestPermission,
     handlePermissionAction: mockHandlePermissionAction,
     refreshPermission: mockRefreshPermission,
     isPermissionLoading: false,
-    isPermissionGranted: false,
-    isPermissionDenied: true,
+    isPermissionGranted: true,
+    isPermissionDenied: false,
     isPermissionUndetermined: false,
     canAskAgain: true,
-    isRequestingPermission: false,
     isPermissionActionPending: false,
     permissionError: null,
     facing: "front",
@@ -178,164 +156,93 @@ function cameraState(overrides: Record<string, unknown> = {}) {
   };
 }
 
-describe("CheckInScreen camera permission flow", () => {
-  let appStateListener: ((state: string) => void) | undefined;
-
+describe("CheckInScreen camera fallback", () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    mockRequestPermission.mockResolvedValue({
-      granted: false,
-      canAskAgain: true,
-      status: "denied",
-    });
-    mockHandlePermissionAction.mockResolvedValue({
-      granted: false,
-      canAskAgain: true,
-      status: "denied",
-    });
-    mockRefreshPermission.mockResolvedValue(undefined);
+    mockRefreshPermission.mockResolvedValue({ granted: true });
+    mockHandlePermissionAction.mockResolvedValue({ granted: true });
     mockUseCheckInCamera.mockReturnValue(cameraState());
-    mockUseFaceCheckIn.mockReturnValue(checkInState);
-    jest.spyOn(AppState, "addEventListener").mockImplementation(
-      (_type, listener) => {
-        appStateListener = listener as (state: string) => void;
-        return { remove: jest.fn() };
-      },
-    );
+    mockUseFaceCheckInSession.mockReturnValue(sessionState);
+    mockLoadVisionCamera.mockReturnValue({
+      available: true,
+      module: { VisionCheckInCamera: MockVisionCamera },
+    });
+    jest.spyOn(AppState, "addEventListener").mockReturnValue({
+      remove: jest.fn(),
+    });
   });
 
-  afterEach(() => {
-    jest.restoreAllMocks();
-  });
+  afterEach(() => jest.restoreAllMocks());
 
-  it("waits for the permission state without mounting camera or requesting access", async () => {
-    mockUseCheckInCamera.mockReturnValue(
-      cameraState({ isPermissionLoading: true }),
-    );
+  it("uses Vision Camera when the native adapter is available", async () => {
     const screen = await render(<CheckInScreen />);
 
-    expect(screen.queryByText("Cho phép sử dụng Camera")).toBeNull();
-    expect(screen.queryByLabelText("Camera preview")).toBeNull();
-    expect(mockRequestPermission).not.toHaveBeenCalled();
-    expect(mockReplace).not.toHaveBeenCalled();
+    expect(await screen.findByLabelText("Vision camera preview")).toBeTruthy();
+    fireEvent.press(screen.getByLabelText("Mark Vision ready"));
+    expect(await screen.findByLabelText("Check-in viewfinder")).toBeTruthy();
+    expect(screen.queryByText("Đang dùng chế độ chụp thủ công")).toBeNull();
   });
 
-  it("shows the default permission copy while permission is undetermined", async () => {
+  it("starts directly in manual mode in Expo Go without a Vision retry", async () => {
+    mockLoadVisionCamera.mockReturnValue({
+      available: false,
+      reason: "expo-go",
+    });
+    const screen = await render(<CheckInScreen />);
+
+    expect(await screen.findByLabelText("Manual camera preview")).toBeTruthy();
+    expect(screen.getByText("Đang dùng chế độ chụp thủ công")).toBeTruthy();
+    expect(screen.queryByText("Thử camera tự động")).toBeNull();
+  });
+
+  it("falls back on a Vision runtime error and allows retry", async () => {
+    const screen = await render(<CheckInScreen />);
+    await screen.findByLabelText("Vision camera preview");
+
+    fireEvent.press(screen.getByLabelText("Trigger Vision error"));
+    expect(await screen.findByLabelText("Manual camera preview")).toBeTruthy();
+    expect(screen.getByText("Thử camera tự động")).toBeTruthy();
+
+    fireEvent.press(screen.getByText("Thử camera tự động"));
+    await waitFor(() =>
+      expect(screen.getByLabelText("Vision camera preview")).toBeTruthy(),
+    );
+    expect(mockLoadVisionCamera).toHaveBeenCalledTimes(2);
+  });
+
+  it("keeps camera permission denial flow unchanged", async () => {
     mockUseCheckInCamera.mockReturnValue(
       cameraState({
-        isPermissionDenied: false,
-        isPermissionUndetermined: true,
+        isPermissionGranted: false,
+        isPermissionDenied: true,
       }),
     );
+    mockRefreshPermission.mockResolvedValue({ granted: false });
     const screen = await render(<CheckInScreen />);
 
     expect(await screen.findByText("Cho phép sử dụng Camera")).toBeTruthy();
-    expect(
-      screen.getByText(
-        "Camera được dùng để nhận diện khuôn mặt và điểm danh học viên/HLV.",
-      ),
-    ).toBeTruthy();
-    expect(mockHandlePermissionAction).not.toHaveBeenCalled();
+    fireEvent.press(screen.getByText("Cho phép"));
+    await waitFor(() => expect(mockHandlePermissionAction).toHaveBeenCalled());
   });
 
-  it("shows denied copy and runs the permission action when allowed", async () => {
-    const screen = await render(<CheckInScreen />);
-
-    expect(await screen.findByText("Cho phép sử dụng Camera")).toBeTruthy();
-    expect(
-      screen.getByText(
-        "Bạn đã từ chối quyền Camera. Vui lòng cho phép để tiếp tục điểm danh.",
-      ),
-    ).toBeTruthy();
-    expect(mockHandlePermissionAction).not.toHaveBeenCalled();
-    expect(mockReplace).not.toHaveBeenCalled();
-    expect(screen.queryByLabelText("Camera preview")).toBeNull();
-
-    await fireEvent.press(screen.getByText("Cho phép"));
-
-    await waitFor(() => {
-      expect(mockHandlePermissionAction).toHaveBeenCalledTimes(1);
-    });
-    expect(mockRequestPermission).not.toHaveBeenCalled();
-    expect(mockReplace).not.toHaveBeenCalled();
-    expect(mockBack).not.toHaveBeenCalled();
-    expect(screen.getByText("Cho phép sử dụng Camera")).toBeTruthy();
-    expect(screen.queryByLabelText("Camera preview")).toBeNull();
-  });
-
-  it("returns to Home only when the user chooses Later", async () => {
-    const screen = await render(<CheckInScreen />);
-
-    await fireEvent.press(await screen.findByText("Để sau"));
-    expect(mockReplace).toHaveBeenCalledWith("/");
-    expect(mockBack).not.toHaveBeenCalled();
-  });
-
-  it("uses the redirect action when the OS cannot ask again", async () => {
-    mockUseCheckInCamera.mockReturnValue(cameraState({ canAskAgain: false }));
-    const screen = await render(<CheckInScreen />);
-
-    expect(
-      await screen.findByText(
-        "Thiết bị không cho hỏi lại quyền Camera. Vui lòng bật quyền trong phần Cài đặt của hệ thống.",
-      ),
-    ).toBeTruthy();
-    await fireEvent.press(await screen.findByText("Chuyển hướng"));
-    await waitFor(() =>
-      expect(mockHandlePermissionAction).toHaveBeenCalledTimes(1),
-    );
-    expect(mockRequestPermission).not.toHaveBeenCalled();
-    expect(mockReplace).not.toHaveBeenCalled();
-
-    await act(async () => appStateListener?.("active"));
-    expect(mockRefreshPermission).toHaveBeenCalledTimes(2);
-  });
-
-  it("mounts the camera only with permission and starts scanning after ready", async () => {
-    mockUseCheckInCamera.mockReturnValue(
-      cameraState({ isPermissionGranted: true }),
-    );
-    const screen = await render(<CheckInScreen />);
-
-    const camera = await screen.findByLabelText("Camera preview");
-    expect(screen.queryByText("Cho phép sử dụng Camera")).toBeNull();
-    expect(mockUseFaceCheckIn).toHaveBeenLastCalledWith(
-      expect.objectContaining({ isActive: false }),
-    );
-
-    await act(async () => camera.props.onStarted());
-
-    await waitFor(() => {
-      expect(mockUseFaceCheckIn).toHaveBeenLastCalledWith(
-        expect.objectContaining({ isActive: true }),
-      );
-    });
-    expect(screen.getByLabelText("Check-in viewfinder")).toBeTruthy();
-  });
-
-  it("routes back from the header through the screen policy", async () => {
-    const screen = await render(<CheckInScreen />);
-
-    await fireEvent.press(await screen.findByLabelText("Check-in back"));
-    expect(mockBack).toHaveBeenCalledTimes(1);
-  });
-
-  it("renders the processing banner with cancel button when isPending is true", async () => {
-    const mockCancel = jest.fn();
-    mockUseFaceCheckIn.mockReturnValue({
-      ...checkInState,
+  it("uses the shared cancellation action while processing", async () => {
+    const cancelCheckIn = jest.fn();
+    mockUseFaceCheckInSession.mockReturnValue({
+      ...sessionState,
+      status: "processing",
       isPending: true,
-      scannerState: "processing",
-      cancelCheckIn: mockCancel,
+      cancelCheckIn,
     });
-
     const screen = await render(<CheckInScreen />);
 
-    expect(await screen.findByText("Đang xử lý điểm danh...")).toBeTruthy();
-    const cancelBtn = screen.getByLabelText("Hủy điểm danh");
-    expect(cancelBtn).toBeTruthy();
+    fireEvent.press(await screen.findByLabelText("Hủy điểm danh"));
+    expect(cancelCheckIn).toHaveBeenCalledTimes(1);
+  });
 
-    fireEvent.press(cancelBtn);
-    expect(mockCancel).toHaveBeenCalledTimes(1);
+  it("routes back through the existing screen policy", async () => {
+    const screen = await render(<CheckInScreen />);
+    fireEvent.press(await screen.findByLabelText("Check-in back"));
+    expect(mockBack).toHaveBeenCalledTimes(1);
+    expect(mockReplace).not.toHaveBeenCalled();
   });
 });

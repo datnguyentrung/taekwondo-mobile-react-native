@@ -207,7 +207,7 @@ describe('useFaceCheckIn (Async Face Check-In)', () => {
     expect(mockSetScannerState).toHaveBeenCalledWith('result');
   });
 
-  it('handles async command failure and maps error', async () => {
+  it('handles async command rejection and maps error', async () => {
     (faceCheckInApi.submitFaceCheckIn as jest.Mock).mockResolvedValueOnce({
       success: true,
       isPending: true,
@@ -230,7 +230,7 @@ describe('useFaceCheckIn (Async Face Check-In)', () => {
     (faceCheckInApi.getAttendanceCommand as jest.Mock).mockResolvedValueOnce({
       success: false,
       isPending: false,
-      status: 'FAILED',
+      status: 'REJECTED',
       requestId: 'req-failed-456',
       failure: {
         errorType: 'ALREADY_CHECKED_IN',
@@ -250,7 +250,7 @@ describe('useFaceCheckIn (Async Face Check-In)', () => {
 
     expect(result.current.isPending).toBe(true);
 
-    // Advance timer for 1st poll (FAILED)
+    // Advance timer for 1st poll (REJECTED)
     await act(async () => {
       jest.advanceTimersByTime(750);
     });
@@ -308,7 +308,7 @@ describe('useFaceCheckIn (Async Face Check-In)', () => {
     expect(faceCheckInApi.getAttendanceCommand).not.toHaveBeenCalled();
   });
 
-  it('times out after 20s if worker does not complete', async () => {
+  it('times out after 8s if worker does not complete', async () => {
     (faceCheckInApi.submitFaceCheckIn as jest.Mock).mockResolvedValueOnce({
       success: true,
       isPending: true,
@@ -344,9 +344,9 @@ describe('useFaceCheckIn (Async Face Check-In)', () => {
 
     expect(result.current.isPending).toBe(true);
 
-    // Advance time past 20s
+    // Advance time past 8s
     await act(async () => {
-      jest.advanceTimersByTime(21000);
+      jest.advanceTimersByTime(9000);
     });
 
     expect(result.current.isPending).toBe(false);

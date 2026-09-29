@@ -51,11 +51,12 @@ export type FaceDetectionRecord = {
 
 // --- Backend Training DTO: FaceCheckInResponse ---
 export type BackendFaceCheckInStatus =
+  | 'PENDING'
+  | 'PROCESSING'
   | 'SUCCESS'
-  | 'ALREADY_CHECKED_IN'
-  | 'ALREADY_CHECKED_OUT'
+  | 'REJECTED'
   | 'FAILED'
-  | 'PENDING';
+  | 'EXPIRED';
 
 export type BackendFaceCheckInAction =
   | 'STUDENT_CHECK_IN'
@@ -100,10 +101,14 @@ export interface BackendFaceCheckInResponse {
 
 // --- Attendance Command Async Poll Types ---
 export type AttendanceCommandStatus =
+  | 'PENDING'
   | 'QUEUED'
   | 'PROCESSING'
   | 'SUCCEEDED'
-  | 'FAILED';
+  | 'SUCCESS'
+  | 'REJECTED'
+  | 'FAILED'
+  | 'EXPIRED';
 
 export interface AttendanceCommandResponse {
   requestId: string;

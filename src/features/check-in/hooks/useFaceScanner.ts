@@ -16,12 +16,14 @@ import type {
   ScannerState,
 } from '../types/faceScanner.types';
 import { createDetectionRecord, evaluateFaceQuality } from '../utils/faceQuality';
+import { processFaceImageForCheckIn } from '../utils/faceImageProcessor';
 import { useStableFaceDetectorOutput } from './useStableFaceDetectorOutput';
 
 export type UseFaceScannerProps = {
   facing: CameraFacing;
   isActive: boolean;
   onFaceCaptured: (photoFilePath: string) => Promise<void> | void;
+  onScannerError?: (source: 'vision' | 'mlkit', error: unknown) => void;
 };
 
 export type UseFaceScannerResult = {
@@ -40,21 +42,35 @@ export function useFaceScanner({
   facing,
   isActive,
   onFaceCaptured,
+  onScannerError,
 }: UseFaceScannerProps): UseFaceScannerResult {
-  const [scannerState, setScannerState] = useState<ScannerState>('initializing');
+  const [scannerState, setScannerState] = useState<ScannerState>(() =>
+    isActive ? 'scanning' : 'initializing',
+  );
   const [feedbackMessage, setFeedbackMessage] = useState<string>(
     FACE_QUALITY_MESSAGES.NO_FACE,
   );
   const [qualityReason, setQualityReason] = useState<FaceQualityReason>('NO_FACE');
 
-  const scannerStateRef = useRef<ScannerState>('initializing');
-  scannerStateRef.current = scannerState;
+  const [prevIsActive, setPrevIsActive] = useState(isActive);
+  if (prevIsActive !== isActive) {
+    setPrevIsActive(isActive);
+    if (isActive) {
+      setFeedbackMessage(FACE_QUALITY_MESSAGES.NO_FACE);
+      setQualityReason('NO_FACE');
+      setScannerState('scanning');
+    } else {
+      setScannerState('initializing');
+    }
+  }
 
+  const scannerStateRef = useRef<ScannerState>(scannerState);
   const isCapturingRef = useRef<boolean>(false);
   const historyRef = useRef<FaceDetectionRecord[]>([]);
+  const lastDetectedFaceRef = useRef<Face | null>(null);
   const isMountedRef = useRef<boolean>(true);
   const onFaceCapturedRef = useRef(onFaceCaptured);
-  onFaceCapturedRef.current = onFaceCaptured;
+  const onScannerErrorRef = useRef(onScannerError);
 
   const device = useCameraDevice(facing);
 
@@ -64,11 +80,24 @@ export function useFaceScanner({
     qualityPrioritization: 'speed',
   });
   const photoOutputRef = useRef(photoOutput);
-  photoOutputRef.current = photoOutput;
+
+  useEffect(() => {
+    scannerStateRef.current = scannerState;
+  }, [scannerState]);
+
+  useEffect(() => {
+    onFaceCapturedRef.current = onFaceCaptured;
+    onScannerErrorRef.current = onScannerError;
+  }, [onFaceCaptured, onScannerError]);
+
+  useEffect(() => {
+    photoOutputRef.current = photoOutput;
+  }, [photoOutput]);
 
   const resumeScanner = useCallback(() => {
     isCapturingRef.current = false;
     historyRef.current = [];
+    lastDetectedFaceRef.current = null;
     setFeedbackMessage(FACE_QUALITY_MESSAGES.NO_FACE);
     setQualityReason('NO_FACE');
     setScannerState('scanning');
@@ -77,24 +106,18 @@ export function useFaceScanner({
   const pauseScanner = useCallback(() => {
     isCapturingRef.current = false;
     historyRef.current = [];
+    lastDetectedFaceRef.current = null;
     setScannerState('initializing');
   }, []);
 
-  // Sync state when camera becomes active/inactive
   useEffect(() => {
     isMountedRef.current = true;
-
-    if (isActive) {
-      resumeScanner();
-    } else {
-      pauseScanner();
-    }
-
     return () => {
       isMountedRef.current = false;
       historyRef.current = [];
+      lastDetectedFaceRef.current = null;
     };
-  }, [isActive, pauseScanner, resumeScanner]);
+  }, []);
 
   const handleCapture = useCallback(async () => {
     if (isCapturingRef.current) return;
@@ -114,8 +137,25 @@ export function useFaceScanner({
       if (!isMountedRef.current) return;
 
       if (photoFile?.filePath) {
-        console.log('[FaceScanner] 📸 Đã chụp ảnh thành công:', photoFile.filePath);
-        await onFaceCapturedRef.current(photoFile.filePath);
+        console.log('[FaceScanner] 📸 Đã chụp ảnh gốc thành công:', photoFile.filePath);
+
+        let finalPhotoPath = photoFile.filePath;
+        try {
+          // Crop vùng mặt + margin 25%, resize tối đa 640x640, JPEG 80%
+          const processed = await processFaceImageForCheckIn({
+            photoUri: photoFile.filePath,
+            face: lastDetectedFaceRef.current,
+            marginRatio: 0.25,
+            maxDimension: 640,
+            quality: 0.8,
+          });
+          finalPhotoPath = processed.uri;
+        } catch (procError) {
+          console.warn('[FaceScanner] ⚠️ Lỗi khi xử lý crop/resize ảnh, fallback dùng ảnh gốc:', procError);
+        }
+
+        console.log('[FaceScanner] 🚀 Gửi ảnh điểm danh (đã xử lý/tối ưu):', finalPhotoPath);
+        await onFaceCapturedRef.current(finalPhotoPath);
       } else {
         console.warn('[FaceScanner] ⚠️ Không nhận được đường dẫn ảnh sau khi chụp');
         resumeScanner();
@@ -123,6 +163,7 @@ export function useFaceScanner({
     } catch (error) {
       if (!isMountedRef.current) return;
       console.warn('[FaceScanner] ❌ Lỗi khi chụp ảnh:', error);
+      onScannerErrorRef.current?.('vision', error);
       resumeScanner();
     }
   }, [resumeScanner]);
@@ -137,12 +178,14 @@ export function useFaceScanner({
 
     if (faces.length === 0) {
       historyRef.current = [];
+      lastDetectedFaceRef.current = null;
       setFeedbackMessage(FACE_QUALITY_MESSAGES.NO_FACE);
       setQualityReason('NO_FACE');
       return;
     }
 
     const primaryFace = faces[0];
+    lastDetectedFaceRef.current = primaryFace;
     console.log('[FaceScanner] 👤 Nhận diện khuôn mặt:', {
       count: faces.length,
       bounds: primaryFace.bounds,
@@ -176,6 +219,7 @@ export function useFaceScanner({
 
   const onError = useCallback((error: Error) => {
     console.warn('MLKit Face Detector encountered an error:', error);
+    onScannerErrorRef.current?.('mlkit', error);
   }, []);
 
   const faceDetectorOutput = useStableFaceDetectorOutput({

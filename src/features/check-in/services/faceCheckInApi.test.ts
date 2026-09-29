@@ -158,7 +158,7 @@ describe('faceCheckInApi', () => {
   it('maps HTTP 200 FAILED response to failure result with identified person summary', async () => {
     (javaApi.post as jest.Mock).mockResolvedValueOnce({
       data: {
-        status: 'FAILED',
+        status: 'REJECTED',
         action: null,
         person: {
           personId: 'p-102',
@@ -196,44 +196,41 @@ describe('faceCheckInApi', () => {
     expect(result.failure).toEqual(
       expect.objectContaining({
         errorType: 'NO_ACTIVE_SESSION',
-        title: 'Chưa có buổi điểm danh phù hợp',
+        title: 'Không có lịch phù hợp',
       }),
     );
   });
 
-  it('polls attendance command status with SUCCEEDED status and maps result', async () => {
+  it('polls face check-in status with SUCCESS status and maps result', async () => {
     (javaApi.get as jest.Mock).mockResolvedValueOnce({
       data: {
         requestId: 'cmd-req-999',
-        status: 'SUCCEEDED',
-        result: {
-          status: 'SUCCESS',
-          action: 'STUDENT_CHECK_IN',
-          person: {
-            personId: 'p-200',
-            fullName: 'Nguyễn Thị C',
-            personCode: 'HV00200',
-            faceImagePath: 'https://example.com/c.jpg',
-          },
-          session: {
-            classSessionId: 'sess-1',
-            courseName: 'Lớp Quyền Nâng Cao',
-            sessionDate: '2026-09-28',
-            startTime: '17:30:00',
-            endTime: '19:00:00',
-          },
-          recordId: 'rec-async-200',
-          checkInTime: '2026-09-28T17:32:00',
-          confidence: 0.942,
-          attendanceStatus: 'ON_TIME',
-          message: 'Attendance saved',
+        status: 'SUCCESS',
+        action: 'STUDENT_CHECK_IN',
+        person: {
+          personId: 'p-200',
+          fullName: 'Nguyễn Thị C',
+          personCode: 'HV00200',
+          faceImagePath: 'https://example.com/c.jpg',
         },
+        session: {
+          classSessionId: 'sess-1',
+          courseName: 'Lớp Quyền Nâng Cao',
+          sessionDate: '2026-09-28',
+          startTime: '17:30:00',
+          endTime: '19:00:00',
+        },
+        recordId: 'rec-async-200',
+        checkInTime: '2026-09-28T17:32:00',
+        confidence: 0.942,
+        attendanceStatus: 'ON_TIME',
+        message: 'Attendance saved',
       },
     });
 
     const result = await faceCheckInApi.getAttendanceCommand('cmd-req-999');
 
-    expect(javaApi.get).toHaveBeenCalledWith('/attendance-commands/cmd-req-999');
+    expect(javaApi.get).toHaveBeenCalledWith('/training/face-check-ins/cmd-req-999');
     expect(result.success).toBe(true);
     expect(result.isPending).toBe(false);
     expect(result.status).toBe('SUCCEEDED');
@@ -243,15 +240,29 @@ describe('faceCheckInApi', () => {
     expect(result.record?.statusLabel).toBe('Đúng giờ');
   });
 
-  it('polls attendance command status with FAILED status and maps error', async () => {
+  it('polls face check-in status with REJECTED status and maps no active context error', async () => {
     (javaApi.get as jest.Mock).mockResolvedValueOnce({
       data: {
         requestId: 'cmd-req-999',
-        status: 'FAILED',
+        status: 'REJECTED',
+        action: null,
+        person: {
+          personId: 'p-102',
+          fullName: 'Lê Văn B',
+          personCode: 'VQ_102',
+          faceImagePath: 'https://example.com/person.jpg',
+        },
+        session: null,
+        recordId: null,
+        checkInTime: null,
+        checkOutTime: null,
+        confidence: 0.812,
+        attendanceStatus: null,
+        message: 'No active attendance context was found for this person',
         error: {
-          code: 'FACE_CHECK_IN_ALREADY_CHECKED_IN',
-          title: 'Already checked in',
-          detail: 'Học viên đã điểm danh trong buổi học hôm nay',
+          code: 'FACE_CHECK_IN_NO_ACTIVE_CONTEXT',
+          title: 'No active face check-in context',
+          detail: 'No active attendance context was found for this person',
         },
       },
     });
@@ -260,16 +271,22 @@ describe('faceCheckInApi', () => {
 
     expect(result.success).toBe(false);
     expect(result.isPending).toBe(false);
-    expect(result.status).toBe('FAILED');
-    expect(result.failure?.errorType).toBe('ALREADY_CHECKED_IN');
-    expect(result.failure?.title).toBe('Đã điểm danh trước đó');
+    expect(result.status).toBe('REJECTED');
+    expect(result.failure?.errorType).toBe('NO_ACTIVE_SESSION');
+    expect(result.failure?.title).toBe('Không có lịch phù hợp');
+    expect(result.record?.fullName).toBe('Lê Văn B');
   });
 
-  it('polls attendance command status with PROCESSING or QUEUED status', async () => {
+  it('polls face check-in status with PROCESSING status', async () => {
     (javaApi.get as jest.Mock).mockResolvedValueOnce({
       data: {
         requestId: 'cmd-req-999',
         status: 'PROCESSING',
+        person: {
+          personId: 'p-200',
+          fullName: 'Nguyễn Thị C',
+          personCode: 'HV00200',
+        },
       },
     });
 

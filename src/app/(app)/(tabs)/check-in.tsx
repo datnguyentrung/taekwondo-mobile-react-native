@@ -1,2 +1,2 @@
-export { CheckInScreen as default } from "@/features/check-in";
+export { default } from "@/features/check-in/screens/CheckInScreen";
 

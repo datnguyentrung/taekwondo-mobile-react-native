@@ -5,7 +5,6 @@ import {
 } from '../constants/faceScannerConfig';
 import type {
   FaceDetectionRecord,
-  FaceQualityReason,
   FaceQualityResult,
 } from '../types/faceScanner.types';
 
