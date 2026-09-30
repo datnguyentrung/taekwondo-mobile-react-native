@@ -48,6 +48,10 @@ export type {
 export interface PersonSearchParams {
   search?: string;
   positionId?: string;
+  status?: PersonStatus;
+  currentBelt?: Belt;
+  gender?: boolean;
+  isStudent?: boolean;
   page?: number;
   size?: number;
   sortBy?: string;

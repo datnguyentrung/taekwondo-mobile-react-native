@@ -1,6 +1,7 @@
 import { useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
-import { Pressable, StyleSheet, View } from "react-native";
+import { useRef, useState } from "react";
+import { ActivityIndicator, Pressable, StyleSheet, View } from "react-native";
+import Animated, { FadeIn, FadeOut } from "react-native-reanimated";
 import {
   Briefcase,
   Calendar,
@@ -20,7 +21,7 @@ import { PickerPopover } from "@/shared/ui/PickerPopover";
 import { ThemedText } from "@/shared/ui/ThemedText";
 import { useToast } from "@/shared/ui/Toast";
 import { formatDateDMY } from "@/shared/utils/dateTime";
-import { radii } from "@/theme";
+import { Colors, effects, radii } from "@/theme";
 import { userKeys } from "../queries/userQueries";
 import { Avatar } from "../screens/userAdministrationShared";
 
@@ -42,6 +43,12 @@ export function LinkedPersonDetailSheet({
     PersonSimpleResponse["position"] | undefined
   >(undefined);
   const [positionPickerOpen, setPositionPickerOpen] = useState(false);
+  const [isUpdatingPosition, setIsUpdatingPosition] = useState(false);
+
+  const previousPosRef = useRef<PersonSimpleResponse["position"] | undefined>(
+    undefined,
+  );
+  const isCancelledRef = useRef(false);
 
   const positions = usePositions();
   const updatePerson = useUpdatePerson();
@@ -53,6 +60,7 @@ export function LinkedPersonDetailSheet({
     setPrevPersonId(person?.personId);
     setOverridePosition(undefined);
     setPositionPickerOpen(false);
+    setIsUpdatingPosition(false);
   }
 
   const currentPerson: PersonSimpleResponse | null = person
@@ -66,7 +74,19 @@ export function LinkedPersonDetailSheet({
   const handleSelectPosition = (newPosId: string) => {
     if (!currentPerson) return;
     const targetPositionId = newPosId ? newPosId : null;
+    const previousPos = currentPerson.position;
+    previousPosRef.current = previousPos;
+    isCancelledRef.current = false;
 
+    // 1. Optimistic update immediately on the UI
+    const updatedPos =
+      (positions.data?.content ?? []).find(
+        (p) => p.positionId === targetPositionId,
+      ) ?? null;
+    setOverridePosition(updatedPos);
+    setIsUpdatingPosition(true);
+
+    // 2. Trigger mutation
     updatePerson.mutate(
       {
         personId: currentPerson.personId,
@@ -84,6 +104,8 @@ export function LinkedPersonDetailSheet({
       },
       {
         onSuccess: async () => {
+          if (isCancelledRef.current) return;
+          setIsUpdatingPosition(false);
           toast.show({ message: "Đã cập nhật chức vụ", variant: "success" });
           await queryClient.invalidateQueries({ queryKey: userKeys.lists() });
           if (userId) {
@@ -91,13 +113,12 @@ export function LinkedPersonDetailSheet({
               queryKey: userKeys.detail(userId),
             });
           }
-          const updatedPos =
-            (positions.data?.content ?? []).find(
-              (p) => p.positionId === targetPositionId,
-            ) ?? null;
-          setOverridePosition(updatedPos);
         },
         onError: () => {
+          if (isCancelledRef.current) return;
+          setIsUpdatingPosition(false);
+          // Rollback to previous position
+          setOverridePosition(previousPosRef.current);
           toast.show({
             message: "Không thể cập nhật chức vụ",
             variant: "error",
@@ -105,6 +126,17 @@ export function LinkedPersonDetailSheet({
         },
       },
     );
+  };
+
+  const handleCancelUpdate = () => {
+    isCancelledRef.current = true;
+    setIsUpdatingPosition(false);
+    // Rollback to previous state
+    setOverridePosition(previousPosRef.current);
+    toast.show({
+      message: "Đã hủy cập nhật chức vụ",
+      variant: "info",
+    });
   };
 
   const positionOptions = [
@@ -121,6 +153,7 @@ export function LinkedPersonDetailSheet({
   ];
 
   const handleCloseSheet = () => {
+    if (isUpdatingPosition) return;
     setPositionPickerOpen(false);
     onClose();
   };
@@ -135,16 +168,48 @@ export function LinkedPersonDetailSheet({
       onClose={handleCloseSheet}
       footer={<AdminButton label="Chi tiết" onPress={handleCloseSheet} />}
       overlay={
-        <PickerPopover
-          visible={positionPickerOpen}
-          useModal={false}
-          title={currentPerson?.fullName ?? "Hồ sơ"}
-          subtitle="Cập nhật chức vụ"
-          options={positionOptions}
-          selectedValue={currentPerson?.position?.positionId ?? ""}
-          onSelect={handleSelectPosition}
-          onClose={() => setPositionPickerOpen(false)}
-        />
+        <>
+          <PickerPopover
+            visible={positionPickerOpen}
+            useModal={false}
+            title={currentPerson?.fullName ?? "Hồ sơ"}
+            subtitle="Cập nhật chức vụ"
+            options={positionOptions}
+            selectedValue={currentPerson?.position?.positionId ?? ""}
+            onSelect={handleSelectPosition}
+            onClose={() => setPositionPickerOpen(false)}
+          />
+          {isUpdatingPosition ? (
+            <Animated.View
+              entering={FadeIn.duration(200)}
+              exiting={FadeOut.duration(150)}
+              style={styles.loadingOverlay}
+            >
+              <View style={styles.loadingCard}>
+                <ActivityIndicator size="large" color={Colors.light.primary} />
+                <View style={styles.loadingTextCol}>
+                  <ThemedText style={styles.loadingTitle}>
+                    Đang cập nhật chức vụ...
+                  </ThemedText>
+                  <ThemedText style={styles.loadingSubtitle}>
+                    {currentPerson?.position?.name || "Chưa gán chức vụ"}
+                  </ThemedText>
+                </View>
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel="Hủy thao tác"
+                  onPress={handleCancelUpdate}
+                  style={({ pressed }) => [
+                    styles.cancelButton,
+                    pressed ? styles.pressed : null,
+                  ]}
+                >
+                  <ThemedText style={styles.cancelButtonText}>Hủy</ThemedText>
+                </Pressable>
+              </View>
+            </Animated.View>
+          ) : null}
+        </>
       }
     >
       {currentPerson ? (
@@ -417,6 +482,54 @@ const styles = StyleSheet.create({
   positionPillText: {
     fontSize: 13,
     fontWeight: "500",
+    color: "#475569",
+  },
+  loadingOverlay: {
+    ...StyleSheet.absoluteFill,
+    backgroundColor: "rgba(0, 0, 0, 0.45)",
+    justifyContent: "center",
+    alignItems: "center",
+    paddingHorizontal: 24,
+    zIndex: 10000,
+  },
+  loadingCard: {
+    width: "100%",
+    maxWidth: 280,
+    backgroundColor: "#FFFFFF",
+    borderRadius: radii.xl,
+    paddingVertical: 24,
+    paddingHorizontal: 20,
+    alignItems: "center",
+    gap: 12,
+    ...effects.card,
+  },
+  loadingTextCol: {
+    alignItems: "center",
+    gap: 4,
+  },
+  loadingTitle: {
+    fontSize: 16,
+    fontWeight: "700",
+    color: "#0F172A",
+    textAlign: "center",
+  },
+  loadingSubtitle: {
+    fontSize: 13,
+    color: "#64748B",
+    textAlign: "center",
+  },
+  cancelButton: {
+    marginTop: 4,
+    backgroundColor: "#F1F5F9",
+    paddingHorizontal: 24,
+    paddingVertical: 9,
+    borderRadius: 9999,
+    borderWidth: 1,
+    borderColor: "#E2E8F0",
+  },
+  cancelButtonText: {
+    fontSize: 14,
+    fontWeight: "600",
     color: "#475569",
   },
   pressed: {
