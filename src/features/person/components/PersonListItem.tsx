@@ -1,57 +1,52 @@
 import { Image, Pressable, StyleSheet, View } from "react-native";
+import { AwardCertificate } from "reicon-react-native";
 
-import type { PersonSimpleResponse } from "@/features/person";
 import { SurfaceCard } from "@/features/student-commerce/components/StudentCommercePrimitives";
-import type { StudentSummaryView } from "@/features/student-commerce/types";
-import { getStudentInitials } from "@/features/student/utils/studentListViewModel";
+import type { PersonSimpleResponse } from "@/features/person";
+import { BeltLabel } from "@/features/person/constants/person.constants";
+import { AppIcon } from "@/shared/ui/AppIcon";
+import { StatusBadge } from "@/shared/ui/StatusBadge";
 import { ThemedText } from "@/shared/ui/ThemedText";
 import { Colors, hexToRgba, radii } from "@/theme";
 
-import { PersonListItem } from "@/features/person/components/PersonListItem";
-import { StudentStatusPill } from "./StudentStatusPill";
-
-export type StudentItemData = StudentSummaryView | PersonSimpleResponse;
-
-function isPersonSimpleResponse(
-  student: StudentItemData,
-): student is PersonSimpleResponse {
-  return "personId" in student;
+export function getPersonInitials(fullName: string) {
+  return fullName
+    .split(" ")
+    .filter(Boolean)
+    .slice(-2)
+    .map((part) => part[0])
+    .join("")
+    .toUpperCase();
 }
 
-export function StudentListItem({
-  student,
+export function PersonListItem({
+  person,
   onPress,
+  statusLabelMap,
 }: {
-  student: StudentItemData;
+  person: PersonSimpleResponse;
   onPress: () => void;
+  statusLabelMap?: Record<string, string>;
 }) {
-  if (isPersonSimpleResponse(student)) {
-    return (
-      <PersonListItem
-        person={student}
-        onPress={onPress}
-        statusLabelMap={{
-          ACTIVE: "Đang học",
-          INACTIVE: "Bảo lưu",
-          SUSPENDED: "Tạm ngưng",
-        }}
-      />
-    );
-  }
+  const fullName = person.fullName;
+  const beltText = BeltLabel[person.currentBelt] || person.currentBelt;
 
-  const fullName = student.fullName;
-  const beltText = student.beltLabel;
-  const statusLabel = student.statusLabel;
-  const subtitle = student.branchName;
-  const faceImagePath =
-    "faceImagePath" in student
-      ? (student as { faceImagePath?: string | null }).faceImagePath
-      : undefined;
+  const defaultStatusLabel =
+    person.status === "ACTIVE"
+      ? "Đang hoạt động"
+      : person.status === "INACTIVE"
+        ? "Tạm dừng"
+        : "Đình chỉ";
+
+  const statusLabel = statusLabelMap?.[person.status] ?? defaultStatusLabel;
+  const isNeutralStatus = person.status !== "ACTIVE";
+  const subtitle = person.position?.name || "CLB Taekwondo Văn Quán";
+  const faceImagePath = person.faceImagePath;
 
   return (
     <Pressable
       accessibilityRole="button"
-      accessibilityLabel={`Xem học viên ${fullName}`}
+      accessibilityLabel={`Xem ${fullName}`}
       onPress={onPress}
       style={({ pressed }) => [pressed ? styles.pressed : null]}
     >
@@ -62,7 +57,7 @@ export function StudentListItem({
           ) : (
             <View style={styles.avatar}>
               <ThemedText type="title" style={styles.avatarText}>
-                {getStudentInitials(fullName)}
+                {getPersonInitials(fullName)}
               </ThemedText>
             </View>
           )}
@@ -74,15 +69,25 @@ export function StudentListItem({
             >
               {fullName}
             </ThemedText>
-            <ThemedText
-              type="bodySmall"
-              style={styles.secondaryText}
-              numberOfLines={1}
-            >
-              {beltText}
-            </ThemedText>
+            <View style={styles.beltRow}>
+              <AppIcon
+                icon={<AwardCertificate />}
+                size={15}
+                color={Colors.light.primary}
+              />
+              <ThemedText
+                type="bodySmall"
+                style={styles.secondaryText}
+                numberOfLines={1}
+              >
+                {beltText}
+              </ThemedText>
+            </View>
           </View>
-          <StudentStatusPill label={statusLabel} />
+          <StatusBadge
+            label={statusLabel}
+            tone={isNeutralStatus ? "neutral" : "primary"}
+          />
         </View>
         <ThemedText
           type="bodySmall"
@@ -128,6 +133,11 @@ const styles = StyleSheet.create({
   },
   secondaryText: {
     color: Colors.light.textSecondary,
+  },
+  beltRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
   },
   pressed: {
     opacity: 0.75,

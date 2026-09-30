@@ -131,6 +131,11 @@ export default function ActivitiesScreen() {
         return;
       }
 
+      if (action.id === "coach-list") {
+        router.push("/coaches" as Href);
+        return;
+      }
+
       if (action.id === 'role-permission-admin') {
         router.push('/admin/roles' as Href);
         return;

@@ -44,6 +44,20 @@ export function useStudents(params?: Omit<PersonSearchParams, "isStudent">) {
   });
 }
 
+export function useCoaches(params?: Omit<PersonSearchParams, "isStudent">) {
+  const queryParams: PersonSearchParams = {
+    isStudent: false,
+    size: PERSON_ADMIN_PAGE_SIZE,
+    sort: "fullName,asc",
+    ...params,
+  };
+  return useQuery({
+    queryKey: personKeys.list(queryParams),
+    queryFn: () => personApi.list(queryParams),
+    staleTime: 30_000,
+  });
+}
+
 export function usePeopleByPosition(positionId?: string) {
   return useQuery({
     queryKey: personKeys.list({

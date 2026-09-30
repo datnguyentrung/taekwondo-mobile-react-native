@@ -4,6 +4,7 @@ import { CalendarCheck } from "lucide-react-native";
 import {
   Book,
   Building,
+  Profile2user,
   Teacher,
   Trophy,
   Users2,
@@ -76,7 +77,7 @@ export const ACTIVITIES_GROUPS: ActivitiesActionGroup[] = [
       {
         id: 'user-admin',
         label: 'Người dùng',
-        icon: <Users2 />,
+        icon: <Profile2user />,
         requiredPermissions: [Permission.USER_READ],
       },
     ],

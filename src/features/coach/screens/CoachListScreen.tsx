@@ -3,14 +3,16 @@ import { useMemo, useState } from "react";
 import { ActivityIndicator, StyleSheet, TextInput, View } from "react-native";
 import { InfoCircle, Search, Tuning } from "reicon-react-native";
 
-import { ALL_BELTS, BeltLabel } from "@/features/person/constants/person.constants";
-import type { Belt, PersonStatus } from "@/features/person/constants/person.constants";
-import { useStudents } from "@/features/person/queries/personQueries";
-import { StudentListItem } from "@/features/student/components/StudentListItem";
+import { PersonListItem } from "@/features/person/components/PersonListItem";
+import type {
+  Belt,
+  PersonStatus,
+} from "@/features/person/constants/person.constants";
 import {
-  STUDENT_TABS,
-  type StudentListTab,
-} from "@/features/student/utils/studentListViewModel";
+  ALL_BELTS,
+  BeltLabel,
+} from "@/features/person/constants/person.constants";
+import { useCoaches } from "@/features/person/queries/personQueries";
 import { DefaultHeaderActions } from "@/routes/navigation/components/DefaultHeaderActions";
 import { HeaderActionButton } from "@/routes/navigation/components/HeaderActionButton";
 import StackScreenLayout from "@/routes/navigation/layouts/StackScreenLayout";
@@ -26,60 +28,67 @@ import { SegmentedControl } from "@/shared/ui/SegmentedControl";
 import { ThemedText } from "@/shared/ui/ThemedText";
 import { Colors } from "@/theme";
 
-export type StudentMultiFilterState = {
+export type CoachMultiFilterState = {
   statuses: readonly PersonStatus[];
   genders: readonly ("true" | "false")[];
   belts: readonly Belt[];
 };
 
-const emptyStudentFilters: StudentMultiFilterState = {
+const emptyCoachFilters: CoachMultiFilterState = {
   statuses: [],
   genders: [],
   belts: [],
 };
 
-export function StudentListScreen() {
+const COACH_TABS = [
+  { value: "all", label: "Tất cả" },
+  { value: "active", label: "Đang hoạt động" },
+  { value: "inactive", label: "Tạm dừng" },
+] as const;
+
+type CoachListTab = (typeof COACH_TABS)[number]["value"];
+
+export function CoachListScreen() {
   const router = useRouter();
 
   const [searchQuery, setSearchQuery] = useState("");
-  const [activeTab, setActiveTab] = useState<StudentListTab>("all");
+  const [activeTab, setActiveTab] = useState<CoachListTab>("all");
   const [filterVisible, setFilterVisible] = useState(false);
 
   const [filters, setFilters] =
-    useState<StudentMultiFilterState>(emptyStudentFilters);
+    useState<CoachMultiFilterState>(emptyCoachFilters);
   const [draftFilters, setDraftFilters] =
-    useState<StudentMultiFilterState>(emptyStudentFilters);
+    useState<CoachMultiFilterState>(emptyCoachFilters);
 
   const appliedCount =
     filters.statuses.length + filters.genders.length + filters.belts.length;
 
   const queryStatus: PersonStatus | undefined = useMemo(() => {
     if (filters.statuses.length === 1) return filters.statuses[0];
-    if (activeTab === "learning") return "ACTIVE";
-    if (activeTab === "paused") return "INACTIVE";
+    if (activeTab === "active") return "ACTIVE";
+    if (activeTab === "inactive") return "INACTIVE";
     return undefined;
   }, [activeTab, filters.statuses]);
 
   const queryGender =
     filters.genders.length === 1 ? filters.genders[0] === "true" : undefined;
-  const queryBelt =
-    filters.belts.length === 1 ? filters.belts[0] : undefined;
+  const queryBelt = filters.belts.length === 1 ? filters.belts[0] : undefined;
 
   const trimmedSearch = searchQuery.trim();
 
-  const studentsQuery = useStudents({
+  const coachesQuery = useCoaches({
     search: trimmedSearch || undefined,
     status: queryStatus,
     gender: queryGender,
     currentBelt: queryBelt,
   });
 
-  const rawStudents = studentsQuery.data?.content ?? [];
+  const rawCoaches = coachesQuery.data?.content ?? [];
 
-  const visibleStudents = useMemo(() => {
-    let list = rawStudents;
+  const visibleCoaches = useMemo(() => {
+    let list = rawCoaches;
 
-    // Local search filter as fallback if backend pagination/cache is in flight
+    // Local search filter as fallback if backend search/cache is in flight
     if (trimmedSearch) {
       const q = trimmedSearch.toLowerCase();
       list = list.filter(
@@ -91,9 +100,9 @@ export function StudentListScreen() {
 
     // Filter by tab when status filter not explicitly set
     if (filters.statuses.length === 0) {
-      if (activeTab === "learning") {
+      if (activeTab === "active") {
         list = list.filter((s) => s.status === "ACTIVE");
-      } else if (activeTab === "paused") {
+      } else if (activeTab === "inactive") {
         list = list.filter((s) => s.status !== "ACTIVE");
       }
     } else if (filters.statuses.length > 1) {
@@ -112,7 +121,7 @@ export function StudentListScreen() {
     }
 
     return list;
-  }, [rawStudents, activeTab, filters, trimmedSearch]);
+  }, [rawCoaches, activeTab, filters, trimmedSearch]);
 
   const openFilter = () => {
     setDraftFilters(filters);
@@ -120,7 +129,7 @@ export function StudentListScreen() {
   };
 
   const handleResetFilters = () => {
-    setDraftFilters(emptyStudentFilters);
+    setDraftFilters(emptyCoachFilters);
   };
 
   const handleApplyFilters = () => {
@@ -133,9 +142,9 @@ export function StudentListScreen() {
       key: "statuses",
       title: "Trạng thái",
       options: [
-        { value: "ACTIVE", label: "Đang học" },
-        { value: "INACTIVE", label: "Bảo lưu" },
-        { value: "SUSPENDED", label: "Tạm ngưng" },
+        { value: "ACTIVE", label: "Đang hoạt động" },
+        { value: "INACTIVE", label: "Tạm dừng" },
+        { value: "SUSPENDED", label: "Đình chỉ" },
       ],
       selectedValues: draftFilters.statuses,
       onToggle: (val) =>
@@ -201,11 +210,11 @@ export function StudentListScreen() {
   return (
     <>
       <StackScreenLayout
-        title="Học viên"
+        title="Huấn luyện viên"
         contentContainerStyle={styles.content}
-        refreshing={studentsQuery.isRefetching}
+        refreshing={coachesQuery.isRefetching}
         onRefresh={async () => {
-          await studentsQuery.refetch();
+          await coachesQuery.refetch();
         }}
         rightActions={
           <>
@@ -214,7 +223,7 @@ export function StudentListScreen() {
               label="Lọc"
               badge={appliedCount || undefined}
               onPress={openFilter}
-              testID="student-list-filter-button"
+              testID="coach-list-filter-button"
             />
             <DefaultHeaderActions />
           </>
@@ -227,10 +236,10 @@ export function StudentListScreen() {
             color={Colors.light.textSecondary}
           />
           <TextInput
-            accessibilityLabel="Tìm kiếm học viên"
+            accessibilityLabel="Tìm kiếm huấn luyện viên"
             value={searchQuery}
             onChangeText={setSearchQuery}
-            placeholder="Tìm theo họ tên, mã, SĐT..."
+            placeholder="Tìm theo họ tên, mã..."
             placeholderTextColor={Colors.light.textSecondary}
             style={styles.searchInput}
             returnKeyType="search"
@@ -239,38 +248,39 @@ export function StudentListScreen() {
         </View>
 
         <SegmentedControl
-          options={STUDENT_TABS}
+          options={COACH_TABS}
           value={activeTab}
           onChange={setActiveTab}
           style={styles.tabs}
         />
 
-        {studentsQuery.isLoading ? (
+        {coachesQuery.isLoading ? (
           <View style={styles.loadingContainer}>
             <ActivityIndicator size="large" color={Colors.light.primary} />
           </View>
         ) : (
-          <View style={styles.studentList}>
-            {visibleStudents.map((student) => (
-              <StudentListItem
-                key={student.personId}
-                student={student}
-                onPress={() =>
+          <View style={styles.coachList}>
+            {visibleCoaches.map((coach) => (
+              <PersonListItem
+                key={coach.personId}
+                person={coach}
+                onPress={() => {
+                  // Navigate to coach profile/detail if available, or view details
                   router.push(
-                    `/students/${student.personCode || student.personId}`,
-                  )
-                }
+                    `/students/${coach.personCode || coach.personId}`,
+                  );
+                }}
               />
             ))}
           </View>
         )}
 
-        {!studentsQuery.isLoading && visibleStudents.length === 0 ? (
+        {!coachesQuery.isLoading && visibleCoaches.length === 0 ? (
           <View style={styles.emptyContainer}>
             <ThemedText type="bodySmall" style={styles.helperText}>
               {appliedCount > 0
-                ? "Không tìm thấy học viên phù hợp với bộ lọc."
-                : "Chưa có học viên trong trạng thái này."}
+                ? "Không tìm thấy huấn luyện viên phù hợp với bộ lọc."
+                : "Chưa có huấn luyện viên trong trạng thái này."}
             </ThemedText>
           </View>
         ) : null}
@@ -282,7 +292,7 @@ export function StudentListScreen() {
             color={Colors.light.textSecondary}
           />
           <ThemedText type="bodySmall" style={styles.helperText}>
-            Chọn học viên để xem hồ sơ, ví và khóa học.
+            Chọn huấn luyện viên để xem thông tin chi tiết.
           </ThemedText>
         </View>
       </StackScreenLayout>
@@ -290,7 +300,7 @@ export function StudentListScreen() {
       <BottomSheetWindow
         visible={filterVisible}
         title="Lọc"
-        accessibilityLabel="Lọc danh sách học viên"
+        accessibilityLabel="Lọc danh sách huấn luyện viên"
         backdropAccessibilityLabel="Đóng bộ lọc"
         onClose={() => setFilterVisible(false)}
         footer={
@@ -332,7 +342,7 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
   },
   tabs: {},
-  studentList: {
+  coachList: {
     gap: 12,
   },
   loadingContainer: {
