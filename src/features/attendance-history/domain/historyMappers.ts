@@ -22,6 +22,11 @@ import type {
   StudentEnrollmentSimpleResponse,
 } from "@/features/student-enrollment/api/student-enrollment.dto";
 
+import type {
+  ScheduleLevel,
+  ScheduleLocation,
+  Weekday,
+} from "@/features/class-schedule/constants/class-schedule.constants";
 import { formatDateDMY } from "@/shared/utils/dateTime";
 import type { AttendanceHistoryMode } from "./historyAccess";
 
@@ -39,7 +44,11 @@ export type HistoryRecordViewModel = {
     | null;
   dateLabel: string;
   branchLabel: string;
+  branchId?: number;
   shiftLabel: string;
+  weekday?: Weekday;
+  scheduleLevel?: ScheduleLevel;
+  location?: ScheduleLocation;
   statusLabel: string;
   badgeLabel: string;
   noteTitle: string;
@@ -49,7 +58,11 @@ export type HistoryRecordViewModel = {
 
 export type StudentAttendanceDisplayMeta = {
   branchLabel: string;
+  branchId?: number;
   shiftLabel: string;
+  weekday?: Weekday;
+  scheduleLevel?: ScheduleLevel;
+  location?: ScheduleLocation;
 };
 
 export type CoachTimesheetDisplayMeta = StudentAttendanceDisplayMeta & {
@@ -67,6 +80,7 @@ export function mapStudentAttendanceToHistoryRecord(
   const evaluationStatus = attendance.evaluationStatus ?? "PENDING";
   const studentEnrollment = attendance.studentEnrollment;
   const name = studentEnrollment?.studentPerson?.fullName;
+  const classSchedule = attendance.classSession?.course?.classSchedule;
 
   return {
     id:
@@ -77,8 +91,12 @@ export function mapStudentAttendanceToHistoryRecord(
     name: name || undefined,
     info: studentEnrollment,
     dateLabel: formatDateDMY(attendance.createdAt),
-    branchLabel: meta.branchLabel,
+    branchLabel: classSchedule?.branch?.name ?? meta.branchLabel,
+    branchId: classSchedule?.branch?.branchId ?? meta.branchId,
     shiftLabel: meta.shiftLabel,
+    weekday: classSchedule?.weekday ?? meta.weekday,
+    scheduleLevel: classSchedule?.level ?? meta.scheduleLevel,
+    location: classSchedule?.location ?? meta.location,
     statusLabel: AttendanceStatusLabel[attendance.attendanceStatus],
     badgeLabel: EvaluationStatusLabel[evaluationStatus],
     noteTitle: "Ghi chú",

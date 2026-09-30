@@ -4,6 +4,7 @@ import React from 'react';
 
 import { useAttendanceHistoryQuery } from './useAttendanceHistoryQuery';
 import { emptyHistoryFilters } from '../screens/AttendanceHistoryScreen/historyFilter.logic';
+import { sessionAttendanceApi } from '@/features/session-attendance/api/sessionAttendanceApi';
 
 // Mock authorization
 jest.mock('@/features/authorization', () => ({
@@ -45,6 +46,10 @@ function createWrapper() {
 }
 
 describe('useAttendanceHistoryQuery', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
   it('returns client-filter strategy when user has only READ permission', async () => {
     const rendered = renderHook(
       () =>
@@ -60,6 +65,39 @@ describe('useAttendanceHistoryQuery', () => {
 
     expect(result.current.strategy).toBe('client-filter');
     await waitFor(() => expect(result.current.isLoading).toBe(false));
+    expect(sessionAttendanceApi.list).toHaveBeenCalledWith({
+      from: '2026-01-01',
+      to: '2026-03-31',
+      page: 0,
+      size: 50,
+    });
     expect(result.current.records).toBeDefined();
+  });
+
+  it('filters student attendance by courseId when course history mode is used', async () => {
+    const rendered = renderHook(
+      () =>
+        useAttendanceHistoryQuery({
+          mode: 'student',
+          courseId: 'course-1',
+          dateRangeOverride: { from: '2026-04-01', to: '2026-06-30' },
+          filters: emptyHistoryFilters,
+          enabled: true,
+        }),
+      { wrapper: createWrapper() },
+    );
+
+    const { result } = await rendered;
+
+    expect(result.current.strategy).toBe('server-filter');
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
+    expect(sessionAttendanceApi.list).toHaveBeenCalledWith({
+      from: '2026-04-01',
+      to: '2026-06-30',
+      courseId: 'course-1',
+      page: 0,
+      size: 50,
+    });
+    expect(result.current.records).toEqual([]);
   });
 });

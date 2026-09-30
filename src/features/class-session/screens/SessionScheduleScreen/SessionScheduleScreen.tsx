@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useRouter } from "expo-router";
 import { ActivityIndicator, ScrollView, StyleSheet, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -8,6 +9,7 @@ import BottomTabScreenLayout, {
 } from "@/routes/navigation/layouts/BottomTabScreenLayout";
 import { ThemedText } from "@/shared/ui/ThemedText";
 import { Colors } from "@/theme";
+import { asHref } from "@/features/student-commerce/utils/studentCommerceUtils";
 import type { ClassSessionCalendarResponse } from "../../api/class-session.dto";
 import { ExpandableCalendarStrip } from "../../components/ExpandableCalendarStrip";
 import { SessionCalendarCard } from "../../components/SessionCalendarCard";
@@ -22,6 +24,7 @@ import {
 import { useClassSessionCalendarQuery } from "../../hooks/useClassSessionCalendarQuery";
 
 export default function SessionScheduleScreen() {
+  const router = useRouter();
   const insets = useSafeAreaInsets();
   const [selectedDate, setSelectedDate] = useState<string>(() =>
     formatToDateString(new Date()),
@@ -205,6 +208,9 @@ export default function SessionScheduleScreen() {
         session={selectedSessionDetail}
         visible={!!selectedSessionDetail}
         onClose={() => setSelectedSessionDetail(null)}
+        onViewDetail={(session) =>
+          router.push(asHref(`/class-sessions/${session.classSessionId}`))
+        }
       />
     </>
   );

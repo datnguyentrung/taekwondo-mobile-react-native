@@ -25,10 +25,13 @@ import {
 } from '../screens/AttendanceHistoryScreen/historyFilter.logic';
 
 import type { HistoryFilterState } from '../screens/AttendanceHistoryScreen/historyFilter.types';
+import type { HistoryDateRange } from '../domain/historyDateRange';
 
 export type UseAttendanceHistoryQueryParams = {
   mode: AttendanceHistoryMode;
   filters: HistoryFilterState;
+  courseId?: string;
+  dateRangeOverride?: HistoryDateRange;
   enabled?: boolean;
 };
 
@@ -43,38 +46,70 @@ export type UseAttendanceHistoryQueryResult = {
 export function useAttendanceHistoryQuery({
   mode,
   filters,
+  courseId,
+  dateRangeOverride,
   enabled = true,
 }: UseAttendanceHistoryQueryParams): UseAttendanceHistoryQueryResult {
   const permissions = usePermissions();
 
-  const strategy = useMemo(
+  const permissionStrategy = useMemo(
     () => determineFilterStrategy({ mode, permissions }),
     [mode, permissions],
   );
+  const strategy = courseId ? 'server-filter' : permissionStrategy;
 
   const dateRange = useMemo(
-    () => getHistoryFilterDateRange(filters),
-    [filters],
+    () => dateRangeOverride ?? getHistoryFilterDateRange(filters),
+    [dateRangeOverride, filters],
   );
 
   // Fallback / initial mock base records if API returns empty during dev
   const baseMockRecords = useMemo(() => getMockHistoryRecords(mode), [mode]);
 
   const queryKey = useMemo(() => {
+    if (courseId) {
+      return ['session-attendances', 'course', courseId, dateRange, filters];
+    }
     if (strategy === 'client-filter') {
-      return [mode === 'student' ? 'session-attendances' : 'coach-timesheets', 'client-all'];
+      return [
+        mode === 'student' ? 'session-attendances' : 'coach-timesheets',
+        'client-all',
+        dateRange,
+      ];
     }
     return [
       mode === 'student' ? 'session-attendances' : 'coach-timesheets',
       'server-filter',
       filters,
     ];
-  }, [mode, strategy, filters]);
+  }, [courseId, dateRange, mode, strategy, filters]);
 
   const queryFn = async (): Promise<HistoryRecordViewModel[]> => {
     if (mode === 'student') {
+      if (courseId) {
+        const res = await sessionAttendanceApi.list({
+          from: dateRange?.from,
+          to: dateRange?.to,
+          courseId,
+          page: 0,
+          size: 50,
+        });
+
+        return (res?.content ?? []).map((item) =>
+          mapStudentAttendanceToHistoryRecord(item, {
+            branchLabel: 'Cơ sở 2',
+            shiftLabel: 'Ca 1',
+          }),
+        );
+      }
+
       if (strategy === 'client-filter') {
-        const res = await sessionAttendanceApi.list();
+        const res = await sessionAttendanceApi.list({
+          from: dateRange?.from,
+          to: dateRange?.to,
+          page: 0,
+          size: 50,
+        });
         if (res?.content && res.content.length > 0) {
           return res.content.map((item) =>
             mapStudentAttendanceToHistoryRecord(item, {
@@ -90,6 +125,16 @@ export function useAttendanceHistoryQuery({
       const res = await sessionAttendanceApi.list({
         from: dateRange?.from,
         to: dateRange?.to,
+        branchId:
+          filters.branchIds.length === 1 ? filters.branchIds[0] : undefined,
+        weekday:
+          filters.weekdays.length === 1 ? filters.weekdays[0] : undefined,
+        scheduleLevel:
+          filters.scheduleLevels.length === 1
+            ? filters.scheduleLevels[0]
+            : undefined,
+        location:
+          filters.locations.length === 1 ? filters.locations[0] : undefined,
         page: 0,
         size: 50,
       });

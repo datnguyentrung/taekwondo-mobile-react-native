@@ -6,7 +6,7 @@ import {
   StyleSheet,
   View,
 } from "react-native";
-import { Calendar, Tuning } from "reicon-react-native";
+import { Calendar, Tuning, X } from "reicon-react-native";
 
 import { DefaultHeaderActions } from "@/routes/navigation/components/DefaultHeaderActions";
 import { HeaderActionButton } from "@/routes/navigation/components/HeaderActionButton";
@@ -43,21 +43,89 @@ import type { HistoryFilterState } from "./AttendanceHistoryScreen/historyFilter
 
 type AttendanceHistoryScreenProps = {
   mode: AttendanceHistoryMode;
+  initialCourseId?: string;
+  initialCourseName?: string;
+  initialFrom?: string;
+  initialTo?: string;
 };
 
 type PickerType = "year" | "quarter" | null;
 
 const SHEET_HANDOFF_DELAY_MS = 140;
 
+function getInitialYear(value?: string) {
+  if (!value) return undefined;
+  const year = Number(value.slice(0, 4));
+  return Number.isFinite(year) ? year : undefined;
+}
+
+function getInitialQuarter(value?: string): CalendarQuarter | undefined {
+  if (!value) return undefined;
+  const month = Number(value.slice(5, 7));
+  if (!Number.isFinite(month) || month < 1 || month > 12) return undefined;
+  return (Math.floor((month - 1) / 3) + 1) as CalendarQuarter;
+}
+
+function ActiveCourseScopeBanner({
+  courseName,
+  onClear,
+}: {
+  courseName?: string;
+  onClear: () => void;
+}) {
+  return (
+    <View style={styles.courseScopeBanner}>
+      <View style={styles.courseScopeContent}>
+        <ThemedText type="caption" style={styles.courseScopeLabel}>
+          Đang lọc theo khóa học
+        </ThemedText>
+        <ThemedText
+          type="subtitle"
+          numberOfLines={1}
+          style={styles.courseScopeName}
+        >
+          {courseName || "Khóa học đã chọn"}
+        </ThemedText>
+      </View>
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel="Xem tất cả khóa học"
+        onPress={onClear}
+        style={({ pressed }) => [
+          styles.courseScopeClearButton,
+          pressed ? styles.pressed : null,
+        ]}
+      >
+        <ThemedText type="bodySmall" style={styles.courseScopeClearText}>
+          Xem tất cả
+        </ThemedText>
+        <AppIcon icon={<X />} size={13} color={Colors.light.primary} />
+      </Pressable>
+    </View>
+  );
+}
+
 export default function AttendanceHistoryScreen({
   mode,
+  initialCourseId,
+  initialCourseName,
+  initialFrom,
+  initialTo,
 }: AttendanceHistoryScreenProps) {
+  const [activeCourseId, setActiveCourseId] = useState<string | undefined>(
+    initialCourseId,
+  );
+  const [activeCourseName, setActiveCourseName] = useState<string | undefined>(
+    initialCourseName,
+  );
+  const initialYear = getInitialYear(initialFrom);
+  const initialQuarter = getInitialQuarter(initialFrom);
   const [selectedYear, setSelectedYear] = useState<number | undefined>(
-    getCurrentCalendarYear,
+    initialYear ?? getCurrentCalendarYear,
   );
   const [selectedQuarter, setSelectedQuarter] = useState<
     CalendarQuarter | undefined
-  >(getCurrentCalendarQuarter);
+  >(initialQuarter ?? getCurrentCalendarQuarter);
   const [picker, setPicker] = useState<PickerType>(null);
   const [quarterError, setQuarterError] = useState<string | null>(null);
   const [filters, setFilters] =
@@ -66,7 +134,12 @@ export default function AttendanceHistoryScreen({
     useState<HistoryFilterState>(emptyHistoryFilters);
   const [filterVisible, setFilterVisible] = useState(false);
   const [filterError, setFilterError] = useState<string | null>(null);
-  const [hasSearched, setHasSearched] = useState(false);
+  const initialDateRange =
+    initialFrom && initialTo ? { from: initialFrom, to: initialTo } : undefined;
+  const [routeDateRange, setRouteDateRange] = useState(initialDateRange);
+  const hasInitialServerFilter = Boolean(activeCourseId && initialDateRange);
+  const [hasSearched, setHasSearched] = useState(hasInitialServerFilter);
+  const historyActive = hasSearched || hasInitialServerFilter;
   const [scoreVisible, setScoreVisible] = useState(false);
   const handoffTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -75,7 +148,12 @@ export default function AttendanceHistoryScreen({
     () => getHistoryFilterGroups(records),
     [records],
   );
-  const appliedCount = filters.branchIds.length + filters.shifts.length;
+  const appliedCount =
+    filters.branchIds.length +
+    filters.shifts.length +
+    filters.weekdays.length +
+    filters.scheduleLevels.length +
+    filters.locations.length;
   const canSearch = Boolean(selectedYear && selectedQuarter);
   const searchEnabled = canSearch && !hasSearched;
 
@@ -88,8 +166,15 @@ export default function AttendanceHistoryScreen({
   } = useAttendanceHistoryQuery({
     mode,
     filters,
-    enabled: hasSearched,
+    courseId: activeCourseId,
+    dateRangeOverride: routeDateRange,
+    enabled: historyActive,
   });
+
+  const handleClearCourseScope = () => {
+    setActiveCourseId(undefined);
+    setActiveCourseName(undefined);
+  };
 
   const groupedRecords = useMemo(
     () => groupHistoryRecordsByDate(visibleRecords, mode),
@@ -109,8 +194,12 @@ export default function AttendanceHistoryScreen({
 
   const isStickyHeaderEnabled = strategy === "server-filter";
 
-  const selectedRange = hasSearched ? getHistoryFilterDateRange(filters) : null;
-  const title = mode === "student" ? "Điểm danh" : "Chấm công";
+  const selectedRange = historyActive
+    ? routeDateRange ?? getHistoryFilterDateRange(filters)
+    : null;
+  const title = mode === "student"
+    ? "Điểm danh"
+    : "Chấm công";
   const filterLabel =
     mode === "student" ? "Lọc lịch sử điểm danh" : "Lọc lịch sử chấm công";
 
@@ -189,6 +278,7 @@ export default function AttendanceHistoryScreen({
 
     setFilters(nextFilters);
     setDraftFilters(nextFilters);
+    setRouteDateRange(undefined);
     setHasSearched(true);
     setFilterError(null);
   };
@@ -200,7 +290,7 @@ export default function AttendanceHistoryScreen({
         scrollEnabled={!isStickyHeaderEnabled}
         rightActions={
           <>
-            {hasSearched ? (
+            {historyActive ? (
               <HeaderActionButton
                 icon={<Tuning />}
                 label={filterLabel}
@@ -214,7 +304,7 @@ export default function AttendanceHistoryScreen({
         }
         contentContainerStyle={styles.content}
         floatingContent={
-          hasSearched && mode === "student" ? (
+          historyActive && mode === "student" ? (
             <TrainingScoreFloatingButton
               onPress={() => setScoreVisible(true)}
             />
@@ -223,13 +313,19 @@ export default function AttendanceHistoryScreen({
       >
         {isStickyHeaderEnabled ? (
           <SectionList
-            sections={hasSearched && visibleRecords.length ? sections : []}
+            sections={historyActive && visibleRecords.length ? sections : []}
             keyExtractor={(item) => item.id}
             stickySectionHeadersEnabled
             showsVerticalScrollIndicator={false}
             contentContainerStyle={styles.sectionListContent}
             ListHeaderComponent={
               <View style={styles.formContainer}>
+                {activeCourseId ? (
+                  <ActiveCourseScopeBanner
+                    courseName={activeCourseName}
+                    onClear={handleClearCourseScope}
+                  />
+                ) : null}
                 <HistoryPeriodSearchForm
                   selectedYear={selectedYear}
                   selectedQuarter={selectedQuarter}
@@ -240,7 +336,7 @@ export default function AttendanceHistoryScreen({
                   onQuarterPress={handleQuarterPress}
                   onSearch={handleSearch}
                 />
-                {hasSearched && isLoading ? (
+                {historyActive && isLoading ? (
                   <View style={styles.centerContainer}>
                     <ActivityIndicator
                       size="large"
@@ -250,7 +346,7 @@ export default function AttendanceHistoryScreen({
                       Đang tải dữ liệu...
                     </ThemedText>
                   </View>
-                ) : hasSearched && isError ? (
+                ) : historyActive && isError ? (
                   <View style={styles.centerContainer}>
                     <ThemedText type="body" style={styles.emptyTitle}>
                       Không thể tải dữ liệu lịch sử
@@ -298,7 +394,7 @@ export default function AttendanceHistoryScreen({
               </View>
             )}
             ListEmptyComponent={
-              hasSearched && !isLoading && !isError ? (
+              historyActive && !isLoading && !isError ? (
                 <View style={styles.emptyState}>
                   <ThemedText type="body" style={styles.emptyTitle}>
                     Không có lịch sử phù hợp
@@ -312,6 +408,12 @@ export default function AttendanceHistoryScreen({
           />
         ) : (
           <>
+            {activeCourseId ? (
+              <ActiveCourseScopeBanner
+                courseName={activeCourseName}
+                onClear={handleClearCourseScope}
+              />
+            ) : null}
             <HistoryPeriodSearchForm
               selectedYear={selectedYear}
               selectedQuarter={selectedQuarter}
@@ -323,7 +425,7 @@ export default function AttendanceHistoryScreen({
               onSearch={handleSearch}
             />
 
-            {hasSearched ? (
+            {historyActive ? (
               isLoading ? (
                 <View style={styles.centerContainer}>
                   <ActivityIndicator
@@ -413,6 +515,7 @@ export default function AttendanceHistoryScreen({
           setSelectedYear(year);
           setSelectedQuarter(undefined);
           setQuarterError(null);
+          setRouteDateRange(undefined);
           setHasSearched(false);
           setFilters(emptyHistoryFilters);
           setDraftFilters(emptyHistoryFilters);
@@ -429,6 +532,7 @@ export default function AttendanceHistoryScreen({
         onPreviewSelect={(quarter) => {
           setSelectedQuarter(quarter);
           setQuarterError(null);
+          setRouteDateRange(undefined);
           setHasSearched(false);
           setFilters(emptyHistoryFilters);
           setDraftFilters(emptyHistoryFilters);
@@ -576,5 +680,48 @@ const styles = StyleSheet.create({
   retryText: {
     color: "#FFFFFF",
     fontWeight: "600",
+  },
+  courseScopeBanner: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    backgroundColor: Colors.light.surface,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderRadius: radii.md,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: Colors.light.divider,
+  },
+  courseScopeContent: {
+    flex: 1,
+    marginRight: 12,
+  },
+  courseScopeLabel: {
+    color: Colors.light.textSecondary,
+    marginBottom: 2,
+  },
+  courseScopeName: {
+    color: Colors.light.text,
+    fontSize: 15,
+    lineHeight: 20,
+    fontWeight: "600",
+  },
+  courseScopeClearButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    backgroundColor: "#FEE2E2",
+    borderRadius: radii.pill,
+  },
+  courseScopeClearText: {
+    color: Colors.light.primary,
+    fontSize: 13,
+    fontWeight: "600",
+  },
+  pressed: {
+    opacity: 0.7,
   },
 });

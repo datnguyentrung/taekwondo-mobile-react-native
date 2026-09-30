@@ -3,6 +3,11 @@ import type {
   SessionSimpleResponse,
 } from "@/features/class-session/api/class-session.dto";
 import type {
+  ScheduleLevel,
+  ScheduleLocation,
+  Weekday,
+} from "@/features/class-schedule/constants/class-schedule.constants";
+import type {
   CourseStaffAssignmentResponse,
   CourseStaffAssignmentSimpleResponse,
 } from "@/features/course-staff-assignment/api/course-staff-assignment.dto";
@@ -82,6 +87,10 @@ export interface AttendanceFilterParams {
   courseId?: string;
   studentPersonId?: string;
   staffPersonId?: string;
+  branchId?: number;
+  weekday?: Weekday;
+  scheduleLevel?: ScheduleLevel;
+  location?: ScheduleLocation;
   page?: number;
   size?: number;
   sort?: string | string[];

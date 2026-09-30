@@ -1,0 +1,381 @@
+import { useQuery } from "@tanstack/react-query";
+import { useRouter } from "expo-router";
+import { ActivityIndicator, Pressable, StyleSheet, View } from "react-native";
+
+import StackScreenLayout from "@/routes/navigation/layouts/StackScreenLayout";
+import { ThemedText } from "@/shared/ui/ThemedText";
+import { Colors, hexToRgba, radii } from "@/theme";
+
+import type { CourseResponse } from "@/features/course/api/course.dto";
+import { CourseStatusLabel } from "@/features/course/constants/course.constants";
+import { CourseDetailContent } from "@/features/course/screens/CourseDetailContent";
+import {
+  ScheduleLevelLabel,
+  WeekdayLabel,
+  type ScheduleLevel,
+  type Weekday,
+} from "@/features/class-schedule/constants/class-schedule.constants";
+import { PackageRegisterButton } from "@/features/course/screens/PackageDetailScreen/PackageRegisterButton";
+import {
+  getCalendarQuarterDateRange,
+  type CalendarQuarter,
+} from "@/features/attendance-history/domain/historyDateRange";
+import {
+  SurfaceCard,
+} from "@/features/student-commerce/components/StudentCommercePrimitives";
+import type { CourseCatalogTab, CourseView } from "@/features/student-commerce/types";
+import { asHref } from "@/features/student-commerce/utils/studentCommerceUtils";
+
+import { classSessionApi } from "../api/classSessionApi";
+import type { SessionSimpleResponse } from "../api/class-session.dto";
+
+type LearningProgress = {
+  completed: number;
+  total: number;
+  percent: number;
+};
+
+function formatTime(time?: string) {
+  if (!time) return "";
+  const [hour, minute] = time.split(":");
+  return hour && minute ? `${hour}:${minute}` : time;
+}
+
+function getCatalogStatus(course: CourseResponse): CourseCatalogTab {
+  if (course.status === "OPEN") return "registration";
+  if (course.status === "ACTIVE") return "active";
+  return "ended";
+}
+
+function mapCourseToDetailView(course: CourseResponse): CourseView {
+  const schedule = course.classSchedule;
+  const weekdayLabel = schedule?.weekday
+    ? WeekdayLabel[schedule.weekday as Weekday] ?? schedule.weekday
+    : "";
+  const levelLabel = schedule?.level
+    ? ScheduleLevelLabel[schedule.level as ScheduleLevel] ?? schedule.level
+    : "Cơ bản";
+  const timeLabel =
+    schedule?.startTime && schedule?.endTime
+      ? `${formatTime(schedule.startTime)} - ${formatTime(schedule.endTime)}`
+      : "";
+  const scheduleLabel =
+    [weekdayLabel, levelLabel, timeLabel].filter(Boolean).join(" · ") ||
+    "Lịch học linh hoạt";
+  const manager = course.manager
+    ? {
+        id: course.manager.personId,
+        fullName: course.manager.fullName,
+        roleLabel: course.manager.position?.name ?? "Quản lý khóa học",
+      }
+    : undefined;
+
+  return {
+    courseId: course.courseId,
+    courseName: course.name,
+    branchName: schedule?.branch?.name ?? "Văn Quán",
+    levelLabel,
+    scheduleLabel,
+    statusLabel: CourseStatusLabel[course.status],
+    catalogStatus: getCatalogStatus(course),
+    capacity: course.capacity,
+    enrolledStudentCount: 0,
+    manager,
+    coachName: course.primaryCoach?.fullName ?? "Huấn luyện viên",
+    assistantCount:
+      (course.assistantCoaches?.length ?? 0) +
+      (course.teachingAssistants?.length ?? 0),
+    packages: [],
+  };
+}
+
+function calculateProgress(sessions: SessionSimpleResponse[]): LearningProgress {
+  const countedSessions = sessions.filter(
+    (item) => item.status !== "CANCELLED" && item.status !== "TERMINATED",
+  );
+  const total = countedSessions.length;
+  const completed = countedSessions.filter(
+    (item) => item.status === "COMPLETED",
+  ).length;
+  const percent = total ? Math.min(Math.round((completed / total) * 100), 100) : 0;
+
+  return { completed, total, percent };
+}
+
+function getQuarterFromDate(date: string): CalendarQuarter {
+  const month = Number(date.slice(5, 7));
+  if (!Number.isFinite(month) || month < 1 || month > 12) return 1;
+  return (Math.floor((month - 1) / 3) + 1) as CalendarQuarter;
+}
+
+function getAttendanceHistoryParams(
+  courseId: string,
+  sessionDate?: string,
+  courseName?: string,
+) {
+  const date = sessionDate || new Date().toISOString().slice(0, 10);
+  const year = Number(date.slice(0, 4));
+  const safeYear = Number.isFinite(year) ? year : new Date().getFullYear();
+  const range = getCalendarQuarterDateRange(safeYear, getQuarterFromDate(date));
+  const query = new URLSearchParams({
+    courseId,
+    ...(courseName ? { courseName } : {}),
+    from: range.from,
+    to: range.to,
+  });
+
+  return `/history/student?${query.toString()}`;
+}
+
+async function fetchCourseProgress(courseId: string): Promise<LearningProgress> {
+  const sessions: SessionSimpleResponse[] = [];
+  let page = 0;
+  const size = 100;
+
+  while (true) {
+    const result = await classSessionApi.list({ courseId, page, size });
+    sessions.push(...(result.content ?? []));
+
+    if (result.last || page + 1 >= result.totalPages) {
+      break;
+    }
+    page += 1;
+  }
+
+  return calculateProgress(sessions);
+}
+
+function LearningProgressCard({ progress }: { progress: LearningProgress }) {
+  return (
+    <SurfaceCard>
+      <View style={styles.progressHeader}>
+        <ThemedText type="subtitle" style={styles.blackText}>
+          Tiến trình học
+        </ThemedText>
+        <ThemedText type="bodySmall" style={styles.progressPercent}>
+          {progress.percent}%
+        </ThemedText>
+      </View>
+      <ThemedText type="bodySmall" style={styles.secondaryText}>
+        Đã hoàn thành {progress.completed}/{progress.total} buổi
+      </ThemedText>
+      <View
+        accessibilityRole="progressbar"
+        accessibilityValue={{
+          min: 0,
+          max: 100,
+          now: progress.percent,
+          text: `Đã hoàn thành ${progress.completed}/${progress.total} buổi`,
+        }}
+        style={styles.progressTrack}
+      >
+        <View
+          style={[styles.progressFill, { width: `${progress.percent}%` }]}
+        />
+      </View>
+    </SurfaceCard>
+  );
+}
+
+function StateCard({
+  title,
+  description,
+  onRetry,
+}: {
+  title: string;
+  description: string;
+  onRetry?: () => void;
+}) {
+  return (
+    <View style={styles.stateCard}>
+      <ThemedText type="body" style={styles.stateTitle}>
+        {title}
+      </ThemedText>
+      <ThemedText type="bodySmall" style={styles.stateDescription}>
+        {description}
+      </ThemedText>
+      {onRetry ? (
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="Thử lại"
+          onPress={onRetry}
+          style={({ pressed }) => [
+            styles.retryButton,
+            pressed ? styles.pressed : null,
+          ]}
+        >
+          <ThemedText type="bodySmall" style={styles.retryText}>
+            Thử lại
+          </ThemedText>
+        </Pressable>
+      ) : null}
+    </View>
+  );
+}
+
+export function ClassSessionDetailScreen({
+  classSessionId,
+}: {
+  classSessionId?: string;
+}) {
+  const router = useRouter();
+  const sessionQuery = useQuery({
+    queryKey: ["class-session-detail", classSessionId],
+    queryFn: () => classSessionApi.get(classSessionId as string),
+    enabled: Boolean(classSessionId),
+  });
+  const courseId = sessionQuery.data?.course.courseId;
+  const progressQuery = useQuery({
+    queryKey: ["class-session-course-progress", courseId],
+    queryFn: () => fetchCourseProgress(courseId as string),
+    enabled: Boolean(courseId),
+  });
+
+  const course = sessionQuery.data?.course
+    ? mapCourseToDetailView(sessionQuery.data.course)
+    : undefined;
+  const progress = progressQuery.data ?? { completed: 0, total: 0, percent: 0 };
+
+  return (
+    <StackScreenLayout
+      title="Chi tiết buổi tập"
+      contentContainerStyle={styles.content}
+      floatingContent={
+        course ? (
+          <PackageRegisterButton
+            title="Điểm danh"
+            accessibilityLabel="Điểm danh"
+            onPress={() =>
+              router.push(
+                asHref(
+                  getAttendanceHistoryParams(
+                    course.courseId,
+                    sessionQuery.data?.sessionDate,
+                    course.courseName,
+                  ),
+                ),
+              )
+            }
+          />
+        ) : undefined
+      }
+    >
+      {!classSessionId ? (
+        <StateCard
+          title="Không tìm thấy buổi tập"
+          description="Thiếu mã buổi tập để tải chi tiết."
+        />
+      ) : sessionQuery.isLoading ? (
+        <View style={styles.loadingState}>
+          <ActivityIndicator size="large" color={Colors.light.primary} />
+          <ThemedText type="bodySmall" style={styles.secondaryText}>
+            Đang tải chi tiết buổi tập...
+          </ThemedText>
+        </View>
+      ) : sessionQuery.isError ? (
+        <StateCard
+          title="Không thể tải chi tiết buổi tập"
+          description="Đã xảy ra lỗi trong quá trình tải dữ liệu. Vui lòng thử lại."
+          onRetry={() => sessionQuery.refetch()}
+        />
+      ) : !course ? (
+        <StateCard
+          title="Không tìm thấy buổi tập"
+          description="Buổi tập này không còn tồn tại hoặc bạn không có quyền truy cập."
+        />
+      ) : (
+        <CourseDetailContent
+          course={course}
+          topContent={<LearningProgressCard progress={progress} />}
+          onOpenAssistants={() =>
+            router.push(asHref(`/courses/${course.courseId}/assistants`))
+          }
+          onOpenStudents={() =>
+            router.push(asHref(`/courses/${course.courseId}/students`))
+          }
+          onOpenPackage={(packageId) =>
+            router.push(
+              asHref(`/courses/${course.courseId}/packages/${packageId}`),
+            )
+          }
+        />
+      )}
+    </StackScreenLayout>
+  );
+}
+
+const styles = StyleSheet.create({
+  content: {
+    gap: 16,
+    paddingTop: 12,
+    paddingHorizontal: 16,
+    paddingBottom: 140,
+  },
+  blackText: {
+    color: Colors.light.text,
+  },
+  secondaryText: {
+    color: Colors.light.textSecondary,
+  },
+  progressHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: 12,
+  },
+  progressPercent: {
+    color: Colors.light.primary,
+    fontWeight: "700",
+  },
+  progressTrack: {
+    height: 10,
+    overflow: "hidden",
+    borderRadius: radii.pill,
+    backgroundColor: hexToRgba(Colors.light.primary, 0.12),
+    marginTop: 12,
+  },
+  progressFill: {
+    height: "100%",
+    borderRadius: radii.pill,
+    backgroundColor: Colors.light.primary,
+  },
+  loadingState: {
+    minHeight: 240,
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 12,
+  },
+  stateCard: {
+    minHeight: 220,
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 10,
+    padding: 20,
+    borderRadius: radii.md,
+    backgroundColor: Colors.light.surface,
+  },
+  stateTitle: {
+    color: Colors.light.text,
+    textAlign: "center",
+  },
+  stateDescription: {
+    color: Colors.light.textSecondary,
+    textAlign: "center",
+  },
+  retryButton: {
+    minHeight: 40,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: 18,
+    borderRadius: radii.md,
+    backgroundColor: Colors.light.primary,
+    marginTop: 6,
+  },
+  retryText: {
+    color: Colors.light.surface,
+    fontWeight: "600",
+  },
+  pressed: {
+    opacity: 0.75,
+  },
+});

@@ -59,6 +59,7 @@ export interface ClassSessionCalendarParams {
 }
 
 export interface ClassSessionFilterParams {
+  courseId?: string;
   page?: number;
   size?: number;
   sort?: string | string[];

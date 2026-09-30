@@ -51,21 +51,34 @@ describe('historyFilter.logic', () => {
     const filters = {
       branchIds: [2],
       shifts: ['Ca 1'],
+      weekdays: ['MONDAY' as const],
+      scheduleLevels: ['BASIC' as const],
+      locations: ['INDOOR' as const],
       year: 2026,
       quarter: 3 as const,
     };
 
-    expect(countSelectedHistoryFilters(filters)).toBe(4);
+    expect(countSelectedHistoryFilters(filters)).toBe(7);
     expect(canApplyHistoryFilters(filters)).toBe(true);
-    expect(canApplyHistoryFilters({ branchIds: [], shifts: [], quarter: 3 })).toBe(
-      false,
-    );
+    expect(
+      canApplyHistoryFilters({
+        branchIds: [],
+        shifts: [],
+        weekdays: [],
+        scheduleLevels: [],
+        locations: [],
+        quarter: 3,
+      }),
+    ).toBe(false);
   });
 
-  it('filters records by branch, shift, and quarter date range', () => {
+  it('filters records by branch, shift, weekday, and quarter date range', () => {
     const filtered = filterHistoryRecords(records, {
       branchIds: [2],
       shifts: ['Ca 1'],
+      weekdays: ['SUNDAY'],
+      scheduleLevels: [],
+      locations: [],
       year: 2026,
       quarter: 3,
     });
@@ -76,11 +89,18 @@ describe('historyFilter.logic', () => {
   it('builds unique filter groups from records', () => {
     const groups = getHistoryFilterGroups(records);
 
+    expect(groups.multi.map((g) => g.key)).toEqual([
+      'branchIds',
+      'weekdays',
+      'scheduleLevels',
+      'locations',
+      'shifts',
+    ]);
     expect(groups.multi[0].options).toEqual([
       { value: 2, label: 'Cơ sở 2' },
       { value: 3, label: 'Cơ sở 3' },
     ]);
-    expect(groups.multi[1].options).toEqual([
+    expect(groups.multi[4].options).toEqual([
       { value: 'Ca 1', label: 'Ca 1' },
       { value: 'Ca 2', label: 'Ca 2' },
     ]);
