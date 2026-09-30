@@ -1,18 +1,12 @@
-import { Modal, Pressable, StyleSheet, TouchableWithoutFeedback, View } from "react-native";
+import React, { useMemo } from "react";
 import { Check, Clock, DocText, Star, X } from "reicon-react-native";
 
-import { AppIcon } from "@/shared/ui/AppIcon";
-import { ThemedText } from "@/shared/ui/ThemedText";
-import { Colors, activeEffect, effects, radii } from "@/theme";
+import { PickerPopover, type PickerPopoverOption } from "@/shared/ui/PickerPopover";
 import type { AppIconElement } from "@/theme/icons";
 
 import type {
   AttendanceStatus,
   EvaluationStatus,
-} from "../constants/session-attendance.constants";
-import {
-  AttendanceStatusLabel,
-  EvaluationStatusLabel,
 } from "../constants/session-attendance.constants";
 
 export const ATTENDANCE_CONFIG: Record<
@@ -113,7 +107,7 @@ export const EVALUATION_CONFIG: Record<
   },
 };
 
-type StatusPickerPopoverProps =
+export type StatusPickerPopoverProps =
   | {
       type: "attendance";
       visible: boolean;
@@ -134,189 +128,53 @@ type StatusPickerPopoverProps =
 export function StatusPickerPopover(props: StatusPickerPopoverProps) {
   const { visible, onClose, studentName, type } = props;
 
+  const options: PickerPopoverOption<AttendanceStatus | EvaluationStatus>[] = useMemo(() => {
+    if (type === "attendance") {
+      const keys: AttendanceStatus[] = ["PRESENT", "LATE", "EXCUSED", "MAKEUP", "ABSENT"];
+      return keys.map((key) => {
+        const cfg = ATTENDANCE_CONFIG[key];
+        return {
+          value: key,
+          label: cfg.label,
+          icon: cfg.icon,
+          bg: cfg.bg,
+          text: cfg.text,
+          border: cfg.border,
+        };
+      });
+    }
+
+    const keys: EvaluationStatus[] = ["GOOD", "AVERAGE", "WEAK", "PENDING"];
+    return keys.map((key) => {
+      const cfg = EVALUATION_CONFIG[key];
+      return {
+        value: key,
+        label: cfg.label,
+        icon: cfg.icon,
+        bg: cfg.bg,
+        text: cfg.text,
+        border: cfg.border,
+      };
+    });
+  }, [type]);
+
   if (!visible) return null;
 
   return (
-    <Modal
-      transparent
+    <PickerPopover
       visible={visible}
-      animationType="fade"
-      onRequestClose={onClose}
-    >
-      <TouchableWithoutFeedback onPress={onClose}>
-        <View style={styles.backdrop}>
-          <TouchableWithoutFeedback>
-            <View style={styles.popoverCard}>
-              <View style={styles.header}>
-                <ThemedText type="caption" style={styles.headerSubtitle}>
-                  {type === "attendance"
-                    ? "CẬP NHẬT ĐIỂM DANH"
-                    : "CẬP NHẬT ĐÁNH GIÁ"}
-                </ThemedText>
-                <ThemedText
-                  type="subtitle"
-                  numberOfLines={1}
-                  style={styles.headerTitle}
-                >
-                  {studentName}
-                </ThemedText>
-              </View>
-
-              <View style={styles.optionsList}>
-                {type === "attendance" ? (
-                  (
-                    [
-                      "PRESENT",
-                      "LATE",
-                      "EXCUSED",
-                      "MAKEUP",
-                      "ABSENT",
-                    ] as AttendanceStatus[]
-                  ).map((key) => {
-                    const cfg = ATTENDANCE_CONFIG[key];
-                    const isSelected = props.currentValue === key;
-                    return (
-                      <Pressable
-                        key={key}
-                        accessibilityRole="button"
-                        accessibilityLabel={AttendanceStatusLabel[key]}
-                        onPress={() => {
-                          props.onSelect(key);
-                          onClose();
-                        }}
-                        style={({ pressed }) => [
-                          styles.optionItem,
-                          { backgroundColor: cfg.bg, borderColor: cfg.border },
-                          isSelected ? styles.optionItemSelected : null,
-                          activeEffect(pressed, "pressedScale"),
-                        ]}
-                      >
-                        <View style={styles.optionLeft}>
-                          <AppIcon icon={cfg.icon} size={16} color={cfg.text} />
-                          <ThemedText
-                            type="body"
-                            style={[styles.optionText, { color: cfg.text }]}
-                          >
-                            {cfg.label}
-                          </ThemedText>
-                        </View>
-                        {isSelected ? (
-                          <View
-                            style={[styles.checkDot, { backgroundColor: cfg.text }]}
-                          />
-                        ) : null}
-                      </Pressable>
-                    );
-                  })
-                ) : (
-                  (
-                    ["GOOD", "AVERAGE", "WEAK", "PENDING"] as EvaluationStatus[]
-                  ).map((key) => {
-                    const cfg = EVALUATION_CONFIG[key];
-                    const isSelected = props.currentValue === key;
-                    return (
-                      <Pressable
-                        key={key}
-                        accessibilityRole="button"
-                        accessibilityLabel={EvaluationStatusLabel[key]}
-                        onPress={() => {
-                          props.onSelect(key);
-                          onClose();
-                        }}
-                        style={({ pressed }) => [
-                          styles.optionItem,
-                          { backgroundColor: cfg.bg, borderColor: cfg.border },
-                          isSelected ? styles.optionItemSelected : null,
-                          activeEffect(pressed, "pressedScale"),
-                        ]}
-                      >
-                        <View style={styles.optionLeft}>
-                          <AppIcon icon={cfg.icon} size={16} color={cfg.text} />
-                          <ThemedText
-                            type="body"
-                            style={[styles.optionText, { color: cfg.text }]}
-                          >
-                            {cfg.label}
-                          </ThemedText>
-                        </View>
-                        {isSelected ? (
-                          <View
-                            style={[styles.checkDot, { backgroundColor: cfg.text }]}
-                          />
-                        ) : null}
-                      </Pressable>
-                    );
-                  })
-                )}
-              </View>
-            </View>
-          </TouchableWithoutFeedback>
-        </View>
-      </TouchableWithoutFeedback>
-    </Modal>
+      title={studentName}
+      subtitle={type === "attendance" ? "Cập nhật điểm danh" : "Cập nhật đánh giá"}
+      options={options}
+      selectedValue={props.currentValue}
+      onSelect={(val) => {
+        if (type === "attendance") {
+          (props.onSelect as (val: AttendanceStatus) => void)(val as AttendanceStatus);
+        } else {
+          (props.onSelect as (val: EvaluationStatus) => void)(val as EvaluationStatus);
+        }
+      }}
+      onClose={onClose}
+    />
   );
 }
-
-const styles = StyleSheet.create({
-  backdrop: {
-    flex: 1,
-    backgroundColor: "rgba(0, 0, 0, 0.45)",
-    justifyContent: "center",
-    alignItems: "center",
-    paddingHorizontal: 24,
-  },
-  popoverCard: {
-    width: "100%",
-    maxWidth: 340,
-    backgroundColor: Colors.light.surface,
-    borderRadius: radii.xl,
-    padding: 20,
-    ...effects.card,
-  },
-  header: {
-    marginBottom: 16,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: Colors.light.divider,
-    paddingBottom: 10,
-  },
-  headerSubtitle: {
-    color: Colors.light.textSecondary,
-    fontSize: 11,
-    fontWeight: "700",
-    letterSpacing: 0.5,
-    marginBottom: 4,
-  },
-  headerTitle: {
-    color: Colors.light.text,
-    fontSize: 17,
-  },
-  optionsList: {
-    gap: 10,
-  },
-  optionItem: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderRadius: radii.md,
-    borderWidth: 1,
-  },
-  optionItemSelected: {
-    borderWidth: 2,
-  },
-  optionLeft: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 10,
-  },
-  optionText: {
-    fontWeight: "600",
-    fontSize: 15,
-  },
-  checkDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-  },
-});

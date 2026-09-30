@@ -105,12 +105,30 @@ export default function SessionScheduleScreen() {
     return groups;
   }, [calendarSessions]);
 
-  const scrollToDate = (dateStr: string) => {
-    const yOffset = datePositions.current[dateStr];
+  const initialScrolledRef = useRef(false);
+
+  const findTargetScrollY = (targetDate: string): number | undefined => {
+    if (datePositions.current[targetDate] !== undefined) {
+      return datePositions.current[targetDate];
+    }
+    // Fallback to the closest date >= targetDate, or the latest past date
+    const recordedDates = Object.keys(datePositions.current).sort();
+    if (recordedDates.length === 0) return undefined;
+
+    const upcomingDate = recordedDates.find((d) => d >= targetDate);
+    if (upcomingDate && datePositions.current[upcomingDate] !== undefined) {
+      return datePositions.current[upcomingDate];
+    }
+    const lastDate = recordedDates[recordedDates.length - 1];
+    return datePositions.current[lastDate];
+  };
+
+  const scrollToDate = (dateStr: string, animated = true) => {
+    const yOffset = findTargetScrollY(dateStr);
     if (yOffset !== undefined && scrollViewRef.current) {
       scrollViewRef.current.scrollTo({
         y: Math.max(0, yOffset - 10),
-        animated: true,
+        animated,
       });
     }
   };
@@ -121,11 +139,15 @@ export default function SessionScheduleScreen() {
   };
 
   useEffect(() => {
-    // When selected date changes or grouped sessions finish rendering, scroll to it
+    initialScrolledRef.current = false;
+    datePositions.current = {};
+  }, [queryRange]);
+
+  useEffect(() => {
     if (selectedDate && datePositions.current[selectedDate] !== undefined) {
       scrollToDate(selectedDate);
     }
-  }, [selectedDate, groupedSessions]);
+  }, [selectedDate]);
 
   return (
     <>
@@ -154,6 +176,12 @@ export default function SessionScheduleScreen() {
             { paddingBottom: BOTTOM_TAB_SPACE + Math.max(insets.bottom, 10) },
           ]}
           showsVerticalScrollIndicator={false}
+          onContentSizeChange={() => {
+            if (!initialScrolledRef.current && Object.keys(datePositions.current).length > 0) {
+              scrollToDate(selectedDate, true);
+              initialScrolledRef.current = true;
+            }
+          }}
         >
           {isLoading ? (
             <View style={styles.centerContainer}>
@@ -183,6 +211,11 @@ export default function SessionScheduleScreen() {
                   onLayout={(event) => {
                     datePositions.current[group.dateString] =
                       event.nativeEvent.layout.y;
+                    if (!initialScrolledRef.current) {
+                      requestAnimationFrame(() => {
+                        scrollToDate(selectedDate, true);
+                      });
+                    }
                   }}
                 >
                   <ThemedText style={styles.dayHeader}>

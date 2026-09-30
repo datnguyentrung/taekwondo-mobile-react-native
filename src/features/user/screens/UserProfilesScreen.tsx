@@ -3,11 +3,10 @@ import { useState } from "react";
 import { View } from "react-native";
 
 import type { RelationshipType } from "@/features/authentication/domain/auth.types";
-import type { PersonBriefResponse, PersonSimpleResponse } from "@/features/person";
+import type { PersonSimpleResponse } from "@/features/person";
 import { userPersonApi } from "@/features/person";
 import { relationshipLabel } from "@/features/person/domain/personViewModel";
 import { usePeople } from "@/features/person/queries/personQueries";
-import { userKeys, useUser } from "../queries/userQueries";
 import { useScreenRefresh } from "@/infrastructure/query/useScreenRefresh";
 import StackScreenLayout from "@/routes/navigation/layouts/StackScreenLayout";
 import {
@@ -23,13 +22,15 @@ import {
   adminStyles,
 } from "@/shared/ui/admin/AdministrationPrimitives";
 import { useToast } from "@/shared/ui/Toast";
+import { LinkedPersonDetailSheet } from "../components/LinkedPersonDetailSheet";
+import { userKeys, useUser } from "../queries/userQueries";
 
 import {
   Avatar,
   StatusChip,
-  useUserId,
   userAdminStyles,
   userRelationships,
+  useUserId,
 } from "./userAdministrationShared";
 
 export function UserProfilesScreen() {
@@ -38,7 +39,8 @@ export function UserProfilesScreen() {
   const people = usePeople();
   const queryClient = useQueryClient();
   const toast = useToast();
-  const linked: PersonBriefResponse[] = user.data?.persons ?? [];
+
+  const linked: PersonSimpleResponse[] = user.data?.persons ?? [];
   const { refreshing, onRefresh } = useScreenRefresh([user, people]);
   const [personId, setPersonId] = useState<string>();
   const [relationship, setRelationship] =
@@ -46,10 +48,16 @@ export function UserProfilesScreen() {
   const [personSheet, setPersonSheet] = useState(false);
   const [relationshipSheet, setRelationshipSheet] = useState(false);
   const [confirming, setConfirming] = useState(false);
+
+  // Selected person for detail sheet
+  const [selectedPerson, setSelectedPerson] =
+    useState<PersonSimpleResponse | null>(null);
+
   const available = (people.data?.content ?? []).filter(
-    (person: PersonSimpleResponse) => !linked.some((item) => item.personId === person.personId),
+    (person: PersonSimpleResponse) =>
+      !linked.some((item) => item.personId === person.personId),
   );
-  const selectedPerson = available.find(
+  const newlySelectedPerson = available.find(
     (person) => person.personId === personId,
   );
 
@@ -64,7 +72,9 @@ export function UserProfilesScreen() {
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: userKeys.lists() });
       if (userId) {
-        await queryClient.invalidateQueries({ queryKey: userKeys.detail(userId) });
+        await queryClient.invalidateQueries({
+          queryKey: userKeys.detail(userId),
+        });
       }
       toast.show({ message: "Đã liên kết hồ sơ", variant: "success" });
       setConfirming(false);
@@ -91,13 +101,23 @@ export function UserProfilesScreen() {
           {linked.map((person) => (
             <AdminListRow
               key={person.personId}
-              leading={<Avatar name={person.fullName} />}
+              leading={
+                <Avatar
+                  name={person.fullName}
+                  imageUrl={person.faceImagePath}
+                />
+              }
               title={person.fullName}
-              subtitle={person.personCode}
+              subtitle={person.position?.name}
+              onPress={() => setSelectedPerson(person)}
               meta={
                 person.status ? (
                   <AdminChip
-                    label={person.status === "ACTIVE" ? "Hoạt động" : "Ngừng hoạt động"}
+                    label={
+                      person.status === "ACTIVE"
+                        ? "Hoạt động"
+                        : "Ngừng hoạt động"
+                    }
                     tone={person.status === "ACTIVE" ? "success" : "neutral"}
                   />
                 ) : (
@@ -111,7 +131,7 @@ export function UserProfilesScreen() {
       <AdminSectionHeader title="Thêm liên kết" />
       <AdminPickerField
         label="Hồ sơ"
-        valueLabel={selectedPerson?.fullName}
+        valueLabel={newlySelectedPerson?.fullName}
         placeholder="Chọn hồ sơ chưa liên kết"
         onPress={() => setPersonSheet(true)}
       />
@@ -152,11 +172,18 @@ export function UserProfilesScreen() {
       <AdminConfirmDialog
         confirming={confirming}
         title="Tạo liên kết hồ sơ?"
-        message={`${selectedPerson?.fullName ?? "Hồ sơ"} sẽ được liên kết với tài khoản theo quan hệ ${relationshipLabel(relationship).toLocaleLowerCase("vi-VN")}.`}
+        message={`${newlySelectedPerson?.fullName ?? "Hồ sơ"} sẽ được liên kết với tài khoản theo quan hệ ${relationshipLabel(relationship).toLocaleLowerCase("vi-VN")}.`}
         confirmLabel="Tạo mới"
         loading={create.isPending}
         onCancel={() => setConfirming(false)}
         onConfirm={() => create.mutate()}
+      />
+
+      {/* Chi tiết hồ sơ liên kết & Popover đổi chức vụ */}
+      <LinkedPersonDetailSheet
+        person={selectedPerson}
+        userId={userId}
+        onClose={() => setSelectedPerson(null)}
       />
     </StackScreenLayout>
   );

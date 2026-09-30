@@ -1,5 +1,5 @@
-import type { PositionSimpleResponse } from '@/features/position/api/position.dto';
-import type { Belt, PersonStatus } from '../constants/person.constants';
+import type { PositionSimpleResponse } from "@/features/position/api/position.dto";
+import type { Belt, PersonStatus } from "../constants/person.constants";
 
 export interface PersonResponse {
   personId: string;
@@ -27,6 +27,7 @@ export interface PersonSimpleResponse {
   currentBelt: Belt;
   status: PersonStatus;
   faceImagePath: string | null;
+  position: PositionSimpleResponse | null;
 }
 
 export interface PersonBriefResponse {

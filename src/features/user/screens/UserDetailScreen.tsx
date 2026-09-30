@@ -3,7 +3,7 @@ import { useRouter, type Href } from "expo-router";
 import { useState } from "react";
 import { View } from "react-native";
 
-import type { PersonBriefResponse } from "@/features/person";
+import type { PersonSimpleResponse } from "@/features/person";
 import { useScreenRefresh } from "@/infrastructure/query/useScreenRefresh";
 import StackScreenLayout from "@/routes/navigation/layouts/StackScreenLayout";
 import {
@@ -21,6 +21,7 @@ import { ThemedText } from "@/shared/ui/ThemedText";
 import { useToast } from "@/shared/ui/Toast";
 import { formatDateDMY, formatDateTime } from "@/shared/utils/dateTime";
 import { userApi } from "../api/userApi";
+import { LinkedPersonDetailSheet } from "../components/LinkedPersonDetailSheet";
 import { userKeys, useUser } from "../queries/userQueries";
 
 import {
@@ -40,10 +41,13 @@ export function UserDetailScreen() {
   const toast = useToast();
   const [confirming, setConfirming] = useState(false);
 
+  const [selectedPerson, setSelectedPerson] =
+    useState<PersonSimpleResponse | null>(null);
+
   const { refreshing, onRefresh } = useScreenRefresh([user]);
 
   const primaryPerson = getPrimaryPerson(user.data);
-  const linkedPeople: PersonBriefResponse[] = user.data?.persons ?? [];
+  const linkedPeople: PersonSimpleResponse[] = user.data?.persons ?? [];
   const assignedRoles = user.data?.roles ?? [];
 
   const remove = useMutation({
@@ -116,12 +120,18 @@ export function UserDetailScreen() {
             <AdminEmptyState message="Chưa liên kết hồ sơ" />
           ) : (
             <AdminCard style={userAdminStyles.zeroPadding}>
-              {linkedPeople.map((person: PersonBriefResponse) => (
+              {linkedPeople.map((person: PersonSimpleResponse) => (
                 <AdminListRow
                   key={person.personId}
-                  leading={<Avatar name={person.fullName} />}
+                  leading={
+                    <Avatar
+                      name={person.fullName}
+                      imageUrl={person.faceImagePath}
+                    />
+                  }
                   title={person.fullName}
-                  subtitle={person.personCode}
+                  subtitle={person.position?.name}
+                  onPress={() => setSelectedPerson(person)}
                   meta={
                     <AdminChip
                       label={
@@ -184,6 +194,13 @@ export function UserDetailScreen() {
         loading={remove.isPending}
         onCancel={() => setConfirming(false)}
         onConfirm={() => remove.mutate()}
+      />
+
+      {/* Chi tiết hồ sơ liên kết & Popover đổi chức vụ */}
+      <LinkedPersonDetailSheet
+        person={selectedPerson}
+        userId={userId}
+        onClose={() => setSelectedPerson(null)}
       />
     </StackScreenLayout>
   );

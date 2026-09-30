@@ -1,5 +1,5 @@
 import { StyleSheet, View } from "react-native";
-import { Calendar, Clock, Home, Star, User, Users2 } from "reicon-react-native";
+import { Clock, Home, Star, Users2 } from "reicon-react-native";
 
 import { AppIcon } from "@/shared/ui/AppIcon";
 import { ThemedText } from "@/shared/ui/ThemedText";
@@ -90,30 +90,13 @@ export function ClassSessionOverviewCard({
         </View>
       </View>
 
-      {/* Coach Info */}
-      <View style={styles.coachRow}>
-        <View style={styles.coachAvatar}>
-          <AppIcon icon={<User />} size={16} color={Colors.light.primary} />
-        </View>
-        <ThemedText type="body" style={styles.coachName}>
-          {coachName}{" "}
-          <ThemedText type="bodySmall" style={styles.coachBelt}>
-            • {coachBelt}
-          </ThemedText>
-        </ThemedText>
-      </View>
-
       <View style={styles.divider} />
 
       {/* Progress 1: Điểm danh */}
       <View style={styles.progressSection}>
         <View style={styles.progressHeader}>
           <View style={styles.progressTitleLeft}>
-            <AppIcon
-              icon={<Users2 />}
-              size={18}
-              color={Colors.light.primary}
-            />
+            <AppIcon icon={<Users2 />} size={18} color={Colors.light.primary} />
             <ThemedText type="body" style={styles.progressTitle}>
               Điểm danh:{" "}
               <ThemedText
@@ -143,22 +126,6 @@ export function ClassSessionOverviewCard({
               },
             ]}
           />
-        </View>
-
-        <View style={styles.progressFootnote}>
-          <ThemedText type="bodySmall" style={styles.footnoteText}>
-            Đã có mặt:{" "}
-            <ThemedText type="subtitle" style={styles.footnoteHighlight}>
-              {stats.presentCount}
-            </ThemedText>{" "}
-            võ sinh
-          </ThemedText>
-          <ThemedText type="bodySmall" style={styles.footnoteText}>
-            Vắng:{" "}
-            <ThemedText type="subtitle" style={styles.footnoteHighlight}>
-              {stats.absentCount}
-            </ThemedText>
-          </ThemedText>
         </View>
       </View>
 
@@ -193,18 +160,6 @@ export function ClassSessionOverviewCard({
               },
             ]}
           />
-        </View>
-
-        <View style={styles.progressFootnote}>
-          <ThemedText type="bodySmall" style={styles.footnoteText}>
-            Đã chấm đòn thế & thể lực
-          </ThemedText>
-          <ThemedText type="bodySmall" style={styles.footnoteText}>
-            Còn lại:{" "}
-            <ThemedText type="subtitle" style={styles.footnoteHighlight}>
-              {Math.max(stats.needEvaluationCount - stats.evaluatedCount, 0)}
-            </ThemedText>
-          </ThemedText>
         </View>
       </View>
     </View>

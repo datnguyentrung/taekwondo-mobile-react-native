@@ -1,7 +1,10 @@
 import type { RelationshipType } from "@/features/authentication/domain/auth.types";
-import type { PersonBriefResponse } from "@/features/person";
-import type { RoleBriefResponse } from "@/features/roles";
+import type {
+  PersonBriefResponse,
+  PersonSimpleResponse,
+} from "@/features/person";
 import type { Belt } from "@/features/person/constants/person.constants";
+import type { RoleBriefResponse } from "@/features/roles";
 import type { UserStatus } from "../constants/user.constants";
 
 export interface ChangePasswordRequest {
@@ -60,7 +63,7 @@ export interface UserDetail {
   lastLoginAt: string | null;
   createdAt: string;
   updatedAt: string;
-  persons: PersonBriefResponse[];
+  persons: PersonSimpleResponse[];
   roles: RoleBriefResponse[];
 }
 

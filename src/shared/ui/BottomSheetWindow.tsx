@@ -1,5 +1,5 @@
-import { useEffect, useMemo } from 'react';
-import type { StyleProp, ViewStyle } from 'react-native';
+import { useEffect, useMemo } from "react";
+import type { StyleProp, ViewStyle } from "react-native";
 import {
   Modal,
   Platform,
@@ -8,8 +8,12 @@ import {
   StyleSheet,
   useWindowDimensions,
   View,
-} from 'react-native';
-import { Gesture, GestureDetector, GestureHandlerRootView } from 'react-native-gesture-handler';
+} from "react-native";
+import {
+  Gesture,
+  GestureDetector,
+  GestureHandlerRootView,
+} from "react-native-gesture-handler";
 import Animated, {
   Extrapolation,
   interpolate,
@@ -18,13 +22,13 @@ import Animated, {
   useReducedMotion,
   useSharedValue,
   withSpring,
-} from 'react-native-reanimated';
-import { scheduleOnRN } from 'react-native-worklets';
+} from "react-native-reanimated";
+import { scheduleOnRN } from "react-native-worklets";
 import { Plus } from "reicon-react-native";
 
-import { Colors, effects, radii } from '@/theme';
-import { AppIcon } from './AppIcon';
-import { ThemedText } from './ThemedText';
+import { Colors, effects, radii } from "@/theme";
+import { AppIcon } from "./AppIcon";
+import { ThemedText } from "./ThemedText";
 
 export type BottomSheetWindowProps = {
   visible: boolean;
@@ -35,13 +39,14 @@ export type BottomSheetWindowProps = {
   closeAccessibilityLabel?: string;
   children: React.ReactNode;
   footer?: React.ReactNode;
+  overlay?: React.ReactNode;
   scrollable?: boolean;
   contentContainerStyle?: StyleProp<ViewStyle>;
   onClose: () => void;
 };
 
 function project(velocity: number, decelerationRate = 0.998) {
-  'worklet';
+  "worklet";
   return ((velocity / 1000) * decelerationRate) / (1 - decelerationRate);
 }
 
@@ -49,17 +54,18 @@ function clampHeightRatio(heightRatio: number) {
   return Math.min(Math.max(heightRatio, 0.25), 0.8);
 }
 
-const ModalRootView = Platform.OS === 'android' ? GestureHandlerRootView : View;
+const ModalRootView = Platform.OS === "android" ? GestureHandlerRootView : View;
 
 export function BottomSheetWindow({
   visible,
   title,
   heightRatio,
   accessibilityLabel,
-  backdropAccessibilityLabel = 'Đóng cửa sổ',
-  closeAccessibilityLabel = 'Đóng',
+  backdropAccessibilityLabel = "Đóng cửa sổ",
+  closeAccessibilityLabel = "Đóng",
   children,
   footer,
+  overlay,
   scrollable = true,
   contentContainerStyle,
   onClose,
@@ -179,9 +185,7 @@ export function BottomSheetWindow({
       }}
     >
       {scrollable ? (
-        <GestureDetector gesture={pan}>
-          {headerContent}
-        </GestureDetector>
+        <GestureDetector gesture={pan}>{headerContent}</GestureDetector>
       ) : (
         headerContent
       )}
@@ -231,7 +235,16 @@ export function BottomSheetWindow({
             onPress={onClose}
           />
         </Animated.View>
-        {scrollable ? sheetContent : <GestureDetector gesture={pan}>{sheetContent}</GestureDetector>}
+        {scrollable ? (
+          sheetContent
+        ) : (
+          <GestureDetector gesture={pan}>{sheetContent}</GestureDetector>
+        )}
+        {overlay ? (
+          <View style={StyleSheet.absoluteFill} pointerEvents="box-none">
+            {overlay}
+          </View>
+        ) : null}
       </ModalRootView>
     </Modal>
   );
@@ -240,37 +253,37 @@ export function BottomSheetWindow({
 const styles = StyleSheet.create({
   root: {
     flex: 1,
-    justifyContent: 'flex-end',
-    },
+    justifyContent: "flex-end",
+  },
   backdrop: {
-    position: 'absolute',
+    position: "absolute",
     top: 0,
     right: 0,
     bottom: 0,
     left: 0,
-    backgroundColor: 'rgba(0, 0, 0, 0.6)',
+    backgroundColor: "rgba(0, 0, 0, 0.6)",
   },
   sheet: {
     backgroundColor: Colors.light.surface,
-    borderTopLeftRadius: radii.md,
-    borderTopRightRadius: radii.md,
-    overflow: 'hidden',
+    borderTopLeftRadius: radii.xl,
+    borderTopRightRadius: radii.xl,
+    overflow: "hidden",
     paddingBottom: 24,
     ...effects.glass,
   },
   defaultSheetSizing: {
-    maxHeight: '88%',
-    minHeight: '78%',
+    maxHeight: "88%",
+    minHeight: "78%",
   },
   header: {
     height: 60,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
     borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: Colors.light.divider,
   },
   handle: {
-    position: 'absolute',
+    position: "absolute",
     top: 7,
     width: 61,
     height: 4,
@@ -279,19 +292,19 @@ const styles = StyleSheet.create({
   },
   title: {
     color: Colors.light.text,
-    textAlign: 'center',
+    textAlign: "center",
   },
   closeButton: {
-    position: 'absolute',
+    position: "absolute",
     right: 18,
     top: 13,
     width: 29,
     height: 29,
     borderRadius: radii.pill,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
     backgroundColor: Colors.light.divider,
-    transform: [{ rotate: '45deg' }],
+    transform: [{ rotate: "45deg" }],
   },
   body: {
     flexShrink: 1,
@@ -303,7 +316,7 @@ const styles = StyleSheet.create({
     paddingBottom: 90,
   },
   footer: {
-    position: 'absolute',
+    position: "absolute",
     left: 20,
     right: 20,
     bottom: 28,
