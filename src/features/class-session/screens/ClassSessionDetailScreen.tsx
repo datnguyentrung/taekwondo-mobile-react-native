@@ -65,7 +65,7 @@ function mapCourseToDetailView(course: CourseResponse): CourseView {
     ? {
         id: course.manager.personId,
         fullName: course.manager.fullName,
-        roleLabel: course.manager.position?.name ?? "Quản lý khóa học",
+        roleLabel: "Quản lý khóa học",
       }
     : undefined;
 
@@ -78,12 +78,10 @@ function mapCourseToDetailView(course: CourseResponse): CourseView {
     statusLabel: CourseStatusLabel[course.status],
     catalogStatus: getCatalogStatus(course),
     capacity: course.capacity,
-    enrolledStudentCount: 0,
+    enrolledStudentCount: course.currentStudentCount ?? 0,
     manager,
     coachName: course.primaryCoach?.fullName ?? "Huấn luyện viên",
-    assistantCount:
-      (course.assistantCoaches?.length ?? 0) +
-      (course.teachingAssistants?.length ?? 0),
+    assistantCount: 0,
     packages: [],
   };
 }

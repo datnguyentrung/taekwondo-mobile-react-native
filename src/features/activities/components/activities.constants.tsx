@@ -1,15 +1,14 @@
 import type { ActivitiesActionGroup } from "@/features/activities/domain/activities.types";
-import { Permission } from '@/features/authorization';
+import { Permission } from "@/features/authorization";
 import { CalendarCheck } from "lucide-react-native";
 import {
   Book,
   Building,
   Profile2user,
+  ShieldUser,
   Teacher,
   Trophy,
   Users2,
-  Widget,
-  ShieldUser,
 } from "reicon-react-native";
 
 export const ACTIVITIES_GROUPS: ActivitiesActionGroup[] = [
@@ -55,28 +54,21 @@ export const ACTIVITIES_GROUPS: ActivitiesActionGroup[] = [
         label: "Cơ sở",
         icon: <Building />,
       },
-      { id: "utility-2", label: "TN2", icon: <Widget /> },
-      { id: "utility-3", label: "TN3", icon: <Widget /> },
-      { id: "utility-4", label: "TN4", icon: <Widget /> },
-      { id: "utility-5", label: "TN5", icon: <Widget /> },
-      { id: "utility-6", label: "TN6", icon: <Widget /> },
-      { id: "utility-7", label: "TN7", icon: <Widget /> },
-      { id: "utility-8", label: "TN8", icon: <Widget /> },
       {
-        id: 'role-permission-admin',
-        label: 'Vai trò & quyền',
+        id: "role-permission-admin",
+        label: "Vai trò & quyền",
         icon: <ShieldUser />,
         requiredPermissions: [Permission.ROLE_READ, Permission.PERMISSION_READ],
       },
       {
-        id: 'position-admin',
-        label: 'Chức vụ',
+        id: "position-admin",
+        label: "Chức vụ",
         icon: <Teacher />,
         requiredPermissions: [Permission.POSITION_READ],
       },
       {
-        id: 'user-admin',
-        label: 'Người dùng',
+        id: "user-admin",
+        label: "Người dùng",
         icon: <Profile2user />,
         requiredPermissions: [Permission.USER_READ],
       },

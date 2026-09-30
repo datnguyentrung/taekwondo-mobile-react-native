@@ -2,7 +2,7 @@ import type {
   ClassScheduleResponse,
   ClassScheduleSimpleResponse,
 } from "@/features/class-schedule/api/class-schedule.dto";
-import type { PersonResponse, PersonSimpleResponse } from "@/features/person/domain/person.types";
+import type { PersonBriefResponse } from "@/features/person/domain/person.types";
 import type { CourseStatus } from "../constants/course.constants";
 
 export interface CourseCreateRequest {
@@ -27,12 +27,11 @@ export interface CourseResponse {
   nextScheduleEffectiveFrom: string | null;
   name: string;
   capacity: number;
+  currentStudentCount: number;
   status: CourseStatus;
   classSessionGeneratedUntil: string | null;
-  primaryCoach?: PersonSimpleResponse | null;
-  assistantCoaches?: PersonResponse[];
-  teachingAssistants?: PersonResponse[];
-  manager?: PersonResponse | null;
+  primaryCoach?: PersonBriefResponse | null;
+  manager?: PersonBriefResponse | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -45,8 +44,10 @@ export interface CourseSimpleResponse {
   nextScheduleEffectiveFrom: string | null;
   name: string;
   capacity: number;
+  currentStudentCount: number;
   status: CourseStatus;
-  primaryCoach?: PersonSimpleResponse | null;
+  primaryCoach?: PersonBriefResponse | null;
+  manager?: PersonBriefResponse | null;
 }
 
 export interface CourseScheduleChangeRequest {

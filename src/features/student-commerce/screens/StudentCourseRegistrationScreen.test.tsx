@@ -123,6 +123,7 @@ const course: CourseResponse = {
   nextScheduleEffectiveFrom: null,
   name: 'Taekwondo Cơ bản',
   capacity: 30,
+  currentStudentCount: 0,
   status: 'OPEN',
   classSessionGeneratedUntil: null,
   createdAt: '2026-09-01T00:00:00Z',

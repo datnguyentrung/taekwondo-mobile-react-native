@@ -1,3 +1,4 @@
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { fireEvent, render, waitFor } from '@testing-library/react-native';
 
 const mockPush = jest.fn();
@@ -36,7 +37,52 @@ jest.mock('@/shared/ui/BottomSheetWindow', () => ({
   },
 }));
 
+jest.mock('@/features/course/api/courseApi', () => ({
+  courseApi: {
+    get: jest.fn().mockImplementation((id: string) => {
+      const { getCommerceState, getCourse } = require('@/features/student-commerce/utils/studentCommerceUtils');
+      const state = getCommerceState();
+      const course = getCourse(state.courses, id);
+      if (course) {
+        return Promise.resolve({
+          courseId: course.courseId,
+          name: course.title,
+          capacity: course.capacity,
+          currentStudentCount: course.enrolledCount,
+          status: course.catalogStatus === 'ended' ? 'CLOSED' : 'ACTIVE',
+          classSessionGeneratedUntil: null,
+          nextScheduleEffectiveFrom: null,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+          primaryCoach: {
+            personId: 'coach-1',
+            fullName: course.primaryCoachName,
+          },
+          manager: {
+            personId: 'manager-1',
+            fullName: course.managerName,
+          },
+        });
+      }
+      return Promise.reject(new Error('Course not found'));
+    }),
+  },
+}));
+
 import { AdminCourseDetailScreen } from './AdminCourseDetailScreen';
+
+async function renderWithQuery(ui: React.ReactElement) {
+  const queryClient = new QueryClient({
+    defaultOptions: {
+      queries: {
+        retry: false,
+      },
+    },
+  });
+  return await render(
+    <QueryClientProvider client={queryClient}>{ui}</QueryClientProvider>,
+  );
+}
 
 describe('AdminCourseDetailScreen', () => {
   beforeEach(() => {
@@ -44,9 +90,9 @@ describe('AdminCourseDetailScreen', () => {
   });
 
   it('disables registration action for ended courses', async () => {
-    const screen = await render(<AdminCourseDetailScreen courseId="ended-basic" />);
+    const view = await renderWithQuery(<AdminCourseDetailScreen courseId="ended-basic" />);
 
-    const registerButton = screen.getByLabelText('Đăng ký học viên');
+    const registerButton = view.getByLabelText('Đăng ký học viên');
     expect(registerButton.props.accessibilityState).toEqual({ disabled: true });
 
     fireEvent.press(registerButton);
@@ -54,17 +100,18 @@ describe('AdminCourseDetailScreen', () => {
   });
 
   it('opens packages from course detail and navigates to package detail', async () => {
-    const screen = await render(<AdminCourseDetailScreen courseId="basic" />);
+    const view = await renderWithQuery(<AdminCourseDetailScreen courseId="basic" />);
 
-    fireEvent.press(screen.getByLabelText('Xem gói học'));
+    const viewPackagesButton = view.getByLabelText('Xem gói học');
+    fireEvent.press(viewPackagesButton);
     await waitFor(() =>
-      expect(screen.getByLabelText('Chọn gói 6 tháng')).toBeTruthy(),
+      expect(view.getByLabelText('Chọn gói 6 tháng')).toBeTruthy(),
     );
-    fireEvent.press(screen.getByLabelText('Chọn gói 6 tháng'));
+    fireEvent.press(view.getByLabelText('Chọn gói 6 tháng'));
     await waitFor(() =>
-      expect(screen.getByLabelText('Chọn gói 6 tháng').props.accessibilityState).toEqual({ selected: true }),
+      expect(view.getByLabelText('Chọn gói 6 tháng').props.accessibilityState).toEqual({ selected: true }),
     );
-    fireEvent.press(screen.getByLabelText('Chọn gói này'));
+    fireEvent.press(view.getByLabelText('Chọn gói này'));
 
     expect(mockPush).toHaveBeenCalledWith('/courses/basic/packages/basic-6m');
   });
