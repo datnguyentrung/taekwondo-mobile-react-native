@@ -101,3 +101,77 @@ export type SessionAttendanceFilterParams = AttendanceFilterParams;
 export type SessionAttendanceListResponse =
   PageResponse<SessionAttendanceSimpleResponse>;
 export type StudentAttendanceListResponse = SessionAttendanceListResponse;
+
+export interface UpdateStatusRequest {
+  attendanceStatus: AttendanceStatus;
+  checkInTime?: string | null;
+}
+
+export interface UpdateEvaluationRequest {
+  evaluationStatus: EvaluationStatus;
+  note?: string | null;
+}
+
+export interface EvaluationStudentEnrollment {
+  studentEnrollmentId: string;
+  studentPerson: {
+    personId: string;
+    fullName: string;
+    gender?: boolean | null;
+    birthDate?: string | null;
+    personCode?: string | null;
+    currentBelt?: string | null;
+    status?: string | null;
+    faceImagePath?: string | null;
+  };
+  coursePurchaseId?: string | null;
+  startDate?: string | null;
+  endDate?: string | null;
+  status?: string | null;
+}
+
+export interface EvaluationAttendance {
+  sessionAttendanceId: string;
+  checkInTime?: string | null;
+  attendanceStatus: AttendanceStatus;
+  evaluationStatus?: EvaluationStatus | null;
+  note?: string | null;
+}
+
+export interface EvaluationStudent {
+  studentEnrollment: EvaluationStudentEnrollment;
+  attendance: EvaluationAttendance | null;
+  recorded: boolean;
+}
+
+export interface ClassSessionEvaluationResponse {
+  classSession: {
+    classSessionId: string;
+    course: {
+      courseId: string;
+      name: string;
+      classSchedule?: {
+        branch?: {
+          branchId: number;
+          name: string;
+        } | null;
+        weekday?: number | string | null;
+        level?: string | null;
+        location?: string | null;
+        status?: string | null;
+      } | null;
+    };
+    sessionDate: string;
+    status: string;
+    attendanceClosed: boolean;
+    startTime: string;
+    endTime: string;
+    primaryCoach?: {
+      personId: string;
+      fullName: string;
+      currentBelt?: string | null;
+      danRank?: string | null;
+    } | null;
+  };
+  students: EvaluationStudent[];
+}

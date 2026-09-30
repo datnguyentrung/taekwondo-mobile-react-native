@@ -27,6 +27,11 @@ export interface SessionResponse {
   startTime: string;
   endTime: string;
   note: string | null;
+  learningProgress?: {
+    completed: number;
+    total: number;
+    percent: number;
+  } | null;
 }
 
 export interface SessionSimpleResponse {

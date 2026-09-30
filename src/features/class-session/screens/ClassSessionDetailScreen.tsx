@@ -15,7 +15,7 @@ import {
   type ScheduleLevel,
   type Weekday,
 } from "@/features/class-schedule/constants/class-schedule.constants";
-import { PackageRegisterButton } from "@/features/course/screens/PackageDetailScreen/PackageRegisterButton";
+import { ClassSessionActionButtons } from "../components/ClassSessionActionButtons";
 import {
   getCalendarQuarterDateRange,
   type CalendarQuarter,
@@ -27,7 +27,6 @@ import type { CourseCatalogTab, CourseView } from "@/features/student-commerce/t
 import { asHref } from "@/features/student-commerce/utils/studentCommerceUtils";
 
 import { classSessionApi } from "../api/classSessionApi";
-import type { SessionSimpleResponse } from "../api/class-session.dto";
 
 type LearningProgress = {
   completed: number;
@@ -89,19 +88,6 @@ function mapCourseToDetailView(course: CourseResponse): CourseView {
   };
 }
 
-function calculateProgress(sessions: SessionSimpleResponse[]): LearningProgress {
-  const countedSessions = sessions.filter(
-    (item) => item.status !== "CANCELLED" && item.status !== "TERMINATED",
-  );
-  const total = countedSessions.length;
-  const completed = countedSessions.filter(
-    (item) => item.status === "COMPLETED",
-  ).length;
-  const percent = total ? Math.min(Math.round((completed / total) * 100), 100) : 0;
-
-  return { completed, total, percent };
-}
-
 function getQuarterFromDate(date: string): CalendarQuarter {
   const month = Number(date.slice(5, 7));
   if (!Number.isFinite(month) || month < 1 || month > 12) return 1;
@@ -125,24 +111,6 @@ function getAttendanceHistoryParams(
   });
 
   return `/history/student?${query.toString()}`;
-}
-
-async function fetchCourseProgress(courseId: string): Promise<LearningProgress> {
-  const sessions: SessionSimpleResponse[] = [];
-  let page = 0;
-  const size = 100;
-
-  while (true) {
-    const result = await classSessionApi.list({ courseId, page, size });
-    sessions.push(...(result.content ?? []));
-
-    if (result.last || page + 1 >= result.totalPages) {
-      break;
-    }
-    page += 1;
-  }
-
-  return calculateProgress(sessions);
 }
 
 function LearningProgressCard({ progress }: { progress: LearningProgress }) {
@@ -224,28 +192,24 @@ export function ClassSessionDetailScreen({
     queryFn: () => classSessionApi.get(classSessionId as string),
     enabled: Boolean(classSessionId),
   });
-  const courseId = sessionQuery.data?.course.courseId;
-  const progressQuery = useQuery({
-    queryKey: ["class-session-course-progress", courseId],
-    queryFn: () => fetchCourseProgress(courseId as string),
-    enabled: Boolean(courseId),
-  });
 
   const course = sessionQuery.data?.course
     ? mapCourseToDetailView(sessionQuery.data.course)
     : undefined;
-  const progress = progressQuery.data ?? { completed: 0, total: 0, percent: 0 };
+  const progress = sessionQuery.data?.learningProgress ?? {
+    completed: 0,
+    total: 0,
+    percent: 0,
+  };
 
   return (
     <StackScreenLayout
       title="Chi tiết buổi tập"
       contentContainerStyle={styles.content}
       floatingContent={
-        course ? (
-          <PackageRegisterButton
-            title="Điểm danh"
-            accessibilityLabel="Điểm danh"
-            onPress={() =>
+        course && classSessionId ? (
+          <ClassSessionActionButtons
+            onHistoryPress={() =>
               router.push(
                 asHref(
                   getAttendanceHistoryParams(
@@ -255,6 +219,9 @@ export function ClassSessionDetailScreen({
                   ),
                 ),
               )
+            }
+            onEvaluatePress={() =>
+              router.push(asHref(`/class-sessions/${classSessionId}/attendance`))
             }
           />
         ) : undefined
