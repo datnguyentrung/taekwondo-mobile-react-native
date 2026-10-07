@@ -5,9 +5,9 @@ import type {
   CourseCreateRequest,
   CourseListParams,
   CourseResponse,
+  CourseScheduleResponse,
+  CourseScheduleUpsertRequest,
   CourseSimpleResponse,
-  CourseScheduleChangeRequest,
-  CourseScheduleChangeResponse,
   CourseUpdateRequest,
 } from './course.dto';
 
@@ -28,18 +28,16 @@ export const courseApi = {
     const response = await javaApi.put<CourseResponse>(`/courses/${courseId}`, request);
     return response.data;
   },
-  async changeSchedule(
-    courseId: string,
-    request: CourseScheduleChangeRequest,
-  ): Promise<CourseScheduleChangeResponse> {
-    const response = await javaApi.put<CourseScheduleChangeResponse>(
-      `/courses/${courseId}/schedule`,
-      request,
-    );
+  async addSchedule(courseId: string, request: CourseScheduleUpsertRequest): Promise<CourseScheduleResponse> {
+    const response = await javaApi.post<CourseScheduleResponse>(`/courses/${courseId}/schedules`, request);
     return response.data;
   },
-  async cancelPendingScheduleChange(courseId: string): Promise<void> {
-    await javaApi.delete(`/courses/${courseId}/schedule/pending`);
+  async updateSchedule(courseId: string, courseScheduleId: string, request: CourseScheduleUpsertRequest): Promise<CourseScheduleResponse> {
+    const response = await javaApi.put<CourseScheduleResponse>(`/courses/${courseId}/schedules/${courseScheduleId}`, request);
+    return response.data;
+  },
+  async removeSchedule(courseId: string, courseScheduleId: string): Promise<void> {
+    await javaApi.delete(`/courses/${courseId}/schedules/${courseScheduleId}`);
   },
   async remove(courseId: string): Promise<void> {
     await javaApi.delete(`/courses/${courseId}`);

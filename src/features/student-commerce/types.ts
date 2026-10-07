@@ -77,7 +77,7 @@ export type CourseView = {
 export type CourseRegistrationCourseView = Pick<
   CourseView,
   'courseId' | 'courseName' | 'branchName' | 'scheduleLabel' | 'statusLabel'
->;
+> & { schedules: Array<{ courseScheduleId: string; label: string }> };
 
 export type CourseEnrollmentView = {
   enrollmentId: string;

@@ -7,7 +7,7 @@ import type { StudentEnrollmentStatus } from '../constants/student-enrollment.co
 export interface StudentEnrollmentCreateRequest {
   studentPersonId: string;
   coursePurchaseId: string;
-  classScheduleId: string;
+  courseScheduleIds: string[];
   startDate: string;
   endDate: string;
   status: StudentEnrollmentStatus;
@@ -19,7 +19,7 @@ export interface StudentEnrollmentResponse {
   studentEnrollmentId: string;
   studentPerson: PersonResponse;
   coursePurchaseId: string;
-  classSchedule: ClassScheduleResponse;
+  courseSchedules: import('@/features/course/api/course.dto').CourseScheduleResponse[];
   startDate: string;
   endDate: string;
   status: StudentEnrollmentStatus;
@@ -31,7 +31,7 @@ export interface StudentEnrollmentSimpleResponse {
   studentEnrollmentId: string;
   studentPerson: PersonSimpleResponse;
   coursePurchaseId: string;
-  classSchedule: ClassScheduleSimpleResponse;
+  courseSchedules: import('@/features/course/api/course.dto').CourseScheduleSimpleResponse[];
   startDate: string;
   endDate: string;
   status: StudentEnrollmentStatus;

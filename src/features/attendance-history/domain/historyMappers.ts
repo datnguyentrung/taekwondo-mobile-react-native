@@ -80,7 +80,7 @@ export function mapStudentAttendanceToHistoryRecord(
   const evaluationStatus = attendance.evaluationStatus ?? "PENDING";
   const studentEnrollment = attendance.studentEnrollment;
   const name = studentEnrollment?.studentPerson?.fullName;
-  const classSchedule = attendance.classSession?.course?.classSchedule;
+  const classSchedule = attendance.classSession?.course?.courseSchedules[0]?.classSchedule;
 
   return {
     id:

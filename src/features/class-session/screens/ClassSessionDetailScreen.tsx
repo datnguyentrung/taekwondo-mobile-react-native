@@ -47,7 +47,7 @@ function getCatalogStatus(course: CourseResponse): CourseCatalogTab {
 }
 
 function mapCourseToDetailView(course: CourseResponse): CourseView {
-  const schedule = course.classSchedule;
+  const schedule = course.courseSchedules[0]?.classSchedule;
   const weekdayLabel = schedule?.weekday
     ? WeekdayLabel[schedule.weekday as Weekday] ?? schedule.weekday
     : "";

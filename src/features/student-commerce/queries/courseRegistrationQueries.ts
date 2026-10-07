@@ -48,7 +48,7 @@ export function mapStudentOverviewToRegistrationStudent(
 export function mapCourseResponseToRegistrationCourse(
   course: CourseSimpleResponse,
 ): CourseRegistrationCourseView {
-  const schedule = course.classSchedule;
+  const schedule = course.courseSchedules[0]?.classSchedule;
   const branchName = schedule?.branch?.name ?? '';
   const scheduleLabel = [schedule?.weekday, schedule?.level, schedule?.location]
     .filter(Boolean)
@@ -60,6 +60,14 @@ export function mapCourseResponseToRegistrationCourse(
     branchName,
     scheduleLabel: scheduleLabel || schedule?.scheduleId || '',
     statusLabel: CourseStatusLabel[course.status],
+    schedules: course.courseSchedules
+      .filter((item) => item.status === 'ACTIVE')
+      .map((item) => ({
+        courseScheduleId: item.courseScheduleId,
+        label: [item.classSchedule.weekday, item.classSchedule.level, item.classSchedule.location]
+          .filter(Boolean)
+          .join(' · '),
+      })),
   };
 }
 

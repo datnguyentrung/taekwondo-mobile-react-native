@@ -15,7 +15,7 @@ import type {
  * Maps a CourseSimpleResponse DTO from backend into a CourseView object for UI components.
  */
 export function mapCourseApiToView(item: CourseSimpleResponse): CourseView {
-  const schedule = item.classSchedule;
+  const schedule = item.courseSchedules[0]?.classSchedule;
   const branchName = schedule?.branch?.name ?? "Cơ sở Văn Quán";
   const weekdayText = schedule?.weekday
     ? typeof schedule.weekday === "number"

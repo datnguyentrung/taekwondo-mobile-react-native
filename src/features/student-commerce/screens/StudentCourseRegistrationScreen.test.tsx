@@ -118,9 +118,7 @@ const student: StudentOverview = {
 
 const course: CourseResponse = {
   courseId: 'course-basic',
-  classScheduleId: 'schedule-basic',
-  nextClassScheduleId: null,
-  nextScheduleEffectiveFrom: null,
+  courseSchedules: [],
   name: 'Taekwondo Cơ bản',
   capacity: 30,
   status: 'OPEN',

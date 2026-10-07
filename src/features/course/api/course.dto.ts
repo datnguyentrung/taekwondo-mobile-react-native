@@ -5,8 +5,33 @@ import type {
 import type { PersonResponse, PersonSimpleResponse } from "@/features/person/domain/person.types";
 import type { CourseStatus } from "../constants/course.constants";
 
-export interface CourseCreateRequest {
+export interface CourseScheduleResponse {
+  courseScheduleId: string;
+  classSchedule: ClassScheduleResponse;
+  startDate: string;
+  endDate: string | null;
+  status: "ACTIVE" | "INACTIVE";
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CourseScheduleSimpleResponse {
+  courseScheduleId: string;
+  classSchedule: ClassScheduleSimpleResponse;
+  startDate: string;
+  endDate: string | null;
+  status: "ACTIVE" | "INACTIVE";
+}
+
+export interface CourseScheduleUpsertRequest {
   classScheduleId: string;
+  startDate: string;
+  endDate: string | null;
+  status: "ACTIVE" | "INACTIVE";
+}
+
+export interface CourseCreateRequest {
+  courseSchedules: CourseScheduleUpsertRequest[];
   name: string;
   capacity: number;
   status: CourseStatus;
@@ -20,11 +45,7 @@ export interface CourseUpdateRequest {
 
 export interface CourseResponse {
   courseId: string;
-  classSchedule?: ClassScheduleResponse;
-  classScheduleId?: string;
-  nextClassSchedule?: ClassScheduleSimpleResponse | null;
-  nextClassScheduleId?: string | null;
-  nextScheduleEffectiveFrom: string | null;
+  courseSchedules: CourseScheduleResponse[];
   name: string;
   capacity: number;
   status: CourseStatus;
@@ -39,25 +60,11 @@ export interface CourseResponse {
 
 export interface CourseSimpleResponse {
   courseId: string;
-  classSchedule?: ClassScheduleSimpleResponse;
-  nextClassSchedule?: ClassScheduleSimpleResponse | null;
-  nextClassScheduleId?: string | null;
-  nextScheduleEffectiveFrom: string | null;
+  courseSchedules: CourseScheduleSimpleResponse[];
   name: string;
   capacity: number;
   status: CourseStatus;
   primaryCoach?: PersonSimpleResponse | null;
-}
-
-export interface CourseScheduleChangeRequest {
-  classScheduleId: string;
-  effectiveFrom: string;
-}
-
-export interface CourseScheduleChangeResponse {
-  course: CourseResponse;
-  cancelledSessionIds: string[];
-  generatedSessionIds: string[];
 }
 
 export interface CourseListParams {

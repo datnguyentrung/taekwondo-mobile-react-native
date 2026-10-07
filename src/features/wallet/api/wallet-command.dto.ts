@@ -14,6 +14,7 @@ export interface WalletTopUpRequest {
 export interface WalletCoursePurchaseRequest {
   studentPersonId: string;
   coursePriceId: string;
+  courseScheduleIds: string[];
   externalReference: string;
   note?: string | null;
 }

@@ -80,10 +80,11 @@ export function StudentCourseRegistrationScreen({
   const [selectedStudent, setSelectedStudent] =
     useState<CourseRegistrationStudentView>();
   const [selectedCourse, setSelectedCourse] =
-    useState<CourseRegistrationCourseView | undefined>(() => initialCourse);
+    useState<CourseRegistrationCourseView | undefined>(() => initialCourse ? { ...initialCourse, schedules: [] } : undefined);
   const [selectedPackage, setSelectedPackage] = useState<CoursePackageView | undefined>(
     () => (initialPackageId ? getPackage(initialCourse, initialPackageId) : undefined),
   );
+  const [selectedScheduleIds, setSelectedScheduleIds] = useState<string[]>([]);
 
   const studentsQuery = useRegistrationStudentSearch(
     studentSearch,
@@ -103,7 +104,7 @@ export function StudentCourseRegistrationScreen({
   const selectedPrice = selectedPackage?.amount ?? 0;
   const balance = state.wallet.balance;
   const canConfirm = Boolean(
-    selectedStudent && selectedCourse && selectedPackage && !purchaseMutation.isPending,
+    selectedStudent && selectedCourse && selectedPackage && selectedScheduleIds.length > 0 && !purchaseMutation.isPending,
   );
 
   return (
@@ -140,6 +141,15 @@ export function StudentCourseRegistrationScreen({
           />
         </Section>
 
+        <Section title="Chọn lịch học">
+          <ScheduleSelection
+            schedules={selectedCourse?.schedules ?? []}
+            selectedIds={selectedScheduleIds}
+            disabled={!selectedCourse}
+            onChange={setSelectedScheduleIds}
+          />
+        </Section>
+
         <PurchaseSummary
           balance={balance}
           price={selectedPrice}
@@ -161,6 +171,7 @@ export function StudentCourseRegistrationScreen({
             purchaseMutation.mutate({
               studentPersonId: selectedStudent.personId,
               coursePriceId: selectedPackage.id,
+              courseScheduleIds: selectedScheduleIds,
               externalReference: `MOBILE-${Date.now()}`,
               note: selectedCourse
                 ? `Đăng ký ${selectedCourse.courseName}`
@@ -213,6 +224,7 @@ export function StudentCourseRegistrationScreen({
             onPress={() => {
               setSelectedCourse(course);
               setSelectedPackage(undefined);
+              setSelectedScheduleIds([]);
               setCourseSheetVisible(false);
             }}
           />
@@ -220,6 +232,46 @@ export function StudentCourseRegistrationScreen({
       />
     </>
   );
+}
+
+function ScheduleSelection({
+  schedules,
+  selectedIds,
+  disabled,
+  onChange,
+}: {
+  schedules: CourseRegistrationCourseView['schedules'];
+  selectedIds: string[];
+  disabled: boolean;
+  onChange: (ids: string[]) => void;
+}) {
+  if (disabled || schedules.length === 0) {
+    return <SurfaceCard soft style={styles.scheduleStateCard}>
+      <ThemedText type="bodySmall" style={styles.secondaryText}>
+        Chọn khóa học để xem các lịch có thể đăng ký.
+      </ThemedText>
+    </SurfaceCard>;
+  }
+  return <View style={styles.scheduleList}>
+    {schedules.map((schedule) => {
+      const selected = selectedIds.includes(schedule.courseScheduleId);
+      return <Pressable
+        key={schedule.courseScheduleId}
+        accessibilityRole="checkbox"
+        accessibilityLabel={`Chọn lịch ${schedule.label}`}
+        accessibilityState={{ checked: selected }}
+        onPress={() => onChange(selected
+          ? selectedIds.filter((id) => id !== schedule.courseScheduleId)
+          : [...selectedIds, schedule.courseScheduleId])}
+        style={({ pressed }) => [styles.scheduleRow, selected ? styles.scheduleRowSelected : null, pressed ? styles.pressed : null]}
+      >
+        <View style={[styles.checkbox, selected ? styles.checkboxSelected : null]}>
+          {selected ? <View style={styles.checkboxDot} /> : null}
+        </View>
+        <ThemedText type="bodySmall" style={styles.blackText}>{schedule.label}</ThemedText>
+      </Pressable>;
+    })}
+  </View>;
 }
 
 function Section({
@@ -726,6 +778,46 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     flexWrap: "wrap",
     gap: 12,
+  },
+  scheduleList: {
+    gap: 10,
+  },
+  scheduleStateCard: {
+    minHeight: 68,
+    justifyContent: 'center',
+  },
+  scheduleRow: {
+    minHeight: 48,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: Colors.light.divider,
+    borderRadius: radii.md,
+    backgroundColor: Colors.light.surface,
+    paddingHorizontal: 14,
+  },
+  scheduleRowSelected: {
+    borderColor: Colors.light.primary,
+    backgroundColor: hexToRgba(Colors.light.primary, 0.05),
+  },
+  checkbox: {
+    width: 22,
+    height: 22,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 4,
+    borderWidth: 2,
+    borderColor: Colors.light.divider,
+  },
+  checkboxSelected: {
+    borderColor: Colors.light.primary,
+  },
+  checkboxDot: {
+    width: 12,
+    height: 12,
+    borderRadius: 2,
+    backgroundColor: Colors.light.primary,
   },
   packagePressable: {
     flexGrow: 1,
