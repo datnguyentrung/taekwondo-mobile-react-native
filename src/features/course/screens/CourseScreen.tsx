@@ -39,7 +39,7 @@ export function CourseCatalogScreen({
   const courses = useMemo(() => {
     const rawList: CourseView[] =
       data?.content && data.content.length > 0
-        ? data.content.map(mapCourseApiToView)
+        ? data.content.map((item) => mapCourseApiToView(item))
         : state.courses;
 
     return rawList.filter((course) => course.catalogStatus === tab);

@@ -1,5 +1,6 @@
+import { useState } from "react";
 import { useLocalSearchParams, useRouter, type Href } from "expo-router";
-import { StyleSheet, View } from "react-native";
+import { Image, StyleSheet, View } from "react-native";
 
 import type { RelationshipType } from "@/features/authentication/domain/auth.types";
 import type { UserDetail, UserSimpleResponse } from "@/features/user/api/user.dto";
@@ -59,10 +60,41 @@ export function userMatchesSearch(user: UserSimpleResponse, search: string) {
   );
 }
 
-export function Avatar({ name }: { name?: string | null }) {
+export function Avatar({
+  name,
+  imageUrl,
+  size = 42,
+}: {
+  name?: string | null;
+  imageUrl?: string | null;
+  size?: number;
+}) {
+  const [hasError, setHasError] = useState(false);
+  const avatarStyle = {
+    width: size,
+    height: size,
+    borderRadius: size / 2,
+  };
+
+  if (imageUrl && !hasError) {
+    return (
+      <Image
+        source={{ uri: imageUrl }}
+        style={[userAdminStyles.avatar, avatarStyle]}
+        onError={() => setHasError(true)}
+      />
+    );
+  }
+
   return (
-    <View style={userAdminStyles.avatar}>
-      <ThemedText type="featureLabel" style={userAdminStyles.avatarText}>
+    <View style={[userAdminStyles.avatar, avatarStyle]}>
+      <ThemedText
+        type="featureLabel"
+        style={[
+          userAdminStyles.avatarText,
+          size !== 42 ? { fontSize: Math.round(size * 0.38) } : null,
+        ]}
+      >
         {initials(name)}
       </ThemedText>
     </View>

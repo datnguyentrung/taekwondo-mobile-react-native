@@ -46,5 +46,28 @@ export const BeltLabel: Record<Belt, string> = {
 export type PersonStatus = 'ACTIVE' | 'INACTIVE' | 'SUSPENDED';
 export type PersonKind = 'STUDENT' | 'SYSTEM_EMPLOYEE';
 
+export const ALL_BELTS: readonly Belt[] = [
+  'C10',
+  'C9',
+  'C8',
+  'C7',
+  'C6',
+  'C5',
+  'C4',
+  'C3',
+  'C2',
+  'C1',
+  'D1',
+  'D2',
+  'D3',
+  'D4',
+  'D5',
+  'D6',
+  'D7',
+  'D8',
+  'D9',
+  'D10',
+] as const;
+
 export const PersonStatusValues = ['ACTIVE', 'INACTIVE', 'SUSPENDED'] as const satisfies readonly PersonStatus[];
 export const PersonKindValues = ['STUDENT', 'SYSTEM_EMPLOYEE'] as const satisfies readonly PersonKind[];

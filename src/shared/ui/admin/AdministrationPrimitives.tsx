@@ -360,7 +360,9 @@ export function AdminChip({
       {content}
     </Pressable>
   ) : (
-    <View style={chipStyle}>{content}</View>
+    <View style={chipStyle} pointerEvents="none">
+      {content}
+    </View>
   );
 }
 

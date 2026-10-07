@@ -1,28 +1,56 @@
 import { useRouter } from "expo-router";
-import { StyleSheet } from "react-native";
+import { useMemo } from "react";
+import { ActivityIndicator, StyleSheet, View } from "react-native";
 
-import StackScreenLayout from "@/routes/navigation/layouts/StackScreenLayout";
-
+import { courseApi } from "@/features/course/api/courseApi";
+import { mapCourseApiToView } from "@/features/course/domain/course.mappers";
 import { PackageRegisterButton } from "@/features/course/screens/PackageDetailScreen/PackageRegisterButton";
-import type { CourseRouteProps } from "@/features/student-commerce/types";
+import type { CourseRouteProps, CourseView } from "@/features/student-commerce/types";
 import {
   asHref,
   getCommerceState,
   getCourse,
 } from "@/features/student-commerce/utils/studentCommerceUtils";
+import { useScreenRefresh } from "@/infrastructure/query/useScreenRefresh";
+import StackScreenLayout from "@/routes/navigation/layouts/StackScreenLayout";
+import { useGetQuery } from "@/shared/hooks/useCrud";
+import { Colors } from "@/theme";
 
 import { CourseDetailContent } from "./CourseDetailContent";
 
 export function AdminCourseDetailScreen({ courseId }: CourseRouteProps) {
   const router = useRouter();
   const state = getCommerceState();
-  const course = getCourse(state.courses, courseId);
+  const mockCourse = getCourse(state.courses, courseId);
+
+  const courseQuery = useGetQuery(
+    ["courses", courseId],
+    () => courseApi.get(courseId!),
+    {
+      enabled: Boolean(courseId),
+      retry: false,
+    },
+  );
+
+  const { data: apiCourse, isLoading } = courseQuery;
+  const { refreshing, onRefresh } = useScreenRefresh([courseQuery]);
+
+  const course: CourseView = useMemo(() => {
+    if (apiCourse) {
+      // Map API CourseResponse to CourseView, reusing packages from mock if available
+      return mapCourseApiToView(apiCourse, mockCourse?.packages ?? []);
+    }
+    return mockCourse;
+  }, [apiCourse, mockCourse]);
+
   const registrationDisabled = course.catalogStatus === "ended";
 
   return (
     <StackScreenLayout
       title="Chi tiết khóa học"
       contentContainerStyle={styles.content}
+      refreshing={refreshing}
+      onRefresh={onRefresh}
       floatingContent={
         <PackageRegisterButton
           title="Đăng ký học viên"
@@ -36,6 +64,13 @@ export function AdminCourseDetailScreen({ courseId }: CourseRouteProps) {
     >
       <CourseDetailContent
         course={course}
+        topContent={
+          isLoading && !apiCourse ? (
+            <View style={styles.loadingContainer}>
+              <ActivityIndicator size="small" color={Colors.light.primary} />
+            </View>
+          ) : undefined
+        }
         onOpenAssistants={() =>
           router.push(asHref(`/courses/${course.courseId}/assistants`))
         }
@@ -56,5 +91,10 @@ const styles = StyleSheet.create({
     paddingTop: 12,
     paddingHorizontal: 16,
     paddingBottom: 140,
+  },
+  loadingContainer: {
+    paddingVertical: 48,
+    alignItems: "center",
+    justifyContent: "center",
   },
 });
