@@ -151,6 +151,11 @@ export default function ActivitiesScreen() {
         return;
       }
 
+      if (action.id === 'mqtt-sensor') {
+        router.push('/mqtt-sensor' as Href);
+        return;
+      }
+
       if (action.id !== "attendance-history") return;
 
       const decision = getAttendanceHistoryNavigationDecision(permissions);

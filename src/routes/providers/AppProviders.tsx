@@ -3,6 +3,7 @@ import { useEffect, type PropsWithChildren } from 'react';
 
 import { useAuthenticationRuntime } from '@/features/authentication';
 import { initializeDatabase } from '@/infrastructure/database/database';
+import { useMqttRuntime } from '@/infrastructure/mqtt';
 import { queryClient } from '@/infrastructure/query/queryClient';
 import { ToastProvider } from '@/shared/ui/Toast';
 
@@ -18,6 +19,7 @@ function DatabaseRuntime({ children }: PropsWithChildren) {
 
 function AuthRuntime({ children }: PropsWithChildren) {
   useAuthenticationRuntime();
+  useMqttRuntime();
   return children;
 }
 

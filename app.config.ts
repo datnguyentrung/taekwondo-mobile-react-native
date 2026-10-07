@@ -137,6 +137,10 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   extra: {
     apiUrlJava:
       process.env.EXPO_PUBLIC_API_URL_JAVA ?? "http://localhost:8080/api/v1",
+    // Mosquitto must expose MQTT over WebSocket. Leave these unset until a
+    // broker endpoint and common topic are available for the environment.
+    mqttBrokerUrl: process.env.EXPO_PUBLIC_MQTT_BROKER_URL ?? "",
+    mqttDefaultTopic: process.env.EXPO_PUBLIC_MQTT_DEFAULT_TOPIC ?? "",
 
     router: {},
 

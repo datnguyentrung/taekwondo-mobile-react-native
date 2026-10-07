@@ -1,33 +1,73 @@
-import mqtt, { MqttClient } from 'mqtt';
-import { MessageHandler, MqttService } from './mqtt.types';
+import mqtt, { type MqttClient } from 'mqtt';
 
-class MqttClientAdapter implements MqttService {
+import type { MessageHandler, MqttMessage, MqttService } from './mqtt.types';
+
+const RECONNECT_PERIOD_MS = 3_000;
+const CONNECT_TIMEOUT_MS = 10_000;
+
+function parsePayload(rawPayload: string): unknown {
+  try {
+    return JSON.parse(rawPayload) as unknown;
+  } catch {
+    return rawPayload;
+  }
+}
+
+function isWebSocketBrokerUrl(brokerUrl: string): boolean {
+  return brokerUrl.startsWith('ws://') || brokerUrl.startsWith('wss://');
+}
+
+export class MqttClientAdapter implements MqttService {
   private client: MqttClient | null = null;
-  private handlers: Map<string, Set<MessageHandler>> = new Map();
+  private brokerUrl: string | null = null;
+  private readonly handlers = new Map<string, Set<MessageHandler>>();
 
-  connect(brokerUrl = 'mqtt://localhost:1883') {
-    if (this.client?.connected) {
+  connect(brokerUrl: string): void {
+    const normalizedBrokerUrl = brokerUrl.trim();
+    if (!normalizedBrokerUrl) {
+      this.warn('MQTT is disabled because mqttBrokerUrl is not configured.');
       return;
     }
 
-    this.client = mqtt.connect(brokerUrl);
+    if (!isWebSocketBrokerUrl(normalizedBrokerUrl)) {
+      this.warn('MQTT broker URL must use ws:// or wss:// for Expo clients.');
+      return;
+    }
+
+    if (this.client && this.brokerUrl === normalizedBrokerUrl) {
+      return;
+    }
+
+    this.disconnectClient(false);
+    this.brokerUrl = normalizedBrokerUrl;
+    this.client = mqtt.connect(normalizedBrokerUrl, {
+      clean: true,
+      reconnectPeriod: RECONNECT_PERIOD_MS,
+      connectTimeout: CONNECT_TIMEOUT_MS,
+    });
 
     this.client.on('connect', () => {
-      console.log('Connected MQTT Broker');
-      for (const topic of this.handlers.keys()) {
-        this.client?.subscribe(topic);
-      }
+      this.subscribeAll();
     });
 
-    this.client.on('message', (topic: string, message: Buffer | string) => {
+    this.client.on('message', (topic, message) => {
       const topicHandlers = this.handlers.get(topic);
-      if (topicHandlers) {
-        topicHandlers.forEach((handler) => handler(topic, message));
+      if (!topicHandlers?.size) return;
+
+      const rawPayload = message.toString();
+      const mqttMessage: MqttMessage = {
+        topic,
+        rawPayload,
+        payload: parsePayload(rawPayload),
+        receivedAt: new Date(),
+      };
+      for (const handler of topicHandlers) {
+        handler(mqttMessage);
       }
     });
 
-    this.client.on('error', (err: Error) => {
-      console.error('MQTT Error:', err);
+    this.client.on('error', (error) => {
+      console.warn('[MQTT] connection error', error);
     });
   }
 
@@ -35,7 +75,7 @@ class MqttClientAdapter implements MqttService {
     if (!this.handlers.has(topic)) {
       this.handlers.set(topic, new Set());
       if (this.client?.connected) {
-        this.client.subscribe(topic);
+        this.subscribeTopic(topic);
       }
     }
 
@@ -51,18 +91,39 @@ class MqttClientAdapter implements MqttService {
     };
   }
 
-  publish(topic: string, message: string | Buffer) {
+  publish(topic: string, message: string): void {
     if (this.client?.connected) {
       this.client.publish(topic, message);
     } else {
-      console.warn('Cannot publish: MQTT client is not connected');
+      this.warn('Cannot publish because MQTT is not connected.');
     }
   }
 
-  disconnect() {
-    this.client?.end();
+  disconnect(): void {
+    this.disconnectClient(true);
+  }
+
+  private subscribeAll(): void {
+    for (const topic of this.handlers.keys()) {
+      this.subscribeTopic(topic);
+    }
+  }
+
+  private subscribeTopic(topic: string): void {
+    this.client?.subscribe(topic, (error) => {
+      if (error) console.warn(`[MQTT] unable to subscribe to ${topic}`, error);
+    });
+  }
+
+  private disconnectClient(clearHandlers: boolean): void {
+    this.client?.end(true);
     this.client = null;
-    this.handlers.clear();
+    this.brokerUrl = null;
+    if (clearHandlers) this.handlers.clear();
+  }
+
+  private warn(message: string): void {
+    if (__DEV__) console.warn(`[MQTT] ${message}`);
   }
 }
 

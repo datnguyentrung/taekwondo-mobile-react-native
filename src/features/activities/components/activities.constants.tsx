@@ -72,6 +72,11 @@ export const ACTIVITIES_GROUPS: ActivitiesActionGroup[] = [
         icon: <Profile2user />,
         requiredPermissions: [Permission.USER_READ],
       },
+      {
+        id: "mqtt-sensor",
+        label: "Cảm biến (MQTT)",
+        icon: <CalendarCheck />,
+      },
     ],
   },
 ];
