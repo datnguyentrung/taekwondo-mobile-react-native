@@ -9,7 +9,10 @@ export function useMqttSubscription(
   enabled = true,
 ): void {
   const handlerRef = useRef(handler);
-  handlerRef.current = handler;
+
+  useEffect(() => {
+    handlerRef.current = handler;
+  });
 
   useEffect(() => {
     if (!enabled || !topic) return undefined;

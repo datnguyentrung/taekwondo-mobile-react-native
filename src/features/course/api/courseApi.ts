@@ -24,8 +24,16 @@ export const courseApi = {
     const response = await javaApi.post<CourseResponse>('/courses', request);
     return response.data;
   },
-  async update(courseId: string, request: CourseUpdateRequest): Promise<CourseResponse> {
-    const response = await javaApi.put<CourseResponse>(`/courses/${courseId}`, request);
+  async update(
+    courseId: string,
+    request: CourseUpdateRequest,
+    options?: { signal?: AbortSignal },
+  ): Promise<CourseResponse> {
+    const response = await javaApi.put<CourseResponse>(
+      `/courses/${courseId}`,
+      request,
+      { signal: options?.signal },
+    );
     return response.data;
   },
   async addSchedule(courseId: string, request: CourseScheduleUpsertRequest): Promise<CourseScheduleResponse> {
@@ -39,7 +47,7 @@ export const courseApi = {
   async removeSchedule(courseId: string, courseScheduleId: string): Promise<void> {
     await javaApi.delete(`/courses/${courseId}/schedules/${courseScheduleId}`);
   },
-  async remove(courseId: string): Promise<void> {
-    await javaApi.delete(`/courses/${courseId}`);
+  async remove(courseId: string, options?: { signal?: AbortSignal }): Promise<void> {
+    await javaApi.delete(`/courses/${courseId}`, { signal: options?.signal });
   },
 };

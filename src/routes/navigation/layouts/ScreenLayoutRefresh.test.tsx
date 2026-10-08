@@ -29,10 +29,12 @@ jest.mock('react-native', () => {
   return new Proxy(RN, {
     get(target, prop) {
       if (prop === 'ScrollView') {
-        return (props: CapturedScrollViewProps) => {
+        const MockScrollView = (props: CapturedScrollViewProps) => {
           mockScrollViewProps.push(props);
           return React.createElement(target.View, null, props.children);
         };
+        MockScrollView.displayName = 'MockScrollView';
+        return MockScrollView;
       }
       return target[prop];
     },

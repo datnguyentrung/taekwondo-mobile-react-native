@@ -6,3 +6,4 @@ export { CourseDetailScreen } from "./screens/CourseDetailScreen";
 export { CourseCatalogScreen } from "./screens/CourseScreen";
 export { PackageDetailScreen } from "./screens/PackageDetailScreen";
 export { CourseActionButtons } from "./components/CourseActionButtons";
+export { CourseEditSheet } from "./components/CourseEditSheet";

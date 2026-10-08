@@ -2,7 +2,6 @@ import { useEffect, useMemo } from "react";
 import type { StyleProp, ViewStyle } from "react-native";
 import {
   Modal,
-  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -54,7 +53,7 @@ function clampHeightRatio(heightRatio: number) {
   return Math.min(Math.max(heightRatio, 0.25), 0.8);
 }
 
-const ModalRootView = Platform.OS === "android" ? GestureHandlerRootView : View;
+const ModalRootView = GestureHandlerRootView;
 
 export function BottomSheetWindow({
   visible,
@@ -73,7 +72,7 @@ export function BottomSheetWindow({
   const reducedMotion = useReducedMotion();
   const { height } = useWindowDimensions();
   const sheetHeight = useSharedValue(Math.round(height * 0.5));
-  const translateY = useSharedValue(0);
+  const translateY = useSharedValue(Math.round(height * 0.5));
   const context = useSharedValue(0);
   const sheetSizingStyle = useMemo(() => {
     if (!heightRatio) {
@@ -92,7 +91,21 @@ export function BottomSheetWindow({
   }, [height, heightRatio]);
 
   useEffect(() => {
-    translateY.set(visible || reducedMotion ? 0 : sheetHeight.get());
+    if (visible) {
+      if (reducedMotion) {
+        translateY.set(0);
+      } else {
+        translateY.set(
+          withSpring(0, {
+            duration: 300,
+            dampingRatio: 0.85,
+            reduceMotion: ReduceMotion.System,
+          }),
+        );
+      }
+    } else {
+      translateY.set(sheetHeight.get());
+    }
   }, [reducedMotion, sheetHeight, translateY, visible]);
 
   const pan = useMemo(
@@ -142,13 +155,13 @@ export function BottomSheetWindow({
   );
 
   const sheetStyle = useAnimatedStyle(() => ({
-    transform: [{ translateY: translateY.get() }],
+    transform: [{ translateY: translateY.value }],
   }));
 
   const backdropStyle = useAnimatedStyle(() => ({
     opacity: interpolate(
-      translateY.get(),
-      [0, Math.max(sheetHeight.get(), 1)],
+      translateY.value,
+      [0, Math.max(sheetHeight.value, 1)],
       [1, 0],
       Extrapolation.CLAMP,
     ),

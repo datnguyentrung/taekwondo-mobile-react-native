@@ -138,19 +138,30 @@ export function FloatingActionBar({
                   />
                 ) : (
                   <>
-                    {icon ? <View style={styles.iconContainer}>{icon}</View> : null}
-                    <ThemedText
-                      type={actions.length >= 3 ? "subtitle" : "heading"}
-                      numberOfLines={1}
-                      style={[
-                        styles.buttonTextBase,
-                        actions.length >= 3 ? styles.compactButtonText : null,
-                        textStyle,
-                        customTextStyle,
-                      ]}
-                    >
-                      {label}
-                    </ThemedText>
+                    {icon ? (
+                      <View
+                        style={[
+                          styles.iconContainer,
+                          !label ? styles.iconContainerNoLabel : null,
+                        ]}
+                      >
+                        {icon}
+                      </View>
+                    ) : null}
+                    {label ? (
+                      <ThemedText
+                        type={actions.length >= 3 ? "subtitle" : "heading"}
+                        numberOfLines={1}
+                        style={[
+                          styles.buttonTextBase,
+                          actions.length >= 3 ? styles.compactButtonText : null,
+                          textStyle,
+                          customTextStyle,
+                        ]}
+                      >
+                        {label}
+                      </ThemedText>
+                    ) : null}
                   </>
                 )}
               </Pressable>
@@ -244,6 +255,9 @@ const styles = StyleSheet.create({
     marginRight: 6,
     alignItems: "center",
     justifyContent: "center",
+  },
+  iconContainerNoLabel: {
+    marginRight: 0,
   },
   buttonTextBase: {
     textAlign: "center",

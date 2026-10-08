@@ -1,4 +1,8 @@
+import { Trash6 } from "reicon-react-native";
+
+import { AppIcon } from "@/shared/ui/AppIcon";
 import { FloatingActionBar } from "@/shared/ui/FloatingActionBar";
+import { Colors } from "@/theme";
 
 export interface CourseActionButtonsProps {
   editTitle?: string;
@@ -9,6 +13,9 @@ export interface CourseActionButtonsProps {
   registerAccessibilityLabel?: string;
   registerDisabled?: boolean;
   onRegisterPress?: () => void;
+  deleteAccessibilityLabel?: string;
+  deleteDisabled?: boolean;
+  onDeletePress?: () => void;
 }
 
 export function CourseActionButtons({
@@ -20,6 +27,9 @@ export function CourseActionButtons({
   registerAccessibilityLabel = "Đăng ký học viên",
   registerDisabled = false,
   onRegisterPress,
+  deleteAccessibilityLabel = "Xóa khóa học",
+  deleteDisabled = false,
+  onDeletePress,
 }: CourseActionButtonsProps) {
   return (
     <FloatingActionBar
@@ -30,6 +40,7 @@ export function CourseActionButtons({
           variant: "outline",
           disabled: editDisabled,
           onPress: onEditPress,
+          flex: 1,
         },
         {
           label: registerTitle,
@@ -37,7 +48,38 @@ export function CourseActionButtons({
           variant: "primary",
           disabled: registerDisabled,
           onPress: onRegisterPress,
+          flex: 1.3,
         },
+        ...(onDeletePress
+          ? [
+              {
+                label: "",
+                accessibilityLabel: deleteAccessibilityLabel,
+                variant: "ghost" as const,
+                disabled: deleteDisabled,
+                onPress: onDeletePress,
+                flex: 0,
+                style: {
+                  width: 44,
+                  minWidth: 44,
+                  paddingHorizontal: 0,
+                  backgroundColor: "transparent",
+                  borderWidth: 0,
+                },
+                icon: (
+                  <AppIcon
+                    icon={<Trash6 />}
+                    size={30}
+                    color={
+                      deleteDisabled
+                        ? Colors.light.textSecondary
+                        : Colors.light.error
+                    }
+                  />
+                ),
+              },
+            ]
+          : []),
       ]}
     />
   );

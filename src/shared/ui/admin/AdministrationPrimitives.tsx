@@ -211,6 +211,7 @@ export function AdminButton({
   return (
     <Pressable
       accessibilityRole="button"
+      accessibilityLabel={label}
       accessibilityState={{ disabled, busy: loading }}
       disabled={disabled || loading}
       onPress={onPress}

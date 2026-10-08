@@ -104,7 +104,11 @@ export function StudentCourseRegistrationScreen({
   const selectedPrice = selectedPackage?.amount ?? 0;
   const balance = state.wallet.balance;
   const canConfirm = Boolean(
-    selectedStudent && selectedCourse && selectedPackage && selectedScheduleIds.length > 0 && !purchaseMutation.isPending,
+    selectedStudent &&
+      selectedCourse &&
+      selectedPackage &&
+      ((selectedCourse.schedules?.length ?? 0) === 0 || selectedScheduleIds.length > 0) &&
+      !purchaseMutation.isPending,
   );
 
   return (
