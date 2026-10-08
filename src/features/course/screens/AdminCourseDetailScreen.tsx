@@ -4,7 +4,7 @@ import { ActivityIndicator, StyleSheet, View } from "react-native";
 
 import { courseApi } from "@/features/course/api/courseApi";
 import { mapCourseApiToView } from "@/features/course/domain/course.mappers";
-import { PackageRegisterButton } from "@/features/course/screens/PackageDetailScreen/PackageRegisterButton";
+import { CourseActionButtons } from "@/features/course/components/CourseActionButtons";
 import type { CourseRouteProps, CourseView } from "@/features/student-commerce/types";
 import {
   asHref,
@@ -52,11 +52,16 @@ export function AdminCourseDetailScreen({ courseId }: CourseRouteProps) {
       refreshing={refreshing}
       onRefresh={onRefresh}
       floatingContent={
-        <PackageRegisterButton
-          title="Đăng ký học viên"
-          accessibilityLabel="Đăng ký học viên"
-          disabled={registrationDisabled}
-          onPress={() =>
+        <CourseActionButtons
+          editTitle="Chỉnh sửa"
+          editAccessibilityLabel="Chỉnh sửa khóa học"
+          onEditPress={() =>
+            router.push(asHref(`/courses/${course.courseId}/edit`))
+          }
+          registerTitle="Đăng ký học viên"
+          registerAccessibilityLabel="Đăng ký học viên"
+          registerDisabled={registrationDisabled}
+          onRegisterPress={() =>
             router.push(asHref(`/courses/${course.courseId}/register`))
           }
         />

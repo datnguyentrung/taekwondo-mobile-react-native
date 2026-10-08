@@ -46,6 +46,7 @@ jest.mock('@/features/course/api/courseApi', () => ({
       if (course) {
         return Promise.resolve({
           courseId: course.courseId,
+          courseSchedules: [],
           name: course.title,
           capacity: course.capacity,
           currentStudentCount: course.enrolledCount,
@@ -114,5 +115,14 @@ describe('AdminCourseDetailScreen', () => {
     fireEvent.press(view.getByLabelText('Chọn gói này'));
 
     expect(mockPush).toHaveBeenCalledWith('/courses/basic/packages/basic-6m');
+  });
+
+  it('navigates to course edit screen on pressing Chỉnh sửa', async () => {
+    const view = await renderWithQuery(<AdminCourseDetailScreen courseId="basic" />);
+
+    const editButton = view.getByLabelText('Chỉnh sửa khóa học');
+    fireEvent.press(editButton);
+
+    expect(mockPush).toHaveBeenCalledWith('/courses/basic/edit');
   });
 });

@@ -20,7 +20,7 @@ export function mapCourseApiToView(
   item: CourseSimpleResponse | CourseResponse,
   fallbackPackages: CourseView["packages"] = [],
 ): CourseView {
-  const schedule = item.courseSchedules[0]?.classSchedule;
+  const schedule = item.courseSchedules?.[0]?.classSchedule;
   const branchName = schedule?.branch?.name ?? "Cơ sở Văn Quán";
   const weekdayText = schedule?.weekday
     ? typeof schedule.weekday === "number"
