@@ -271,6 +271,7 @@ describe('AdminCourseDetailScreen', () => {
         'basic',
         {
           name: 'Lớp Taekwondo Cơ Bản Cập Nhật',
+          level: 'BASIC',
           capacity: 35,
           status: 'ACTIVE',
         },

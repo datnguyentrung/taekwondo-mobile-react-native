@@ -1,6 +1,7 @@
 import type { CourseResponse, CourseSimpleResponse } from '@/features/course/api/course.dto';
 import type { PersonSimpleResponse } from '@/features/person/domain/person.types';
 import type { SessionStatus } from '../constants/class-session.constants';
+import type { CourseLevel } from '@/features/course/constants/course.constants';
 
 export interface SessionCreateRequest {
   courseId: string;
@@ -20,6 +21,7 @@ export interface ReopenAttendanceRequest {
 export interface SessionResponse {
   classSessionId: string;
   course: CourseResponse;
+  scheduleLevel: CourseLevel;
   sessionDate: string;
   status: SessionStatus;
   attendanceClosed: boolean;
@@ -37,6 +39,7 @@ export interface SessionResponse {
 export interface SessionSimpleResponse {
   classSessionId: string;
   course: CourseSimpleResponse;
+  scheduleLevel: CourseLevel;
   sessionDate: string;
   status: SessionStatus;
   attendanceClosed: boolean;

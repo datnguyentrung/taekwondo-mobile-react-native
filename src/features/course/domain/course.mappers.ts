@@ -1,7 +1,6 @@
 import type { CourseResponse, CourseSimpleResponse } from "../api/course.dto";
-import { CourseStatusLabel } from "../constants/course.constants";
+import { CourseLevelLabel, CourseStatusLabel } from "../constants/course.constants";
 import {
-  ScheduleLevelLabel,
   WeekdayCodeToLabel,
   WeekdayLabel,
   type Weekday,
@@ -27,9 +26,7 @@ export function mapCourseApiToView(
       ? (WeekdayCodeToLabel[schedule.weekday] ?? `Thứ ${schedule.weekday}`)
       : (WeekdayLabel[schedule.weekday as Weekday] ?? String(schedule.weekday))
     : "";
-  const levelText = schedule?.level
-    ? (ScheduleLevelLabel[schedule.level] ?? schedule.level)
-    : "";
+  const levelText = CourseLevelLabel[item.level] ?? item.level;
   const scheduleLabel =
     [weekdayText, levelText].filter(Boolean).join(" · ") || "Lịch học linh hoạt";
 

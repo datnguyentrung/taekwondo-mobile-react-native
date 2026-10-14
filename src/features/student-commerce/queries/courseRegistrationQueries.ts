@@ -2,7 +2,7 @@ import { useMutation, useQuery } from '@tanstack/react-query';
 
 import { courseApi } from '@/features/course/api/courseApi';
 import type { CourseSimpleResponse } from '@/features/course/api/course.dto';
-import { CourseStatusLabel } from '@/features/course/constants/course.constants';
+import { CourseLevelLabel, CourseStatusLabel } from '@/features/course/constants/course.constants';
 import { coursePriceApi } from '@/features/course-price/api/coursePriceApi';
 import type { CoursePriceSimpleResponse } from '@/features/course-price/api/course-price.dto';
 import { studentApi } from '@/features/student/api/studentApi';
@@ -50,7 +50,7 @@ export function mapCourseResponseToRegistrationCourse(
 ): CourseRegistrationCourseView {
   const schedule = course.courseSchedules[0]?.classSchedule;
   const branchName = schedule?.branch?.name ?? '';
-  const scheduleLabel = [schedule?.weekday, schedule?.level, schedule?.location]
+  const scheduleLabel = [schedule?.weekday, CourseLevelLabel[course.level], schedule?.location]
     .filter(Boolean)
     .join(' · ');
 
@@ -64,7 +64,7 @@ export function mapCourseResponseToRegistrationCourse(
       .filter((item) => item.status === 'ACTIVE')
       .map((item) => ({
         courseScheduleId: item.courseScheduleId,
-        label: [item.classSchedule.weekday, item.classSchedule.level, item.classSchedule.location]
+        label: [item.classSchedule.weekday, item.classSchedule.location]
           .filter(Boolean)
           .join(' · '),
       })),

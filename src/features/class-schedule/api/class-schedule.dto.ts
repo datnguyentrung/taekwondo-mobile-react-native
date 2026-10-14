@@ -1,7 +1,6 @@
 ﻿import type { BranchResponse, BranchSimpleResponse } from '@/features/branch/api/branch.dto';
 import type { CoachSummary } from '@/features/coach/api/coach-summary.dto';
 import type {
-  ScheduleLevel,
   ScheduleLocation,
   ScheduleShift,
   ScheduleStatus,
@@ -12,10 +11,8 @@ import type { ClassScheduleSummary } from './class-schedule-summary.dto';
 export interface GetClassSchedulesParams {
   branchId?: number;
   weekday?: Weekday;
-  level?: ScheduleLevel;
   location?: ScheduleLocation;
   status?: ScheduleStatus;
-  scheduleLevel?: ScheduleLevel;
   scheduleLocation?: ScheduleLocation;
   scheduleShift?: ScheduleShift;
   scheduleStatus?: ScheduleStatus;
@@ -28,7 +25,6 @@ export interface GetClassSchedulesParams {
 export interface ClassScheduleCreateRequest {
   branchId: number;
   weekday: Weekday;
-  level: ScheduleLevel;
   location: ScheduleLocation;
   status: ScheduleStatus;
   startTime: string;
@@ -41,7 +37,6 @@ export interface ClassScheduleResponse {
   scheduleId: string;
   branch: BranchResponse;
   weekday: Weekday;
-  level: ScheduleLevel;
   location: ScheduleLocation;
   status: ScheduleStatus;
   startTime: string;
@@ -52,15 +47,15 @@ export interface ClassScheduleSimpleResponse {
   scheduleId: string;
   branch: BranchSimpleResponse;
   weekday: Weekday;
-  level: ScheduleLevel;
   location: ScheduleLocation;
   status: ScheduleStatus;
+  startTime: string;
+  endTime: string;
 }
 
 export interface ClassScheduleDetail extends ClassScheduleResponse {
   branchName?: string;
   coaches?: CoachSummary[];
-  scheduleLevel?: ScheduleLevel;
   scheduleShift?: ScheduleShift;
   scheduleLocation?: ScheduleLocation;
   scheduleStatus?: ScheduleStatus;
@@ -72,7 +67,6 @@ export interface ClassScheduleDetail extends ClassScheduleResponse {
 export interface LegacyClassScheduleUpdateRequest {
   branchId?: number;
   weekday?: Weekday;
-  level?: ScheduleLevel;
   startTime?: string;
   endTime?: string;
   shift?: ScheduleShift;

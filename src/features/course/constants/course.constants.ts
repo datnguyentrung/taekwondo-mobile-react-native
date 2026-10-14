@@ -13,3 +13,17 @@ export const CourseStatusLabel: Record<CourseStatus, string> = {
   CLOSED: "Đã đóng",
   CANCELLED: "Đã hủy",
 };
+
+export type CourseLevel = "BASIC" | "ADVANCED" | "EXPERT";
+
+export const CourseLevelValues = [
+  "BASIC",
+  "ADVANCED",
+  "EXPERT",
+] as const satisfies readonly CourseLevel[];
+
+export const CourseLevelLabel: Record<CourseLevel, string> = {
+  BASIC: "Cơ bản",
+  ADVANCED: "Nâng cao",
+  EXPERT: "Chuyên sâu",
+};

@@ -7,12 +7,10 @@ import { ThemedText } from "@/shared/ui/ThemedText";
 import { Colors, hexToRgba, radii } from "@/theme";
 
 import type { CourseResponse } from "@/features/course/api/course.dto";
-import { CourseStatusLabel } from "@/features/course/constants/course.constants";
+import { CourseLevelLabel, CourseStatusLabel, type CourseLevel } from "@/features/course/constants/course.constants";
 import { CourseDetailContent } from "@/features/course/screens/CourseDetailContent";
 import {
-  ScheduleLevelLabel,
   WeekdayLabel,
-  type ScheduleLevel,
   type Weekday,
 } from "@/features/class-schedule/constants/class-schedule.constants";
 import { ClassSessionActionButtons } from "../components/ClassSessionActionButtons";
@@ -46,14 +44,16 @@ function getCatalogStatus(course: CourseResponse): CourseCatalogTab {
   return "ended";
 }
 
-function mapCourseToDetailView(course: CourseResponse): CourseView {
+function mapCourseToDetailView(
+  course: CourseResponse,
+  snapshotLevel?: CourseLevel,
+): CourseView {
   const schedule = course.courseSchedules[0]?.classSchedule;
   const weekdayLabel = schedule?.weekday
     ? WeekdayLabel[schedule.weekday as Weekday] ?? schedule.weekday
     : "";
-  const levelLabel = schedule?.level
-    ? ScheduleLevelLabel[schedule.level as ScheduleLevel] ?? schedule.level
-    : "Cơ bản";
+  const displayLevel = snapshotLevel ?? course.level;
+  const levelLabel = CourseLevelLabel[displayLevel] ?? displayLevel;
   const timeLabel =
     schedule?.startTime && schedule?.endTime
       ? `${formatTime(schedule.startTime)} - ${formatTime(schedule.endTime)}`
@@ -192,7 +192,10 @@ export function ClassSessionDetailScreen({
   });
 
   const course = sessionQuery.data?.course
-    ? mapCourseToDetailView(sessionQuery.data.course)
+    ? mapCourseToDetailView(
+        sessionQuery.data.course,
+        sessionQuery.data.scheduleLevel,
+      )
     : undefined;
   const progress = sessionQuery.data?.learningProgress ?? {
     completed: 0,

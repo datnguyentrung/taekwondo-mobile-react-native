@@ -1,7 +1,6 @@
 import type { ImageSourcePropType } from 'react-native';
 
 import type {
-  ScheduleLevel,
   ScheduleShift,
   Weekday,
 } from '../../constants/class-schedule.constants';
@@ -11,8 +10,6 @@ export type ScheduleScreenItem = {
   branchId: number;
   branchName: string;
   weekday: Weekday;
-  level: ScheduleLevel;
-  levelLabel: string;
   shift: ScheduleShift;
   shiftLabel: string;
   startTime: string;
@@ -25,7 +22,6 @@ export type ScheduleFilterState = {
   branchIds: number[];
   sessions: string[];
   shifts: string[];
-  levels: ScheduleLevel[];
 };
 
 export type ScheduleFilterGroupKey = keyof ScheduleFilterState;

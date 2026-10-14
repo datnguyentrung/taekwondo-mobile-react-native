@@ -334,13 +334,14 @@ export function AdminChip({
   onPress?: () => void;
   tone?: "neutral" | "success" | "warning" | "info" | "danger";
 }) {
+  const selectable = Boolean(onPress);
   const content = (
     <ThemedText
       type="featureLabel"
       style={[
         styles.chipText,
+        !selectable && tone !== "neutral" && styles[`chipText_${tone}`],
         selected && styles.chipTextSelected,
-        tone !== "neutral" && styles[`chipText_${tone}`],
       ]}
     >
       {label}
@@ -348,8 +349,9 @@ export function AdminChip({
   );
   const chipStyle = [
     styles.chip,
+    selectable && !selected && styles.chipSelectableUnselected,
+    !selectable && tone !== "neutral" && styles[`chip_${tone}`],
     selected && styles.chipSelected,
-    tone !== "neutral" && styles[`chip_${tone}`],
   ];
   return onPress ? (
     <Pressable
@@ -703,11 +705,16 @@ const styles = StyleSheet.create({
     borderColor: Colors.light.divider,
   },
   chipSelected: {
-    backgroundColor: Colors.light.primarySoft,
+    backgroundColor: Colors.light.primary,
     borderColor: Colors.light.primary,
+    borderWidth: 2,
+  },
+  chipSelectableUnselected: {
+    backgroundColor: "transparent",
+    borderColor: Colors.light.divider,
   },
   chipText: { color: Colors.light.textSecondary },
-  chipTextSelected: { color: Colors.light.primary },
+  chipTextSelected: { color: Colors.light.surface },
   chip_success: {
     backgroundColor: Colors.light.successSoft,
     borderColor: Colors.light.success,

@@ -5,6 +5,7 @@ import { AppIcon } from "@/shared/ui/AppIcon";
 import { ThemedText } from "@/shared/ui/ThemedText";
 import { Colors, effects, radii } from "@/theme";
 import type { ClassSessionEvaluationResponse } from "../api/session-attendance.dto";
+import { CourseLevelLabel } from "@/features/course/constants/course.constants";
 
 export interface AttendanceProgressStats {
   totalStudents: number;
@@ -29,12 +30,7 @@ export function ClassSessionOverviewCard({
     classSession.course.classSchedule?.location === "OUTDOOR"
       ? "Sân tập ngoài trời"
       : "Phòng tập CLC";
-  const courseLevel =
-    classSession.course.classSchedule?.level === "ADVANCED"
-      ? "Khóa Nâng Cao"
-      : classSession.course.classSchedule?.level === "INTERMEDIATE"
-        ? "Khóa Trung Cấp"
-        : "Khóa Căn Bản";
+  const courseLevel = `Khóa ${CourseLevelLabel[classSession.scheduleLevel]}`;
 
   const startTime = classSession.startTime?.slice(0, 5) ?? "15:00";
   const endTime = classSession.endTime?.slice(0, 5) ?? "17:00";

@@ -12,14 +12,14 @@ export function ScheduleCard({ schedule }: { schedule: ScheduleScreenItem }) {
         source={schedule.image}
         style={styles.cardImage}
         contentFit="cover"
-        accessibilityLabel={schedule.levelLabel}
+        accessibilityLabel={`${schedule.branchName}, ${schedule.shiftLabel}`}
       />
       <View style={styles.cardCopy}>
         <ThemedText type="subtitle" style={styles.branchName}>
           {schedule.branchName}
         </ThemedText>
-        <ThemedText type="bodySmall" style={styles.levelLabel}>
-          {schedule.levelLabel}
+        <ThemedText type="bodySmall" style={styles.shiftLabel}>
+          {schedule.shiftLabel}
         </ThemedText>
         <ThemedText type="bodySmall" style={styles.coachName}>
           {schedule.coachName}
@@ -59,7 +59,7 @@ const styles = StyleSheet.create({
     color: Colors.light.text,
     lineHeight: 26,
   },
-  levelLabel: {
+  shiftLabel: {
     color: Colors.light.text,
     fontFamily: typography.title.fontFamily,
     fontWeight: '600',

@@ -11,8 +11,8 @@ import type {
 } from './class-schedule.dto';
 
 export const classScheduleApi = {
-  async list(params?: GetClassSchedulesParams): Promise<PageResponse<ClassScheduleSimpleResponse>> {
-    const response = await javaApi.get<PageResponse<ClassScheduleSimpleResponse>>('/class-schedules', { params });
+  async list(params?: GetClassSchedulesParams): Promise<PageResponse<ClassScheduleResponse>> {
+    const response = await javaApi.get<PageResponse<ClassScheduleResponse>>('/class-schedules', { params });
     return response.data;
   },
 

@@ -120,6 +120,7 @@ const course: CourseResponse = {
   courseId: 'course-basic',
   courseSchedules: [],
   name: 'Taekwondo Cơ bản',
+  level: 'BASIC',
   capacity: 30,
   currentStudentCount: 0,
   status: 'OPEN',
@@ -157,7 +158,7 @@ describe('course registration view-model mappers', () => {
     expect(mapCourseResponseToRegistrationCourse(course)).toMatchObject({
       courseId: 'course-basic',
       courseName: 'Taekwondo Cơ bản',
-      statusLabel: 'Đang mở đăng ký',
+      statusLabel: 'Mở đăng ký',
     });
     expect(mapCoursePriceToPackage(coursePrice)).toEqual({
       id: 'price-3m',

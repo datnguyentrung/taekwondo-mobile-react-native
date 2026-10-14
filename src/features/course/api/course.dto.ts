@@ -3,7 +3,7 @@ import type {
   ClassScheduleSimpleResponse,
 } from "@/features/class-schedule/api/class-schedule.dto";
 import type { PersonBriefResponse } from "@/features/person/domain/person.types";
-import type { CourseStatus } from "../constants/course.constants";
+import type { CourseLevel, CourseStatus } from "../constants/course.constants";
 
 export interface CourseScheduleResponse {
   courseScheduleId: string;
@@ -33,12 +33,14 @@ export interface CourseScheduleUpsertRequest {
 export interface CourseCreateRequest {
   courseSchedules: CourseScheduleUpsertRequest[];
   name: string;
+  level: CourseLevel;
   capacity: number;
   status: CourseStatus;
 }
 
 export interface CourseUpdateRequest {
   name: string;
+  level: CourseLevel;
   capacity: number;
   status: CourseStatus;
 }
@@ -47,6 +49,7 @@ export interface CourseResponse {
   courseId: string;
   courseSchedules: CourseScheduleResponse[];
   name: string;
+  level: CourseLevel;
   capacity: number;
   currentStudentCount: number;
   status: CourseStatus;
@@ -61,6 +64,7 @@ export interface CourseSimpleResponse {
   courseId: string;
   courseSchedules: CourseScheduleSimpleResponse[];
   name: string;
+  level: CourseLevel;
   capacity: number;
   currentStudentCount: number;
   status: CourseStatus;

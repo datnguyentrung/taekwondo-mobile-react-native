@@ -6,6 +6,9 @@ import { Check, DocText, Play } from 'reicon-react-native';
 import { courseApi } from '@/features/course/api/courseApi';
 import type { CourseResponse } from '@/features/course/api/course.dto';
 import {
+  type CourseLevel,
+  CourseLevelLabel,
+  CourseLevelValues,
   type CourseStatus,
   CourseStatusLabel,
   CourseStatusValues,
@@ -13,6 +16,7 @@ import {
 import { getApiErrorMessage } from '@/infrastructure/http/httpError';
 import {
   AdminButton,
+  AdminChip,
   AdminField,
 } from '@/shared/ui/admin/AdministrationPrimitives';
 import { AppIcon } from '@/shared/ui/AppIcon';
@@ -24,6 +28,7 @@ import { activeEffect, Colors, hexToRgba, radii } from '@/theme';
 
 export type CourseEditSheetInitialData = {
   name: string;
+  level: CourseLevel;
   capacity: number;
   status: CourseStatus;
 };
@@ -159,6 +164,7 @@ function CourseEditSheetComponent({
 
   const [name, setName] = useState(initialData?.name ?? '');
   const [capacity, setCapacity] = useState(String(initialData?.capacity ?? 0));
+  const [level, setLevel] = useState<CourseLevel>(initialData.level);
   const [status, setStatus] = useState<CourseStatus>(initialData?.status ?? 'OPEN');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [baselineData, setBaselineData] = useState(initialData);
@@ -171,6 +177,7 @@ function CourseEditSheetComponent({
       setBaselineData(initialData);
       setName(initialData?.name ?? '');
       setCapacity(String(initialData?.capacity ?? 0));
+      setLevel(initialData.level);
       setStatus(initialData?.status ?? 'OPEN');
       setIsSubmitting(false);
     }
@@ -188,9 +195,10 @@ function CourseEditSheetComponent({
     return (
       trimmedName !== initialName ||
       parsedCapacity !== (baselineData?.capacity ?? 0) ||
+      level !== baselineData.level ||
       status !== (baselineData?.status ?? 'OPEN')
     );
-  }, [name, parsedCapacity, status, baselineData]);
+  }, [name, parsedCapacity, level, status, baselineData]);
 
   const isValid = useMemo(() => {
     return (name ?? '').trim().length > 0 && parsedCapacity > 0;
@@ -216,6 +224,7 @@ function CourseEditSheetComponent({
         courseId,
         {
           name: (name ?? '').trim(),
+          level,
           capacity: parsedCapacity,
           status,
         },
@@ -246,7 +255,7 @@ function CourseEditSheetComponent({
         variant: 'error',
       });
     }
-  }, [courseId, isDirty, isValid, isSubmitting, name, parsedCapacity, status, toast, onSuccess, onClose]);
+  }, [courseId, isDirty, isValid, isSubmitting, name, level, parsedCapacity, status, toast, onSuccess, onClose]);
 
   return (
     <BottomSheetWindow
@@ -281,6 +290,23 @@ function CourseEditSheetComponent({
           onChangeText={setName}
           editable={!isSubmitting}
         />
+
+        <View style={styles.statusSection}>
+          <ThemedText type="featureLabel" style={styles.statusSectionTitle}>
+            Level khóa học *
+          </ThemedText>
+          <View style={styles.levelRow}>
+            {CourseLevelValues.map((value) => (
+              <AdminChip
+                key={value}
+                label={CourseLevelLabel[value]}
+                tone={value === 'EXPERT' ? 'danger' : value === 'ADVANCED' ? 'info' : 'neutral'}
+                selected={level === value}
+                onPress={isSubmitting ? undefined : () => setLevel(value)}
+              />
+            ))}
+          </View>
+        </View>
 
         <AdminField
           label="Sức chứa tối đa (học viên)"
@@ -337,6 +363,11 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 10,
+  },
+  levelRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
   },
   statusCard: {
     flex: 1,

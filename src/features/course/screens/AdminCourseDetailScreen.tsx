@@ -69,6 +69,7 @@ export function AdminCourseDetailScreen({ courseId }: CourseRouteProps) {
 
     return {
       name: apiCourse?.name ?? course?.courseName ?? "",
+      level: apiCourse?.level ?? "BASIC",
       capacity: apiCourse?.capacity ?? course?.capacity ?? 20,
       status: defaultStatus,
     };

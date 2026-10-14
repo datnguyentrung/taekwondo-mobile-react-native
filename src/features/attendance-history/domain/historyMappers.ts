@@ -95,7 +95,7 @@ export function mapStudentAttendanceToHistoryRecord(
     branchId: classSchedule?.branch?.branchId ?? meta.branchId,
     shiftLabel: meta.shiftLabel,
     weekday: classSchedule?.weekday ?? meta.weekday,
-    scheduleLevel: classSchedule?.level ?? meta.scheduleLevel,
+    scheduleLevel: attendance.classSession?.scheduleLevel ?? meta.scheduleLevel,
     location: classSchedule?.location ?? meta.location,
     statusLabel: AttendanceStatusLabel[attendance.attendanceStatus],
     badgeLabel: EvaluationStatusLabel[evaluationStatus],

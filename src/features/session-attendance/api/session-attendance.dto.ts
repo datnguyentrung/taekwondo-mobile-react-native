@@ -20,6 +20,7 @@ import type {
   AttendanceStatus,
   EvaluationStatus,
 } from "../constants/session-attendance.constants";
+import type { CourseLevel } from "@/features/course/constants/course.constants";
 
 export interface AllowedActions {
   update: boolean;
@@ -150,17 +151,18 @@ export interface ClassSessionEvaluationResponse {
     course: {
       courseId: string;
       name: string;
+      level: CourseLevel;
       classSchedule?: {
         branch?: {
           branchId: number;
           name: string;
         } | null;
         weekday?: number | string | null;
-        level?: string | null;
         location?: string | null;
         status?: string | null;
       } | null;
     };
+    scheduleLevel: CourseLevel;
     sessionDate: string;
     status: string;
     attendanceClosed: boolean;
