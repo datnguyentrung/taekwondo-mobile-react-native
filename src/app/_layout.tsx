@@ -34,8 +34,8 @@ function AuthRouter() {
       </Stack.Protected>
       <Stack.Protected guard={status === 'authenticated'}>
         <Stack.Screen name="(app)" />
-        <Stack.Screen name="(sparring)" />
       </Stack.Protected>
+      <Stack.Screen name="(sparring)" />
     </Stack>
   );
 }

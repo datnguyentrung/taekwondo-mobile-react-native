@@ -1,4 +1,4 @@
-export type SparringSide = 'red' | 'blue';
+export type SparringSide = "red" | "blue";
 
 export type SparringSnapshot = {
   roomCode: string;
@@ -13,11 +13,14 @@ export type SparringSnapshot = {
 };
 
 export type SparringCommand =
-  | { type: 'judgeScore'; side: SparringSide; points: 2 | 3 }
-  | { type: 'operatorAdjustScore'; side: SparringSide; delta: -1 | 1 }
-  | { type: 'operatorAdjustPenalty'; side: SparringSide; delta: -1 | 1 }
-  | { type: 'setRound'; round: 1 | 2 | 3 }
-  | { type: 'setDuration'; seconds: number }
-  | { type: 'start' | 'pause' | 'end' };
+  | { type: 'judgeScore'; side: SparringSide; points: 1 | 2 | 3 | 4 | 5 }
+  | { type: "operatorAdjustScore"; side: SparringSide; delta: -1 | 1 }
+  | { type: "operatorAdjustPenalty"; side: SparringSide; delta: -1 | 1 }
+  | { type: "setRound"; round: 1 | 2 | 3 }
+  | { type: "setDuration"; seconds: number }
+  | { type: "start" | "pause" | "end" };
 
-export type SparringRoomEnvelope = { roomCode: string; snapshot: SparringSnapshot };
+export type SparringRoomEnvelope = {
+  roomCode: string;
+  snapshot: SparringSnapshot;
+};
