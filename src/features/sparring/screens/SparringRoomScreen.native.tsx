@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, useCallback } from 'react';
+import { useEffect, useMemo, useState, useCallback } from 'react';
 import {
   StyleSheet,
   View,
@@ -21,7 +21,7 @@ import Svg, {
 } from 'react-native-svg';
 
 import { ThemedText } from '@/shared/ui/ThemedText';
-import { isSparringRoomCode } from '../domain/sparringRoom';
+import { isSparringRoomCode, judgeScoreForGesture } from '../domain/sparringRoom';
 import { useSparringRoom } from '../hooks/useSparringRoom';
 import type { SparringSide } from '../domain/sparring.types';
 
@@ -29,21 +29,41 @@ import type { SparringSide } from '../domain/sparring.types';
 // Đặt -15px để phản hồi cực kỳ nhạy và dứt khoát trên màn hình cảm ứng
 const SWIPE_UP_DISTANCE = -15;
 
+class JudgeGestureTracker {
+  private startY = 0;
+  private triggered = false;
+
+  start(pageY: number) {
+    this.startY = pageY;
+    this.triggered = false;
+  }
+
+  displacement(gestureDy: number, pageY: number) {
+    return gestureDy !== 0 ? gestureDy : pageY - this.startY;
+  }
+
+  triggerOnce() {
+    if (this.triggered) return false;
+    this.triggered = true;
+    return true;
+  }
+
+  wasTriggered() {
+    return this.triggered;
+  }
+}
+
 interface JudgeCardProps {
   side: SparringSide;
   basePoints: 2 | 3;
   onScore: (side: SparringSide, points: 1 | 2 | 3 | 4 | 5) => void;
 }
 
-function JudgeCard({ side, basePoints, onScore }: JudgeCardProps) {
+export function JudgeCard({ side, basePoints, onScore }: JudgeCardProps) {
   const isRed = side === 'red';
-  const swipePoints = (basePoints === 3 ? 5 : 4) as 4 | 5;
+  const swipePoints = judgeScoreForGesture(basePoints, true);
 
   const [isPressed, setIsPressed] = useState(false);
-
-  // Lưu trữ tọa độ bắt đầu và cờ đã trigger
-  const startYRef = useRef(0);
-  const isSwipeTriggeredRef = useRef(false);
 
   const triggerScore = useCallback(
     (pts: 1 | 2 | 3 | 4 | 5) => {
@@ -54,29 +74,30 @@ function JudgeCard({ side, basePoints, onScore }: JudgeCardProps) {
   );
 
   // PanResponder native 100% đáng tin cậy trên React Native Mobile
-  const panResponder = useRef(
-    PanResponder.create({
+  const panResponder = useMemo(
+    () => {
+      const gesture = new JudgeGestureTracker();
+      return PanResponder.create({
       onStartShouldSetPanResponder: () => true,
       onMoveShouldSetPanResponder: (_, gestureState) => {
         return Math.abs(gestureState.dy) > 4;
       },
       onPanResponderGrant: (evt) => {
-        startYRef.current = evt.nativeEvent.pageY;
-        isSwipeTriggeredRef.current = false;
+        gesture.start(evt.nativeEvent.pageY);
         setIsPressed(true);
       },
       onPanResponderMove: (evt, gestureState) => {
-        const dy = gestureState.dy !== 0 ? gestureState.dy : evt.nativeEvent.pageY - startYRef.current;
-        if (dy <= SWIPE_UP_DISTANCE && !isSwipeTriggeredRef.current) {
-          isSwipeTriggeredRef.current = true;
+        const dy = gesture.displacement(gestureState.dy, evt.nativeEvent.pageY);
+        if (dy <= SWIPE_UP_DISTANCE && gesture.triggerOnce()) {
           triggerScore(swipePoints);
         }
       },
       onPanResponderRelease: (evt, gestureState) => {
         setIsPressed(false);
-        const dy = gestureState.dy !== 0 ? gestureState.dy : evt.nativeEvent.pageY - startYRef.current;
-        if (!isSwipeTriggeredRef.current) {
+        const dy = gesture.displacement(gestureState.dy, evt.nativeEvent.pageY);
+        if (!gesture.wasTriggered()) {
           if (dy <= SWIPE_UP_DISTANCE) {
+            gesture.triggerOnce();
             triggerScore(swipePoints);
           } else {
             triggerScore(basePoints);
@@ -86,8 +107,10 @@ function JudgeCard({ side, basePoints, onScore }: JudgeCardProps) {
       onPanResponderTerminate: () => {
         setIsPressed(false);
       },
-    })
-  ).current;
+      });
+    },
+    [basePoints, swipePoints, triggerScore]
+  );
 
   const dotsColor = 'rgba(255, 255, 255, 0.45)';
 
@@ -115,6 +138,8 @@ function JudgeCard({ side, basePoints, onScore }: JudgeCardProps) {
       {/* Ô chấm điểm cố định 100% vị trí, không bị kéo chạy theo, chỉ đổi style hover/press */}
       <View
         {...panResponder.panHandlers}
+        accessibilityLabel={`${side === 'red' ? 'Đỏ' : 'Xanh'} cộng ${basePoints} điểm`}
+        accessibilityRole="button"
         style={[
           styles.judgeCard,
           isRed ? styles.redCard : styles.blueCard,
@@ -145,11 +170,14 @@ export function SparringRoomScreen() {
     };
   }, []);
 
-  if (!isSparringRoomCode(roomCode ?? '')) return null;
+  const handleScore = useCallback(
+    (side: SparringSide, points: 1 | 2 | 3 | 4 | 5) => {
+      send({ type: 'judgeScore', side, points });
+    },
+    [send]
+  );
 
-  const handleScore = (side: SparringSide, points: 1 | 2 | 3 | 4 | 5) => {
-    send({ type: 'judgeScore', side, points });
-  };
+  if (!isSparringRoomCode(roomCode ?? '')) return null;
 
   const handleScore1 = (side: SparringSide) => {
     void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);

@@ -4,7 +4,7 @@ import { useEffect } from 'react';
 import { useColorScheme } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
-import { AppProviders } from '@/app/providers/AppProviders';
+import { AppProviders } from '@/providers/AppProviders';
 import {
   BootstrapScreen,
   SessionRecoveryScreen,

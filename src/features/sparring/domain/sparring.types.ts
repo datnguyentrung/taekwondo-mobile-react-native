@@ -2,6 +2,8 @@ export type SparringSide = "red" | "blue";
 
 export type SparringSnapshot = {
   roomCode: string;
+  redName: string;
+  blueName: string;
   round: number;
   remainingSeconds: number;
   redScore: number;
@@ -14,8 +16,9 @@ export type SparringSnapshot = {
 
 export type SparringCommand =
   | { type: 'judgeScore'; side: SparringSide; points: 1 | 2 | 3 | 4 | 5 }
-  | { type: "operatorAdjustScore"; side: SparringSide; delta: -1 | 1 }
-  | { type: "operatorAdjustPenalty"; side: SparringSide; delta: -1 | 1 }
+  | { type: 'operatorAdjustScore'; side: SparringSide; delta: number }
+  | { type: 'operatorAdjustPenalty'; side: SparringSide; delta: number }
+  | { type: 'setCompetitorName'; side: SparringSide; name: string }
   | { type: "setRound"; round: 1 | 2 | 3 }
   | { type: "setDuration"; seconds: number }
   | { type: "start" | "pause" | "end" };

@@ -32,7 +32,7 @@ Phạm vi: toàn bộ `src/`, route entries, platform adapters, cấu hình Expo
 | `src/routes/activities/ActivitiesScreen.tsx` | Danh mục hoạt động và quick actions | `features/activities/screens` | Di chuyển |
 | `src/routes/explore/*` | Màn hình/component Explore | `features/explore` | Di chuyển |
 | `src/routes/account/*` | Account và hồ sơ cá nhân | `features/user-profile` | Di chuyển |
-| `src/routes/providers/AppProviders.tsx` | Composition root | `app/providers` | Di chuyển |
+| `src/routes/providers/AppProviders.tsx` | Composition root | `src/providers` | Di chuyển |
 | Template Home/Splash không còn caller | Mã mẫu không thuộc sản phẩm | Không có | Xóa |
 | `SessionAttendanceScreen.tsx` | Query, thống kê, optimistic update, API | Hook và pure domain rule | Tách |
 | `CourseScreen.tsx` | Query, mapper, cache registration | `queries/courseCatalogQueries.ts` | Tách |

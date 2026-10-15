@@ -44,12 +44,12 @@ Quy tắc:
 src/
 ├── app/                         # Expo Router entries và app composition
 │   ├── _layout.tsx
-│   ├── providers/
-│   │   └── AppProviders.tsx
 │   ├── (auth)/
 │   └── (app)/
 │       ├── _layout.tsx
 │       └── _layout.web.tsx
+├── providers/                   # App composition and runtime providers
+│   └── AppProviders.tsx
 ├── routes/
 │   └── navigation/              # Stack/tab shell, guards, shared headers
 ├── features/

@@ -6,6 +6,9 @@ import {
   Modal,
   ScrollView,
   Platform,
+  TextInput,
+  type StyleProp,
+  type TextStyle,
 } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
 import {
@@ -25,6 +28,115 @@ import { ThemedText } from '@/shared/ui/ThemedText';
 import { formatSparringTime, isSparringRoomCode } from '../domain/sparringRoom';
 import { useSparringRoom } from '../hooks/useSparringRoom';
 import type { SparringCommand, SparringSide } from '../domain/sparring.types';
+
+const MAX_COMPETITOR_NAME_LENGTH = 30;
+
+function normalizeStep(value: string, maximum: number): string {
+  const parsed = Number.parseInt(value, 10);
+  if (!Number.isFinite(parsed)) return '1';
+  return String(Math.min(maximum, Math.max(1, parsed)));
+}
+
+function stepAmount(value: string, maximum: number): number {
+  return Number(normalizeStep(value, maximum));
+}
+
+type StepValueInputProps = {
+  accessibilityLabel: string;
+  maximum: number;
+  value: string;
+  onChange: (value: string) => void;
+};
+
+function StepValueInput({
+  accessibilityLabel,
+  maximum,
+  value,
+  onChange,
+}: StepValueInputProps) {
+  const commit = () => onChange(normalizeStep(value, maximum));
+  return (
+    <TextInput
+      accessibilityLabel={accessibilityLabel}
+      value={value}
+      onChangeText={(nextValue) =>
+        onChange(nextValue.replace(/\D/g, '').slice(0, String(maximum).length))
+      }
+      onBlur={commit}
+      onSubmitEditing={commit}
+      keyboardType="number-pad"
+      inputMode="numeric"
+      maxLength={String(maximum).length}
+      selectTextOnFocus
+      style={[styles.valueBox, styles.valueInput]}
+    />
+  );
+}
+
+type EditableTeamNameProps = {
+  editable: boolean;
+  name: string;
+  side: SparringSide;
+  style: StyleProp<TextStyle>;
+  onCommit: (side: SparringSide, name: string) => void;
+};
+
+function EditableTeamName({
+  editable,
+  name,
+  side,
+  style,
+  onCommit,
+}: EditableTeamNameProps) {
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState(name);
+  const committingRef = React.useRef(false);
+
+  const finishEditing = () => {
+    if (committingRef.current) return;
+    committingRef.current = true;
+    const normalized = draft.trim();
+    if (normalized && normalized !== name) onCommit(side, normalized);
+    setEditing(false);
+  };
+
+  if (editing && editable) {
+    return (
+      <TextInput
+        accessibilityLabel={`Tên võ sĩ ${side === 'red' ? 'đỏ' : 'xanh'}`}
+        autoFocus
+        maxLength={MAX_COMPETITOR_NAME_LENGTH}
+        onBlur={finishEditing}
+        onChangeText={setDraft}
+        onKeyPress={({ nativeEvent }) => {
+          if (nativeEvent.key === 'Escape') {
+            committingRef.current = true;
+            setDraft(name);
+            setEditing(false);
+          }
+        }}
+        onSubmitEditing={finishEditing}
+        selectTextOnFocus
+        style={[styles.teamNameInput, style]}
+        value={draft}
+      />
+    );
+  }
+
+  return (
+    <Pressable
+      accessibilityRole={editable ? 'button' : undefined}
+      accessibilityLabel={editable ? `Sửa tên ${name}` : name}
+      disabled={!editable}
+      onPress={() => {
+        committingRef.current = false;
+        setDraft(name);
+        setEditing(true);
+      }}>
+      <ThemedText style={style} numberOfLines={1}>{name}</ThemedText>
+    </Pressable>
+  );
+}
 
 export function SparringRoomScreen() {
   const { roomCode: raw } = useLocalSearchParams<{ roomCode: string }>();
@@ -61,9 +173,11 @@ export function SparringRoomScreen() {
   const [pointsToWin, setPointsToWin] = useState(99);
 
   // Step amounts for middle controller
-  const [timeStep] = useState(1);
-  const [scoreStep] = useState(1);
-  const [penaltyStep] = useState(1);
+  const [timeStep, setTimeStep] = useState('1');
+  const [redScoreStep, setRedScoreStep] = useState('1');
+  const [blueScoreStep, setBlueScoreStep] = useState('1');
+  const [redPenaltyStep, setRedPenaltyStep] = useState('1');
+  const [bluePenaltyStep, setBluePenaltyStep] = useState('1');
 
   // Hiệp thắng (Round rounds won / summary)
   const [redRoundsWon] = useState(0);
@@ -81,14 +195,14 @@ export function SparringRoomScreen() {
   }, [action, snapshot.running]);
 
   const adjustScore = useCallback(
-    (side: SparringSide, delta: -1 | 1) => {
+    (side: SparringSide, delta: number) => {
       action({ type: 'operatorAdjustScore', side, delta });
     },
     [action]
   );
 
   const adjustPenalty = useCallback(
-    (side: SparringSide, delta: -1 | 1) => {
+    (side: SparringSide, delta: number) => {
       action({ type: 'operatorAdjustPenalty', side, delta });
     },
     [action]
@@ -217,13 +331,21 @@ export function SparringRoomScreen() {
         <View
           style={[
             styles.teamColumn,
+            viewMode === 'operator' && styles.teamColumnOperator,
             viewMode === 'display' && styles.teamColumnDisplay,
           ]}>
-          <ThemedText style={[styles.teamLabel, styles.redLabel]}>RED</ThemedText>
+          <EditableTeamName
+            editable={operator && viewMode === 'operator'}
+            name={snapshot.redName}
+            side="red"
+            style={[styles.teamLabel, styles.redLabel]}
+            onCommit={(side, name) => action({ type: 'setCompetitorName', side, name })}
+          />
           <View
             style={[
               styles.scoreCard,
               styles.redScoreCard,
+              viewMode === 'operator' && styles.scoreCardOperator,
               viewMode === 'display' && styles.scoreCardDisplay,
             ]}>
             <ThemedText
@@ -251,15 +373,20 @@ export function SparringRoomScreen() {
               <ThemedText style={styles.controlHeader}>TIME (SEC)</ThemedText>
               <View style={styles.controlRow}>
                 <Pressable
-                  onPress={() => adjustTime(-timeStep)}
+                  accessibilityLabel="Giảm thời gian"
+                  onPress={() => adjustTime(-stepAmount(timeStep, 60))}
                   style={styles.circleBtn}>
                   <Minus size={18} color="#444" strokeWidth={3} />
                 </Pressable>
-                <View style={styles.valueBox}>
-                  <ThemedText style={styles.valueText}>{timeStep}</ThemedText>
-                </View>
+                <StepValueInput
+                  accessibilityLabel="Bước điều chỉnh thời gian"
+                  maximum={60}
+                  value={timeStep}
+                  onChange={setTimeStep}
+                />
                 <Pressable
-                  onPress={() => adjustTime(timeStep)}
+                  accessibilityLabel="Tăng thời gian"
+                  onPress={() => adjustTime(stepAmount(timeStep, 60))}
                   style={styles.circleBtn}>
                   <Plus size={18} color="#444" strokeWidth={3} />
                 </Pressable>
@@ -272,15 +399,20 @@ export function SparringRoomScreen() {
                 <ThemedText style={styles.controlHeader}>POINTS</ThemedText>
                 <View style={styles.controlRow}>
                   <Pressable
-                    onPress={() => adjustScore('red', -1)}
+                    accessibilityLabel="Giảm điểm đỏ"
+                    onPress={() => adjustScore('red', -stepAmount(redScoreStep, 99))}
                     style={styles.circleBtn}>
                     <Minus size={18} color="#444" strokeWidth={3} />
                   </Pressable>
-                  <View style={styles.valueBox}>
-                    <ThemedText style={styles.valueText}>{scoreStep}</ThemedText>
-                  </View>
+                  <StepValueInput
+                    accessibilityLabel="Bước điều chỉnh điểm đỏ"
+                    maximum={99}
+                    value={redScoreStep}
+                    onChange={setRedScoreStep}
+                  />
                   <Pressable
-                    onPress={() => adjustScore('red', 1)}
+                    accessibilityLabel="Tăng điểm đỏ"
+                    onPress={() => adjustScore('red', stepAmount(redScoreStep, 99))}
                     style={styles.circleBtn}>
                     <Plus size={18} color="#444" strokeWidth={3} />
                   </Pressable>
@@ -291,15 +423,20 @@ export function SparringRoomScreen() {
                 <ThemedText style={styles.controlHeader}>POINTS</ThemedText>
                 <View style={styles.controlRow}>
                   <Pressable
-                    onPress={() => adjustScore('blue', -1)}
+                    accessibilityLabel="Giảm điểm xanh"
+                    onPress={() => adjustScore('blue', -stepAmount(blueScoreStep, 99))}
                     style={styles.circleBtn}>
                     <Minus size={18} color="#444" strokeWidth={3} />
                   </Pressable>
-                  <View style={styles.valueBox}>
-                    <ThemedText style={styles.valueText}>{scoreStep}</ThemedText>
-                  </View>
+                  <StepValueInput
+                    accessibilityLabel="Bước điều chỉnh điểm xanh"
+                    maximum={99}
+                    value={blueScoreStep}
+                    onChange={setBlueScoreStep}
+                  />
                   <Pressable
-                    onPress={() => adjustScore('blue', 1)}
+                    accessibilityLabel="Tăng điểm xanh"
+                    onPress={() => adjustScore('blue', stepAmount(blueScoreStep, 99))}
                     style={styles.circleBtn}>
                     <Plus size={18} color="#444" strokeWidth={3} />
                   </Pressable>
@@ -313,15 +450,20 @@ export function SparringRoomScreen() {
                 <ThemedText style={styles.controlHeader}>PENALTY</ThemedText>
                 <View style={styles.controlRow}>
                   <Pressable
-                    onPress={() => adjustPenalty('red', -1)}
+                    accessibilityLabel="Giảm điểm phạt đỏ"
+                    onPress={() => adjustPenalty('red', -stepAmount(redPenaltyStep, 20))}
                     style={styles.circleBtn}>
                     <Minus size={18} color="#444" strokeWidth={3} />
                   </Pressable>
-                  <View style={styles.valueBox}>
-                    <ThemedText style={styles.valueText}>{penaltyStep}</ThemedText>
-                  </View>
+                  <StepValueInput
+                    accessibilityLabel="Bước điều chỉnh điểm phạt đỏ"
+                    maximum={20}
+                    value={redPenaltyStep}
+                    onChange={setRedPenaltyStep}
+                  />
                   <Pressable
-                    onPress={() => adjustPenalty('red', 1)}
+                    accessibilityLabel="Tăng điểm phạt đỏ"
+                    onPress={() => adjustPenalty('red', stepAmount(redPenaltyStep, 20))}
                     style={styles.circleBtn}>
                     <Plus size={18} color="#444" strokeWidth={3} />
                   </Pressable>
@@ -332,15 +474,20 @@ export function SparringRoomScreen() {
                 <ThemedText style={styles.controlHeader}>PENALTY</ThemedText>
                 <View style={styles.controlRow}>
                   <Pressable
-                    onPress={() => adjustPenalty('blue', -1)}
+                    accessibilityLabel="Giảm điểm phạt xanh"
+                    onPress={() => adjustPenalty('blue', -stepAmount(bluePenaltyStep, 20))}
                     style={styles.circleBtn}>
                     <Minus size={18} color="#444" strokeWidth={3} />
                   </Pressable>
-                  <View style={styles.valueBox}>
-                    <ThemedText style={styles.valueText}>{penaltyStep}</ThemedText>
-                  </View>
+                  <StepValueInput
+                    accessibilityLabel="Bước điều chỉnh điểm phạt xanh"
+                    maximum={20}
+                    value={bluePenaltyStep}
+                    onChange={setBluePenaltyStep}
+                  />
                   <Pressable
-                    onPress={() => adjustPenalty('blue', 1)}
+                    accessibilityLabel="Tăng điểm phạt xanh"
+                    onPress={() => adjustPenalty('blue', stepAmount(bluePenaltyStep, 20))}
                     style={styles.circleBtn}>
                     <Plus size={18} color="#444" strokeWidth={3} />
                   </Pressable>
@@ -354,13 +501,21 @@ export function SparringRoomScreen() {
         <View
           style={[
             styles.teamColumn,
+            viewMode === 'operator' && styles.teamColumnOperator,
             viewMode === 'display' && styles.teamColumnDisplay,
           ]}>
-          <ThemedText style={[styles.teamLabel, styles.blueLabel]}>BLUE</ThemedText>
+          <EditableTeamName
+            editable={operator && viewMode === 'operator'}
+            name={snapshot.blueName}
+            side="blue"
+            style={[styles.teamLabel, styles.blueLabel]}
+            onCommit={(side, name) => action({ type: 'setCompetitorName', side, name })}
+          />
           <View
             style={[
               styles.scoreCard,
               styles.blueScoreCard,
+              viewMode === 'operator' && styles.scoreCardOperator,
               viewMode === 'display' && styles.scoreCardDisplay,
             ]}>
             <ThemedText
@@ -940,13 +1095,31 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)' as any,
   },
+  teamColumnOperator: {
+    maxWidth: 'min(31vw, 420px)' as any,
+  },
   teamColumnDisplay: {
+    maxWidth: 'none' as any,
   },
   teamLabel: {
     fontSize: 28,
     fontWeight: '800',
     marginBottom: 6,
     letterSpacing: 1,
+    maxWidth: 420,
+    textAlign: 'center',
+  },
+  teamNameInput: {
+    minWidth: 180,
+    maxWidth: 420,
+    paddingHorizontal: 12,
+    paddingVertical: 2,
+    borderWidth: 1,
+    borderColor: '#D1D5DB',
+    borderRadius: 8,
+    backgroundColor: '#FFFFFF',
+    textAlign: 'center',
+    outlineStyle: 'none' as any,
   },
   redLabel: {
     color: '#EF4444',
@@ -965,6 +1138,10 @@ const styles = StyleSheet.create({
   scoreCardDisplay: {
     borderRadius: 24,
   },
+  scoreCardOperator: {
+    width: '88%',
+    flex: 0.86,
+  },
   redScoreCard: {
     backgroundColor: '#EF4444',
   },
@@ -972,11 +1149,11 @@ const styles = StyleSheet.create({
     backgroundColor: '#1D4ED8',
   },
   scoreNumber: {
-    fontSize: 'min(24vh, 180px)' as any,
+    fontSize: 'min(27vh, 207px)' as any,
     fontWeight: '900',
     color: '#FFFFFF',
     fontVariant: ['tabular-nums'],
-    lineHeight: 'min(24vh, 180px)' as any,
+    lineHeight: 'min(27vh, 207px)' as any,
     transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)' as any,
   },
   scoreNumberDisplay: {
@@ -1001,7 +1178,7 @@ const styles = StyleSheet.create({
     color: '#4B5563',
   },
   middleController: {
-    width: 220,
+    width: 292,
     alignItems: 'center',
     justifyContent: 'center',
     gap: 14,
@@ -1033,29 +1210,32 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   circleBtn: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
+    width: 34,
+    height: 34,
+    borderRadius: 17,
     backgroundColor: '#D1D5DB',
     alignItems: 'center',
     justifyContent: 'center',
     cursor: 'pointer' as any,
   },
   valueBox: {
-    minWidth: 38,
-    height: 28,
+    width: 66,
+    height: 42,
     borderWidth: 1,
     borderColor: '#D1D5DB',
     borderRadius: 4,
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: '#FFFFFF',
-    paddingHorizontal: 4,
+    paddingHorizontal: 8,
   },
-  valueText: {
-    fontSize: 15,
-    fontWeight: '700',
+  valueInput: {
+    fontSize: 22,
+    lineHeight: 26,
+    fontWeight: '800',
     color: '#111827',
+    textAlign: 'center',
+    outlineStyle: 'none' as any,
   },
   footer: {
     height: 44,
