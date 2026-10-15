@@ -1,1 +1,1 @@
-export { default } from "@/routes/activities/ActivitiesScreen";
+export { default } from "@/features/activities/screens/ActivitiesScreen";

@@ -1,12 +1,10 @@
-import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useRouter, type Href } from "expo-router";
 import { useEffect, useState } from "react";
 import { View } from "react-native";
 
 import type { UserStatus } from "../constants/user.constants";
-import { userApi } from "../api/userApi";
 import { userStatusLabel } from "../domain/userViewModel";
-import { userKeys, useUser } from "../queries/userQueries";
+import { useDeleteUser, useUpdateUser, useUser } from "../queries/userQueries";
 import { useScreenRefresh } from "@/infrastructure/query/useScreenRefresh";
 import StackScreenLayout from "@/routes/navigation/layouts/StackScreenLayout";
 import {
@@ -29,7 +27,6 @@ export function UserEditScreen() {
   const router = useRouter();
   const userId = useUserId();
   const user = useUser(userId);
-  const queryClient = useQueryClient();
   const toast = useToast();
   const [phone, setPhone] = useState("");
   const [newPassword, setNewPassword] = useState("");
@@ -47,18 +44,8 @@ export function UserEditScreen() {
     setStatus(user.data.status ?? "PENDING");
   }, [user.data]);
 
-  const save = useMutation({
-    mutationFn: () =>
-      userApi.update(userId as string, {
-        phoneNumber: phone.trim(),
-        passwordHash: newPassword.trim(),
-        status,
-        lastLoginAt: user.data?.lastLoginAt ?? "1970-01-01T00:00:00",
-        authorizationVersion: user.data?.authorizationVersion ?? 0,
-      }),
+  const save = useUpdateUser({
     onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: userKeys.lists() });
-      await queryClient.invalidateQueries({ queryKey: userKeys.detail(userId ?? "") });
       toast.show({ message: "Đã cập nhật người dùng", variant: "success" });
       setConfirming(false);
       router.replace(`/admin/users/${userId}` as Href);
@@ -66,10 +53,8 @@ export function UserEditScreen() {
     onError: () =>
       toast.show({ message: "Không thể cập nhật người dùng", variant: "error" }),
   });
-  const remove = useMutation({
-    mutationFn: () => userApi.remove(userId as string),
+  const remove = useDeleteUser({
     onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: userKeys.lists() });
       router.replace("/admin/users" as Href);
     },
     onError: () =>
@@ -139,7 +124,18 @@ export function UserEditScreen() {
         confirmLabel="Lưu"
         loading={save.isPending}
         onCancel={() => setConfirming(false)}
-        onConfirm={() => save.mutate()}
+        onConfirm={() =>
+          save.mutate({
+            userId: userId as string,
+            request: {
+              phoneNumber: phone.trim(),
+              passwordHash: newPassword.trim(),
+              status,
+              lastLoginAt: user.data?.lastLoginAt ?? "1970-01-01T00:00:00",
+              authorizationVersion: user.data?.authorizationVersion ?? 0,
+            },
+          })
+        }
       />
       <AdminConfirmDialog
         confirming={confirmDelete}
@@ -149,7 +145,7 @@ export function UserEditScreen() {
         destructive
         loading={remove.isPending}
         onCancel={() => setConfirmDelete(false)}
-        onConfirm={() => remove.mutate()}
+        onConfirm={() => remove.mutate(userId as string)}
       />
     </StackScreenLayout>
   );

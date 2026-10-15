@@ -1,15 +1,14 @@
-import { useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "expo-router";
 import { useCallback, useMemo, useRef, useState } from "react";
 import { ActivityIndicator, StyleSheet, View } from "react-native";
 
-import { courseApi } from "@/features/course/api/courseApi";
 import type { CourseResponse } from "@/features/course/api/course.dto";
 import type { CourseStatus } from "@/features/course/constants/course.constants";
 import { mapCourseApiToView } from "@/features/course/domain/course.mappers";
 import { CourseActionButtons } from "@/features/course/components/CourseActionButtons";
 import { CourseEditSheet } from "@/features/course/components/CourseEditSheet";
-import type { CourseRouteProps, CourseView } from "@/features/student-commerce/types";
+import type { CourseView } from "@/features/course/domain/course.types";
+import type { CourseRouteProps } from "@/features/student-commerce/types";
 import {
   asHref,
   getCommerceState,
@@ -17,17 +16,20 @@ import {
 } from "@/features/student-commerce/utils/studentCommerceUtils";
 import { useScreenRefresh } from "@/infrastructure/query/useScreenRefresh";
 import StackScreenLayout from "@/routes/navigation/layouts/StackScreenLayout";
-import { useGetQuery } from "@/shared/hooks/useCrud";
 import { CancellableLoadingOverlay } from "@/shared/ui/CancellableLoadingOverlay";
 import { ConfirmationDialog } from "@/shared/ui/ConfirmationDialog";
 import { useToast } from "@/shared/ui/Toast";
 import { Colors } from "@/theme";
 
 import { CourseDetailContent } from "./CourseDetailContent";
+import {
+  useCourseCacheActions,
+  useCourseDetail,
+  useDeleteCourse,
+} from "../queries/courseCatalogQueries";
 
 export function AdminCourseDetailScreen({ courseId }: CourseRouteProps) {
   const router = useRouter();
-  const queryClient = useQueryClient();
   const toast = useToast();
   const [isEditSheetVisible, setIsEditSheetVisible] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
@@ -37,14 +39,9 @@ export function AdminCourseDetailScreen({ courseId }: CourseRouteProps) {
   const state = getCommerceState();
   const mockCourse = getCourse(state.courses, courseId);
 
-  const courseQuery = useGetQuery(
-    ["courses", courseId],
-    () => courseApi.get(courseId!),
-    {
-      enabled: Boolean(courseId),
-      retry: false,
-    },
-  );
+  const courseQuery = useCourseDetail(courseId);
+  const { registerCourse } = useCourseCacheActions();
+  const deleteCourse = useDeleteCourse();
 
   const { data: apiCourse, isLoading } = courseQuery;
   const { refreshing, onRefresh } = useScreenRefresh([courseQuery]);
@@ -78,9 +75,8 @@ export function AdminCourseDetailScreen({ courseId }: CourseRouteProps) {
   const handleEditSuccess = (updatedCourse: CourseResponse) => {
     const activeId = course?.courseId ?? courseId;
     if (activeId) {
-      queryClient.setQueryData(["courses", activeId], updatedCourse);
+      void registerCourse(updatedCourse);
     }
-    queryClient.invalidateQueries({ queryKey: ["courses"] });
   };
 
   const handleCancelDelete = useCallback(() => {
@@ -102,14 +98,16 @@ export function AdminCourseDetailScreen({ courseId }: CourseRouteProps) {
     deleteAbortControllerRef.current = abortController;
 
     try {
-      await courseApi.remove(targetCourseId, { signal: abortController.signal });
+      await deleteCourse.mutateAsync({
+        courseId: targetCourseId,
+        signal: abortController.signal,
+      });
 
       toast.show({
         message: "Xóa khóa học thành công",
         variant: "success",
       });
 
-      queryClient.invalidateQueries({ queryKey: ["courses"] });
       router.back();
     } catch (error) {
       if ((error as { name?: string })?.name === "AbortError") {
@@ -125,7 +123,7 @@ export function AdminCourseDetailScreen({ courseId }: CourseRouteProps) {
       setIsDeleting(false);
       deleteAbortControllerRef.current = null;
     }
-  }, [course?.courseId, courseId, queryClient, router, toast]);
+  }, [course?.courseId, courseId, deleteCourse, router, toast]);
 
   return (
     <>

@@ -5,17 +5,8 @@ import { AppIcon } from "@/shared/ui/AppIcon";
 import { ThemedText } from "@/shared/ui/ThemedText";
 import { Colors, effects, radii } from "@/theme";
 import type { ClassSessionEvaluationResponse } from "../api/session-attendance.dto";
+import type { AttendanceProgressStats } from "../domain/attendanceProgress";
 import { CourseLevelLabel } from "@/features/course/constants/course.constants";
-
-export interface AttendanceProgressStats {
-  totalStudents: number;
-  presentCount: number;
-  absentCount: number;
-  attendancePercent: number;
-  evaluatedCount: number;
-  needEvaluationCount: number;
-  evaluationPercent: number;
-}
 
 export function ClassSessionOverviewCard({
   classSession,

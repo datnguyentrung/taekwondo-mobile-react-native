@@ -1,7 +1,7 @@
 import { Image, Pressable, StyleSheet, View } from "react-native";
 
 import type { PersonSimpleResponse } from "@/features/person";
-import { SurfaceCard } from "@/features/student-commerce/components/StudentCommercePrimitives";
+import { SurfaceCard } from "@/shared/ui/commerce/CommercePrimitives";
 import type { StudentSummaryView } from "@/features/student-commerce/types";
 import { getStudentInitials } from "@/features/student/utils/studentListViewModel";
 import { ThemedText } from "@/shared/ui/ThemedText";

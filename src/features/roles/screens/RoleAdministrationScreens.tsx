@@ -1,11 +1,9 @@
-import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useLocalSearchParams, useRouter, type Href } from "expo-router";
 import { useMemo, useState } from "react";
 import { StyleSheet, View } from "react-native";
 
 import { PermissionsTabContent } from "@/features/permissions";
 import type {
-  PermissionResponse,
   PermissionSimpleResponse,
 } from "@/features/permissions/api/permission.dto";
 import { groupPermissions } from "@/features/permissions/domain/permissionViewModel";
@@ -32,9 +30,14 @@ import { useToast } from "@/shared/ui/Toast";
 import { containsSearch } from "@/shared/utils/string";
 import { Colors, radii } from "@/theme";
 import type { RoleResponse } from "../api/role.dto";
-import { roleApi } from "../api/roleApi";
-import { rolePermissionApi } from "../api/rolePermissionApi";
-import { roleKeys, useRole, useRoles } from "../queries/roleQueries";
+import {
+  useCreateRole,
+  useDeleteRole,
+  useReplaceRolePermissions,
+  useRole,
+  useRoles,
+  useUpdateRole,
+} from "../queries/roleQueries";
 
 const tabs = [
   { value: "roles", label: "Vai trò" },
@@ -127,13 +130,10 @@ export function RoleDetailScreen() {
   const router = useRouter();
   const roleCode = useRoleCode();
   const role = useRole(roleCode);
-  const queryClient = useQueryClient();
   const toast = useToast();
   const [confirming, setConfirming] = useState(false);
-  const remove = useMutation({
-    mutationFn: () => roleApi.remove(roleCode as string),
+  const remove = useDeleteRole({
     onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: roleKeys.lists() });
       toast.show({ message: "Đã xóa vai trò", variant: "success" });
       setConfirming(false);
       router.replace("/admin/roles" as Href);
@@ -231,7 +231,7 @@ export function RoleDetailScreen() {
         destructive
         loading={remove.isPending}
         onCancel={() => setConfirming(false)}
-        onConfirm={() => remove.mutate()}
+        onConfirm={() => remove.mutate(roleCode as string)}
       />
     </StackScreenLayout>
   );
@@ -239,7 +239,6 @@ export function RoleDetailScreen() {
 
 function RoleCreateForm() {
   const router = useRouter();
-  const queryClient = useQueryClient();
   const toast = useToast();
   const [code, setCode] = useState("");
   const [name, setName] = useState("");
@@ -247,16 +246,8 @@ function RoleCreateForm() {
   const [version, setVersion] = useState("0");
   const [confirming, setConfirming] = useState(false);
 
-  const save = useMutation({
-    mutationFn: async () =>
-      roleApi.create({
-        code: code.trim().toUpperCase(),
-        name: name.trim(),
-        description: description.trim(),
-        permissionVersion: Number(version) || 0,
-      }),
+  const save = useCreateRole({
     onSuccess: async (saved) => {
-      await queryClient.invalidateQueries({ queryKey: roleKeys.lists() });
       toast.show({
         message: "Đã tạo vai trò",
         variant: "success",
@@ -319,7 +310,14 @@ function RoleCreateForm() {
         confirmLabel="Tạo mới"
         loading={save.isPending}
         onCancel={() => setConfirming(false)}
-        onConfirm={() => save.mutate()}
+        onConfirm={() =>
+          save.mutate({
+            code: code.trim().toUpperCase(),
+            name: name.trim(),
+            description: description.trim(),
+            permissionVersion: Number(version) || 0,
+          })
+        }
       />
     </>
   );
@@ -327,7 +325,6 @@ function RoleCreateForm() {
 
 function RoleEditForm({ role }: { role: RoleResponse }) {
   const router = useRouter();
-  const queryClient = useQueryClient();
   const toast = useToast();
   const [name, setName] = useState(role.name);
   const [description, setDescription] = useState(role.description);
@@ -335,15 +332,8 @@ function RoleEditForm({ role }: { role: RoleResponse }) {
   const [confirming, setConfirming] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
 
-  const save = useMutation({
-    mutationFn: async () =>
-      roleApi.update(role.code, {
-        name: name.trim(),
-        description: description.trim(),
-        permissionVersion: Number(version) || 0,
-      }),
+  const save = useUpdateRole({
     onSuccess: async (saved) => {
-      await queryClient.invalidateQueries({ queryKey: roleKeys.all });
       toast.show({
         message: "Đã cập nhật vai trò",
         variant: "success",
@@ -358,10 +348,8 @@ function RoleEditForm({ role }: { role: RoleResponse }) {
       }),
   });
 
-  const remove = useMutation({
-    mutationFn: () => roleApi.remove(role.code),
+  const remove = useDeleteRole({
     onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: roleKeys.lists() });
       router.replace("/admin/roles" as Href);
     },
     onError: () =>
@@ -419,7 +407,16 @@ function RoleEditForm({ role }: { role: RoleResponse }) {
         confirmLabel="Lưu"
         loading={save.isPending}
         onCancel={() => setConfirming(false)}
-        onConfirm={() => save.mutate()}
+        onConfirm={() =>
+          save.mutate({
+            code: role.code,
+            request: {
+              name: name.trim(),
+              description: description.trim(),
+              permissionVersion: Number(version) || 0,
+            },
+          })
+        }
       />
       <AdminConfirmDialog
         confirming={confirmDelete}
@@ -429,7 +426,7 @@ function RoleEditForm({ role }: { role: RoleResponse }) {
         destructive
         loading={remove.isPending}
         onCancel={() => setConfirmDelete(false)}
-        onConfirm={() => remove.mutate()}
+        onConfirm={() => remove.mutate(role.code)}
       />
     </>
   );
@@ -474,7 +471,6 @@ function RolePermissionsForm({
   catalog: PermissionSimpleResponse[];
 }) {
   const router = useRouter();
-  const queryClient = useQueryClient();
   const toast = useToast();
   const [search, setSearch] = useState("");
   const initialCodes = useMemo(
@@ -492,13 +488,8 @@ function RolePermissionsForm({
   );
   const groups = useMemo(() => groupPermissions(filtered), [filtered]);
 
-  const save = useMutation({
-    mutationFn: () =>
-      rolePermissionApi.replaceForRole(role.code, {
-        permissionCodes: selected,
-      }),
+  const save = useReplaceRolePermissions({
     onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: roleKeys.all });
       toast.show({
         message: "Đã cập nhật quyền của vai trò",
         variant: "success",
@@ -557,7 +548,9 @@ function RolePermissionsForm({
         <AdminButton
           label="Lưu phân quyền"
           loading={save.isPending}
-          onPress={() => save.mutate()}
+          onPress={() =>
+            save.mutate({ roleCode: role.code, permissionCodes: selected })
+          }
           style={adminStyles.grow}
         />
       </View>

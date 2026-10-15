@@ -1,4 +1,3 @@
-import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useRouter, type Href } from "expo-router";
 import { useState } from "react";
 import { View } from "react-native";
@@ -20,9 +19,8 @@ import {
 import { ThemedText } from "@/shared/ui/ThemedText";
 import { useToast } from "@/shared/ui/Toast";
 import { formatDateDMY, formatDateTime } from "@/shared/utils/dateTime";
-import { userApi } from "../api/userApi";
 import { LinkedPersonDetailSheet } from "../components/LinkedPersonDetailSheet";
-import { userKeys, useUser } from "../queries/userQueries";
+import { useDeleteUser, useUser } from "../queries/userQueries";
 
 import {
   Avatar,
@@ -37,7 +35,6 @@ export function UserDetailScreen() {
   const router = useRouter();
   const userId = useUserId();
   const user = useUser(userId);
-  const queryClient = useQueryClient();
   const toast = useToast();
   const [confirming, setConfirming] = useState(false);
 
@@ -50,10 +47,8 @@ export function UserDetailScreen() {
   const linkedPeople: PersonSimpleResponse[] = user.data?.persons ?? [];
   const assignedRoles = user.data?.roles ?? [];
 
-  const remove = useMutation({
-    mutationFn: () => userApi.remove(userId as string),
+  const remove = useDeleteUser({
     onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: userKeys.lists() });
       toast.show({ message: "Đã xóa người dùng", variant: "success" });
       router.replace("/admin/users" as Href);
     },
@@ -193,7 +188,7 @@ export function UserDetailScreen() {
         destructive
         loading={remove.isPending}
         onCancel={() => setConfirming(false)}
-        onConfirm={() => remove.mutate()}
+        onConfirm={() => remove.mutate(userId as string)}
       />
 
       {/* Chi tiết hồ sơ liên kết & Popover đổi chức vụ */}

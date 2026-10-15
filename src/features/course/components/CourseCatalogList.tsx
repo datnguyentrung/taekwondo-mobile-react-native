@@ -1,5 +1,5 @@
 import { CourseCatalogCard } from "@/features/student-commerce/components/StudentCommercePrimitives";
-import type { CourseView } from "@/features/student-commerce/types";
+import type { CourseView } from "@/features/course/domain/course.types";
 
 export function CourseCatalogList({
   courses,

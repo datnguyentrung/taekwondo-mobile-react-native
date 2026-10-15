@@ -1,7 +1,4 @@
-import type {
-  CourseCatalogTab,
-  CourseView,
-} from "@/features/student-commerce/types";
+import type { CourseCatalogTab, CourseView } from "../domain/course.types";
 import { filterCoursesByCatalogTab } from "@/features/student-commerce/utils/studentCommerceUtils";
 
 export const COURSE_CATALOG_TABS: { value: CourseCatalogTab; label: string }[] =

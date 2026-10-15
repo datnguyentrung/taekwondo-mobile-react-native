@@ -1,7 +1,7 @@
 import { Image, Pressable, StyleSheet, View } from "react-native";
 import { AwardCertificate } from "reicon-react-native";
 
-import { SurfaceCard } from "@/features/student-commerce/components/StudentCommercePrimitives";
+import { SurfaceCard } from "@/shared/ui/commerce/CommercePrimitives";
 import type { PersonSimpleResponse } from "@/features/person";
 import { BeltLabel } from "@/features/person/constants/person.constants";
 import { AppIcon } from "@/shared/ui/AppIcon";

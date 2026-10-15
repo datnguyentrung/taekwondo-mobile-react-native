@@ -149,6 +149,7 @@ export const Permission = {
 
   WALLET_TOP_UP_CREATE: 'WALLET_TOP_UP_CREATE',
   WALLET_REFUND_CREATE: 'WALLET_REFUND_CREATE',
+  SPARRING_OPERATE: 'SPARRING_OPERATE',
 } as const satisfies Record<string, string>;
 
 export type PermissionValue =

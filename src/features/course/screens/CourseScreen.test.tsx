@@ -13,6 +13,10 @@ jest.mock("expo-router", () => ({
 }));
 
 jest.mock("@tanstack/react-query", () => ({
+  useQuery: () => ({
+    data: { content: [] },
+    isLoading: false,
+  }),
   useQueryClient: () => ({
     setQueryData: mockSetQueryData,
     invalidateQueries: mockInvalidateQueries,
@@ -24,13 +28,6 @@ jest.mock("@/features/authorization", () => ({
   useCan: () => mockCanCreateCourse,
 }));
 
-jest.mock("@/shared/hooks/useCrud", () => ({
-  useGetQuery: () => ({
-    data: { content: [] },
-    isLoading: false,
-  }),
-}));
-
 jest.mock("@/infrastructure/query/useScreenRefresh", () => ({
   useScreenRefresh: () => ({ refreshing: false, onRefresh: jest.fn() }),
 }));
@@ -40,7 +37,7 @@ jest.mock("@/features/student-commerce/utils/studentCommerceUtils", () => ({
   getCommerceState: () => ({ courses: [] }),
 }));
 
-jest.mock("@/features/student-commerce/components/StudentCommercePrimitives", () => {
+jest.mock("@/shared/ui/commerce/CommercePrimitives", () => {
   const React = require("react");
   const { Text, TextInput, View } = require("react-native");
   return {

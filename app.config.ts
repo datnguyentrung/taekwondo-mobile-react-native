@@ -9,7 +9,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   slug: "taekwondo-mobile",
   version: "1.0.0",
 
-  orientation: "portrait",
+  orientation: "default",
   icon: "./assets/images/icon.png",
   scheme: "taekwondomobile",
   userInterfaceStyle: "automatic",
@@ -45,7 +45,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   },
 
   web: {
-    output: "static",
+    output: "single",
     favicon: "./assets/images/favicon.png",
   },
 
@@ -53,6 +53,8 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     "expo-router",
     "expo-sqlite",
     "expo-image",
+    "expo-screen-orientation",
+    "expo-navigation-bar",
     "expo-web-browser",
 
     [

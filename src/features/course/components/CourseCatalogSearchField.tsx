@@ -1,5 +1,5 @@
-import { FormField } from "@/features/student-commerce/components/StudentCommercePrimitives";
-import type { CourseCatalogTab } from "@/features/student-commerce/types";
+import { FormField } from "@/shared/ui/commerce/CommercePrimitives";
+import type { CourseCatalogTab } from "@/features/course/domain/course.types";
 import { AppIcon } from "@/shared/ui/AppIcon";
 import { Colors, radii } from "@/theme";
 import { Plus } from "reicon-react-native";

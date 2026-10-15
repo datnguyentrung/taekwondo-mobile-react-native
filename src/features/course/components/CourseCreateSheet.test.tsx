@@ -10,8 +10,14 @@ const mockToastShow = jest.fn();
 const mockRefetchSchedules = jest.fn();
 let mockClassSchedulesQuery: Record<string, unknown>;
 
-jest.mock("@/shared/hooks/useCrud", () => ({
-  useGetQuery: () => mockClassSchedulesQuery,
+jest.mock("@/features/course/queries/courseCatalogQueries", () => ({
+  useCourseCreateOptions: () => mockClassSchedulesQuery,
+  useCreateCourse: () => ({
+    mutateAsync: ({ request, signal }: { request: unknown; signal?: AbortSignal }) => {
+      const { courseApi } = require("@/features/course/api/courseApi");
+      return courseApi.create(request, { signal });
+    },
+  }),
 }));
 
 jest.mock("@/shared/ui/Toast", () => ({

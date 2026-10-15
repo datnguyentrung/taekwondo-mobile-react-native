@@ -4,7 +4,7 @@ import { useEffect } from 'react';
 import { useColorScheme } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
-import { AppProviders } from '@/routes/providers/AppProviders';
+import { AppProviders } from '@/app/providers/AppProviders';
 import {
   BootstrapScreen,
   SessionRecoveryScreen,
@@ -34,6 +34,7 @@ function AuthRouter() {
       </Stack.Protected>
       <Stack.Protected guard={status === 'authenticated'}>
         <Stack.Screen name="(app)" />
+        <Stack.Screen name="(sparring)" />
       </Stack.Protected>
     </Stack>
   );

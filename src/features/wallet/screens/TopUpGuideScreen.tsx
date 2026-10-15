@@ -4,7 +4,7 @@ import StackScreenLayout from "@/routes/navigation/layouts/StackScreenLayout";
 import { ThemedText } from "@/shared/ui/ThemedText";
 import { Colors } from "@/theme";
 
-import { InfoRow, SurfaceCard } from "@/features/student-commerce/components/StudentCommercePrimitives";
+import { InfoRow, SurfaceCard } from "@/shared/ui/commerce/CommercePrimitives";
 
 export function TopUpGuideScreen() {
   return (

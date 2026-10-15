@@ -28,6 +28,11 @@ export const ACTIVITIES_GROUPS: ActivitiesActionGroup[] = [
         defaultQuick: true,
       },
       {
+        id: "sparring",
+        label: "Đối kháng",
+        icon: <Trophy />,
+      },
+      {
         id: "student-list",
         label: "Học viên",
         icon: <Users2 />,

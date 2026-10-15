@@ -1,1 +1,1 @@
-export { default } from "@/routes/account/AccountScreen";
+export { default } from "@/features/user-profile/screens/AccountScreen";

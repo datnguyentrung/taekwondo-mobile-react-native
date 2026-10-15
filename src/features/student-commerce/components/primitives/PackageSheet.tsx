@@ -13,7 +13,7 @@ import {
   getCommerceState,
   getMonthlyPackagePrice,
 } from "../../utils/studentCommerceUtils";
-import { StatusBadge, SurfaceCard } from "./CommerceLayoutPrimitives";
+import { StatusBadge, SurfaceCard } from "@/shared/ui/commerce/CommercePrimitives";
 
 export function PackageSheet({
   visible,

@@ -1,5 +1,13 @@
 # Taekwondo Mobile — Agent Rules
 
+## Architecture source of truth
+
+Before adding, moving, or refactoring source files or platform adapters, read
+`docs/architecture/REACT_NATIVE_PROJECT_STRUCTURE_V2.md`.
+
+V2 is the current standard. `REACT_NATIVE_PROJECT_STRUCTURE.md` is retained as
+the v1 historical reference.
+
 ## Expo HAS CHANGED
 
 Read the exact versioned docs at https://docs.expo.dev/versions/v57.0.0/ before writing any code.

@@ -1,13 +1,10 @@
-import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useRouter, type Href } from "expo-router";
 import { useState } from "react";
 import { View } from "react-native";
 
 import type { RelationshipType } from "@/features/authentication/domain/auth.types";
-import { userRoleApi } from "@/features/roles";
 import { useRoles } from "@/features/roles/queries/roleQueries";
-import { userApi } from "../api/userApi";
-import { userKeys } from "../queries/userQueries";
+import { useCreateUser } from "../queries/userQueries";
 import { relationshipLabel } from "@/features/person/domain/personViewModel";
 import { usePeople } from "@/features/person/queries/personQueries";
 import StackScreenLayout from "@/routes/navigation/layouts/StackScreenLayout";
@@ -30,7 +27,6 @@ export function UserCreateScreen() {
   const router = useRouter();
   const people = usePeople();
   const roles = useRoles();
-  const queryClient = useQueryClient();
   const toast = useToast();
   const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
@@ -44,21 +40,8 @@ export function UserCreateScreen() {
     (person) => person.personId === personId,
   );
 
-  const create = useMutation({
-    mutationFn: async () => {
-      const created = await userApi.create({
-        phoneNumber: phone.trim(),
-        passwordHash: password,
-        personId: personId as string,
-        relationshipType: relationship,
-      });
-      if (roleCodes.length) {
-        await userRoleApi.replaceForUser(created.userId, { roleCodes });
-      }
-      return created;
-    },
+  const create = useCreateUser({
     onSuccess: async (created) => {
-      await queryClient.invalidateQueries({ queryKey: userKeys.all });
       toast.show({ message: "Đã tạo người dùng", variant: "success" });
       setConfirming(false);
       router.replace(`/admin/users/${created.userId}` as Href);
@@ -153,7 +136,17 @@ export function UserCreateScreen() {
         confirmLabel="Tạo mới"
         loading={create.isPending}
         onCancel={() => setConfirming(false)}
-        onConfirm={() => create.mutate()}
+        onConfirm={() =>
+          create.mutate({
+            request: {
+              phoneNumber: phone.trim(),
+              passwordHash: password,
+              personId: personId as string,
+              relationshipType: relationship,
+            },
+            roleCodes,
+          })
+        }
       />
     </StackScreenLayout>
   );

@@ -1,12 +1,10 @@
-import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useRouter, type Href } from "expo-router";
 import { useEffect, useState } from "react";
 import { View } from "react-native";
 
-import { userRoleApi } from "@/features/roles";
 import { useRoles } from "@/features/roles/queries/roleQueries";
 import { roleCodesForUser } from "../domain/userViewModel";
-import { userKeys, useUser, useUserRoles } from "../queries/userQueries";
+import { useReplaceUserRoles, useUser, useUserRoles } from "../queries/userQueries";
 import { useScreenRefresh } from "@/infrastructure/query/useScreenRefresh";
 import StackScreenLayout from "@/routes/navigation/layouts/StackScreenLayout";
 import {
@@ -27,7 +25,6 @@ export function UserRolesScreen() {
   const user = useUser(userId);
   const roles = useRoles();
   const assignments = useUserRoles();
-  const queryClient = useQueryClient();
   const toast = useToast();
   const [selected, setSelected] = useState<string[]>([]);
   const { refreshing, onRefresh } = useScreenRefresh([user, roles, assignments]);
@@ -38,11 +35,8 @@ export function UserRolesScreen() {
     setSelected(roleCodesForUser(userId ?? "", assignments.data?.content ?? []));
   }, [assignments.data, userId]);
 
-  const save = useMutation({
-    mutationFn: () =>
-      userRoleApi.replaceForUser(userId as string, { roleCodes: selected }),
+  const save = useReplaceUserRoles({
     onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: userKeys.roles });
       toast.show({ message: "Đã cập nhật vai trò", variant: "success" });
       router.replace(`/admin/users/${userId}` as Href);
     },
@@ -96,7 +90,9 @@ export function UserRolesScreen() {
         <AdminButton
           label="Lưu vai trò"
           loading={save.isPending}
-          onPress={() => save.mutate()}
+          onPress={() =>
+            save.mutate({ userId: userId as string, roleCodes: selected })
+          }
           style={adminStyles.grow}
         />
       </View>

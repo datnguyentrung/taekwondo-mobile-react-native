@@ -109,6 +109,7 @@ jest.mock('@/features/course/api/courseApi', () => ({
           courseId: course.courseId,
           courseSchedules: [],
           name: course.courseName ?? course.title ?? 'Taekwondo Cơ bản',
+          level: 'BASIC',
           capacity: course.capacity ?? 20,
           currentStudentCount: course.enrolledStudentCount ?? course.enrolledCount ?? 15,
           status: course.catalogStatus === 'ended' ? 'CLOSED' : 'ACTIVE',
@@ -163,6 +164,7 @@ describe('AdminCourseDetailScreen', () => {
       courseId: 'basic',
       courseSchedules: [],
       name: 'Lớp Taekwondo Cơ Bản Cập Nhật',
+      level: 'BASIC',
       capacity: 35,
       currentStudentCount: 15,
       status: 'ACTIVE',
@@ -205,7 +207,7 @@ describe('AdminCourseDetailScreen', () => {
     expect(mockPush).toHaveBeenCalledWith('/courses/basic/packages/basic-6m');
   });
 
-  it('opens course edit bottom sheet when clicking Chỉnh sửa and pre-fills 3 fields', async () => {
+  it('opens course edit bottom sheet and pre-fills the course level', async () => {
     const view = await renderWithQuery(<AdminCourseDetailScreen courseId="basic" />);
 
     const editButton = await view.findByLabelText('Chỉnh sửa khóa học');
@@ -215,6 +217,7 @@ describe('AdminCourseDetailScreen', () => {
       expect(view.getByTestId('bottom-sheet-window')).toBeTruthy();
       expect(view.getByLabelText('Tên khóa học')).toBeTruthy();
       expect(view.getByLabelText('Sức chứa tối đa (học viên)')).toBeTruthy();
+      expect(view.getAllByText('Cơ bản').length).toBeGreaterThan(0);
       expect(view.getAllByText('Đang diễn ra').length).toBeGreaterThan(0);
     });
 
@@ -228,6 +231,7 @@ describe('AdminCourseDetailScreen', () => {
       courseId: 'basic',
       courseSchedules: [],
       name: 'Lớp Taekwondo Cơ Bản Cập Nhật',
+      level: 'ADVANCED' as const,
       capacity: 35,
       currentStudentCount: 15,
       status: 'ACTIVE' as const,
@@ -256,6 +260,7 @@ describe('AdminCourseDetailScreen', () => {
     // Change course name and capacity
     await fireEvent.changeText(nameInput, 'Lớp Taekwondo Cơ Bản Cập Nhật');
     await fireEvent.changeText(capacityInput, '35');
+    await fireEvent.press(view.getByText('Nâng cao'));
 
     // Click Save
     await waitFor(() => {
@@ -271,7 +276,7 @@ describe('AdminCourseDetailScreen', () => {
         'basic',
         {
           name: 'Lớp Taekwondo Cơ Bản Cập Nhật',
-          level: 'BASIC',
+          level: 'ADVANCED',
           capacity: 35,
           status: 'ACTIVE',
         },
@@ -408,7 +413,7 @@ describe('AdminCourseDetailScreen', () => {
     await fireEvent.press(deleteButton);
 
     const confirmButton = await view.findByText('Xóa');
-    await fireEvent.press(confirmButton);
+    fireEvent.press(confirmButton);
 
     await waitFor(() => {
       expect(courseApi.remove).toHaveBeenCalledWith(
@@ -453,7 +458,7 @@ describe('AdminCourseDetailScreen', () => {
     await fireEvent.press(deleteButton);
 
     const confirmButton = await view.findByText('Xóa');
-    await fireEvent.press(confirmButton);
+    fireEvent.press(confirmButton);
 
     await waitFor(() => {
       expect(view.getByText('Đang xóa khóa học...')).toBeTruthy();

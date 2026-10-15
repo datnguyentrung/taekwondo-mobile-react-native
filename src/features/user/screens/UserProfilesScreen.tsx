@@ -1,10 +1,8 @@
-import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { View } from "react-native";
 
 import type { RelationshipType } from "@/features/authentication/domain/auth.types";
 import type { PersonSimpleResponse } from "@/features/person";
-import { userPersonApi } from "@/features/person";
 import { relationshipLabel } from "@/features/person/domain/personViewModel";
 import { usePeople } from "@/features/person/queries/personQueries";
 import { useScreenRefresh } from "@/infrastructure/query/useScreenRefresh";
@@ -23,7 +21,7 @@ import {
 } from "@/shared/ui/admin/AdministrationPrimitives";
 import { useToast } from "@/shared/ui/Toast";
 import { LinkedPersonDetailSheet } from "../components/LinkedPersonDetailSheet";
-import { userKeys, useUser } from "../queries/userQueries";
+import { useLinkUserProfile, useUser } from "../queries/userQueries";
 
 import {
   Avatar,
@@ -37,7 +35,6 @@ export function UserProfilesScreen() {
   const userId = useUserId();
   const user = useUser(userId);
   const people = usePeople();
-  const queryClient = useQueryClient();
   const toast = useToast();
 
   const linked: PersonSimpleResponse[] = user.data?.persons ?? [];
@@ -61,21 +58,8 @@ export function UserProfilesScreen() {
     (person) => person.personId === personId,
   );
 
-  const create = useMutation({
-    mutationFn: () =>
-      userPersonApi.create({
-        userId: userId as string,
-        personId: personId as string,
-        relationshipType: relationship,
-        active: true,
-      }),
+  const create = useLinkUserProfile({
     onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: userKeys.lists() });
-      if (userId) {
-        await queryClient.invalidateQueries({
-          queryKey: userKeys.detail(userId),
-        });
-      }
       toast.show({ message: "Đã liên kết hồ sơ", variant: "success" });
       setConfirming(false);
       setPersonId(undefined);
@@ -176,7 +160,14 @@ export function UserProfilesScreen() {
         confirmLabel="Tạo mới"
         loading={create.isPending}
         onCancel={() => setConfirming(false)}
-        onConfirm={() => create.mutate()}
+        onConfirm={() =>
+          create.mutate({
+            userId: userId as string,
+            personId: personId as string,
+            relationshipType: relationship,
+            active: true,
+          })
+        }
       />
 
       {/* Chi tiết hồ sơ liên kết & Popover đổi chức vụ */}

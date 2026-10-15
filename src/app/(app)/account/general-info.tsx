@@ -1,1 +1,1 @@
-export { default } from "@/routes/account/GeneralInfoScreen";
+export { default } from "@/features/user-profile/screens/GeneralInfoScreen";

@@ -1,4 +1,3 @@
-import { useQueryClient } from "@tanstack/react-query";
 import { useRef, useState } from "react";
 import { ActivityIndicator, Pressable, StyleSheet, View } from "react-native";
 import Animated, { FadeIn, FadeOut } from "react-native-reanimated";
@@ -22,7 +21,7 @@ import { ThemedText } from "@/shared/ui/ThemedText";
 import { useToast } from "@/shared/ui/Toast";
 import { formatDateDMY } from "@/shared/utils/dateTime";
 import { Colors, effects, radii } from "@/theme";
-import { userKeys } from "../queries/userQueries";
+import { useInvalidateUser } from "../queries/userQueries";
 import { Avatar } from "../screens/userAdministrationShared";
 
 export interface LinkedPersonDetailSheetProps {
@@ -52,7 +51,7 @@ export function LinkedPersonDetailSheet({
 
   const positions = usePositions();
   const updatePerson = useUpdatePerson();
-  const queryClient = useQueryClient();
+  const invalidateUser = useInvalidateUser();
   const toast = useToast();
 
   // Sync state during render when person prop changes
@@ -107,12 +106,7 @@ export function LinkedPersonDetailSheet({
           if (isCancelledRef.current) return;
           setIsUpdatingPosition(false);
           toast.show({ message: "Đã cập nhật chức vụ", variant: "success" });
-          await queryClient.invalidateQueries({ queryKey: userKeys.lists() });
-          if (userId) {
-            await queryClient.invalidateQueries({
-              queryKey: userKeys.detail(userId),
-            });
-          }
+          await invalidateUser(userId);
         },
         onError: () => {
           if (isCancelledRef.current) return;

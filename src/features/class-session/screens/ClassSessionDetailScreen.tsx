@@ -1,4 +1,3 @@
-import { useQuery } from "@tanstack/react-query";
 import { useRouter } from "expo-router";
 import { ActivityIndicator, Pressable, StyleSheet, View } from "react-native";
 
@@ -18,13 +17,11 @@ import {
   getCalendarQuarterDateRange,
   type CalendarQuarter,
 } from "@/features/attendance-history/domain/historyDateRange";
-import {
-  SurfaceCard,
-} from "@/features/student-commerce/components/StudentCommercePrimitives";
-import type { CourseCatalogTab, CourseView } from "@/features/student-commerce/types";
+import { SurfaceCard } from "@/shared/ui/commerce/CommercePrimitives";
+import type { CourseCatalogTab, CourseView } from "@/features/course/domain/course.types";
 import { asHref } from "@/features/student-commerce/utils/studentCommerceUtils";
 
-import { classSessionApi } from "../api/classSessionApi";
+import { useClassSessionDetail } from "../queries/classSessionQueries";
 
 type LearningProgress = {
   completed: number;
@@ -185,11 +182,7 @@ export function ClassSessionDetailScreen({
   classSessionId?: string;
 }) {
   const router = useRouter();
-  const sessionQuery = useQuery({
-    queryKey: ["class-session-detail", classSessionId],
-    queryFn: () => classSessionApi.get(classSessionId as string),
-    enabled: Boolean(classSessionId),
-  });
+  const sessionQuery = useClassSessionDetail(classSessionId);
 
   const course = sessionQuery.data?.course
     ? mapCourseToDetailView(

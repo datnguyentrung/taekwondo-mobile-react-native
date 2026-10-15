@@ -1,7 +1,14 @@
 import type { WalletTransactionDirection } from '@/features/wallet/constants/wallet.constants';
+import type { CourseView } from '@/features/course/domain/course.types';
+
+export type {
+  CourseCatalogTab,
+  CoursePackageView,
+  CourseStaffMemberView,
+  CourseView,
+} from '@/features/course/domain/course.types';
 
 export type CommerceContext = 'admin-student' | 'admin-course' | 'account';
-export type CourseCatalogTab = 'registration' | 'active' | 'ended';
 export type StudentCourseTab = 'current' | 'history';
 export type TransactionFilter = 'all' | 'credit' | 'debit';
 
@@ -30,48 +37,6 @@ export type WalletTransactionView = {
   dateLabel: string;
   reference: string;
   courseName?: string;
-};
-
-export type CoursePackageView = {
-  id: string;
-  label: string;
-  durationLabel: string;
-  sessions: number;
-  amount: number;
-  originalAmount?: number;
-  footerText?: string;
-  badge?: {
-    label: string;
-    tone: "popular" | "saving";
-  };
-};
-
-export type CourseStaffMemberView = {
-  id: string;
-  fullName: string;
-  roleLabel: string;
-};
-
-export type CourseView = {
-  courseId: string;
-  courseName: string;
-  subtitle?: string;
-  description?: string;
-  benefits?: string;
-  curriculum?: string;
-  branchName: string;
-  levelLabel: string;
-  scheduleLabel: string;
-  statusLabel: string;
-  catalogStatus: CourseCatalogTab;
-  capacity?: number;
-  enrolledStudentCount?: number;
-  endedAtLabel?: string;
-  manager?: CourseStaffMemberView;
-  coachName: string;
-  coaches?: CourseStaffMemberView[];
-  assistantCount?: number;
-  packages: CoursePackageView[];
 };
 
 export type CourseRegistrationCourseView = Pick<

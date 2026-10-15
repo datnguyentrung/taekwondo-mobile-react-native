@@ -26,7 +26,7 @@ import {
   InfoRow,
   StatusBadge,
   SurfaceCard,
-} from "./CommerceLayoutPrimitives";
+} from "@/shared/ui/commerce/CommercePrimitives";
 
 export function StudentSummaryCard({
   student,

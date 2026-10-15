@@ -3,7 +3,6 @@ import { Pressable, StyleSheet, View } from 'react-native';
 import { Ban, Lock } from 'lucide-react-native';
 import { Check, DocText, Play } from 'reicon-react-native';
 
-import { courseApi } from '@/features/course/api/courseApi';
 import type { CourseResponse } from '@/features/course/api/course.dto';
 import {
   type CourseLevel,
@@ -25,6 +24,7 @@ import { CancellableLoadingOverlay } from '@/shared/ui/CancellableLoadingOverlay
 import { ThemedText } from '@/shared/ui/ThemedText';
 import { useToast } from '@/shared/ui/Toast';
 import { activeEffect, Colors, hexToRgba, radii } from '@/theme';
+import { useUpdateCourse } from '@/features/course/queries/courseCatalogQueries';
 
 export type CourseEditSheetInitialData = {
   name: string;
@@ -161,6 +161,7 @@ function CourseEditSheetComponent({
   onSuccess,
 }: CourseEditSheetProps) {
   const toast = useToast();
+  const { mutateAsync: updateCourse } = useUpdateCourse();
 
   const [name, setName] = useState(initialData?.name ?? '');
   const [capacity, setCapacity] = useState(String(initialData?.capacity ?? 0));
@@ -220,16 +221,16 @@ function CourseEditSheetComponent({
     setIsSubmitting(true);
 
     try {
-      const updatedCourse = await courseApi.update(
+      const updatedCourse = await updateCourse({
         courseId,
-        {
+        request: {
           name: (name ?? '').trim(),
           level,
           capacity: parsedCapacity,
           status,
         },
-        { signal: controller.signal },
-      );
+        signal: controller.signal,
+      });
 
       setIsSubmitting(false);
       abortControllerRef.current = null;
@@ -255,7 +256,7 @@ function CourseEditSheetComponent({
         variant: 'error',
       });
     }
-  }, [courseId, isDirty, isValid, isSubmitting, name, level, parsedCapacity, status, toast, onSuccess, onClose]);
+  }, [courseId, isDirty, isValid, isSubmitting, name, level, parsedCapacity, status, toast, onSuccess, onClose, updateCourse]);
 
   return (
     <BottomSheetWindow

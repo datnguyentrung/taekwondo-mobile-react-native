@@ -1,5 +1,8 @@
 # React Native + TypeScript Project Structure & File Placement Rulebook
 
+> Historical reference (v1). The current project standard is
+> [REACT_NATIVE_PROJECT_STRUCTURE_V2.md](./REACT_NATIVE_PROJECT_STRUCTURE_V2.md).
+
 > **Status:** Architecture Source of Truth  
 > **Target:** React Native + TypeScript, iOS + Android  
 > **Compatible with:** Expo and React Native Bare/CLI  

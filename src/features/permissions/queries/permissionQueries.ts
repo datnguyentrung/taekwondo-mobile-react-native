@@ -1,5 +1,6 @@
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
+import type { PermissionResponse, PermissionUpdateRequest } from "../api/permission.dto";
 import { permissionApi } from "../api/permissionApi";
 
 export const PERMISSION_ADMIN_PAGE_SIZE = 200;
@@ -30,5 +31,24 @@ export function usePermission(id?: number) {
     queryFn: () => permissionApi.get(id as number),
     enabled: Boolean(id),
     staleTime: 30_000,
+  });
+}
+
+export function useUpdatePermission(callbacks: {
+  onSuccess?: (data: PermissionResponse) => void | Promise<void>;
+  onError?: () => void;
+} = {}) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, request }: { id: number; request: PermissionUpdateRequest }) =>
+      permissionApi.update(id, request),
+    onSuccess: async (data) => {
+      await queryClient.invalidateQueries({ queryKey: permissionKeys.lists() });
+      await queryClient.invalidateQueries({
+        queryKey: permissionKeys.detail(data.permissionId),
+      });
+      await callbacks.onSuccess?.(data);
+    },
+    onError: callbacks.onError,
   });
 }

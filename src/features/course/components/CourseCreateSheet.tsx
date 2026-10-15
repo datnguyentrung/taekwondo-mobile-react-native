@@ -10,12 +10,10 @@ import { Pressable, StyleSheet, View } from "react-native";
 import { Plus, Trash } from "reicon-react-native";
 
 import type { ClassScheduleSimpleResponse } from "@/features/class-schedule/api/class-schedule.dto";
-import { classScheduleApi } from "@/features/class-schedule/api/classScheduleApi";
 import {
   ScheduleLocationLabel,
   WeekdayLabel,
 } from "@/features/class-schedule/constants/class-schedule.constants";
-import { courseApi } from "@/features/course/api/courseApi";
 import type {
   CourseCreateRequest,
   CourseResponse,
@@ -30,7 +28,10 @@ import {
   CourseStatusValues,
 } from "@/features/course/constants/course.constants";
 import { getApiErrorMessage } from "@/infrastructure/http/httpError";
-import { useGetQuery } from "@/shared/hooks/useCrud";
+import {
+  useCourseCreateOptions,
+  useCreateCourse,
+} from "@/features/course/queries/courseCatalogQueries";
 import {
   AdminButton,
   AdminChip,
@@ -297,6 +298,7 @@ function CourseCreateSheetComponent({
   onSuccess,
 }: CourseCreateSheetProps) {
   const toast = useToast();
+  const { mutateAsync: createCourse } = useCreateCourse();
   const nextDraftIdRef = useRef(2);
   const abortControllerRef = useRef<AbortController | null>(null);
 
@@ -310,11 +312,7 @@ function CourseCreateSheetComponent({
   const [pickerTargetId, setPickerTargetId] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const classSchedulesQuery = useGetQuery(
-    ["class-schedules", "course-create-options"],
-    () => classScheduleApi.list({ page: 0, size: 200 }),
-    { enabled: visible },
-  );
+  const classSchedulesQuery = useCourseCreateOptions(visible);
 
   const classSchedules = useMemo(
     () => classSchedulesQuery.data?.content ?? [],
@@ -411,7 +409,8 @@ function CourseCreateSheetComponent({
     };
 
     try {
-      const createdCourse = await courseApi.create(request, {
+      const createdCourse = await createCourse({
+        request,
         signal: controller.signal,
       });
 
@@ -438,6 +437,7 @@ function CourseCreateSheetComponent({
     }
   }, [
     capacity,
+    createCourse,
     isSubmitting,
     level,
     name,

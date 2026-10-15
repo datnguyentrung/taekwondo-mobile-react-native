@@ -1,15 +1,13 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { StyleSheet } from "react-native";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useLocalSearchParams, useRouter, type Href } from "expo-router";
 
 import type { PermissionResponse } from "../api/permission.dto";
-import { permissionApi } from "../api/permissionApi";
 import { groupPermissions } from "../domain/permissionViewModel";
 import {
-  permissionKeys,
   usePermission,
   usePermissionsCatalog,
+  useUpdatePermission,
 } from "../queries/permissionQueries";
 import StackScreenLayout from "@/routes/navigation/layouts/StackScreenLayout";
 import {
@@ -105,24 +103,12 @@ function PermissionEditForm({
   permission: PermissionResponse;
 }) {
   const router = useRouter();
-  const queryClient = useQueryClient();
   const toast = useToast();
   const [description, setDescription] = useState(permission.description ?? "");
   const [confirming, setConfirming] = useState(false);
 
-  const save = useMutation({
-    mutationFn: () =>
-      permissionApi.update(permission.permissionId, {
-        code: permission.code,
-        model: permission.model,
-        action: permission.action,
-        description: description.trim(),
-      }),
+  const save = useUpdatePermission({
     onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: permissionKeys.lists() });
-      await queryClient.invalidateQueries({
-        queryKey: permissionKeys.detail(permission.permissionId),
-      });
       toast.show({
         message: "Đã cập nhật quyền",
         variant: "success",
@@ -175,7 +161,17 @@ function PermissionEditForm({
         confirmLabel="Lưu"
         loading={save.isPending}
         onCancel={() => setConfirming(false)}
-        onConfirm={() => save.mutate()}
+        onConfirm={() =>
+          save.mutate({
+            id: permission.permissionId,
+            request: {
+              code: permission.code,
+              model: permission.model,
+              action: permission.action,
+              description: description.trim(),
+            },
+          })
+        }
       />
     </>
   );

@@ -10,7 +10,7 @@ import type {
   CourseCatalogTab,
   CourseStaffMemberView,
   CourseView,
-} from "@/features/student-commerce/types";
+} from "./course.types";
 
 /**
  * Maps a CourseSimpleResponse or CourseResponse DTO from backend into a CourseView object for UI components.

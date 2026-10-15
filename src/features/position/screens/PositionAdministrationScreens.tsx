@@ -1,9 +1,7 @@
 import { useEffect, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useLocalSearchParams, useRouter, type Href } from 'expo-router';
 
-import { positionApi } from '../api/positionApi';
 import StackScreenLayout from '@/routes/navigation/layouts/StackScreenLayout';
 import { ThemedText } from '@/shared/ui/ThemedText';
 import { useToast } from '@/shared/ui/Toast';
@@ -24,7 +22,14 @@ import {
   AdminSwitchField,
   adminStyles,
 } from '@/shared/ui/admin/AdministrationPrimitives';
-import { positionKeys, usePosition, usePositionPeople, usePositions } from '../queries/positionQueries';
+import {
+  useCreatePosition,
+  useDeletePosition,
+  usePosition,
+  usePositionPeople,
+  usePositions,
+  useUpdatePosition,
+} from '../queries/positionQueries';
 import { formatDateTime } from '@/shared/utils/dateTime';
 import { containsSearch, initials } from '@/shared/utils/string';
 
@@ -79,12 +84,10 @@ export function PositionDetailScreen() {
   const router = useRouter();
   const positionId = usePositionId();
   const position = usePosition(positionId);
-  const queryClient = useQueryClient();
   const toast = useToast();
   const [confirming, setConfirming] = useState(false);
-  const remove = useMutation({
-    mutationFn: () => positionApi.remove(positionId as string),
-    onSuccess: async () => { await queryClient.invalidateQueries({ queryKey: positionKeys.lists() }); toast.show({ message: 'Đã xóa chức vụ', variant: 'success' }); router.replace('/admin/positions' as Href); },
+  const remove = useDeletePosition({
+    onSuccess: async () => { toast.show({ message: 'Đã xóa chức vụ', variant: 'success' }); router.replace('/admin/positions' as Href); },
     onError: () => toast.show({ message: 'Không thể xóa chức vụ đang có nhân sự', variant: 'error' }),
   });
   return (
@@ -99,7 +102,7 @@ export function PositionDetailScreen() {
         <AdminButton label="Chỉnh sửa chức vụ" onPress={() => navigate(router, `/admin/positions/${positionId}/edit`)} />
         <AdminButton label="Xóa chức vụ" variant="text" onPress={() => setConfirming(true)} />
       </>}
-      <AdminConfirmDialog confirming={confirming} title="Xóa chức vụ?" message={`Chức vụ “${position.data?.name ?? ''}” sẽ bị xóa vĩnh viễn. Hãy bảo đảm không còn nhân sự được gán.`} confirmLabel="Xóa" destructive loading={remove.isPending} onCancel={() => setConfirming(false)} onConfirm={() => remove.mutate()} />
+      <AdminConfirmDialog confirming={confirming} title="Xóa chức vụ?" message={`Chức vụ “${position.data?.name ?? ''}” sẽ bị xóa vĩnh viễn. Hãy bảo đảm không còn nhân sự được gán.`} confirmLabel="Xóa" destructive loading={remove.isPending} onCancel={() => setConfirming(false)} onConfirm={() => remove.mutate(positionId as string)} />
     </StackScreenLayout>
   );
 }
@@ -125,7 +128,6 @@ function PositionFormScreen({ mode }: { mode: 'create' | 'edit' }) {
   const router = useRouter();
   const positionId = usePositionId();
   const position = usePosition(mode === 'edit' ? positionId : undefined);
-  const queryClient = useQueryClient();
   const toast = useToast();
   const [code, setCode] = useState('');
   const [name, setName] = useState('');
@@ -139,12 +141,19 @@ function PositionFormScreen({ mode }: { mode: 'create' | 'edit' }) {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setCode(position.data.code); setName(position.data.name); setDescription(position.data.description ?? ''); setActive(position.data.active);
   }, [position.data]);
-  const save = useMutation({
-    mutationFn: () => mode === 'create' ? positionApi.create({ code: code.trim().toUpperCase(), name: name.trim(), description: description.trim() || null, active }) : positionApi.update(positionId as string, { code: code.trim().toUpperCase(), name: name.trim(), description: description.trim() || null, active }),
-    onSuccess: async (saved) => { await queryClient.invalidateQueries({ queryKey: positionKeys.lists() }); toast.show({ message: mode === 'create' ? 'Đã tạo chức vụ' : 'Đã cập nhật chức vụ', variant: 'success' }); setConfirming(false); router.replace(`/admin/positions/${saved.positionId}` as Href); },
+  const mutationCallbacks = {
+    onSuccess: async (saved: { positionId: string }) => { toast.show({ message: mode === 'create' ? 'Đã tạo chức vụ' : 'Đã cập nhật chức vụ', variant: 'success' }); setConfirming(false); router.replace(`/admin/positions/${saved.positionId}` as Href); },
     onError: () => toast.show({ message: 'Không thể lưu chức vụ', variant: 'error' }),
-  });
-  const remove = useMutation({ mutationFn: () => positionApi.remove(positionId as string), onSuccess: async () => { await queryClient.invalidateQueries({ queryKey: positionKeys.lists() }); router.replace('/admin/positions' as Href); }, onError: () => toast.show({ message: 'Không thể xóa chức vụ đang có nhân sự', variant: 'error' }) });
+  };
+  const createPosition = useCreatePosition(mutationCallbacks);
+  const updatePosition = useUpdatePosition(mutationCallbacks);
+  const remove = useDeletePosition({ onSuccess: async () => { router.replace('/admin/positions' as Href); }, onError: () => toast.show({ message: 'Không thể xóa chức vụ đang có nhân sự', variant: 'error' }) });
+  const savePending = createPosition.isPending || updatePosition.isPending;
+  const save = () => {
+    const request = { code: code.trim().toUpperCase(), name: name.trim(), description: description.trim() || null, active };
+    if (mode === 'create') createPosition.mutate(request);
+    else updatePosition.mutate({ id: positionId as string, request });
+  };
   const valid = code.trim().length > 1 && name.trim().length > 1;
   return (
     <StackScreenLayout title={mode === 'create' ? 'Tạo chức vụ' : 'Sửa chức vụ'} contentContainerStyle={adminStyles.screen}>
@@ -155,8 +164,8 @@ function PositionFormScreen({ mode }: { mode: 'create' | 'edit' }) {
       {mode === 'edit' ? <AdminInfoBanner>Việc ngừng dùng chức vụ không tự động gỡ chức vụ khỏi nhân sự hiện tại.</AdminInfoBanner> : null}
       <AdminButton label={mode === 'create' ? 'Tạo chức vụ' : 'Lưu thay đổi'} disabled={!valid} onPress={() => setConfirming(true)} />
       {mode === 'edit' ? <AdminButton label="Xóa chức vụ" variant="text" onPress={() => setConfirmDelete(true)} /> : <AdminButton label="Hủy" variant="secondary" onPress={() => router.back()} />}
-      <AdminConfirmDialog confirming={confirming} title={mode === 'create' ? 'Tạo chức vụ mới?' : 'Lưu thay đổi?'} message={`Thông tin “${name || 'chức vụ'}” sẽ được ${mode === 'create' ? 'tạo mới' : 'cập nhật'}.`} confirmLabel={mode === 'create' ? 'Tạo mới' : 'Lưu'} loading={save.isPending} onCancel={() => setConfirming(false)} onConfirm={() => save.mutate()} />
-      <AdminConfirmDialog confirming={confirmDelete} title="Xóa chức vụ?" message="Chức vụ sẽ bị xóa vĩnh viễn và không thể hoàn tác." confirmLabel="Xóa" destructive loading={remove.isPending} onCancel={() => setConfirmDelete(false)} onConfirm={() => remove.mutate()} />
+      <AdminConfirmDialog confirming={confirming} title={mode === 'create' ? 'Tạo chức vụ mới?' : 'Lưu thay đổi?'} message={`Thông tin “${name || 'chức vụ'}” sẽ được ${mode === 'create' ? 'tạo mới' : 'cập nhật'}.`} confirmLabel={mode === 'create' ? 'Tạo mới' : 'Lưu'} loading={savePending} onCancel={() => setConfirming(false)} onConfirm={save} />
+      <AdminConfirmDialog confirming={confirmDelete} title="Xóa chức vụ?" message="Chức vụ sẽ bị xóa vĩnh viễn và không thể hoàn tác." confirmLabel="Xóa" destructive loading={remove.isPending} onCancel={() => setConfirmDelete(false)} onConfirm={() => remove.mutate(positionId as string)} />
     </StackScreenLayout>
   );
 }

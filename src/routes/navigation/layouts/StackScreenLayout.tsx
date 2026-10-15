@@ -44,6 +44,7 @@ export type StackScreenLayoutProps = {
   refreshEnabled?: boolean;
   refreshing?: boolean;
   onRefresh?: () => Promise<void> | void;
+  headerVariant?: 'default' | 'dark';
 };
 
 export default function StackScreenLayout({
@@ -56,17 +57,19 @@ export default function StackScreenLayout({
   refreshEnabled = true,
   refreshing: controlledRefreshing,
   onRefresh: customOnRefresh,
+  headerVariant = 'default',
 }: StackScreenLayoutProps) {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const actionColor = Colors.light.text;
+  const isDarkHeader = headerVariant === 'dark';
+  const actionColor = isDarkHeader ? Colors.light.surface : Colors.light.text;
   const defaultRefresh = useActiveQueriesRefresh();
   const refreshing = controlledRefreshing ?? defaultRefresh.refreshing;
   const onRefresh = customOnRefresh ?? defaultRefresh.onRefresh;
 
   return (
     <SafeAreaView edges={["left", "right"]} style={styles.safeArea}>
-      <View style={[styles.header, { paddingTop: Math.max(insets.top, 16) }]}>
+      <View style={[styles.header, isDarkHeader ? styles.darkHeader : null, { paddingTop: Math.max(insets.top, 16) }]}>
         <View style={styles.headerContent}>
           <Pressable
             accessibilityRole="button"
@@ -82,7 +85,7 @@ export default function StackScreenLayout({
           >
             <AppIcon icon={<ChevronLeft />} color={actionColor} />
           </Pressable>
-          <ThemedText type="heading" style={styles.title}>
+          <ThemedText type="heading" style={[styles.title, isDarkHeader ? styles.darkTitle : null]}>
             {title}
           </ThemedText>
           <View style={styles.actions}>
@@ -138,6 +141,7 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.light.surface,
     ...effects.soft,
   },
+  darkHeader: { backgroundColor: '#202020' },
   headerContent: {
     height: height * 0.08,
     alignItems: "center",
@@ -156,6 +160,7 @@ const styles = StyleSheet.create({
     textAlign: "center",
     ...typography.heading,
   },
+  darkTitle: { color: Colors.light.surface },
   actions: {
     position: "absolute",
     right: 19,
