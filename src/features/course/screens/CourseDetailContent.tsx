@@ -1,13 +1,22 @@
 import { useState, type ReactNode } from "react";
-import { Image, Pressable, StyleSheet, View } from "react-native";
+import { Pressable, StyleSheet, View } from "react-native";
 import {
   ArrowRight,
+  Calendar,
   Check,
   ChevronRight,
   Star,
   User,
   Users,
 } from "reicon-react-native";
+
+import {
+  WeekdayCode,
+  WeekdayCodeToLabel,
+  WeekdayLabel,
+  type Weekday,
+} from "@/features/class-schedule/constants/class-schedule.constants";
+import { ScheduleDetailSheet } from "@/features/class-schedule/components/ScheduleDetailSheet";
 
 import { AppIcon } from "@/shared/ui/AppIcon";
 import { ThemedText } from "@/shared/ui/ThemedText";
@@ -18,25 +27,26 @@ import {
   SurfaceCard,
 } from "@/features/student-commerce/components/StudentCommercePrimitives";
 import type { CourseView } from "@/features/student-commerce/types";
+import type { CourseScheduleView } from "@/features/course/domain/course.types";
 import { formatCourseStartingPrice } from "@/features/student-commerce/utils/studentCommerceUtils";
-
-const DEMO_AVATAR_URL =
-  "https://lh3.googleusercontent.com/aida-public/AB6AXuBF_9wruZmrd5W618KQGIABGmFsg2kJ3v5ERJRoLshYk3cpM4l9MCnKKDANCZBw5ahU219v3W4h-5xSsz3negqPD76yDfmXZkh2ZNfrdhyYVMjxN3RkTKzQULtI8ND5EGnsBMVOkA_prNR7DRe9Me8EkPuyHy4WqFDg5koUxcN51oAQp6p2qgGSFDD4uY0RAjaunm2vh_OLZYP0cYmMqaO_mUqmV3JPqCwwArpRxPWCY64o6ykObbLK7w";
 
 export function CourseDetailContent({
   course,
   topContent,
+  onOpenCoaches,
   onOpenAssistants,
   onOpenStudents,
   onOpenPackage,
 }: {
   course: CourseView;
   topContent?: ReactNode;
+  onOpenCoaches: () => void;
   onOpenAssistants: () => void;
   onOpenStudents: () => void;
   onOpenPackage: (packageId: string) => void;
 }) {
   const [packageSheetVisible, setPackageSheetVisible] = useState(false);
+  const [selectedSchedule, setSelectedSchedule] = useState<CourseScheduleView>();
 
   const capacity = course.capacity ?? 30;
   const enrolled = course.enrolledStudentCount ?? 18;
@@ -44,6 +54,16 @@ export function CourseDetailContent({
     ? Math.min(Math.round((enrolled / capacity) * 100), 100)
     : 0;
   const packageCount = course.packages.length;
+  const schedulesList = [...course.schedules].sort((a, b) => {
+    const weekdayA = typeof a.weekday === "number"
+      ? a.weekday
+      : WeekdayCode[a.weekday as Weekday] ?? 0;
+    const weekdayB = typeof b.weekday === "number"
+      ? b.weekday
+      : WeekdayCode[b.weekday as Weekday] ?? 0;
+    if (weekdayA !== weekdayB) return weekdayA - weekdayB;
+    return (a.startTime ?? "").localeCompare(b.startTime ?? "");
+  });
 
   return (
     <>
@@ -128,6 +148,118 @@ export function CourseDetailContent({
         </View>
       </SurfaceCard>
 
+      <SurfaceCard>
+        <View style={styles.sectionHeaderRow}>
+          <ThemedText type="subtitle" style={styles.blackText}>
+            Lịch học
+          </ThemedText>
+          <ThemedText type="caption" style={styles.secondaryText}>
+            {schedulesList.length
+              ? `${schedulesList.length} ca học trong tuần`
+              : "Lịch học linh hoạt"}
+          </ThemedText>
+        </View>
+        <View style={styles.divider} />
+
+        <View style={styles.scheduleItemsList}>
+          {schedulesList.length > 0 ? (
+            schedulesList.map((schedule, index) => {
+              const weekdayText = typeof schedule.weekday === "number"
+                ? WeekdayCodeToLabel[schedule.weekday] ?? `Thứ ${schedule.weekday}`
+                : schedule.weekday
+                  ? WeekdayLabel[schedule.weekday as Weekday] ?? String(schedule.weekday)
+                  : "Lịch học";
+              const timeText = schedule.startTime && schedule.endTime
+                ? `${schedule.startTime.slice(0, 5)} - ${schedule.endTime.slice(0, 5)}`
+                : "";
+
+              return (
+                <View key={schedule.courseScheduleId}>
+                  <Pressable
+                    accessibilityRole="button"
+                    accessibilityLabel={`Xem chi tiết lịch ${weekdayText}`}
+                    onPress={() => setSelectedSchedule(schedule)}
+                    style={({ pressed }) => [
+                      styles.scheduleItemRow,
+                      pressed ? styles.btnPressed : null,
+                    ]}
+                  >
+                    <View style={styles.scheduleIconWrap}>
+                      <AppIcon icon={<Calendar />} size={18} color={Colors.light.primary} />
+                    </View>
+                    <View style={styles.scheduleItemContent}>
+                      <View style={styles.scheduleMetaColumn}>
+                        <ThemedText type="bodySmall" style={styles.blackTextBold}>
+                          {weekdayText}
+                        </ThemedText>
+                        {schedule.branchName ? (
+                          <ThemedText type="caption" style={styles.secondaryText}>
+                            {schedule.branchName}
+                          </ThemedText>
+                        ) : null}
+                      </View>
+                      <View style={styles.scheduleTimingColumn}>
+                        {timeText ? (
+                          <View style={styles.timeBadge}>
+                            <ThemedText type="caption" style={styles.timeBadgeText}>
+                              {timeText}
+                            </ThemedText>
+                          </View>
+                        ) : null}
+                        <View style={styles.scheduleStaffList}>
+                          {schedule.staffAssignments.length > 0 ? (
+                            schedule.staffAssignments.map((staff) => (
+                              <View key={staff.assignmentId} style={styles.scheduleStaffRow}>
+                                <ThemedText type="caption" style={styles.scheduleStaffName}>
+                                  {staff.fullName}
+                                </ThemedText>
+                                <View
+                                  style={[
+                                    styles.staffRoleBadge,
+                                    staff.isPrimary ? styles.primaryRoleBadge : null,
+                                  ]}
+                                  accessibilityLabel={`${staff.fullName}, ${staff.roleLabel}`}
+                                >
+                                  <ThemedText
+                                    type="caption"
+                                    style={[
+                                      styles.staffRoleText,
+                                      staff.isPrimary ? styles.primaryRoleText : null,
+                                    ]}
+                                  >
+                                    {staff.roleLabel}
+                                  </ThemedText>
+                                </View>
+                              </View>
+                            ))
+                          ) : (
+                            <ThemedText type="caption" style={styles.scheduleEmptyStaffText}>
+                              Chưa phân công
+                            </ThemedText>
+                          )}
+                        </View>
+                      </View>
+                    </View>
+                  </Pressable>
+                  {index < schedulesList.length - 1 ? (
+                    <View style={styles.rowDivider} />
+                  ) : null}
+                </View>
+              );
+            })
+          ) : (
+            <View style={styles.scheduleFallbackRow}>
+              <View style={styles.scheduleIconWrap}>
+                <AppIcon icon={<Calendar />} size={18} color={Colors.light.primary} />
+              </View>
+              <ThemedText type="bodySmall" style={styles.blackTextBold}>
+                {course.scheduleLabel || "Lịch học linh hoạt"}
+              </ThemedText>
+            </View>
+          )}
+        </View>
+      </SurfaceCard>
+
       <View style={styles.pricingCard}>
         <View style={styles.pricingBadgesRow}>
           <View style={styles.offerTag}>
@@ -205,58 +337,37 @@ export function CourseDetailContent({
         ) : null}
       </View>
 
-      <SurfaceCard>
-        <ThemedText type="subtitle" style={styles.sectionTitle}>
-          Quản lý
-        </ThemedText>
-        <View style={styles.staffProfileCard}>
-          <View style={styles.avatarWrapper}>
-            <Image
-              source={{ uri: DEMO_AVATAR_URL }}
-              style={styles.avatarImage}
-              resizeMode="cover"
-            />
-          </View>
-          <View style={styles.staffInfoBlock}>
-            <ThemedText type="bodySmall" style={styles.blackTextBold}>
-              {course.manager?.fullName ?? "Nguyễn Văn Minh"}
-            </ThemedText>
-            <ThemedText type="caption" style={styles.secondaryText}>
-              {course.manager?.roleLabel ?? "Quản lý khóa học"}
-            </ThemedText>
-          </View>
-        </View>
-      </SurfaceCard>
-
-      <SurfaceCard>
-        <ThemedText type="subtitle" style={styles.sectionTitle}>
-          Huấn luyện viên
-        </ThemedText>
-        <View style={styles.staffProfileCard}>
-          <View style={styles.avatarWrapper}>
-            <Image
-              source={{ uri: DEMO_AVATAR_URL }}
-              style={styles.avatarImage}
-              resizeMode="cover"
-            />
-            <View style={styles.beltOverlayTag}>
-              <ThemedText type="caption" style={styles.beltOverlayText}>
-                Đai đen
+      <SurfaceCard soft style={styles.rosterCard}>
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="Xem danh sách huấn luyện viên"
+          onPress={onOpenCoaches}
+          style={({ pressed }) => [styles.rosterRow, pressed ? styles.btnPressed : null]}
+        >
+          <View style={styles.rosterLeft}>
+            <View style={styles.rosterIconContainer}>
+              <AppIcon icon={<User />} size={20} color={Colors.light.primary} />
+            </View>
+            <View>
+              <ThemedText type="bodySmall" style={styles.blackTextBold}>
+                Huấn luyện viên ({course.coachCount})
+              </ThemedText>
+              <ThemedText type="caption" style={styles.secondaryText}>
+                {course.coachCount > 0
+                  ? `${course.coachCount} huấn luyện viên phụ trách`
+                  : "Chưa phân công huấn luyện viên"}
               </ThemedText>
             </View>
           </View>
-          <View style={styles.staffInfoBlock}>
-            <ThemedText type="bodySmall" style={styles.blackTextBold}>
-              {course.coachName || "Nguyễn Văn Minh"}
-            </ThemedText>
-            <ThemedText type="caption" style={styles.secondaryText}>
-              Huấn luyện viên chính
-            </ThemedText>
-          </View>
-        </View>
-      </SurfaceCard>
+          <AppIcon
+            icon={<ChevronRight />}
+            size={18}
+            color={Colors.light.textSecondary}
+          />
+        </Pressable>
 
-      <SurfaceCard soft style={styles.rosterCard}>
+        <View style={styles.rowDivider} />
+
         <Pressable
           accessibilityRole="button"
           accessibilityLabel="Xem danh sách trợ giảng"
@@ -272,10 +383,12 @@ export function CourseDetailContent({
             </View>
             <View>
               <ThemedText type="bodySmall" style={styles.blackTextBold}>
-                Trợ giảng ({course.assistantCount ?? 2})
+                Trợ giảng ({course.assistantCount})
               </ThemedText>
               <ThemedText type="caption" style={styles.secondaryText}>
-                {course.assistantCount ?? 2} trợ giảng phụ trách
+                {course.assistantCount > 0
+                  ? `${course.assistantCount} trợ giảng phụ trách`
+                  : "Chưa phân công trợ giảng"}
               </ThemedText>
             </View>
           </View>
@@ -329,6 +442,31 @@ export function CourseDetailContent({
           }, 100);
         }}
       />
+      <ScheduleDetailSheet
+        visible={Boolean(selectedSchedule)}
+        schedule={selectedSchedule ? {
+          id: selectedSchedule.courseScheduleId,
+          weekdayLabel: typeof selectedSchedule.weekday === "number"
+            ? WeekdayCodeToLabel[selectedSchedule.weekday] ?? `Thứ ${selectedSchedule.weekday}`
+            : selectedSchedule.weekday
+              ? WeekdayLabel[selectedSchedule.weekday as Weekday] ?? String(selectedSchedule.weekday)
+              : "Lịch học",
+          timeLabel: selectedSchedule.startTime && selectedSchedule.endTime
+            ? `${selectedSchedule.startTime.slice(0, 5)} - ${selectedSchedule.endTime.slice(0, 5)}`
+            : "",
+          branchName: selectedSchedule.branchName,
+          startDate: selectedSchedule.startDate,
+          endDate: selectedSchedule.endDate,
+          statusLabel: selectedSchedule.status === "ACTIVE" ? "Đang hoạt động" : "Không hoạt động",
+          staff: selectedSchedule.staffAssignments.map((staff) => ({
+            id: staff.assignmentId,
+            fullName: staff.fullName,
+            roleLabel: staff.roleLabel,
+            isPrimary: staff.isPrimary,
+          })),
+        } : undefined}
+        onClose={() => setSelectedSchedule(undefined)}
+      />
     </>
   );
 }
@@ -367,11 +505,6 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-  },
-  sectionTitle: {
-    color: Colors.light.text,
-    fontWeight: "700",
-    marginBottom: 4,
   },
   divider: {
     height: 1,
@@ -508,39 +641,91 @@ const styles = StyleSheet.create({
     color: "#FFFFFF",
     fontWeight: "700",
   },
-  staffProfileCard: {
-    width: 140,
-    gap: 8,
-    marginTop: 8,
-  },
-  avatarWrapper: {
-    width: 140,
-    height: 140,
-    borderRadius: radii.lg,
-    overflow: "hidden",
-    backgroundColor: Colors.light.backgroundElement,
-    position: "relative",
-  },
-  avatarImage: {
-    width: "100%",
-    height: "100%",
-  },
-  beltOverlayTag: {
-    position: "absolute",
-    bottom: 8,
-    left: 8,
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-    borderRadius: radii.pill,
-    backgroundColor: "rgba(0, 0, 0, 0.65)",
-  },
-  beltOverlayText: {
-    color: "#FFFFFF",
-    fontWeight: "600",
-    fontSize: 10,
-  },
-  staffInfoBlock: {
+  scheduleItemsList: {
     gap: 2,
+  },
+  scheduleItemRow: {
+    flexDirection: "row",
+    gap: 12,
+    paddingVertical: 12,
+  },
+  scheduleIconWrap: {
+    width: 38,
+    height: 38,
+    borderRadius: radii.pill,
+    backgroundColor: hexToRgba(Colors.light.primary, 0.08),
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  scheduleItemContent: {
+    flex: 1,
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "flex-start",
+    gap: 12,
+  },
+  scheduleMetaColumn: {
+    flex: 1,
+    minWidth: 0,
+    gap: 4,
+  },
+  scheduleTimingColumn: {
+    flex: 1.5,
+    minWidth: 0,
+    alignItems: "flex-end",
+    gap: 6,
+  },
+  timeBadge: {
+    alignSelf: "flex-end",
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: radii.pill,
+    backgroundColor: hexToRgba(Colors.light.primary, 0.08),
+  },
+  timeBadgeText: {
+    color: Colors.light.primary,
+    fontWeight: "700",
+  },
+  scheduleStaffList: {
+    width: "100%",
+    gap: 6,
+  },
+  scheduleStaffRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: 8,
+  },
+  scheduleStaffName: {
+    flex: 1,
+    color: Colors.light.text,
+    textAlign: "right",
+  },
+  scheduleEmptyStaffText: {
+    color: Colors.light.textSecondary,
+    textAlign: "right",
+  },
+  staffRoleBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: radii.pill,
+    backgroundColor: Colors.light.backgroundElement,
+  },
+  primaryRoleBadge: {
+    backgroundColor: hexToRgba(Colors.light.primary, 0.1),
+  },
+  staffRoleText: {
+    color: Colors.light.textSecondary,
+  },
+  primaryRoleText: {
+    color: Colors.light.primary,
+    fontWeight: "700",
+  },
+  scheduleFallbackRow: {
+    minHeight: 52,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
   },
   rosterCard: {
     padding: 0,

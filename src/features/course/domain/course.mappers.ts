@@ -5,10 +5,10 @@ import {
   WeekdayLabel,
   type Weekday,
 } from "@/features/class-schedule/constants/class-schedule.constants";
-import { BeltLabel } from "@/features/person/constants/person.constants";
+import { AssignmentTypeLabel } from "@/features/course-staff-assignment/constants/course-staff-assignment.constants";
 import type {
   CourseCatalogTab,
-  CourseStaffMemberView,
+  CourseScheduleView,
   CourseView,
 } from "./course.types";
 
@@ -19,7 +19,8 @@ export function mapCourseApiToView(
   item: CourseSimpleResponse | CourseResponse,
   fallbackPackages: CourseView["packages"] = [],
 ): CourseView {
-  const schedule = item.courseSchedules?.[0]?.classSchedule;
+  const apiSchedules = item.courseSchedules ?? [];
+  const schedule = apiSchedules[0]?.classSchedule;
   const branchName = schedule?.branch?.name ?? "Cơ sở Văn Quán";
   const weekdayText = schedule?.weekday
     ? typeof schedule.weekday === "number"
@@ -37,29 +38,44 @@ export function mapCourseApiToView(
       ? "active"
       : "ended";
 
-  const managerView: CourseStaffMemberView | undefined = item.manager
-    ? {
-        id: item.manager.personId,
-        fullName: item.manager.fullName,
-        roleLabel: "Quản lý khóa học",
+  const schedules: CourseScheduleView[] = apiSchedules.map((courseSchedule) => {
+    const staffAssignments = "staffAssignments" in courseSchedule
+      ? courseSchedule.staffAssignments
+      : [];
+    return {
+      courseScheduleId: courseSchedule.courseScheduleId,
+      weekday: courseSchedule.classSchedule.weekday,
+      startTime: courseSchedule.classSchedule.startTime,
+      endTime: courseSchedule.classSchedule.endTime,
+      branchName: courseSchedule.classSchedule.branch?.name ?? "",
+      startDate: courseSchedule.startDate,
+      endDate: courseSchedule.endDate,
+      status: courseSchedule.status,
+      staffAssignments: staffAssignments.map((assignment) => ({
+        assignmentId: assignment.courseStaffAssignmentId,
+        id: assignment.staffPerson.personId,
+        fullName: assignment.staffPerson.fullName,
+        assignmentType: assignment.assignmentType,
+        roleLabel: AssignmentTypeLabel[assignment.assignmentType],
+        isPrimary: assignment.assignmentType === "PRIMARY_COACH",
+      })),
+    };
+  });
+
+  const uniqueCoachIds = new Set<string>();
+  const uniqueAssistantIds = new Set<string>();
+  for (const courseSchedule of schedules) {
+    for (const staff of courseSchedule.staffAssignments) {
+      if (
+        staff.assignmentType === "PRIMARY_COACH" ||
+        staff.assignmentType === "ASSISTANT_COACH"
+      ) {
+        uniqueCoachIds.add(staff.id);
+      } else if (staff.assignmentType === "TEACHING_ASSISTANT") {
+        uniqueAssistantIds.add(staff.id);
       }
-    : undefined;
-
-  const primaryCoach = item.primaryCoach;
-  const coachName = primaryCoach?.fullName || "Huấn luyện viên chính";
-  const coachBeltLabel = primaryCoach?.currentBelt
-    ? BeltLabel[primaryCoach.currentBelt] || primaryCoach.currentBelt
-    : "Đai đen";
-
-  const coaches: CourseStaffMemberView[] = primaryCoach
-    ? [
-        {
-          id: primaryCoach.personId,
-          fullName: primaryCoach.fullName,
-          roleLabel: `Huấn luyện viên chính · ${coachBeltLabel}`,
-        },
-      ]
-    : [];
+    }
+  }
 
   return {
     courseId: item.courseId,
@@ -75,10 +91,9 @@ export function mapCourseApiToView(
     catalogStatus,
     capacity: item.capacity,
     enrolledStudentCount: item.currentStudentCount ?? 0,
-    manager: managerView,
-    coachName,
-    coaches,
-    assistantCount: 0,
+    schedules,
+    coachCount: uniqueCoachIds.size,
+    assistantCount: uniqueAssistantIds.size,
     packages: fallbackPackages,
   };
 }

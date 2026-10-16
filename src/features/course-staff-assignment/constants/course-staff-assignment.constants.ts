@@ -12,9 +12,9 @@ export const AssignmentTypeValues = [
 ] as const satisfies readonly AssignmentType[];
 
 export const AssignmentTypeLabel: Record<AssignmentType, string> = {
-  PRIMARY_COACH: 'Giảng viên chính',
-  ASSISTANT_COACH: 'Trợ giảng',
-  TEACHING_ASSISTANT: 'Trợ lý giảng dạy',
+  PRIMARY_COACH: 'HLV chính',
+  ASSISTANT_COACH: 'HLV phụ',
+  TEACHING_ASSISTANT: 'Trợ giảng',
   MANAGER: 'Quản lý',
 };
 

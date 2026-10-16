@@ -1,3 +1,5 @@
+import type { AssignmentType } from "@/features/course-staff-assignment/constants/course-staff-assignment.constants";
+
 export type { CourseResponse as Course } from "../api/course.dto";
 
 export type CourseCatalogTab = "registration" | "active" | "ended";
@@ -19,6 +21,24 @@ export type CourseStaffMemberView = {
   roleLabel: string;
 };
 
+export type CourseScheduleStaffView = CourseStaffMemberView & {
+  assignmentId: string;
+  assignmentType: AssignmentType;
+  isPrimary: boolean;
+};
+
+export type CourseScheduleView = {
+  courseScheduleId: string;
+  weekday?: string | number;
+  startTime?: string;
+  endTime?: string;
+  branchName: string;
+  startDate: string;
+  endDate: string | null;
+  status: "ACTIVE" | "INACTIVE";
+  staffAssignments: CourseScheduleStaffView[];
+};
+
 export type CourseView = {
   courseId: string;
   courseName: string;
@@ -34,9 +54,8 @@ export type CourseView = {
   capacity?: number;
   enrolledStudentCount?: number;
   endedAtLabel?: string;
-  manager?: CourseStaffMemberView;
-  coachName: string;
-  coaches?: CourseStaffMemberView[];
-  assistantCount?: number;
+  schedules: CourseScheduleView[];
+  coachCount: number;
+  assistantCount: number;
   packages: CoursePackageView[];
 };

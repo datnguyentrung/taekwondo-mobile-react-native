@@ -42,6 +42,8 @@ export interface StudentEnrollmentListParams {
   to: string;
   courseId?: string;
   studentPersonId?: string;
+  status?: StudentEnrollmentStatus;
+  search?: string;
   page?: number;
   size?: number;
   sort?: string | string[];

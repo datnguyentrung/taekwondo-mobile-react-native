@@ -6,8 +6,9 @@ import { DefaultHeaderActions } from '@/routes/navigation/components/DefaultHead
 import { HeaderActionButton } from '@/routes/navigation/components/HeaderActionButton';
 import BottomTabScreenLayout from '@/routes/navigation/layouts/BottomTabScreenLayout';
 import { BottomSheetWindow } from '@/shared/ui/BottomSheetWindow';
+import { ScheduleDetailSheet } from '../../components/ScheduleDetailSheet';
 import { Colors } from '@/theme';
-import type { Weekday } from '../../constants/class-schedule.constants';
+import { WeekdayLabel, type Weekday } from '../../constants/class-schedule.constants';
 import { ScheduleCard } from './ScheduleCard';
 import { FilterActions, ScheduleFilterContent } from './ScheduleFilterContent';
 import { ScheduleWeekTabBar } from './ScheduleWeekTabBar';
@@ -17,7 +18,7 @@ import {
   emptyScheduleFilters,
   filterScheduleItems,
 } from './scheduleScreen.logic';
-import type { ScheduleFilterState } from './scheduleScreen.types';
+import type { ScheduleFilterState, ScheduleScreenItem } from './scheduleScreen.types';
 
 export default function ScheduleScreen() {
   const [selectedDay, setSelectedDay] = useState<Weekday>('MONDAY');
@@ -25,6 +26,7 @@ export default function ScheduleScreen() {
   const [draftFilters, setDraftFilters] =
     useState<ScheduleFilterState>(emptyScheduleFilters);
   const [filterVisible, setFilterVisible] = useState(false);
+  const [selectedSchedule, setSelectedSchedule] = useState<ScheduleScreenItem>();
 
   const appliedCount = countSelectedScheduleFilters(filters);
   const draftCount = countSelectedScheduleFilters(draftFilters);
@@ -63,7 +65,7 @@ export default function ScheduleScreen() {
 
         <View style={styles.list}>
           {visibleSchedules.map((item) => (
-            <ScheduleCard key={item.scheduleId} schedule={item} />
+            <ScheduleCard key={item.scheduleId} schedule={item} onPress={() => setSelectedSchedule(item)} />
           ))}
         </View>
       </BottomTabScreenLayout>
@@ -90,6 +92,17 @@ export default function ScheduleScreen() {
           onChange={setDraftFilters}
         />
       </BottomSheetWindow>
+      <ScheduleDetailSheet
+        visible={Boolean(selectedSchedule)}
+        schedule={selectedSchedule ? {
+          id: selectedSchedule.scheduleId,
+          weekdayLabel: WeekdayLabel[selectedSchedule.weekday] ?? selectedSchedule.weekday,
+          timeLabel: `${selectedSchedule.startTime} - ${selectedSchedule.endTime}`,
+          branchName: selectedSchedule.branchName,
+          primaryCoachName: selectedSchedule.coachName,
+        } : undefined}
+        onClose={() => setSelectedSchedule(undefined)}
+      />
     </>
   );
 }

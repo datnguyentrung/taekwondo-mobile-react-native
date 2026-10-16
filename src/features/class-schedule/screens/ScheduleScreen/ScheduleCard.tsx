@@ -1,13 +1,18 @@
 import { Image } from 'expo-image';
-import { StyleSheet, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
 
 import { ThemedText } from '@/shared/ui/ThemedText';
 import { Colors, effects, hexToRgba, radii, typography } from '@/theme';
 import type { ScheduleScreenItem } from './scheduleScreen.types';
 
-export function ScheduleCard({ schedule }: { schedule: ScheduleScreenItem }) {
+export function ScheduleCard({ schedule, onPress }: { schedule: ScheduleScreenItem; onPress?: () => void }) {
   return (
-    <View style={styles.card}>
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={`Xem chi tiết lịch ${schedule.branchName}, ${schedule.shiftLabel}`}
+      onPress={onPress}
+      style={({ pressed }) => [styles.card, pressed ? styles.pressed : null]}
+    >
       <Image
         source={schedule.image}
         style={styles.cardImage}
@@ -30,7 +35,7 @@ export function ScheduleCard({ schedule }: { schedule: ScheduleScreenItem }) {
           </ThemedText>
         </View>
       </View>
-    </View>
+    </Pressable>
   );
 }
 
@@ -44,6 +49,7 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.light.surface,
     ...effects.card,
   },
+  pressed: { opacity: 0.78 },
   cardImage: {
     width: 139,
     height: 110,

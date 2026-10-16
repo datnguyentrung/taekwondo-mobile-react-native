@@ -92,6 +92,14 @@ Implementation shell:
 - add another inline “back” row below the shared header
 - use bottom tab chrome inside a stack detail screen
 
+For searchable or paginated stack lists, follow
+[`STACK_VIRTUALIZED_LIST_RULES.md`](./STACK_VIRTUALIZED_LIST_RULES.md) so the
+virtualized list remains the only scroll owner.
+
+For searchable or paginated stack lists, follow
+[`STACK_VIRTUALIZED_LIST_RULES.md`](./STACK_VIRTUALIZED_LIST_RULES.md) so the
+virtualized list remains the only scroll owner.
+
 ---
 
 ## Pattern C — Feature catalog

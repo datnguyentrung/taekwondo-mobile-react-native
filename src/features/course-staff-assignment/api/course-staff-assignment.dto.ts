@@ -1,4 +1,4 @@
-﻿import type { CourseResponse, CourseSimpleResponse } from '@/features/course/api/course.dto';
+﻿import type { CourseScheduleResponse, CourseScheduleSimpleResponse } from '@/features/course/api/course.dto';
 import type { PersonResponse, PersonSimpleResponse } from '@/features/person/api/person.dto';
 import type { PageResponse } from '@/infrastructure/http/pagination.types';
 import type {
@@ -8,7 +8,7 @@ import type {
 
 export interface CourseStaffAssignmentCreateRequest {
   staffPersonId: string;
-  courseId: string;
+  courseScheduleId: string;
   assignmentType: AssignmentType;
   startDate: string;
   endDate: string | null;
@@ -21,7 +21,7 @@ export type CourseStaffAssignmentUpdateRequest = CourseStaffAssignmentCreateRequ
 export interface CourseStaffAssignmentResponse {
   courseStaffAssignmentId: string;
   staffPerson: PersonResponse;
-  course: CourseResponse;
+  courseSchedule: CourseScheduleResponse;
   assignmentType: AssignmentType;
   startDate: string;
   endDate: string | null;
@@ -34,7 +34,7 @@ export interface CourseStaffAssignmentResponse {
 export interface CourseStaffAssignmentSimpleResponse {
   courseStaffAssignmentId: string;
   staffPerson: PersonSimpleResponse;
-  course: CourseSimpleResponse;
+  courseSchedule: CourseScheduleSimpleResponse;
   assignmentType: AssignmentType;
   startDate: string;
   endDate: string | null;
@@ -42,6 +42,10 @@ export interface CourseStaffAssignmentSimpleResponse {
 }
 
 export interface CourseStaffAssignmentListParams {
+  courseId?: string;
+  assignmentTypes?: AssignmentType[];
+  effectiveOn?: string;
+  search?: string;
   page?: number;
   size?: number;
   sort?: string | string[];

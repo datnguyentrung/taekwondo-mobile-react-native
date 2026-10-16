@@ -6,7 +6,7 @@ import { ThemedText } from "@/shared/ui/ThemedText";
 import { Colors, hexToRgba, radii } from "@/theme";
 
 import type { CourseResponse } from "@/features/course/api/course.dto";
-import { CourseLevelLabel, CourseStatusLabel, type CourseLevel } from "@/features/course/constants/course.constants";
+import { CourseLevelLabel, type CourseLevel } from "@/features/course/constants/course.constants";
 import { CourseDetailContent } from "@/features/course/screens/CourseDetailContent";
 import {
   WeekdayLabel,
@@ -18,7 +18,8 @@ import {
   type CalendarQuarter,
 } from "@/features/attendance-history/domain/historyDateRange";
 import { SurfaceCard } from "@/shared/ui/commerce/CommercePrimitives";
-import type { CourseCatalogTab, CourseView } from "@/features/course/domain/course.types";
+import type { CourseView } from "@/features/course/domain/course.types";
+import { mapCourseApiToView } from "@/features/course/domain/course.mappers";
 import { asHref } from "@/features/student-commerce/utils/studentCommerceUtils";
 
 import { useClassSessionDetail } from "../queries/classSessionQueries";
@@ -33,12 +34,6 @@ function formatTime(time?: string) {
   if (!time) return "";
   const [hour, minute] = time.split(":");
   return hour && minute ? `${hour}:${minute}` : time;
-}
-
-function getCatalogStatus(course: CourseResponse): CourseCatalogTab {
-  if (course.status === "OPEN") return "registration";
-  if (course.status === "ACTIVE") return "active";
-  return "ended";
 }
 
 function mapCourseToDetailView(
@@ -58,28 +53,13 @@ function mapCourseToDetailView(
   const scheduleLabel =
     [weekdayLabel, levelLabel, timeLabel].filter(Boolean).join(" · ") ||
     "Lịch học linh hoạt";
-  const manager = course.manager
-    ? {
-        id: course.manager.personId,
-        fullName: course.manager.fullName,
-        roleLabel: "Quản lý khóa học",
-      }
-    : undefined;
+  const mappedCourse = mapCourseApiToView(course);
 
   return {
-    courseId: course.courseId,
-    courseName: course.name,
+    ...mappedCourse,
     branchName: schedule?.branch?.name ?? "Văn Quán",
     levelLabel,
     scheduleLabel,
-    statusLabel: CourseStatusLabel[course.status],
-    catalogStatus: getCatalogStatus(course),
-    capacity: course.capacity,
-    enrolledStudentCount: course.currentStudentCount ?? 0,
-    manager,
-    coachName: course.primaryCoach?.fullName ?? "Huấn luyện viên",
-    assistantCount: 0,
-    packages: [],
   };
 }
 
@@ -248,11 +228,14 @@ export function ClassSessionDetailScreen({
         <CourseDetailContent
           course={course}
           topContent={<LearningProgressCard progress={progress} />}
+          onOpenCoaches={() =>
+            router.push(asHref(`/courses/${course.courseId}/members/coaches`))
+          }
           onOpenAssistants={() =>
-            router.push(asHref(`/courses/${course.courseId}/assistants`))
+            router.push(asHref(`/courses/${course.courseId}/members/teaching-assistants`))
           }
           onOpenStudents={() =>
-            router.push(asHref(`/courses/${course.courseId}/students`))
+            router.push(asHref(`/courses/${course.courseId}/members/students`))
           }
           onOpenPackage={(packageId) =>
             router.push(

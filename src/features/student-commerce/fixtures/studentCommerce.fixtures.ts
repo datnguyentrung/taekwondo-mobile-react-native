@@ -148,24 +148,8 @@ export const studentCommerceMock: StudentCommerceState = {
       catalogStatus: 'registration',
       capacity: 30,
       enrolledStudentCount: 18,
-      manager: {
-        id: 'manager-minh',
-        fullName: 'Nguyễn Văn Minh',
-        roleLabel: 'Quản lý khóa học',
-      },
-      coachName: 'Nguyễn Văn Minh',
-      coaches: [
-        {
-          id: 'coach-minh',
-          fullName: 'Nguyễn Văn Minh',
-          roleLabel: 'Huấn luyện viên chính',
-        },
-        {
-          id: 'coach-hung',
-          fullName: 'Trần Quốc Hùng',
-          roleLabel: 'Huấn luyện viên',
-        },
-      ],
+      schedules: [],
+      coachCount: 2,
       assistantCount: 2,
       packages: [
         { id: 'basic-1m', label: '1 tháng · 8 buổi', durationLabel: '1 tháng', sessions: 8, amount: 600000 },
@@ -190,19 +174,8 @@ export const studentCommerceMock: StudentCommerceState = {
       catalogStatus: 'active',
       capacity: 24,
       enrolledStudentCount: 12,
-      manager: {
-        id: 'manager-lan',
-        fullName: 'Phạm Thu Lan',
-        roleLabel: 'Quản lý khóa học',
-      },
-      coachName: 'Phạm Thu Lan',
-      coaches: [
-        {
-          id: 'coach-lan',
-          fullName: 'Phạm Thu Lan',
-          roleLabel: 'Huấn luyện viên chính',
-        },
-      ],
+      schedules: [],
+      coachCount: 1,
       assistantCount: 1,
       packages: [
         { id: 'advanced-1m', label: '1 tháng · 8 buổi', durationLabel: '1 tháng', sessions: 8, amount: 900000 },
@@ -227,19 +200,8 @@ export const studentCommerceMock: StudentCommerceState = {
       catalogStatus: 'active',
       capacity: 20,
       enrolledStudentCount: 12,
-      manager: {
-        id: 'manager-minh-expert',
-        fullName: 'Nguyễn Văn Minh',
-        roleLabel: 'Quản lý khóa học',
-      },
-      coachName: 'Trần Quốc Hùng',
-      coaches: [
-        {
-          id: 'coach-hung-expert',
-          fullName: 'Trần Quốc Hùng',
-          roleLabel: 'Huấn luyện viên chính',
-        },
-      ],
+      schedules: [],
+      coachCount: 1,
       assistantCount: 2,
       packages: [
         { id: 'expert-1m', label: '1 tháng · 8 buổi', durationLabel: '1 tháng', sessions: 8, amount: 1200000 },
@@ -260,19 +222,8 @@ export const studentCommerceMock: StudentCommerceState = {
       catalogStatus: 'ended',
       endedAtLabel: 'Kết thúc 01/08/2026',
       enrolledStudentCount: 24,
-      manager: {
-        id: 'manager-minh-ended',
-        fullName: 'Nguyễn Văn Minh',
-        roleLabel: 'Quản lý khóa học',
-      },
-      coachName: 'Nguyễn Văn Minh',
-      coaches: [
-        {
-          id: 'coach-minh-ended',
-          fullName: 'Nguyễn Văn Minh',
-          roleLabel: 'Huấn luyện viên chính',
-        },
-      ],
+      schedules: [],
+      coachCount: 1,
       assistantCount: 2,
       packages: [
         { id: 'ended-basic-3m', label: '3 tháng · 24 buổi', durationLabel: '3 tháng', sessions: 24, amount: 1650000 },
@@ -293,19 +244,8 @@ export const studentCommerceMock: StudentCommerceState = {
       catalogStatus: 'ended',
       endedAtLabel: 'Kết thúc 30/06/2026',
       enrolledStudentCount: 18,
-      manager: {
-        id: 'manager-lan-ended',
-        fullName: 'Phạm Thu Lan',
-        roleLabel: 'Quản lý khóa học',
-      },
-      coachName: 'Phạm Thu Lan',
-      coaches: [
-        {
-          id: 'coach-lan-ended',
-          fullName: 'Phạm Thu Lan',
-          roleLabel: 'Huấn luyện viên chính',
-        },
-      ],
+      schedules: [],
+      coachCount: 1,
       assistantCount: 1,
       packages: [
         { id: 'ended-advanced-3m', label: '3 tháng · 24 buổi', durationLabel: '3 tháng', sessions: 24, amount: 2400000 },

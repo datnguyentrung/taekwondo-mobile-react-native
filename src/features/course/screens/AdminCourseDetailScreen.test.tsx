@@ -107,7 +107,37 @@ jest.mock('@/features/course/api/courseApi', () => ({
       if (course) {
         return Promise.resolve({
           courseId: course.courseId,
-          courseSchedules: [],
+          courseSchedules: [
+            {
+              courseScheduleId: 'schedule-1',
+              classSchedule: {
+                scheduleId: 'class-schedule-1',
+                branch: { branchId: 1, name: 'Văn Quán' },
+                weekday: 'TUESDAY',
+                location: 'INDOOR',
+                status: 'ACTIVE',
+                startTime: '18:00:00',
+                endTime: '19:30:00',
+              },
+              staffAssignments: [
+                {
+                  courseStaffAssignmentId: 'assignment-primary',
+                  staffPerson: { personId: 'coach-1', fullName: 'HLV Nguyễn Văn A' },
+                  assignmentType: 'PRIMARY_COACH',
+                },
+                {
+                  courseStaffAssignmentId: 'assignment-assistant',
+                  staffPerson: { personId: 'assistant-1', fullName: 'Trợ giảng B' },
+                  assignmentType: 'TEACHING_ASSISTANT',
+                },
+              ],
+              startDate: '2026-01-01',
+              endDate: null,
+              status: 'ACTIVE',
+              createdAt: new Date().toISOString(),
+              updatedAt: new Date().toISOString(),
+            },
+          ],
           name: course.courseName ?? course.title ?? 'Taekwondo Cơ bản',
           level: 'BASIC',
           capacity: course.capacity ?? 20,
@@ -117,14 +147,6 @@ jest.mock('@/features/course/api/courseApi', () => ({
           nextScheduleEffectiveFrom: null,
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString(),
-          primaryCoach: {
-            personId: 'coach-1',
-            fullName: course.primaryCoachName ?? 'HLV Nguyễn Văn A',
-          },
-          manager: {
-            personId: 'manager-1',
-            fullName: course.managerName ?? 'Quản lý B',
-          },
         });
       }
       return Promise.reject(new Error('Course not found'));
@@ -207,6 +229,16 @@ describe('AdminCourseDetailScreen', () => {
     expect(mockPush).toHaveBeenCalledWith('/courses/basic/packages/basic-6m');
   });
 
+  it('shows schedule staff roles and derives roster counts from assignments', async () => {
+    const view = await renderWithQuery(<AdminCourseDetailScreen courseId="basic" />);
+
+    expect(await view.findByText('HLV Nguyễn Văn A')).toBeTruthy();
+    expect(view.getByText('HLV chính')).toBeTruthy();
+    expect(view.getByText('Trợ giảng B')).toBeTruthy();
+    expect(view.getByText('Huấn luyện viên (1)')).toBeTruthy();
+    expect(view.getByText('Trợ giảng (1)')).toBeTruthy();
+  });
+
   it('opens course edit bottom sheet and pre-fills the course level', async () => {
     const view = await renderWithQuery(<AdminCourseDetailScreen courseId="basic" />);
 
@@ -238,8 +270,6 @@ describe('AdminCourseDetailScreen', () => {
       classSessionGeneratedUntil: null,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
-      primaryCoach: { personId: 'coach-1', fullName: 'HLV Nguyễn Văn A' },
-      manager: { personId: 'manager-1', fullName: 'Quản lý B' },
     };
 
     let resolvePromise: (val: unknown) => void;

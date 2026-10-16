@@ -153,8 +153,6 @@ const createdCourse = {
   currentStudentCount: 0,
   status: "OPEN" as const,
   classSessionGeneratedUntil: null,
-  primaryCoach: null,
-  manager: null,
   createdAt: "2026-10-14T00:00:00",
   updatedAt: "2026-10-14T00:00:00",
 };

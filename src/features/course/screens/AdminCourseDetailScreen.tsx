@@ -158,11 +158,14 @@ export function AdminCourseDetailScreen({ courseId }: CourseRouteProps) {
                 </View>
               ) : undefined
             }
+            onOpenCoaches={() =>
+              router.push(asHref(`/courses/${course.courseId}/members/coaches`))
+            }
             onOpenAssistants={() =>
-              router.push(asHref(`/courses/${course.courseId}/assistants`))
+              router.push(asHref(`/courses/${course.courseId}/members/teaching-assistants`))
             }
             onOpenStudents={() =>
-              router.push(asHref(`/courses/${course.courseId}/students`))
+              router.push(asHref(`/courses/${course.courseId}/members/students`))
             }
             onOpenPackage={(packageId) =>
               router.push(asHref(`/courses/${course.courseId}/packages/${packageId}`))

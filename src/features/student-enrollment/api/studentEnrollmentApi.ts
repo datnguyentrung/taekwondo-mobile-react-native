@@ -11,8 +11,8 @@ import type {
 } from './student-enrollment.dto';
 
 export const studentEnrollmentApi = {
-  async list(params?: StudentEnrollmentListParams): Promise<PageResponse<StudentEnrollmentResponse>> {
-    const response = await javaApi.get<PageResponse<StudentEnrollmentResponse>>('/student-enrollments', { params });
+  async list(params?: StudentEnrollmentListParams): Promise<PageResponse<StudentEnrollmentSimpleResponse>> {
+    const response = await javaApi.get<PageResponse<StudentEnrollmentSimpleResponse>>('/student-enrollments', { params });
     return response.data;
   },
   async get(enrollmentId: string): Promise<StudentEnrollmentResponse> {
