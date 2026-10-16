@@ -106,8 +106,13 @@ export function useStaffCandidates(search: string, enabled: boolean) {
 export function useCreateCourseStaffAssignment(courseId: string) {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (request: CourseStaffAssignmentCreateRequest) =>
-      courseStaffAssignmentApi.create(request),
+    mutationFn: ({
+      request,
+      signal,
+    }: {
+      request: CourseStaffAssignmentCreateRequest;
+      signal?: AbortSignal;
+    }) => courseStaffAssignmentApi.create(request, { signal }),
     onSuccess: async () => {
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: courseMemberRosterKeys.all }),

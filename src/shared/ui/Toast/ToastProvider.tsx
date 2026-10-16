@@ -25,15 +25,24 @@ export type ShowToastOptions = {
   duration?: number;
 };
 
+export type ToastState = {
+  key: number;
+  message: string;
+  variant: ToastVariant;
+  duration: number;
+};
+
 export type ToastContextValue = {
   show: (options: ShowToastOptions) => void;
+  toast?: ToastState | null;
+  dismiss?: () => void;
 };
 
 // ---------------------------------------------------------------------------
 // Context
 // ---------------------------------------------------------------------------
 
-const ToastContext = createContext<ToastContextValue | null>(null);
+export const ToastContext = createContext<ToastContextValue | null>(null);
 
 // ---------------------------------------------------------------------------
 // Hook
@@ -50,13 +59,6 @@ export function useToast(): ToastContextValue {
 // ---------------------------------------------------------------------------
 // Provider
 // ---------------------------------------------------------------------------
-
-type ToastState = {
-  key: number;
-  message: string;
-  variant: ToastVariant;
-  duration: number;
-};
 
 export function ToastProvider({ children }: PropsWithChildren) {
   const [toast, setToast] = useState<ToastState | null>(null);
@@ -76,7 +78,10 @@ export function ToastProvider({ children }: PropsWithChildren) {
     setToast(null);
   }, []);
 
-  const contextValue = useMemo<ToastContextValue>(() => ({ show }), [show]);
+  const contextValue = useMemo<ToastContextValue>(
+    () => ({ show, toast, dismiss }),
+    [show, toast, dismiss],
+  );
 
   return (
     <ToastContext.Provider value={contextValue}>

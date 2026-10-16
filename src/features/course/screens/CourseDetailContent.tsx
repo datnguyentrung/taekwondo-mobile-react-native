@@ -10,24 +10,24 @@ import {
   Users,
 } from "reicon-react-native";
 
+import { ScheduleDetailSheet } from "@/features/class-schedule/components/ScheduleDetailSheet";
 import {
   WeekdayCode,
   WeekdayCodeToLabel,
   WeekdayLabel,
   type Weekday,
 } from "@/features/class-schedule/constants/class-schedule.constants";
-import { ScheduleDetailSheet } from "@/features/class-schedule/components/ScheduleDetailSheet";
 
 import { AppIcon } from "@/shared/ui/AppIcon";
 import { ThemedText } from "@/shared/ui/ThemedText";
-import { Colors, hexToRgba, radii } from "@/theme";
+import { activeEffect, Colors, hexToRgba, radii, typography } from "@/theme";
 
+import type { CourseScheduleView } from "@/features/course/domain/course.types";
 import {
   PackageSheet,
   SurfaceCard,
 } from "@/features/student-commerce/components/StudentCommercePrimitives";
 import type { CourseView } from "@/features/student-commerce/types";
-import type { CourseScheduleView } from "@/features/course/domain/course.types";
 import { formatCourseStartingPrice } from "@/features/student-commerce/utils/studentCommerceUtils";
 
 export function CourseDetailContent({
@@ -46,7 +46,8 @@ export function CourseDetailContent({
   onOpenPackage: (packageId: string) => void;
 }) {
   const [packageSheetVisible, setPackageSheetVisible] = useState(false);
-  const [selectedSchedule, setSelectedSchedule] = useState<CourseScheduleView>();
+  const [selectedSchedule, setSelectedSchedule] =
+    useState<CourseScheduleView>();
 
   const capacity = course.capacity ?? 30;
   const enrolled = course.enrolledStudentCount ?? 18;
@@ -55,12 +56,14 @@ export function CourseDetailContent({
     : 0;
   const packageCount = course.packages.length;
   const schedulesList = [...course.schedules].sort((a, b) => {
-    const weekdayA = typeof a.weekday === "number"
-      ? a.weekday
-      : WeekdayCode[a.weekday as Weekday] ?? 0;
-    const weekdayB = typeof b.weekday === "number"
-      ? b.weekday
-      : WeekdayCode[b.weekday as Weekday] ?? 0;
+    const weekdayA =
+      typeof a.weekday === "number"
+        ? a.weekday
+        : (WeekdayCode[a.weekday as Weekday] ?? 0);
+    const weekdayB =
+      typeof b.weekday === "number"
+        ? b.weekday
+        : (WeekdayCode[b.weekday as Weekday] ?? 0);
     if (weekdayA !== weekdayB) return weekdayA - weekdayB;
     return (a.startTime ?? "").localeCompare(b.startTime ?? "");
   });
@@ -153,14 +156,18 @@ export function CourseDetailContent({
         <View style={styles.scheduleItemsList}>
           {schedulesList.length > 0 ? (
             schedulesList.map((schedule, index) => {
-              const weekdayText = typeof schedule.weekday === "number"
-                ? WeekdayCodeToLabel[schedule.weekday] ?? `Thứ ${schedule.weekday}`
-                : schedule.weekday
-                  ? WeekdayLabel[schedule.weekday as Weekday] ?? String(schedule.weekday)
-                  : "Lịch học";
-              const timeText = schedule.startTime && schedule.endTime
-                ? `${schedule.startTime.slice(0, 5)} - ${schedule.endTime.slice(0, 5)}`
-                : "";
+              const weekdayText =
+                typeof schedule.weekday === "number"
+                  ? (WeekdayCodeToLabel[schedule.weekday] ??
+                    `Thứ ${schedule.weekday}`)
+                  : schedule.weekday
+                    ? (WeekdayLabel[schedule.weekday as Weekday] ??
+                      String(schedule.weekday))
+                    : "Lịch học";
+              const timeText =
+                schedule.startTime && schedule.endTime
+                  ? `${schedule.startTime.slice(0, 5)} - ${schedule.endTime.slice(0, 5)}`
+                  : "";
 
               return (
                 <View key={schedule.courseScheduleId}>
@@ -170,19 +177,29 @@ export function CourseDetailContent({
                     onPress={() => setSelectedSchedule(schedule)}
                     style={({ pressed }) => [
                       styles.scheduleItemRow,
-                      pressed ? styles.btnPressed : null,
+                      activeEffect(pressed, "pressed"),
                     ]}
                   >
                     <View style={styles.scheduleIconWrap}>
-                      <AppIcon icon={<Calendar />} size={18} color={Colors.light.primary} />
+                      <AppIcon
+                        icon={<Calendar />}
+                        size={18}
+                        color={Colors.light.primary}
+                      />
                     </View>
                     <View style={styles.scheduleItemContent}>
                       <View style={styles.scheduleMetaColumn}>
-                        <ThemedText type="bodySmall" style={styles.blackTextBold}>
+                        <ThemedText
+                          type="bodySmall"
+                          style={styles.blackTextBold}
+                        >
                           {weekdayText}
                         </ThemedText>
                         {schedule.branchName ? (
-                          <ThemedText type="caption" style={styles.secondaryText}>
+                          <ThemedText
+                            type="caption"
+                            style={styles.secondaryText}
+                          >
                             {schedule.branchName}
                           </ThemedText>
                         ) : null}
@@ -190,7 +207,10 @@ export function CourseDetailContent({
                       <View style={styles.scheduleTimingColumn}>
                         {timeText ? (
                           <View style={styles.timeBadge}>
-                            <ThemedText type="caption" style={styles.timeBadgeText}>
+                            <ThemedText
+                              type="caption"
+                              style={styles.timeBadgeText}
+                            >
                               {timeText}
                             </ThemedText>
                           </View>
@@ -198,14 +218,22 @@ export function CourseDetailContent({
                         <View style={styles.scheduleStaffList}>
                           {schedule.staffAssignments.length > 0 ? (
                             schedule.staffAssignments.map((staff) => (
-                              <View key={staff.assignmentId} style={styles.scheduleStaffRow}>
-                                <ThemedText type="caption" style={styles.scheduleStaffName}>
+                              <View
+                                key={staff.assignmentId}
+                                style={styles.scheduleStaffRow}
+                              >
+                                <ThemedText
+                                  type="caption"
+                                  style={styles.scheduleStaffName}
+                                >
                                   {staff.fullName}
                                 </ThemedText>
                                 <View
                                   style={[
                                     styles.staffRoleBadge,
-                                    staff.isPrimary ? styles.primaryRoleBadge : null,
+                                    staff.isPrimary
+                                      ? styles.primaryRoleBadge
+                                      : null,
                                   ]}
                                   accessibilityLabel={`${staff.fullName}, ${staff.roleLabel}`}
                                 >
@@ -213,7 +241,9 @@ export function CourseDetailContent({
                                     type="caption"
                                     style={[
                                       styles.staffRoleText,
-                                      staff.isPrimary ? styles.primaryRoleText : null,
+                                      staff.isPrimary
+                                        ? styles.primaryRoleText
+                                        : null,
                                     ]}
                                   >
                                     {staff.roleLabel}
@@ -222,12 +252,22 @@ export function CourseDetailContent({
                               </View>
                             ))
                           ) : (
-                            <ThemedText type="caption" style={styles.scheduleEmptyStaffText}>
+                            <ThemedText
+                              type="caption"
+                              style={styles.scheduleEmptyStaffText}
+                            >
                               Chưa phân công
                             </ThemedText>
                           )}
                         </View>
                       </View>
+                    </View>
+                    <View style={styles.scheduleArrowWrap}>
+                      <AppIcon
+                        icon={<ChevronRight />}
+                        size={16}
+                        color={Colors.light.textSecondary}
+                      />
                     </View>
                   </Pressable>
                   {index < schedulesList.length - 1 ? (
@@ -239,7 +279,11 @@ export function CourseDetailContent({
           ) : (
             <View style={styles.scheduleFallbackRow}>
               <View style={styles.scheduleIconWrap}>
-                <AppIcon icon={<Calendar />} size={18} color={Colors.light.primary} />
+                <AppIcon
+                  icon={<Calendar />}
+                  size={18}
+                  color={Colors.light.primary}
+                />
               </View>
               <ThemedText type="bodySmall" style={styles.blackTextBold}>
                 {course.scheduleLabel || "Lịch học linh hoạt"}
@@ -335,7 +379,10 @@ export function CourseDetailContent({
           accessibilityRole="button"
           accessibilityLabel="Xem danh sách huấn luyện viên"
           onPress={onOpenCoaches}
-          style={({ pressed }) => [styles.rosterRow, pressed ? styles.btnPressed : null]}
+          style={({ pressed }) => [
+            styles.rosterRow,
+            pressed ? styles.btnPressed : null,
+          ]}
         >
           <View style={styles.rosterLeft}>
             <View style={styles.rosterIconContainer}>
@@ -440,27 +487,38 @@ export function CourseDetailContent({
       />
       <ScheduleDetailSheet
         visible={Boolean(selectedSchedule)}
-        schedule={selectedSchedule ? {
-          id: selectedSchedule.courseScheduleId,
-          weekdayLabel: typeof selectedSchedule.weekday === "number"
-            ? WeekdayCodeToLabel[selectedSchedule.weekday] ?? `Thứ ${selectedSchedule.weekday}`
-            : selectedSchedule.weekday
-              ? WeekdayLabel[selectedSchedule.weekday as Weekday] ?? String(selectedSchedule.weekday)
-              : "Lịch học",
-          timeLabel: selectedSchedule.startTime && selectedSchedule.endTime
-            ? `${selectedSchedule.startTime.slice(0, 5)} - ${selectedSchedule.endTime.slice(0, 5)}`
-            : "",
-          branchName: selectedSchedule.branchName,
-          startDate: selectedSchedule.startDate,
-          endDate: selectedSchedule.endDate,
-          statusLabel: selectedSchedule.status === "ACTIVE" ? "Đang hoạt động" : "Không hoạt động",
-          staff: selectedSchedule.staffAssignments.map((staff) => ({
-            id: staff.assignmentId,
-            fullName: staff.fullName,
-            roleLabel: staff.roleLabel,
-            isPrimary: staff.isPrimary,
-          })),
-        } : undefined}
+        schedule={
+          selectedSchedule
+            ? {
+                id: selectedSchedule.courseScheduleId,
+                weekdayLabel:
+                  typeof selectedSchedule.weekday === "number"
+                    ? (WeekdayCodeToLabel[selectedSchedule.weekday] ??
+                      `Thứ ${selectedSchedule.weekday}`)
+                    : selectedSchedule.weekday
+                      ? (WeekdayLabel[selectedSchedule.weekday as Weekday] ??
+                        String(selectedSchedule.weekday))
+                      : "Lịch học",
+                timeLabel:
+                  selectedSchedule.startTime && selectedSchedule.endTime
+                    ? `${selectedSchedule.startTime.slice(0, 5)} - ${selectedSchedule.endTime.slice(0, 5)}`
+                    : "",
+                branchName: selectedSchedule.branchName,
+                startDate: selectedSchedule.startDate,
+                endDate: selectedSchedule.endDate,
+                statusLabel:
+                  selectedSchedule.status === "ACTIVE"
+                    ? "Đang hoạt động"
+                    : "Không hoạt động",
+                staff: selectedSchedule.staffAssignments.map((staff) => ({
+                  id: staff.assignmentId,
+                  fullName: staff.fullName,
+                  roleLabel: staff.roleLabel,
+                  isPrimary: staff.isPrimary,
+                })),
+              }
+            : undefined
+        }
         onClose={() => setSelectedSchedule(undefined)}
       />
     </>
@@ -473,10 +531,12 @@ const styles = StyleSheet.create({
   },
   blackTextBold: {
     color: Colors.light.text,
-    fontWeight: "700",
+    // ...typography.bodySmall,
+    fontWeight: "bold",
   },
   secondaryText: {
     color: Colors.light.textSecondary,
+    ...typography.caption,
   },
   titleHeader: {
     gap: 4,
@@ -642,7 +702,8 @@ const styles = StyleSheet.create({
   },
   scheduleItemRow: {
     flexDirection: "row",
-    gap: 12,
+    alignItems: "center",
+    gap: 10,
     paddingVertical: 12,
   },
   scheduleIconWrap: {
@@ -658,7 +719,12 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "flex-start",
-    gap: 12,
+    gap: 10,
+  },
+  scheduleArrowWrap: {
+    paddingLeft: 2,
+    alignItems: "center",
+    justifyContent: "center",
   },
   scheduleMetaColumn: {
     flex: 1,

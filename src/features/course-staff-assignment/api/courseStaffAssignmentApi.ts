@@ -22,10 +22,14 @@ export const courseStaffAssignmentApi = {
     );
     return response.data;
   },
-  async create(request: CourseStaffAssignmentCreateRequest): Promise<CourseStaffAssignmentResponse> {
+  async create(
+    request: CourseStaffAssignmentCreateRequest,
+    options?: { signal?: AbortSignal },
+  ): Promise<CourseStaffAssignmentResponse> {
     const response = await javaApi.post<CourseStaffAssignmentResponse>(
       '/course-staff-assignments',
       request,
+      { signal: options?.signal },
     );
     return response.data;
   },

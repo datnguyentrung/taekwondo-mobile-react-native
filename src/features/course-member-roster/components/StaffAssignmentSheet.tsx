@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import { ActivityIndicator, Pressable, StyleSheet, View } from "react-native";
 
 import {
@@ -8,6 +8,7 @@ import {
 import type { CourseScheduleResponse } from "@/features/course/api/course.dto";
 import type { PersonSimpleResponse } from "@/features/person";
 import { BottomSheetWindow } from "@/shared/ui/BottomSheetWindow";
+import { CancellableLoadingOverlay } from "@/shared/ui/CancellableLoadingOverlay";
 import {
   FormField,
   PrimaryActionButton,
@@ -60,10 +61,21 @@ export function StaffAssignmentSheet({
   const [startDate, setStartDate] = useState(getLocalDate());
   const [endDate, setEndDate] = useState("");
   const [note, setNote] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const submitAbortControllerRef = useRef<AbortController | null>(null);
   const candidates = useStaffCandidates(search, visible && step === 1);
   const mutation = useCreateCourseStaffAssignment(courseId);
 
+  const handleCancelSubmit = useCallback(() => {
+    if (submitAbortControllerRef.current) {
+      submitAbortControllerRef.current.abort();
+      submitAbortControllerRef.current = null;
+    }
+    setIsSubmitting(false);
+  }, []);
+
   const closeAndReset = () => {
+    handleCancelSubmit();
     setStep(1);
     setSearch("");
     setSelectedPerson(null);
@@ -87,24 +99,40 @@ export function StaffAssignmentSheet({
       return;
     }
 
+    setIsSubmitting(true);
+    const abortController = new AbortController();
+    submitAbortControllerRef.current = abortController;
+
     try {
       await mutation.mutateAsync({
-        staffPersonId: selectedPerson.personId,
-        courseScheduleId: scheduleId,
-        assignmentType,
-        startDate,
-        endDate: endDate || null,
-        assignmentStatus: "ACTIVE",
-        note: note || null,
+        request: {
+          staffPersonId: selectedPerson.personId,
+          courseScheduleId: scheduleId,
+          assignmentType,
+          startDate,
+          endDate: endDate || null,
+          assignmentStatus: "ACTIVE",
+          note: note || null,
+        },
+        signal: abortController.signal,
       });
       toast.show({ message: "Đã thêm phân công.", variant: "success" });
       closeAndReset();
-    } catch {
+    } catch (error) {
+      if (
+        (error as { name?: string })?.name === "AbortError" ||
+        (error as { code?: string })?.code === "ERR_CANCELED"
+      ) {
+        return;
+      }
       toast.show({
         message:
           "Không thể thêm phân công. Vui lòng kiểm tra thời gian và thử lại.",
         variant: "error",
       });
+    } finally {
+      setIsSubmitting(false);
+      submitAbortControllerRef.current = null;
     }
   };
 
@@ -134,6 +162,14 @@ export function StaffAssignmentSheet({
       heightRatio={0.8}
       contentContainerStyle={styles.contentContainer}
       onClose={closeAndReset}
+      overlay={
+        <CancellableLoadingOverlay
+          visible={isSubmitting}
+          message="Đang thêm phân công..."
+          cancelLabel="Hủy"
+          onCancel={handleCancelSubmit}
+        />
+      }
       footer={
         step === 2 ? (
           <View style={styles.footerRow}>
@@ -147,8 +183,8 @@ export function StaffAssignmentSheet({
             <View style={styles.footerAction}>
               <PrimaryActionButton
                 title="Thêm"
-                loading={mutation.isPending}
-                disabled={!scheduleId || !selectedPerson}
+                loading={isSubmitting}
+                disabled={!scheduleId || !selectedPerson || isSubmitting}
                 onPress={() => void submit()}
               />
             </View>

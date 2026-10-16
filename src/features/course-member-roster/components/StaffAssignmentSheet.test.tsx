@@ -17,14 +17,54 @@ jest.mock("@/shared/ui/BottomSheetWindow", () => ({
     title,
     children,
     footer,
+    overlay,
   }: {
     visible: boolean;
     title: string;
     children: React.ReactNode;
     footer?: React.ReactNode;
+    overlay?: React.ReactNode;
   }) => {
     const { Text, View } = require("react-native");
-    return visible ? <View><Text>{title}</Text>{children}{footer}</View> : null;
+    return visible ? (
+      <View>
+        <Text>{title}</Text>
+        {children}
+        {footer}
+        {overlay}
+      </View>
+    ) : null;
+  },
+}));
+
+jest.mock("@/shared/ui/CancellableLoadingOverlay", () => ({
+  CancellableLoadingOverlay: ({
+    visible,
+    message,
+    cancelLabel = "Hủy",
+    onCancel,
+  }: {
+    visible: boolean;
+    message?: string;
+    cancelLabel?: string;
+    onCancel?: () => void;
+  }) => {
+    const { Pressable, Text, View } = require("react-native");
+    if (!visible) return null;
+    return (
+      <View accessibilityLabel={message}>
+        <Text>{message}</Text>
+        {onCancel ? (
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={cancelLabel}
+            onPress={onCancel}
+          >
+            <Text>{cancelLabel}</Text>
+          </Pressable>
+        ) : null}
+      </View>
+    );
   },
 }));
 
@@ -114,15 +154,15 @@ describe("StaffAssignmentSheet", () => {
   it("shows the staff picker and available staff", async () => {
     const view = await renderSheet();
     expect(view.getByText("Chọn nhân sự")).toBeTruthy();
-    expect(view.getByLabelText("Nhân sự").props.accessibilityState.selected).toBe(true);
-    expect(view.getByLabelText("Phân công").props.accessibilityState.selected).toBe(false);
+    expect(view.getByLabelText("1. Nhân sự").props.accessibilityState.selected).toBe(true);
+    expect(view.getByLabelText("2. Phân công").props.accessibilityState.selected).toBe(false);
     expect(view.getByLabelText("Chọn Nguyễn Văn An")).toBeTruthy();
   });
 
   it("keeps the assignment tab locked until a staff member is selected", async () => {
     const view = await renderSheet();
 
-    await act(async () => fireEvent.press(view.getByLabelText("Phân công")));
+    await act(async () => fireEvent.press(view.getByLabelText("2. Phân công")));
 
     expect(view.getByText("Chọn nhân sự")).toBeTruthy();
     expect(mockToastShow).toHaveBeenCalledWith({
@@ -157,15 +197,18 @@ describe("StaffAssignmentSheet", () => {
 
     await act(async () => fireEvent.press(view.getByLabelText("Chọn Nguyễn Văn An")));
     await waitFor(() => expect(view.getByText("Thông tin phân công")).toBeTruthy());
-    expect(view.getByLabelText("Phân công").props.accessibilityState.selected).toBe(true);
+    expect(view.getByLabelText("2. Phân công").props.accessibilityState.selected).toBe(true);
     await act(async () => fireEvent.press(view.getByText("HLV chính")));
     await act(async () => fireEvent.press(view.getByText("Thứ Hai, 18:00–19:30 · Văn Quán")));
     await act(async () => fireEvent.press(view.getByLabelText("Thêm")));
 
     await waitFor(() => expect(mockMutateAsync).toHaveBeenCalledWith(expect.objectContaining({
-      assignmentType: "PRIMARY_COACH",
-      courseScheduleId: "schedule-1",
-      staffPersonId: "person-1",
+      request: expect.objectContaining({
+        assignmentType: "PRIMARY_COACH",
+        courseScheduleId: "schedule-1",
+        staffPersonId: "person-1",
+      }),
+      signal: expect.any(Object),
     })));
   });
 
@@ -186,7 +229,7 @@ describe("StaffAssignmentSheet", () => {
 
     await act(async () => fireEvent.press(view.getByLabelText("Chọn Nguyễn Văn An")));
     await waitFor(() => expect(view.getByText("Thông tin phân công")).toBeTruthy());
-    await act(async () => fireEvent.press(view.getByLabelText("Nhân sự")));
+    await act(async () => fireEvent.press(view.getByLabelText("1. Nhân sự")));
     await waitFor(() => expect(view.getByLabelText("Chọn Trần Minh Bình")).toBeTruthy());
     await act(async () => fireEvent.press(view.getByLabelText("Chọn Trần Minh Bình")));
     await waitFor(() => expect(view.getByText("Thông tin phân công")).toBeTruthy());
@@ -194,7 +237,10 @@ describe("StaffAssignmentSheet", () => {
     await act(async () => fireEvent.press(view.getByLabelText("Thêm")));
 
     await waitFor(() => expect(mockMutateAsync).toHaveBeenCalledWith(expect.objectContaining({
-      staffPersonId: "person-2",
+      request: expect.objectContaining({
+        staffPersonId: "person-2",
+      }),
+      signal: expect.any(Object),
     })));
   });
 
@@ -209,7 +255,10 @@ describe("StaffAssignmentSheet", () => {
     await act(async () => fireEvent.press(view.getByLabelText("Thêm")));
 
     await waitFor(() => expect(mockMutateAsync).toHaveBeenCalledWith(expect.objectContaining({
-      assignmentType: "TEACHING_ASSISTANT",
+      request: expect.objectContaining({
+        assignmentType: "TEACHING_ASSISTANT",
+      }),
+      signal: expect.any(Object),
     })));
   });
 
@@ -223,6 +272,41 @@ describe("StaffAssignmentSheet", () => {
     await act(async () => fireEvent.press(view.getByLabelText("Thêm")));
 
     await waitFor(() => expect(mockToastShow).toHaveBeenCalledWith(expect.objectContaining({ variant: "error" })));
+    expect(view.getByText("Thông tin phân công")).toBeTruthy();
+  });
+
+  it("allows cancelling in-flight assignment creation with overlay Hủy button and shows no error toast", async () => {
+    let capturedSignal: AbortSignal | undefined;
+    mockMutateAsync.mockImplementation(
+      ({ signal }: { signal?: AbortSignal }) =>
+        new Promise((_resolve, reject) => {
+          capturedSignal = signal;
+          if (signal) {
+            signal.addEventListener("abort", () => {
+              const abortError = new Error("Aborted");
+              abortError.name = "AbortError";
+              reject(abortError);
+            });
+          }
+        }),
+    );
+    const view = await renderSheet();
+
+    await act(async () => fireEvent.press(view.getByLabelText("Chọn Nguyễn Văn An")));
+    await waitFor(() => expect(view.getByText("Thông tin phân công")).toBeTruthy());
+    await act(async () => fireEvent.press(view.getByText("Thứ Hai, 18:00–19:30 · Văn Quán")));
+    await act(async () => fireEvent.press(view.getByLabelText("Thêm")));
+
+    // CancellableLoadingOverlay is visible
+    expect(view.getByText("Đang thêm phân công...")).toBeTruthy();
+    const cancelOverlayBtn = view.getByLabelText("Hủy");
+    expect(cancelOverlayBtn).toBeTruthy();
+
+    await act(async () => fireEvent.press(cancelOverlayBtn));
+
+    expect(capturedSignal?.aborted).toBe(true);
+    expect(mockToastShow).not.toHaveBeenCalled();
+    expect(view.queryByText("Đang thêm phân công...")).toBeNull();
     expect(view.getByText("Thông tin phân công")).toBeTruthy();
   });
 });

@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from "react";
+import { useContext, useEffect, useMemo } from "react";
 import type { StyleProp, ViewStyle } from "react-native";
 import {
   Modal,
@@ -28,6 +28,8 @@ import { Plus } from "reicon-react-native";
 import { Colors, effects, radii } from "@/theme";
 import { AppIcon } from "./AppIcon";
 import { ThemedText } from "./ThemedText";
+import { Toast } from "./Toast/Toast";
+import { ToastContext } from "./Toast/ToastProvider";
 
 export type BottomSheetWindowProps = {
   visible: boolean;
@@ -69,6 +71,7 @@ export function BottomSheetWindow({
   contentContainerStyle,
   onClose,
 }: BottomSheetWindowProps) {
+  const toastContext = useContext(ToastContext);
   const reducedMotion = useReducedMotion();
   const { height } = useWindowDimensions();
   const sheetHeight = useSharedValue(Math.round(height * 0.5));
@@ -257,6 +260,15 @@ export function BottomSheetWindow({
           <View style={StyleSheet.absoluteFill} pointerEvents="box-none">
             {overlay}
           </View>
+        ) : null}
+        {toastContext?.toast ? (
+          <Toast
+            key={toastContext.toast.key}
+            message={toastContext.toast.message}
+            variant={toastContext.toast.variant}
+            duration={toastContext.toast.duration}
+            onDismiss={toastContext.dismiss ?? (() => {})}
+          />
         ) : null}
       </ModalRootView>
     </Modal>

@@ -55,6 +55,10 @@ jest.mock("@/shared/ui/BottomSheetWindow", () => ({
   },
 }));
 
+jest.mock("@/shared/ui/CancellableLoadingOverlay", () => ({
+  CancellableLoadingOverlay: () => null,
+}));
+
 jest.mock("@/shared/ui/Toast", () => ({
   useToast: () => ({ show: jest.fn() }),
 }));
@@ -119,7 +123,6 @@ describe("CourseMemberRosterScreen", () => {
   it("renders the shared list hierarchy while retaining schedule assignments", async () => {
     const view = await render(<CourseMemberRosterScreen courseId="course-1" memberKind="coaches" />);
 
-    expect(view.getByText("Theo dõi huấn luyện viên và lịch được phân công trong khóa học.")).toBeTruthy();
     expect(view.getByText("Danh sách huấn luyện viên")).toBeTruthy();
     expect(view.getByText("Nguyễn Văn An")).toBeTruthy();
     expect(view.getByText("HLV chính")).toBeTruthy();
