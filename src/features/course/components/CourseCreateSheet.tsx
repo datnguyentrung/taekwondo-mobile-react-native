@@ -1,17 +1,11 @@
-import React, {
-  memo,
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from "react";
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Pressable, StyleSheet, View } from "react-native";
-import { Plus, Trash } from "reicon-react-native";
+import { Check, Plus, Trash } from "reicon-react-native";
 
 import type { ClassScheduleSimpleResponse } from "@/features/class-schedule/api/class-schedule.dto";
 import {
   ScheduleLocationLabel,
+  WeekdayCode,
   WeekdayLabel,
 } from "@/features/class-schedule/constants/class-schedule.constants";
 import type {
@@ -27,11 +21,11 @@ import {
   CourseStatusLabel,
   CourseStatusValues,
 } from "@/features/course/constants/course.constants";
-import { getApiErrorMessage } from "@/infrastructure/http/httpError";
 import {
   useCourseCreateOptions,
   useCreateCourse,
 } from "@/features/course/queries/courseCatalogQueries";
+import { getApiErrorMessage } from "@/infrastructure/http/httpError";
 import {
   AdminButton,
   AdminChip,
@@ -43,6 +37,7 @@ import {
 import { AppIcon } from "@/shared/ui/AppIcon";
 import { BottomSheetWindow } from "@/shared/ui/BottomSheetWindow";
 import { CancellableLoadingOverlay } from "@/shared/ui/CancellableLoadingOverlay";
+import { PickerPopover } from "@/shared/ui/PickerPopover";
 import { ThemedText } from "@/shared/ui/ThemedText";
 import { useToast } from "@/shared/ui/Toast";
 import { formatDateYMD } from "@/shared/utils/dateTime";
@@ -190,12 +185,16 @@ function SchedulePickerOption({
 
   return (
     <Pressable
-      accessibilityRole="radio"
+      accessibilityRole="checkbox"
       accessibilityLabel={`${schedule.branch.name}, ${WeekdayLabel[schedule.weekday]}, ${formatScheduleTime(schedule.startTime)} đến ${formatScheduleTime(schedule.endTime)}, ${locationLabel}`}
       accessibilityHint={
         isActive ? "Chọn lịch lớp này" : "Lịch lớp hiện không hoạt động"
       }
-      accessibilityState={{ disabled: !isActive, selected: isActive && selected }}
+      accessibilityState={{
+        disabled: !isActive,
+        checked: isActive && selected,
+        selected: isActive && selected,
+      }}
       disabled={!isActive}
       onPress={onPress}
       style={({ pressed }) => [
@@ -208,34 +207,55 @@ function SchedulePickerOption({
       <View style={styles.schedulePickerCopy}>
         <ThemedText type="featureLabel">{schedule.branch.name}</ThemedText>
         <ThemedText type="bodySmall" style={styles.secondaryText}>
-          {WeekdayLabel[schedule.weekday]} · {formatScheduleTime(schedule.startTime)} –{" "}
+          {WeekdayLabel[schedule.weekday]} ·{" "}
+          {formatScheduleTime(schedule.startTime)} –{" "}
           {formatScheduleTime(schedule.endTime)}
         </ThemedText>
         <ThemedText type="bodySmall" style={styles.secondaryText}>
           {locationLabel}
         </ThemedText>
       </View>
-      <View
-        style={[
-          styles.scheduleStatus,
-          isActive ? styles.scheduleStatusActive : styles.scheduleStatusInactive,
-        ]}
-      >
-        <ThemedText
-          type="bodySmall"
-          style={isActive ? styles.scheduleStatusActiveText : styles.scheduleStatusInactiveText}
+      <View style={styles.scheduleOptionRight}>
+        <View
+          style={[
+            styles.scheduleStatus,
+            isActive
+              ? styles.scheduleStatusActive
+              : styles.scheduleStatusInactive,
+          ]}
         >
-          {SCHEDULE_STATUS_LABEL[schedule.status]}
-        </ThemedText>
+          <ThemedText
+            type="bodySmall"
+            style={
+              isActive
+                ? styles.scheduleStatusActiveText
+                : styles.scheduleStatusInactiveText
+            }
+          >
+            {SCHEDULE_STATUS_LABEL[schedule.status]}
+          </ThemedText>
+        </View>
+        <View
+          style={[
+            styles.checkboxBase,
+            selected ? styles.checkboxSelected : null,
+          ]}
+        >
+          {selected ? (
+            <AppIcon icon={<Check />} size={14} color={Colors.light.surface} />
+          ) : null}
+        </View>
       </View>
     </Pressable>
   );
 }
 
 function getApiMessage(error: unknown): string {
-  const apiMessage = (error as {
-    response?: { data?: { message?: string } };
-  })?.response?.data?.message;
+  const apiMessage = (
+    error as {
+      response?: { data?: { message?: string } };
+    }
+  )?.response?.data?.message;
 
   return (
     apiMessage ||
@@ -310,6 +330,7 @@ function CourseCreateSheetComponent({
     createScheduleDraft("schedule-1"),
   ]);
   const [pickerTargetId, setPickerTargetId] = useState<string | null>(null);
+  const [selectedScheduleIds, setSelectedScheduleIds] = useState<string[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const classSchedulesQuery = useCourseCreateOptions(visible);
@@ -317,6 +338,16 @@ function CourseCreateSheetComponent({
   const classSchedules = useMemo(
     () => classSchedulesQuery.data?.content ?? [],
     [classSchedulesQuery.data?.content],
+  );
+  const sortedClassSchedules = useMemo(
+    () =>
+      [...classSchedules].sort(
+        (a, b) =>
+          a.branch.name.localeCompare(b.branch.name) ||
+          WeekdayCode[a.weekday] - WeekdayCode[b.weekday] ||
+          a.startTime.localeCompare(b.startTime),
+      ),
+    [classSchedules],
   );
   const classScheduleById = useMemo(
     () =>
@@ -339,6 +370,7 @@ function CourseCreateSheetComponent({
     setStatus("OPEN");
     setSchedules([createScheduleDraft("schedule-1")]);
     setPickerTargetId(null);
+    setSelectedScheduleIds([]);
   }, []);
 
   useEffect(
@@ -366,6 +398,74 @@ function CourseCreateSheetComponent({
     nextDraftIdRef.current += 1;
     setSchedules((current) => [...current, createScheduleDraft(draftId)]);
   }, []);
+
+  const handleOpenPicker = useCallback(
+    (draftId: string) => {
+      const target = schedules.find((s) => s.draftId === draftId);
+      setPickerTargetId(draftId);
+      setSelectedScheduleIds(
+        target?.classScheduleId ? [target.classScheduleId] : [],
+      );
+    },
+    [schedules],
+  );
+
+  const handleClosePicker = useCallback(() => {
+    setPickerTargetId(null);
+    setSelectedScheduleIds([]);
+  }, []);
+
+  const toggleScheduleSelection = useCallback((scheduleId: string) => {
+    setSelectedScheduleIds((current) =>
+      current.includes(scheduleId)
+        ? current.filter((id) => id !== scheduleId)
+        : [...current, scheduleId],
+    );
+  }, []);
+
+  const handleConfirmSchedules = useCallback(() => {
+    if (!pickerTargetId || selectedScheduleIds.length === 0) {
+      handleClosePicker();
+      return;
+    }
+
+    const [firstId, ...remainingIds] = selectedScheduleIds;
+    const targetDraft = schedules.find((s) => s.draftId === pickerTargetId);
+
+    setSchedules((current) => {
+      let updated = current.map((item) =>
+        item.draftId === pickerTargetId
+          ? { ...item, classScheduleId: firstId }
+          : item,
+      );
+
+      const existingScheduleIds = new Set(
+        updated.map((item) => item.classScheduleId).filter(Boolean),
+      );
+
+      for (const extraId of remainingIds) {
+        if (!existingScheduleIds.has(extraId)) {
+          const newDraftId = `schedule-${nextDraftIdRef.current}`;
+          nextDraftIdRef.current += 1;
+          updated = [
+            ...updated,
+            {
+              draftId: newDraftId,
+              classScheduleId: extraId,
+              startDate: targetDraft?.startDate ?? formatDateYMD(Date.now()),
+              endDate: targetDraft?.endDate ?? null,
+              status: targetDraft?.status ?? "ACTIVE",
+            },
+          ];
+          existingScheduleIds.add(extraId);
+        }
+      }
+
+      return updated;
+    });
+
+    handleClosePicker();
+  }, [handleClosePicker, pickerTargetId, schedules, selectedScheduleIds]);
 
   const removeSchedule = useCallback((draftId: string) => {
     setSchedules((current) =>
@@ -456,18 +556,72 @@ function CourseCreateSheetComponent({
   return (
     <>
       <BottomSheetWindow
-        visible={visible && !pickerTargetId}
+        visible={visible}
         title="Tạo khóa học"
         heightRatio={0.8}
         accessibilityLabel="Biểu mẫu tạo khóa học"
         onClose={handleClose}
         overlay={
-          <CancellableLoadingOverlay
-            visible={isSubmitting}
-            message="Đang tạo khóa học..."
-            cancelLabel="Hủy"
-            onCancel={handleCancelSubmit}
-          />
+          <>
+            <CancellableLoadingOverlay
+              visible={isSubmitting}
+              message="Đang tạo khóa học..."
+              cancelLabel="Hủy"
+              onCancel={handleCancelSubmit}
+            />
+            <PickerPopover
+              visible={Boolean(pickerTargetId)}
+              useModal={false}
+              title="Chọn lịch lớp"
+              subtitle={
+                selectedScheduleIds.length > 0
+                  ? `Đã chọn ${selectedScheduleIds.length} lịch học`
+                  : "Lịch học khả dụng"
+              }
+              accessibilityLabel="Danh sách lịch lớp"
+              cardStyle={styles.schedulePickerCard}
+              onClose={handleClosePicker}
+              footer={
+                <AdminButton
+                  label="Chọn"
+                  variant="primary"
+                  disabled={selectedScheduleIds.length === 0}
+                  onPress={handleConfirmSchedules}
+                  style={styles.pickerConfirmButton}
+                />
+              }
+            >
+              <View style={styles.pickerContent}>
+                {classSchedulesQuery.isLoading ? (
+                  <AdminLoadingState />
+                ) : classSchedulesQuery.error ? (
+                  <View style={styles.pickerState}>
+                    <AdminEmptyState message="Không thể tải danh sách lịch lớp." />
+                    <AdminButton
+                      label="Thử lại"
+                      variant="secondary"
+                      onPress={() => {
+                        void classSchedulesQuery.refetch();
+                      }}
+                    />
+                  </View>
+                ) : classSchedules.length === 0 ? (
+                  <AdminEmptyState message="Chưa có lịch lớp để lựa chọn." />
+                ) : (
+                  sortedClassSchedules.map((schedule) => (
+                    <SchedulePickerOption
+                      key={schedule.scheduleId}
+                      schedule={schedule}
+                      selected={selectedScheduleIds.includes(
+                        schedule.scheduleId,
+                      )}
+                      onPress={() => toggleScheduleSelection(schedule.scheduleId)}
+                    />
+                  ))
+                )}
+              </View>
+            </PickerPopover>
+          </>
         }
         footer={
           <View style={styles.footerActions}>
@@ -617,7 +771,7 @@ function CourseCreateSheetComponent({
                         : undefined
                     }
                     placeholder="Chọn lịch lớp"
-                    onPress={() => setPickerTargetId(schedule.draftId)}
+                    onPress={() => handleOpenPicker(schedule.draftId)}
                   />
                   <FieldError message={errors?.classScheduleId} />
                 </View>
@@ -672,49 +826,6 @@ function CourseCreateSheetComponent({
               </View>
             );
           })}
-        </View>
-      </BottomSheetWindow>
-
-      <BottomSheetWindow
-        visible={visible && Boolean(pickerTargetId)}
-        title="Chọn lịch lớp"
-        heightRatio={0.65}
-        accessibilityLabel="Danh sách lịch lớp"
-        onClose={() => setPickerTargetId(null)}
-      >
-        <View style={styles.pickerContent}>
-          {classSchedulesQuery.isLoading ? (
-            <AdminLoadingState />
-          ) : classSchedulesQuery.error ? (
-            <View style={styles.pickerState}>
-              <AdminEmptyState message="Không thể tải danh sách lịch lớp." />
-              <AdminButton
-                label="Thử lại"
-                variant="secondary"
-                onPress={() => {
-                  void classSchedulesQuery.refetch();
-                }}
-              />
-            </View>
-          ) : classSchedules.length === 0 ? (
-            <AdminEmptyState message="Chưa có lịch lớp để lựa chọn." />
-          ) : (
-            classSchedules.map((schedule) => (
-              <SchedulePickerOption
-                key={schedule.scheduleId}
-                schedule={schedule}
-                selected={pickerTarget?.classScheduleId === schedule.scheduleId}
-                onPress={() => {
-                  if (pickerTargetId) {
-                    updateSchedule(pickerTargetId, {
-                      classScheduleId: schedule.scheduleId,
-                    });
-                  }
-                  setPickerTargetId(null);
-                }}
-              />
-            ))
-          )}
         </View>
       </BottomSheetWindow>
     </>
@@ -799,10 +910,11 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   pickerContent: {
-    paddingHorizontal: 20,
-    paddingTop: 12,
-    paddingBottom: 24,
     gap: 10,
+  },
+  schedulePickerCard: {
+    maxWidth: 380,
+    width: "100%",
   },
   schedulePickerOption: {
     minHeight: 96,
@@ -826,6 +938,24 @@ const styles = StyleSheet.create({
     flex: 1,
     gap: 2,
   },
+  scheduleOptionRight: {
+    alignItems: "flex-end",
+    gap: 8,
+  },
+  checkboxBase: {
+    width: 20,
+    height: 20,
+    borderRadius: radii.sm,
+    borderWidth: 1.5,
+    borderColor: Colors.light.divider,
+    backgroundColor: Colors.light.surface,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  checkboxSelected: {
+    borderColor: Colors.light.primary,
+    backgroundColor: Colors.light.primary,
+  },
   scheduleStatus: {
     alignSelf: "flex-start",
     paddingHorizontal: 8,
@@ -843,6 +973,9 @@ const styles = StyleSheet.create({
   },
   scheduleStatusInactiveText: {
     color: Colors.light.textSecondary,
+  },
+  pickerConfirmButton: {
+    width: "100%",
   },
   pickerState: {
     gap: 12,

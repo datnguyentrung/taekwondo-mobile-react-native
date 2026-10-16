@@ -188,6 +188,7 @@ async function fillValidForm(
       "Cơ sở Trung tâm, Thứ Hai, 18:00 đến 19:30, Phòng tập",
     ),
   );
+  await fireEvent.press(screen.getByLabelText("Chọn"));
 }
 
 describe("CourseCreateSheet", () => {
@@ -286,6 +287,7 @@ describe("CourseCreateSheet", () => {
         "Cơ sở Trung tâm, Thứ Hai, 18:00 đến 19:30, Phòng tập",
       ),
     );
+    await fireEvent.press(screen.getByLabelText("Chọn"));
 
     expect(
       screen.getByText("Sức chứa phải là số nguyên lớn hơn 0."),
@@ -323,6 +325,7 @@ describe("CourseCreateSheet", () => {
         "Cơ sở Tây Hồ, Thứ Ba, 18:00 đến 19:30, Phòng tập",
       ),
     );
+    await fireEvent.press(screen.getByLabelText("Chọn"));
     await fireEvent.press(screen.getByLabelText("Lưu"));
 
     await waitFor(() => expect(mockCreate).toHaveBeenCalledTimes(1));
@@ -340,6 +343,57 @@ describe("CourseCreateSheet", () => {
         status: "ACTIVE",
       },
     ]);
+  });
+
+  it("automatically creates additional schedules when multiple options are selected in PickerPopover without closing BottomSheetWindow", async () => {
+    const mockCreate = courseApi.create as jest.MockedFunction<typeof courseApi.create>;
+    mockCreate.mockResolvedValue(createdCourse);
+    const { screen } = await renderSheet();
+
+    await fireEvent.changeText(
+      screen.getByLabelText("Tên khóa học *"),
+      "Khóa nâng cao",
+    );
+    await fireEvent.changeText(screen.getByLabelText("Sức chứa tối đa *"), "30");
+    await fireEvent.press(screen.getByText("Nâng cao"));
+
+    // Open PickerPopover
+    await fireEvent.press(screen.getByLabelText("Lịch lớp *: Chọn lịch lớp"));
+
+    // BottomSheetWindow "Tạo khóa học" stays visible!
+    expect(screen.getByLabelText("Biểu mẫu tạo khóa học")).toBeTruthy();
+    expect(screen.getByLabelText("Danh sách lịch lớp")).toBeTruthy();
+
+    // Select both schedules
+    await fireEvent.press(
+      screen.getByLabelText(
+        "Cơ sở Trung tâm, Thứ Hai, 18:00 đến 19:30, Phòng tập",
+      ),
+    );
+    await fireEvent.press(
+      screen.getByLabelText(
+        "Cơ sở Tây Hồ, Thứ Ba, 18:00 đến 19:30, Phòng tập",
+      ),
+    );
+
+    // Confirm selection with "Chọn" button
+    await fireEvent.press(screen.getByLabelText("Chọn"));
+
+    // Both schedule cards should now be present in the sheet
+    expect(screen.getByText("Lịch học 1")).toBeTruthy();
+    expect(screen.getByText("Lịch học 2")).toBeTruthy();
+    expect(screen.getByText("Cơ sở Trung tâm · Thứ Hai")).toBeTruthy();
+    expect(screen.getByText("Cơ sở Tây Hồ · Thứ Ba")).toBeTruthy();
+
+    await fireEvent.press(screen.getByLabelText("Lưu"));
+    await waitFor(() => expect(mockCreate).toHaveBeenCalledTimes(1));
+    expect(mockCreate.mock.calls[0][0].courseSchedules).toHaveLength(2);
+    expect(mockCreate.mock.calls[0][0].courseSchedules[0].classScheduleId).toBe(
+      "schedule-api-1",
+    );
+    expect(mockCreate.mock.calls[0][0].courseSchedules[1].classScheduleId).toBe(
+      "schedule-api-2",
+    );
   });
 
   it("aborts an in-flight create silently and keeps the form", async () => {

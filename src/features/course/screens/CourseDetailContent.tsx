@@ -1,7 +1,8 @@
 import { useState, type ReactNode } from "react";
-import { Image, Pressable, StyleSheet, View } from "react-native";
+import { Pressable, StyleSheet, View } from "react-native";
 import {
   ArrowRight,
+  Calendar,
   Check,
   ChevronRight,
   Star,
@@ -13,6 +14,12 @@ import { AppIcon } from "@/shared/ui/AppIcon";
 import { ThemedText } from "@/shared/ui/ThemedText";
 import { Colors, hexToRgba, radii } from "@/theme";
 
+import {
+  WeekdayCode,
+  WeekdayCodeToLabel,
+  WeekdayLabel,
+  type Weekday,
+} from "@/features/class-schedule/constants/class-schedule.constants";
 import {
   PackageSheet,
   SurfaceCard,
@@ -43,6 +50,8 @@ export function CourseDetailContent({
   const enrolledPercent = capacity
     ? Math.min(Math.round((enrolled / capacity) * 100), 100)
     : 0;
+  const schedulesList = course.classSchedules ?? [];
+  const scheduleCount = schedulesList.length;
   const packageCount = course.packages.length;
 
   return (
@@ -90,17 +99,6 @@ export function CourseDetailContent({
 
           <View style={styles.infoRow}>
             <ThemedText type="bodySmall" style={styles.secondaryText}>
-              Lịch học
-            </ThemedText>
-            <ThemedText type="bodySmall" style={styles.blackTextBold}>
-              {course.scheduleLabel}
-            </ThemedText>
-          </View>
-
-          <View style={styles.rowDivider} />
-
-          <View style={styles.infoRow}>
-            <ThemedText type="bodySmall" style={styles.secondaryText}>
               Sức chứa
             </ThemedText>
             <ThemedText type="bodySmall" style={styles.blackTextBold}>
@@ -128,10 +126,121 @@ export function CourseDetailContent({
         </View>
       </SurfaceCard>
 
+      <SurfaceCard>
+        <View style={styles.sectionHeaderRow}>
+          <ThemedText type="subtitle" style={styles.blackText}>
+            Lịch học
+          </ThemedText>
+          <ThemedText type="caption" style={styles.secondaryText}>
+            {scheduleCount
+              ? `${scheduleCount} ca học trong tuần`
+              : "Lịch học linh hoạt"}
+          </ThemedText>
+        </View>
+        <View style={styles.divider} />
+
+        <View style={styles.scheduleItemsList}>
+          {scheduleCount > 0 ? (
+            schedulesList
+              .sort((a, b) => {
+                const weekdayA = a.weekday || 0;
+                const weekdayB = b.weekday || 0;
+                const timeA =
+                  a.startTime && a.endTime
+                    ? `${a.startTime.slice(0, 5)} - ${a.endTime.slice(0, 5)}`
+                    : "";
+                const timeB =
+                  b.startTime && b.endTime
+                    ? `${b.startTime.slice(0, 5)} - ${b.endTime.slice(0, 5)}`
+                    : "";
+                if (weekdayA !== weekdayB) {
+                  return WeekdayCode[weekdayA] - WeekdayCode[weekdayB];
+                }
+                return timeA.localeCompare(timeB);
+              })
+              .map((sch, index) => {
+                const weekdayStr = sch.weekday
+                  ? typeof sch.weekday === "number"
+                    ? (WeekdayCodeToLabel[sch.weekday] ?? `Thứ ${sch.weekday}`)
+                    : (WeekdayLabel[sch.weekday as Weekday] ??
+                      String(sch.weekday))
+                  : "Lịch học";
+                const timeStr =
+                  sch.startTime && sch.endTime
+                    ? `${sch.startTime.slice(0, 5)} - ${sch.endTime.slice(0, 5)}`
+                    : "";
+                const branchText = sch.branch?.name ?? "";
+
+                return (
+                  <View key={sch.scheduleId || `sch-${index}`}>
+                    <View style={styles.scheduleItemRow}>
+                      <View style={styles.scheduleIconWrap}>
+                        <AppIcon
+                          icon={<Calendar />}
+                          size={18}
+                          color={Colors.light.primary}
+                        />
+                      </View>
+                      <View style={styles.scheduleItemContent}>
+                        <View style={styles.scheduleItemTop}>
+                          <ThemedText
+                            type="bodySmall"
+                            style={styles.blackTextBold}
+                          >
+                            {weekdayStr}
+                          </ThemedText>
+                          {timeStr ? (
+                            <View style={styles.timeBadge}>
+                              <ThemedText
+                                type="caption"
+                                style={styles.timeBadgeText}
+                              >
+                                {timeStr}
+                              </ThemedText>
+                            </View>
+                          ) : null}
+                        </View>
+                        {branchText ? (
+                          <ThemedText
+                            type="caption"
+                            style={styles.secondaryText}
+                          >
+                            {branchText}
+                          </ThemedText>
+                        ) : null}
+                      </View>
+                    </View>
+                    {index < scheduleCount - 1 ? (
+                      <View style={styles.rowDivider} />
+                    ) : null}
+                  </View>
+                );
+              })
+          ) : (
+            <View style={styles.scheduleFallbackRow}>
+              <View style={styles.scheduleIconWrap}>
+                <AppIcon
+                  icon={<Calendar />}
+                  size={18}
+                  color={Colors.light.primary}
+                />
+              </View>
+              <ThemedText type="bodySmall" style={styles.blackTextBold}>
+                {course.scheduleLabel || "Lịch học linh hoạt"}
+              </ThemedText>
+            </View>
+          )}
+        </View>
+      </SurfaceCard>
+
       <View style={styles.pricingCard}>
         <View style={styles.pricingBadgesRow}>
           <View style={styles.offerTag}>
-            <AppIcon icon={<Star weight="Filled" />} size={12} color="#FFFFFF" />
+            <AppIcon
+              icon={<Star weight="Filled" />}
+              size={12}
+              color="#FFFFFF"
+            />
             <ThemedText type="caption" style={styles.offerTagText}>
               ƯU ĐÃI ĐẶC BIỆT
             </ThemedText>
@@ -205,57 +314,6 @@ export function CourseDetailContent({
         ) : null}
       </View>
 
-      <SurfaceCard>
-        <ThemedText type="subtitle" style={styles.sectionTitle}>
-          Quản lý
-        </ThemedText>
-        <View style={styles.staffProfileCard}>
-          <View style={styles.avatarWrapper}>
-            <Image
-              source={{ uri: DEMO_AVATAR_URL }}
-              style={styles.avatarImage}
-              resizeMode="cover"
-            />
-          </View>
-          <View style={styles.staffInfoBlock}>
-            <ThemedText type="bodySmall" style={styles.blackTextBold}>
-              {course.manager?.fullName ?? "Nguyễn Văn Minh"}
-            </ThemedText>
-            <ThemedText type="caption" style={styles.secondaryText}>
-              {course.manager?.roleLabel ?? "Quản lý khóa học"}
-            </ThemedText>
-          </View>
-        </View>
-      </SurfaceCard>
-
-      <SurfaceCard>
-        <ThemedText type="subtitle" style={styles.sectionTitle}>
-          Huấn luyện viên
-        </ThemedText>
-        <View style={styles.staffProfileCard}>
-          <View style={styles.avatarWrapper}>
-            <Image
-              source={{ uri: DEMO_AVATAR_URL }}
-              style={styles.avatarImage}
-              resizeMode="cover"
-            />
-            <View style={styles.beltOverlayTag}>
-              <ThemedText type="caption" style={styles.beltOverlayText}>
-                Đai đen
-              </ThemedText>
-            </View>
-          </View>
-          <View style={styles.staffInfoBlock}>
-            <ThemedText type="bodySmall" style={styles.blackTextBold}>
-              {course.coachName || "Nguyễn Văn Minh"}
-            </ThemedText>
-            <ThemedText type="caption" style={styles.secondaryText}>
-              Huấn luyện viên chính
-            </ThemedText>
-          </View>
-        </View>
-      </SurfaceCard>
-
       <SurfaceCard soft style={styles.rosterCard}>
         <Pressable
           accessibilityRole="button"
@@ -299,7 +357,11 @@ export function CourseDetailContent({
         >
           <View style={styles.rosterLeft}>
             <View style={styles.rosterIconContainer}>
-              <AppIcon icon={<Users />} size={20} color={Colors.light.primary} />
+              <AppIcon
+                icon={<Users />}
+                size={20}
+                color={Colors.light.primary}
+              />
             </View>
             <View>
               <ThemedText type="bodySmall" style={styles.blackTextBold}>
@@ -567,5 +629,51 @@ const styles = StyleSheet.create({
   },
   btnPressed: {
     opacity: 0.75,
+  },
+  scheduleItemsList: {
+    gap: 4,
+    marginTop: 4,
+  },
+  scheduleItemRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    paddingVertical: 8,
+  },
+  scheduleFallbackRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    paddingVertical: 8,
+  },
+  scheduleIconWrap: {
+    width: 36,
+    height: 36,
+    borderRadius: radii.md,
+    backgroundColor: hexToRgba(Colors.light.primary, 0.08),
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  scheduleItemContent: {
+    flex: 1,
+    gap: 2,
+  },
+  scheduleItemTop: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+  timeBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: radii.sm,
+    backgroundColor: Colors.light.backgroundElement,
+    borderWidth: 1,
+    borderColor: hexToRgba(Colors.light.divider, 0.6),
+  },
+  timeBadgeText: {
+    color: Colors.light.text,
+    fontWeight: "600",
+    fontSize: 11,
   },
 });

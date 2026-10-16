@@ -7,7 +7,9 @@ import {
 } from "@/features/class-schedule/constants/class-schedule.constants";
 import { BeltLabel } from "@/features/person/constants/person.constants";
 import type {
+  CourseBranchItemView,
   CourseCatalogTab,
+  CourseClassScheduleItemView,
   CourseStaffMemberView,
   CourseView,
 } from "./course.types";
@@ -61,6 +63,28 @@ export function mapCourseApiToView(
       ]
     : [];
 
+  // Extract unique classSchedules and unique branches from courseSchedules
+  const rawCourseSchedules = item.courseSchedules ?? [];
+  const classScheduleMap = new Map<string, CourseClassScheduleItemView>();
+  const branchMap = new Map<number | string, CourseBranchItemView>();
+
+  for (const cs of rawCourseSchedules) {
+    if (cs?.classSchedule) {
+      if (!classScheduleMap.has(cs.classSchedule.scheduleId)) {
+        classScheduleMap.set(cs.classSchedule.scheduleId, cs.classSchedule);
+      }
+      if (cs.classSchedule.branch) {
+        const bId = cs.classSchedule.branch.branchId;
+        if (bId != null && !branchMap.has(bId)) {
+          branchMap.set(bId, cs.classSchedule.branch);
+        }
+      }
+    }
+  }
+
+  const classSchedules: CourseClassScheduleItemView[] = Array.from(classScheduleMap.values());
+  const branches: CourseBranchItemView[] = Array.from(branchMap.values());
+
   return {
     courseId: item.courseId,
     courseName: item.name,
@@ -80,5 +104,8 @@ export function mapCourseApiToView(
     coaches,
     assistantCount: 0,
     packages: fallbackPackages,
+    branches,
+    classSchedules,
+    courseSchedules: rawCourseSchedules,
   };
 }
