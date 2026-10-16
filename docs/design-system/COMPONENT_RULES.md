@@ -65,6 +65,8 @@ Current responsibilities include:
 
 A new picker/filter should compose inside this shell rather than recreating those behaviors.
 
+For feature content inset, scrolling and footer composition, follow [Bottom-sheet content rules](./BOTTOM_SHEET_CONTENT_RULES.md).
+
 ## 2. Screen chrome
 
 ### Root bottom-tab screen

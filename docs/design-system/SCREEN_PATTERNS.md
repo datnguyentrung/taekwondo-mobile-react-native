@@ -720,6 +720,8 @@ Use typed Expo Router routes where possible.
 - content is temporary/contextual
 - user should return to the underlying task after choosing
 
+Compose sheet content according to [Bottom-sheet content rules](./BOTTOM_SHEET_CONTENT_RULES.md).
+
 ### Use a centered confirmation modal when
 
 - the decision is consequential
