@@ -110,17 +110,6 @@ export function CourseDetailContent({
 
           <View style={styles.infoRow}>
             <ThemedText type="bodySmall" style={styles.secondaryText}>
-              Lịch học
-            </ThemedText>
-            <ThemedText type="bodySmall" style={styles.blackTextBold}>
-              {course.scheduleLabel}
-            </ThemedText>
-          </View>
-
-          <View style={styles.rowDivider} />
-
-          <View style={styles.infoRow}>
-            <ThemedText type="bodySmall" style={styles.secondaryText}>
               Sức chứa
             </ThemedText>
             <ThemedText type="bodySmall" style={styles.blackTextBold}>
@@ -263,7 +252,11 @@ export function CourseDetailContent({
       <View style={styles.pricingCard}>
         <View style={styles.pricingBadgesRow}>
           <View style={styles.offerTag}>
-            <AppIcon icon={<Star weight="Filled" />} size={12} color="#FFFFFF" />
+            <AppIcon
+              icon={<Star weight="Filled" />}
+              size={12}
+              color="#FFFFFF"
+            />
             <ThemedText type="caption" style={styles.offerTagText}>
               ƯU ĐÃI ĐẶC BIỆT
             </ThemedText>
@@ -367,7 +360,6 @@ export function CourseDetailContent({
         </Pressable>
 
         <View style={styles.rowDivider} />
-
         <Pressable
           accessibilityRole="button"
           accessibilityLabel="Xem danh sách trợ giảng"
@@ -412,7 +404,11 @@ export function CourseDetailContent({
         >
           <View style={styles.rosterLeft}>
             <View style={styles.rosterIconContainer}>
-              <AppIcon icon={<Users />} size={20} color={Colors.light.primary} />
+              <AppIcon
+                icon={<Users />}
+                size={20}
+                color={Colors.light.primary}
+              />
             </View>
             <View>
               <ThemedText type="bodySmall" style={styles.blackTextBold}>
