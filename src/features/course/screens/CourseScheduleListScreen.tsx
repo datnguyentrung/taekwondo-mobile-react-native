@@ -21,6 +21,8 @@ import { ThemedText } from "@/shared/ui/ThemedText";
 import { useToast } from "@/shared/ui/Toast";
 import { Colors, Spacing, effects, radii } from "@/theme";
 
+import { groupCourseSchedulesByBranch } from "./CourseScheduleListScreen.logic";
+
 export function CourseScheduleListScreen({ courseId }: { courseId: string }) {
   const toast = useToast();
   const canUpdate = useCan(Permission.COURSE_UPDATE);
@@ -48,6 +50,7 @@ export function CourseScheduleListScreen({ courseId }: { courseId: string }) {
   }, [searchInput]);
 
   const schedules = useMemo(() => sortCourseSchedules(course?.schedules ?? []).filter((schedule) => matchesSearch(schedule, search)), [course?.schedules, search]);
+  const scheduleGroups = useMemo(() => groupCourseSchedulesByBranch(schedules), [schedules]);
 
   const updateSchedule = async (target: CourseScheduleView, request: CourseScheduleUpsertRequest, message: string) => {
     try {
@@ -121,16 +124,32 @@ export function CourseScheduleListScreen({ courseId }: { courseId: string }) {
       </View>
 
       {schedules.length > 0 ? (
-        <View style={styles.list}>
-          {schedules.map((schedule, index) => (
-            <View key={schedule.courseScheduleId}>
-              <ScheduleRow
-                schedule={schedule}
-                onPress={() => setSelected(schedule)}
-              />
-              {index < schedules.length - 1 ? (
-                <View style={styles.separator} />
-              ) : null}
+        <View style={styles.groups}>
+          {scheduleGroups.map((group) => (
+            <View key={group.branchName} style={styles.group}>
+              <View style={styles.groupHeader}>
+                <ThemedText type="subtitle" style={styles.groupTitle}>
+                  {group.branchName}
+                </ThemedText>
+                <View style={styles.countBadge}>
+                  <ThemedText type="bodySmall" style={styles.countBadgeText}>
+                    {group.countLabel}
+                  </ThemedText>
+                </View>
+              </View>
+              <View style={styles.list}>
+                {group.schedules.map((schedule, index) => (
+                  <View key={schedule.courseScheduleId}>
+                    <ScheduleRow
+                      schedule={schedule}
+                      onPress={() => setSelected(schedule)}
+                    />
+                    {index < group.schedules.length - 1 ? (
+                      <View style={styles.separator} />
+                    ) : null}
+                  </View>
+                ))}
+              </View>
             </View>
           ))}
         </View>
@@ -172,6 +191,12 @@ const styles = StyleSheet.create({
   searchField: { flex: 1, minWidth: 0 },
   addButton: { width: 48, height: 48, alignItems: "center", justifyContent: "center", borderRadius: radii.md, backgroundColor: Colors.light.primary, borderCurve: "continuous" },
   pressed: effects.pressed,
+  groups: { gap: Spacing.four },
+  group: { gap: Spacing.two },
+  groupHeader: { minHeight: 44, flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: Spacing.two },
+  groupTitle: { flex: 1, minWidth: 0, color: Colors.light.text },
+  countBadge: { borderRadius: radii.pill, paddingHorizontal: Spacing.two, paddingVertical: 6, backgroundColor: Colors.light.primarySoft },
+  countBadgeText: { color: Colors.light.primary, fontWeight: "700" },
   list: { overflow: "hidden" },
   separator: { height: StyleSheet.hairlineWidth, backgroundColor: Colors.light.divider },
   state: { paddingVertical: 48, alignItems: "center" },

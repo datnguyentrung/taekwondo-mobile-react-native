@@ -3,16 +3,15 @@ import { StyleSheet, View } from "react-native";
 import { ThemedText } from "@/shared/ui/ThemedText";
 import { Colors, radii } from "@/theme";
 
-export function WebUnsupportedScreen() {
+export function WebUnsupportedScreen({ title = "Màn hình chưa hỗ trợ trên Web", description = "Chức năng này hiện được cung cấp trên ứng dụng Android và iOS. Các màn hình Web sẽ được bật riêng khi đã có đầy đủ luồng nghiệp vụ." }: { title?: string; description?: string }) {
   return (
     <View style={styles.screen}>
       <View style={styles.card}>
         <ThemedText type="heading" style={styles.title}>
-          Màn hình chưa hỗ trợ trên Web
+          {title}
         </ThemedText>
         <ThemedText type="body" style={styles.description}>
-          Chức năng này hiện được cung cấp trên ứng dụng Android và iOS. Các
-          màn hình Web sẽ được bật riêng khi đã có đầy đủ luồng nghiệp vụ.
+          {description}
         </ThemedText>
       </View>
     </View>
