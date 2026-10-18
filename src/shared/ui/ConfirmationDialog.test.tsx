@@ -53,4 +53,23 @@ describe("ConfirmationDialog", () => {
     });
     expect(onCancel).toHaveBeenCalledTimes(1);
   });
+
+  it("renders inline without a native modal and dismisses", async () => {
+    const onCancel = jest.fn();
+    const screen = await render(
+      <ConfirmationDialog
+        visible
+        presentation="inline"
+        title="Xóa lịch học"
+        description="Xác nhận xóa lịch học."
+        confirmLabel="Xóa"
+        onCancel={onCancel}
+        onConfirm={jest.fn()}
+      />,
+    );
+
+    expect(screen.getByTestId("confirmation-dialog")).toBeTruthy();
+    await fireEvent.press(screen.getByText("Hủy"));
+    expect(onCancel).toHaveBeenCalledTimes(1);
+  });
 });

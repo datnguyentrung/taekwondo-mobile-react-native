@@ -2,21 +2,12 @@ import { useState, type ReactNode } from "react";
 import { Pressable, StyleSheet, View } from "react-native";
 import {
   ArrowRight,
-  Calendar,
   Check,
   ChevronRight,
   Star,
   User,
   Users,
 } from "reicon-react-native";
-
-import { ScheduleDetailSheet } from "@/features/class-schedule/components/ScheduleDetailSheet";
-import {
-  WeekdayCode,
-  WeekdayCodeToLabel,
-  WeekdayLabel,
-  type Weekday,
-} from "@/features/class-schedule/constants/class-schedule.constants";
 
 import { AppIcon } from "@/shared/ui/AppIcon";
 import { ThemedText } from "@/shared/ui/ThemedText";
@@ -29,6 +20,9 @@ import {
 } from "@/features/student-commerce/components/StudentCommercePrimitives";
 import type { CourseView } from "@/features/student-commerce/types";
 import { formatCourseStartingPrice } from "@/features/student-commerce/utils/studentCommerceUtils";
+import { CourseInformationSection } from "@/features/course/components/CourseInformationSection";
+import { CourseScheduleSection } from "@/features/course/components/CourseScheduleSection";
+import { CourseScheduleDetailWindow } from "@/features/course/components/CourseScheduleDetailWindow";
 
 export function CourseDetailContent({
   course,
@@ -37,6 +31,13 @@ export function CourseDetailContent({
   onOpenAssistants,
   onOpenStudents,
   onOpenPackage,
+  onOpenSchedules,
+  onEditSchedule,
+  onToggleScheduleStatus,
+  onDeleteSchedule,
+  onCancelScheduleDelete,
+  scheduleDeletePending = false,
+  scheduleActionPending = false,
 }: {
   course: CourseView;
   topContent?: ReactNode;
@@ -44,29 +45,20 @@ export function CourseDetailContent({
   onOpenAssistants: () => void;
   onOpenStudents: () => void;
   onOpenPackage: (packageId: string) => void;
+  onOpenSchedules?: () => void;
+  onEditSchedule?: (schedule: CourseScheduleView) => void;
+  onToggleScheduleStatus?: (schedule: CourseScheduleView) => void;
+  onDeleteSchedule?: (schedule: CourseScheduleView) => Promise<boolean>;
+  onCancelScheduleDelete?: () => void;
+  scheduleDeletePending?: boolean;
+  scheduleActionPending?: boolean;
 }) {
   const [packageSheetVisible, setPackageSheetVisible] = useState(false);
   const [selectedSchedule, setSelectedSchedule] =
     useState<CourseScheduleView>();
 
-  const capacity = course.capacity ?? 30;
   const enrolled = course.enrolledStudentCount ?? 18;
-  const enrolledPercent = capacity
-    ? Math.min(Math.round((enrolled / capacity) * 100), 100)
-    : 0;
   const packageCount = course.packages.length;
-  const schedulesList = [...course.schedules].sort((a, b) => {
-    const weekdayA =
-      typeof a.weekday === "number"
-        ? a.weekday
-        : (WeekdayCode[a.weekday as Weekday] ?? 0);
-    const weekdayB =
-      typeof b.weekday === "number"
-        ? b.weekday
-        : (WeekdayCode[b.weekday as Weekday] ?? 0);
-    if (weekdayA !== weekdayB) return weekdayA - weekdayB;
-    return (a.startTime ?? "").localeCompare(b.startTime ?? "");
-  });
 
   return (
     <>
@@ -88,210 +80,17 @@ export function CourseDetailContent({
         </View>
       </SurfaceCard>
 
-      <SurfaceCard>
-        <View style={styles.sectionHeaderRow}>
-          <ThemedText type="subtitle" style={styles.blackText}>
-            Thông tin
-          </ThemedText>
-          <ThemedText type="caption" style={styles.secondaryText}>
-            Chi tiết lịch & sĩ số
-          </ThemedText>
-        </View>
-        <View style={styles.divider} />
+      <CourseInformationSection
+        levelLabel={course.levelLabel}
+        capacity={course.capacity ?? 30}
+        enrolled={course.enrolledStudentCount ?? 18}
+      />
 
-        <View style={styles.detailsList}>
-          <View style={styles.infoRow}>
-            <ThemedText type="bodySmall" style={styles.secondaryText}>
-              Cấp độ
-            </ThemedText>
-            <ThemedText type="bodySmall" style={styles.blackTextBold}>
-              {course.levelLabel || "Nhập môn & Cơ bản"}
-            </ThemedText>
-          </View>
-
-          <View style={styles.rowDivider} />
-
-          <View style={styles.infoRow}>
-            <ThemedText type="bodySmall" style={styles.secondaryText}>
-              Sức chứa
-            </ThemedText>
-            <ThemedText type="bodySmall" style={styles.blackTextBold}>
-              {capacity} học viên
-            </ThemedText>
-          </View>
-
-          <View style={styles.rowDivider} />
-
-          <View style={styles.infoRow}>
-            <ThemedText type="bodySmall" style={styles.secondaryText}>
-              Đang học
-            </ThemedText>
-            <View style={styles.enrolledGroup}>
-              <ThemedText type="bodySmall" style={styles.blackTextBold}>
-                {enrolled} học viên
-              </ThemedText>
-              <View style={styles.percentBadge}>
-                <ThemedText type="caption" style={styles.percentBadgeText}>
-                  {enrolledPercent}%
-                </ThemedText>
-              </View>
-            </View>
-          </View>
-        </View>
-      </SurfaceCard>
-
-      <SurfaceCard>
-        <View style={styles.sectionHeaderRow}>
-          <ThemedText type="subtitle" style={styles.blackText}>
-            Lịch học
-          </ThemedText>
-          <ThemedText type="caption" style={styles.secondaryText}>
-            {schedulesList.length
-              ? `${schedulesList.length} ca học trong tuần`
-              : "Lịch học linh hoạt"}
-          </ThemedText>
-        </View>
-        <View style={styles.divider} />
-
-        <View style={styles.scheduleItemsList}>
-          {schedulesList.length > 0 ? (
-            schedulesList.map((schedule, index) => {
-              const weekdayText =
-                typeof schedule.weekday === "number"
-                  ? (WeekdayCodeToLabel[schedule.weekday] ??
-                    `Thứ ${schedule.weekday}`)
-                  : schedule.weekday
-                    ? (WeekdayLabel[schedule.weekday as Weekday] ??
-                      String(schedule.weekday))
-                    : "Lịch học";
-              const timeText =
-                schedule.startTime && schedule.endTime
-                  ? `${schedule.startTime.slice(0, 5)} - ${schedule.endTime.slice(0, 5)}`
-                  : "";
-
-              return (
-                <View key={schedule.courseScheduleId}>
-                  <Pressable
-                    accessibilityRole="button"
-                    accessibilityLabel={`Xem chi tiết lịch ${weekdayText}`}
-                    onPress={() => setSelectedSchedule(schedule)}
-                    style={({ pressed }) => [
-                      styles.scheduleItemRow,
-                      activeEffect(pressed, "pressed"),
-                    ]}
-                  >
-                    <View style={styles.scheduleIconWrap}>
-                      <AppIcon
-                        icon={<Calendar />}
-                        size={18}
-                        color={Colors.light.primary}
-                      />
-                    </View>
-                    <View style={styles.scheduleItemContent}>
-                      <View style={styles.scheduleMetaColumn}>
-                        <ThemedText
-                          type="bodySmall"
-                          style={styles.blackTextBold}
-                        >
-                          {weekdayText}
-                        </ThemedText>
-                        {schedule.branchName ? (
-                          <ThemedText
-                            type="caption"
-                            style={styles.secondaryText}
-                          >
-                            {schedule.branchName}
-                          </ThemedText>
-                        ) : null}
-                      </View>
-                      <View style={styles.scheduleTimingColumn}>
-                        {timeText ? (
-                          <View style={styles.timeBadge}>
-                            <ThemedText
-                              type="caption"
-                              style={styles.timeBadgeText}
-                            >
-                              {timeText}
-                            </ThemedText>
-                          </View>
-                        ) : null}
-                        <View style={styles.scheduleStaffList}>
-                          {schedule.staffAssignments.length > 0 ? (
-                            schedule.staffAssignments.map((staff) => (
-                              <View
-                                key={staff.assignmentId}
-                                style={styles.scheduleStaffRow}
-                              >
-                                <ThemedText
-                                  type="caption"
-                                  style={styles.scheduleStaffName}
-                                >
-                                  {staff.fullName}
-                                </ThemedText>
-                                <View
-                                  style={[
-                                    styles.staffRoleBadge,
-                                    staff.isPrimary
-                                      ? styles.primaryRoleBadge
-                                      : null,
-                                  ]}
-                                  accessibilityLabel={`${staff.fullName}, ${staff.roleLabel}`}
-                                >
-                                  <ThemedText
-                                    type="caption"
-                                    style={[
-                                      styles.staffRoleText,
-                                      staff.isPrimary
-                                        ? styles.primaryRoleText
-                                        : null,
-                                    ]}
-                                  >
-                                    {staff.roleLabel}
-                                  </ThemedText>
-                                </View>
-                              </View>
-                            ))
-                          ) : (
-                            <ThemedText
-                              type="caption"
-                              style={styles.scheduleEmptyStaffText}
-                            >
-                              Chưa phân công
-                            </ThemedText>
-                          )}
-                        </View>
-                      </View>
-                    </View>
-                    <View style={styles.scheduleArrowWrap}>
-                      <AppIcon
-                        icon={<ChevronRight />}
-                        size={16}
-                        color={Colors.light.textSecondary}
-                      />
-                    </View>
-                  </Pressable>
-                  {index < schedulesList.length - 1 ? (
-                    <View style={styles.rowDivider} />
-                  ) : null}
-                </View>
-              );
-            })
-          ) : (
-            <View style={styles.scheduleFallbackRow}>
-              <View style={styles.scheduleIconWrap}>
-                <AppIcon
-                  icon={<Calendar />}
-                  size={18}
-                  color={Colors.light.primary}
-                />
-              </View>
-              <ThemedText type="bodySmall" style={styles.blackTextBold}>
-                {course.scheduleLabel || "Lịch học linh hoạt"}
-              </ThemedText>
-            </View>
-          )}
-        </View>
-      </SurfaceCard>
+      <CourseScheduleSection
+        schedules={course.schedules}
+        onOpenSchedule={setSelectedSchedule}
+        onSeeMore={onOpenSchedules}
+      />
 
       <View style={styles.pricingCard}>
         <View style={styles.pricingBadgesRow}>
@@ -485,41 +284,15 @@ export function CourseDetailContent({
           }, 100);
         }}
       />
-      <ScheduleDetailSheet
-        visible={Boolean(selectedSchedule)}
-        schedule={
-          selectedSchedule
-            ? {
-                id: selectedSchedule.courseScheduleId,
-                weekdayLabel:
-                  typeof selectedSchedule.weekday === "number"
-                    ? (WeekdayCodeToLabel[selectedSchedule.weekday] ??
-                      `Thứ ${selectedSchedule.weekday}`)
-                    : selectedSchedule.weekday
-                      ? (WeekdayLabel[selectedSchedule.weekday as Weekday] ??
-                        String(selectedSchedule.weekday))
-                      : "Lịch học",
-                timeLabel:
-                  selectedSchedule.startTime && selectedSchedule.endTime
-                    ? `${selectedSchedule.startTime.slice(0, 5)} - ${selectedSchedule.endTime.slice(0, 5)}`
-                    : "",
-                branchName: selectedSchedule.branchName,
-                startDate: selectedSchedule.startDate,
-                endDate: selectedSchedule.endDate,
-                statusLabel:
-                  selectedSchedule.status === "ACTIVE"
-                    ? "Đang hoạt động"
-                    : "Không hoạt động",
-                staff: selectedSchedule.staffAssignments.map((staff) => ({
-                  id: staff.assignmentId,
-                  fullName: staff.fullName,
-                  roleLabel: staff.roleLabel,
-                  isPrimary: staff.isPrimary,
-                })),
-              }
-            : undefined
-        }
+      <CourseScheduleDetailWindow
+        schedule={selectedSchedule}
         onClose={() => setSelectedSchedule(undefined)}
+        onEdit={onEditSchedule}
+        onToggleStatus={onToggleScheduleStatus}
+        onDelete={onDeleteSchedule}
+        onCancelDelete={onCancelScheduleDelete}
+        deleting={scheduleDeletePending}
+        actionPending={scheduleActionPending}
       />
     </>
   );

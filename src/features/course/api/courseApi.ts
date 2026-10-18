@@ -49,27 +49,30 @@ export const courseApi = {
     request: CourseScheduleUpsertRequest,
   ): Promise<CourseScheduleResponse> {
     const response = await javaApi.post<CourseScheduleResponse>(
-      `/courses/${courseId}/schedules`,
-      request,
+      "/course-schedules",
+      { courseId, ...request },
     );
     return response.data;
   },
   async updateSchedule(
-    courseId: string,
     courseScheduleId: string,
     request: CourseScheduleUpsertRequest,
+    options?: { signal?: AbortSignal },
   ): Promise<CourseScheduleResponse> {
     const response = await javaApi.put<CourseScheduleResponse>(
-      `/courses/${courseId}/schedules/${courseScheduleId}`,
+      `/course-schedules/${courseScheduleId}`,
       request,
+      { signal: options?.signal },
     );
     return response.data;
   },
   async removeSchedule(
-    courseId: string,
     courseScheduleId: string,
+    options?: { signal?: AbortSignal },
   ): Promise<void> {
-    await javaApi.delete(`/courses/${courseId}/schedules/${courseScheduleId}`);
+    await javaApi.delete(`/course-schedules/${courseScheduleId}`, {
+      signal: options?.signal,
+    });
   },
   async remove(
     courseId: string,

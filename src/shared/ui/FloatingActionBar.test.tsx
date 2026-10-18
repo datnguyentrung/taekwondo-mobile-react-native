@@ -131,4 +131,19 @@ describe("FloatingActionBar", () => {
 
     expect(screen.getByText("Custom Content Inside Bar")).toBeTruthy();
   });
+
+  it("can omit the bottom safe-area inset for a sheet footer", async () => {
+    const screen = await render(
+      <FloatingActionBar
+        includeBottomSafeArea={false}
+        minBottomInset={0}
+        actions={[{ label: "Lưu", variant: "primary" }]}
+      />,
+    );
+
+    const root = screen.getByRole("button").parent?.parent;
+    expect(root?.props.style).toEqual(
+      expect.arrayContaining([expect.objectContaining({ paddingBottom: 0 })]),
+    );
+  });
 });

@@ -43,6 +43,7 @@ export interface CourseStaffAssignmentSimpleResponse {
 
 export interface CourseStaffAssignmentListParams {
   courseId?: string;
+  courseScheduleId?: string;
   assignmentTypes?: AssignmentType[];
   effectiveOn?: string;
   search?: string;

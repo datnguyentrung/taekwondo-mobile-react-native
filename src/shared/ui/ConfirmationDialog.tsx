@@ -12,6 +12,7 @@ type ConfirmationDialogProps = {
   pending?: boolean;
   confirmVariant?: "primary" | "danger";
   actionOrder?: "cancel-confirm" | "confirm-cancel";
+  presentation?: "modal" | "inline";
   onCancel: () => void;
   onConfirm: () => void;
 };
@@ -25,6 +26,7 @@ export function ConfirmationDialog({
   pending = false,
   confirmVariant = "primary",
   actionOrder = "cancel-confirm",
+  presentation = "modal",
   onCancel,
   onConfirm,
 }: ConfirmationDialogProps) {
@@ -77,6 +79,37 @@ export function ConfirmationDialog({
       ? [confirmAction, cancelAction]
       : [cancelAction, confirmAction];
 
+  const content = (
+    <View
+      testID={presentation === "inline" ? "confirmation-dialog" : undefined}
+      style={styles.modalOverlay}
+      pointerEvents="auto"
+    >
+      <Pressable
+        testID="confirmation-dialog-backdrop"
+        style={StyleSheet.absoluteFill}
+        onPress={pending ? undefined : onCancel}
+      />
+      <View
+        style={styles.modalCard}
+        accessibilityViewIsModal
+        accessibilityRole="alert"
+      >
+        <ThemedText type="title" style={styles.modalTitle}>
+          {title}
+        </ThemedText>
+        <ThemedText type="bodySmall" style={styles.modalDescription}>
+          {description}
+        </ThemedText>
+        <View style={styles.modalActions}>{actions}</View>
+      </View>
+    </View>
+  );
+
+  if (presentation === "inline") {
+    return visible ? content : null;
+  }
+
   return (
     <Modal
       testID="confirmation-dialog"
@@ -85,21 +118,7 @@ export function ConfirmationDialog({
       animationType="fade"
       onRequestClose={onCancel}
     >
-      <View style={styles.modalOverlay}>
-        <View
-          style={styles.modalCard}
-          accessibilityViewIsModal
-          accessibilityRole="alert"
-        >
-          <ThemedText type="title" style={styles.modalTitle}>
-            {title}
-          </ThemedText>
-          <ThemedText type="bodySmall" style={styles.modalDescription}>
-            {description}
-          </ThemedText>
-          <View style={styles.modalActions}>{actions}</View>
-        </View>
-      </View>
+      {content}
     </Modal>
   );
 }

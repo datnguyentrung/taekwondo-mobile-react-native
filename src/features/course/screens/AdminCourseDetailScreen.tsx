@@ -5,9 +5,12 @@ import { ActivityIndicator, StyleSheet, View } from "react-native";
 import type { CourseResponse } from "@/features/course/api/course.dto";
 import type { CourseStatus } from "@/features/course/constants/course.constants";
 import { mapCourseApiToView } from "@/features/course/domain/course.mappers";
+import type { CourseScheduleView, CourseView } from "@/features/course/domain/course.types";
 import { CourseActionButtons } from "@/features/course/components/CourseActionButtons";
 import { CourseEditSheet } from "@/features/course/components/CourseEditSheet";
-import type { CourseView } from "@/features/course/domain/course.types";
+import { CourseScheduleFormSheet } from "@/features/course/components/CourseScheduleFormSheet";
+import { Permission } from "@/features/authorization/domain/permissions";
+import { useCan } from "@/features/authorization/hooks/useAccess";
 import type { CourseRouteProps } from "@/features/student-commerce/types";
 import {
   asHref,
@@ -20,12 +23,16 @@ import { CancellableLoadingOverlay } from "@/shared/ui/CancellableLoadingOverlay
 import { ConfirmationDialog } from "@/shared/ui/ConfirmationDialog";
 import { useToast } from "@/shared/ui/Toast";
 import { Colors } from "@/theme";
+import { getApiErrorMessage } from "@/infrastructure/http/httpError";
+import { formatDateYMD } from "@/shared/utils/dateTime";
 
 import { CourseDetailContent } from "./CourseDetailContent";
 import {
   useCourseCacheActions,
   useCourseDetail,
+  useDeleteCourseSchedule,
   useDeleteCourse,
+  useUpdateCourseSchedule,
 } from "../queries/courseCatalogQueries";
 
 export function AdminCourseDetailScreen({ courseId }: CourseRouteProps) {
@@ -33,8 +40,10 @@ export function AdminCourseDetailScreen({ courseId }: CourseRouteProps) {
   const toast = useToast();
   const [isEditSheetVisible, setIsEditSheetVisible] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [scheduleToEdit, setScheduleToEdit] = useState<CourseScheduleView>();
   const [isDeleting, setIsDeleting] = useState(false);
   const deleteAbortControllerRef = useRef<AbortController | null>(null);
+  const scheduleDeleteAbortControllerRef = useRef<AbortController | null>(null);
 
   const state = getCommerceState();
   const mockCourse = getCourse(state.courses, courseId);
@@ -42,6 +51,14 @@ export function AdminCourseDetailScreen({ courseId }: CourseRouteProps) {
   const courseQuery = useCourseDetail(courseId);
   const { registerCourse } = useCourseCacheActions();
   const deleteCourse = useDeleteCourse();
+  const updateSchedule = useUpdateCourseSchedule();
+  const deleteSchedule = useDeleteCourseSchedule();
+  const canUpdateCourse = useCan(Permission.COURSE_UPDATE);
+  const canReadAssignments = useCan(Permission.COURSE_STAFF_ASSIGNMENT_READ);
+  const canCreateAssignments = useCan(Permission.COURSE_STAFF_ASSIGNMENT_CREATE);
+  const canUpdateAssignments = useCan(Permission.COURSE_STAFF_ASSIGNMENT_UPDATE);
+  const canEndAssignments = useCan(Permission.COURSE_STAFF_ASSIGNMENT_DELETE);
+  const canOpenScheduleEditor = canUpdateCourse || canReadAssignments || canCreateAssignments || canUpdateAssignments || canEndAssignments;
 
   const { data: apiCourse, isLoading } = courseQuery;
   const { refreshing, onRefresh } = useScreenRefresh([courseQuery]);
@@ -125,6 +142,69 @@ export function AdminCourseDetailScreen({ courseId }: CourseRouteProps) {
     }
   }, [course?.courseId, courseId, deleteCourse, router, toast]);
 
+  const handleScheduleUpdate = useCallback(async (
+    target: CourseScheduleView,
+    request: { classScheduleId: string; startDate: string; endDate: string | null; status: "ACTIVE" | "INACTIVE" },
+    successMessage: string,
+  ) => {
+    try {
+      await updateSchedule.mutateAsync({
+        courseId: course?.courseId ?? courseId,
+        courseScheduleId: target.courseScheduleId,
+        request,
+      });
+      setScheduleToEdit(undefined);
+      toast.show({ message: successMessage, variant: "success" });
+    } catch (error) {
+      toast.show({ message: getApiErrorMessage(error, "Không thể cập nhật lịch học. Vui lòng thử lại."), variant: "error" });
+    }
+  }, [toast, updateSchedule]);
+
+  const handleToggleScheduleStatus = useCallback((target: CourseScheduleView) => {
+    const nextStatus = target.status === "ACTIVE" ? "INACTIVE" : "ACTIVE";
+    const today = formatDateYMD(Date.now());
+    void handleScheduleUpdate(
+      target,
+      {
+        classScheduleId: target.classScheduleId,
+        startDate: target.startDate,
+        endDate: nextStatus === "INACTIVE"
+          ? target.endDate ?? (target.startDate > today ? target.startDate : today)
+          : null,
+        status: nextStatus,
+      },
+      target.status === "ACTIVE" ? "Đã tạm dừng lịch học" : "Đã kích hoạt lịch học",
+    );
+  }, [handleScheduleUpdate]);
+
+  const handleCancelScheduleDelete = useCallback(() => {
+    scheduleDeleteAbortControllerRef.current?.abort();
+    scheduleDeleteAbortControllerRef.current = null;
+  }, []);
+
+  const handleScheduleDelete = useCallback(async (target: CourseScheduleView) => {
+    const targetCourseId = course?.courseId ?? courseId;
+    if (!targetCourseId) return false;
+
+    const abortController = new AbortController();
+    scheduleDeleteAbortControllerRef.current = abortController;
+    try {
+      await deleteSchedule.mutateAsync({
+        courseId: targetCourseId,
+        courseScheduleId: target.courseScheduleId,
+        signal: abortController.signal,
+      });
+      toast.show({ message: "Xóa lịch học thành công", variant: "success" });
+      return true;
+    } catch (error) {
+      if ((error as { name?: string })?.name === "AbortError") return false;
+      toast.show({ message: getApiErrorMessage(error, "Không thể xóa lịch học. Vui lòng thử lại."), variant: "error" });
+      return false;
+    } finally {
+      scheduleDeleteAbortControllerRef.current = null;
+    }
+  }, [course?.courseId, courseId, deleteSchedule, toast]);
+
   return (
     <>
       <StackScreenLayout
@@ -170,6 +250,15 @@ export function AdminCourseDetailScreen({ courseId }: CourseRouteProps) {
             onOpenPackage={(packageId) =>
               router.push(asHref(`/courses/${course.courseId}/packages/${packageId}`))
             }
+            onOpenSchedules={() =>
+              router.push(asHref(`/courses/${course.courseId}/schedules`))
+            }
+            onEditSchedule={canOpenScheduleEditor ? setScheduleToEdit : undefined}
+            onToggleScheduleStatus={canUpdateCourse ? handleToggleScheduleStatus : undefined}
+            onDeleteSchedule={canUpdateCourse ? handleScheduleDelete : undefined}
+            onCancelScheduleDelete={canUpdateCourse ? handleCancelScheduleDelete : undefined}
+            scheduleDeletePending={deleteSchedule.isPending}
+            scheduleActionPending={updateSchedule.isPending}
           />
         ) : (
           <View style={styles.loadingContainer}>
@@ -184,6 +273,19 @@ export function AdminCourseDetailScreen({ courseId }: CourseRouteProps) {
         initialData={editInitialData}
         onClose={() => setIsEditSheetVisible(false)}
         onSuccess={handleEditSuccess}
+      />
+
+      <CourseScheduleFormSheet
+        visible={Boolean(scheduleToEdit)}
+        mode="edit"
+        courseId={course?.courseId ?? courseId}
+        schedule={scheduleToEdit}
+        submitting={updateSchedule.isPending}
+        onClose={() => setScheduleToEdit(undefined)}
+        onSubmit={(request) => {
+          if (!scheduleToEdit) return;
+          void handleScheduleUpdate(scheduleToEdit, request, "Cập nhật lịch học thành công");
+        }}
       />
 
       <ConfirmationDialog

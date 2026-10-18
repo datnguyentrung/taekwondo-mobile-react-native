@@ -41,6 +41,7 @@ export interface FloatingActionBarProps {
   direction?: "row" | "column";
   gap?: number;
   minBottomInset?: number;
+  includeBottomSafeArea?: boolean;
   paddingHorizontal?: number;
   paddingTop?: number;
   backgroundColor?: string;
@@ -54,6 +55,7 @@ export function FloatingActionBar({
   direction = "row",
   gap,
   minBottomInset = 16,
+  includeBottomSafeArea = true,
   paddingHorizontal = 20,
   paddingTop = 12,
   backgroundColor = hexToRgba(Colors.light.background, 0.94),
@@ -71,7 +73,9 @@ export function FloatingActionBar({
         {
           paddingHorizontal,
           paddingTop,
-          paddingBottom: Math.max(insets.bottom, minBottomInset),
+          paddingBottom: includeBottomSafeArea
+            ? Math.max(insets.bottom, minBottomInset)
+            : minBottomInset,
           backgroundColor,
         },
         containerStyle,

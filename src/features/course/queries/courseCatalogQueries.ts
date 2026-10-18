@@ -2,7 +2,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useCallback, useMemo } from "react";
 
 import { courseApi } from "../api/courseApi";
-import type { CourseCreateRequest, CourseResponse, CourseUpdateRequest } from "../api/course.dto";
+import type { CourseCreateRequest, CourseResponse, CourseScheduleResponse, CourseScheduleUpsertRequest, CourseUpdateRequest } from "../api/course.dto";
 import { classScheduleApi } from "@/features/class-schedule/api/classScheduleApi";
 import { mapCourseApiToView } from "../domain/course.mappers";
 import type { CourseCatalogTab, CourseView } from "../domain/course.types";
@@ -94,5 +94,72 @@ export function useUpdateCourse() {
       request: CourseUpdateRequest;
       signal?: AbortSignal;
     }) => courseApi.update(courseId, request, { signal }),
+  });
+}
+
+export function useUpdateCourseSchedule() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ courseScheduleId, request, signal }: {
+      courseId: string;
+      courseScheduleId: string;
+      request: CourseScheduleUpsertRequest;
+      signal?: AbortSignal;
+    }) => courseApi.updateSchedule(courseScheduleId, request, { signal }),
+    onSuccess: async (schedule: CourseScheduleResponse, variables) => {
+      const { courseId } = variables;
+      queryClient.setQueryData<CourseResponse>(courseCatalogKeys.detail(courseId), (course) =>
+        course ? {
+          ...course,
+          courseSchedules: course.courseSchedules.map((item) =>
+            item.courseScheduleId === schedule.courseScheduleId ? schedule : item,
+          ),
+        } : course,
+      );
+      await queryClient.invalidateQueries({ queryKey: courseCatalogKeys.all });
+    },
+  });
+}
+
+export function useAddCourseSchedule() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ courseId, request }: {
+      courseId: string;
+      request: CourseScheduleUpsertRequest;
+    }) => courseApi.addSchedule(courseId, request),
+    onSuccess: async (schedule: CourseScheduleResponse, { courseId }) => {
+      queryClient.setQueryData<CourseResponse>(courseCatalogKeys.detail(courseId), (course) =>
+        course
+          ? { ...course, courseSchedules: [...course.courseSchedules, schedule] }
+          : course,
+      );
+      await queryClient.invalidateQueries({ queryKey: courseCatalogKeys.all });
+    },
+  });
+}
+
+export function useDeleteCourseSchedule() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ courseId, courseScheduleId, signal }: {
+      courseId: string;
+      courseScheduleId: string;
+      signal?: AbortSignal;
+    }) =>
+      courseApi.removeSchedule(courseScheduleId, { signal }),
+    onSuccess: (_result, { courseId, courseScheduleId }) => {
+      queryClient.setQueryData<CourseResponse>(courseCatalogKeys.detail(courseId), (course) =>
+        course
+          ? {
+              ...course,
+              courseSchedules: course.courseSchedules.filter(
+                (schedule) => schedule.courseScheduleId !== courseScheduleId,
+              ),
+            }
+          : course,
+      );
+      void queryClient.invalidateQueries({ queryKey: courseCatalogKeys.all });
+    },
   });
 }

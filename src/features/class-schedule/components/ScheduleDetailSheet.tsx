@@ -1,7 +1,12 @@
-import type { ReactNode } from "react";
+import { useCallback, useState, type ReactNode } from "react";
 import { StyleSheet, View } from "react-native";
+import { Trash6 } from "reicon-react-native";
 
+import { AppIcon } from "@/shared/ui/AppIcon";
 import { BottomSheetWindow } from "@/shared/ui/BottomSheetWindow";
+import { CancellableLoadingOverlay } from "@/shared/ui/CancellableLoadingOverlay";
+import { ConfirmationDialog } from "@/shared/ui/ConfirmationDialog";
+import { FloatingActionBar, type FloatingActionItem } from "@/shared/ui/FloatingActionBar";
 import { ThemedText } from "@/shared/ui/ThemedText";
 import { Colors, hexToRgba, radii, Spacing } from "@/theme";
 
@@ -24,6 +29,16 @@ export type ScheduleDetailData = {
   staff?: ScheduleDetailStaff[];
 };
 
+export type ScheduleDetailActions = {
+  onEdit?: () => void;
+  onToggleStatus?: () => void;
+  onDelete?: () => Promise<boolean>;
+  onCancelDelete?: () => void;
+  deleting?: boolean;
+  disabled?: boolean;
+  loading?: boolean;
+};
+
 function formatDate(date?: string | null) {
   if (!date) return "Không giới hạn";
   const [year, month, day] = date.split("-");
@@ -34,16 +49,65 @@ export function ScheduleDetailSheet({
   visible,
   schedule,
   onClose,
+  actions,
 }: {
   visible: boolean;
   schedule?: ScheduleDetailData;
   onClose: () => void;
+  actions?: ScheduleDetailActions;
 }) {
+  const [deleteConfirmationVisible, setDeleteConfirmationVisible] = useState(false);
   const staff = schedule?.staff ?? [];
   const primary = staff.find((item) => item.isPrimary);
   const remaining = staff.filter((item) => !item.isPrimary);
   const primaryName = primary?.fullName ?? schedule?.primaryCoachName;
   const isActive = schedule?.statusLabel?.toLowerCase().includes("đang") ?? false;
+  const handleClose = useCallback(() => {
+    setDeleteConfirmationVisible(false);
+    onClose();
+  }, [onClose]);
+  const handleConfirmDelete = useCallback(async () => {
+    if (!actions?.onDelete) return;
+
+    setDeleteConfirmationVisible(false);
+    const deleted = await actions.onDelete();
+    if (deleted) handleClose();
+  }, [actions, handleClose]);
+  const footerActions: FloatingActionItem[] = [];
+  if (actions?.onEdit) {
+    footerActions.push({
+      label: "Chỉnh sửa",
+      accessibilityLabel: "Chỉnh sửa lịch học",
+      variant: "outline",
+      disabled: actions.disabled,
+      loading: actions.loading,
+      onPress: actions.onEdit,
+    });
+  }
+  if (actions?.onToggleStatus) {
+    footerActions.push({
+      label: isActive ? "Tạm dừng" : "Kích hoạt",
+      accessibilityLabel: isActive ? "Tạm dừng lịch học" : "Kích hoạt lịch học",
+      variant: "primary",
+      disabled: actions.disabled,
+      loading: actions.loading,
+      onPress: actions.onToggleStatus,
+      flex: 1.2,
+    });
+  }
+  if (actions?.onDelete) {
+    footerActions.push({
+      label: "",
+      accessibilityLabel: "Xóa lịch học",
+      variant: "ghost",
+      disabled: actions.disabled,
+      loading: actions.loading,
+      onPress: () => setDeleteConfirmationVisible(true),
+      flex: 0,
+      style: styles.deleteButton,
+      icon: <AppIcon icon={<Trash6 />} size={30} color={actions.disabled ? Colors.light.textSecondary : Colors.light.error} />,
+    });
+  }
 
   return (
     <BottomSheetWindow
@@ -51,7 +115,38 @@ export function ScheduleDetailSheet({
       title="Chi tiết lịch"
       accessibilityLabel="Cửa sổ chi tiết lịch"
       heightRatio={0.68}
-      onClose={onClose}
+      onClose={handleClose}
+      overlay={actions?.onDelete && schedule ? (
+        <>
+          <ConfirmationDialog
+            visible={deleteConfirmationVisible}
+            presentation="inline"
+            title="Xóa lịch học"
+            description="Bạn có chắc chắn muốn xóa lịch học này không? Thao tác không thể hoàn tác khi lịch chưa có dữ liệu liên quan."
+            confirmLabel="Xóa"
+            cancelLabel="Hủy"
+            confirmVariant="danger"
+            onCancel={() => setDeleteConfirmationVisible(false)}
+            onConfirm={() => void handleConfirmDelete()}
+          />
+          <CancellableLoadingOverlay
+            visible={actions.deleting ?? false}
+            message="Đang xóa lịch học..."
+            cancelLabel="Hủy"
+            onCancel={actions.onCancelDelete}
+          />
+        </>
+      ) : undefined}
+      footer={footerActions.length > 0 && schedule ? (
+        <FloatingActionBar
+          minBottomInset={0}
+          includeBottomSafeArea={false}
+          paddingHorizontal={0}
+          paddingTop={0}
+          backgroundColor="transparent"
+          actions={footerActions}
+        />
+      ) : undefined}
     >
       {schedule ? (
         <View style={styles.content}>
@@ -125,4 +220,5 @@ const styles = StyleSheet.create({
   primaryValue: { alignItems: "flex-end", gap: Spacing.one },
   primaryBadge: { paddingHorizontal: Spacing.two, paddingVertical: Spacing.one, borderRadius: radii.pill, backgroundColor: hexToRgba(Colors.light.primary, 0.1) },
   primaryBadgeText: { color: Colors.light.primary, fontWeight: "700" },
+  deleteButton: { width: 44, minWidth: 44, paddingHorizontal: 0, backgroundColor: "transparent", borderWidth: 0 },
 });

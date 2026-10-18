@@ -44,6 +44,7 @@ export function mapCourseApiToView(
       : [];
     return {
       courseScheduleId: courseSchedule.courseScheduleId,
+      classScheduleId: courseSchedule.classSchedule.scheduleId,
       weekday: courseSchedule.classSchedule.weekday,
       startTime: courseSchedule.classSchedule.startTime,
       endTime: courseSchedule.classSchedule.endTime,

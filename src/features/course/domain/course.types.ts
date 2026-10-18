@@ -29,6 +29,7 @@ export type CourseScheduleStaffView = CourseStaffMemberView & {
 
 export type CourseScheduleView = {
   courseScheduleId: string;
+  classScheduleId: string;
   weekday?: string | number;
   startTime?: string;
   endTime?: string;

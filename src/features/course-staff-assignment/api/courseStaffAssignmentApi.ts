@@ -43,6 +43,12 @@ export const courseStaffAssignmentApi = {
     );
     return response.data;
   },
+  async end(courseStaffAssignmentId: string): Promise<CourseStaffAssignmentResponse> {
+    const response = await javaApi.put<CourseStaffAssignmentResponse>(
+      `/course-staff-assignments/${courseStaffAssignmentId}/end`,
+    );
+    return response.data;
+  },
   async remove(courseStaffAssignmentId: string): Promise<void> {
     await javaApi.delete(`/course-staff-assignments/${courseStaffAssignmentId}`);
   },

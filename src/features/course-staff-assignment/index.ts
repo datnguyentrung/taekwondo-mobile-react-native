@@ -5,3 +5,11 @@ export type {
   CourseStaffAssignmentResponse,
   CourseStaffAssignmentUpdateRequest,
 } from './api/course-staff-assignment.dto';
+export {
+  useCourseScheduleStaffAssignments,
+  useCourseStaffAssignmentDetail,
+  useCreateCourseScheduleStaffAssignment,
+  useEndCourseScheduleStaffAssignment,
+  useStaffAssignmentCandidates,
+  useUpdateCourseScheduleStaffAssignment,
+} from './queries/courseStaffAssignmentQueries';

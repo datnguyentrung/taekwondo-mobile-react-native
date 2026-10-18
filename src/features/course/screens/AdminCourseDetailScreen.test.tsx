@@ -14,6 +14,10 @@ jest.mock('react-native-safe-area-context', () => ({
   useSafeAreaInsets: () => ({ bottom: 0, left: 0, right: 0, top: 0 }),
 }));
 
+jest.mock('@/features/authorization/hooks/useAccess', () => ({
+  useCan: () => true,
+}));
+
 jest.mock('@/shared/ui/Toast', () => ({
   useToast: () => ({ show: mockToastShow }),
   ToastProvider: ({ children }: { children: React.ReactNode }) => children,
@@ -152,6 +156,8 @@ jest.mock('@/features/course/api/courseApi', () => ({
       return Promise.reject(new Error('Course not found'));
     }),
     update: jest.fn(),
+    updateSchedule: jest.fn(),
+    removeSchedule: jest.fn(),
     remove: jest.fn(),
   },
 }));
@@ -181,6 +187,8 @@ describe('AdminCourseDetailScreen', () => {
     mockBack.mockClear();
     mockToastShow.mockClear();
     (courseApi.update as jest.Mock).mockReset();
+    (courseApi.updateSchedule as jest.Mock).mockReset();
+    (courseApi.removeSchedule as jest.Mock).mockReset();
     (courseApi.remove as jest.Mock).mockReset();
     (courseApi.update as jest.Mock).mockResolvedValue({
       courseId: 'basic',
@@ -237,6 +245,109 @@ describe('AdminCourseDetailScreen', () => {
     expect(view.getByText('Trợ giảng B')).toBeTruthy();
     expect(view.getByText('Huấn luyện viên (1)')).toBeTruthy();
     expect(view.getByText('Trợ giảng (1)')).toBeTruthy();
+  });
+
+  it('keeps Schedule Detail open while confirming and cancelling schedule deletion', async () => {
+    const view = await renderWithQuery(<AdminCourseDetailScreen courseId="basic" />);
+
+    await fireEvent.press(await view.findByLabelText('Xem chi tiết lịch Thứ Ba'));
+    expect(await view.findByLabelText('Xóa lịch học')).toBeTruthy();
+
+    await fireEvent.press(view.getByLabelText('Xóa lịch học'));
+    expect(view.getByTestId('bottom-sheet-window')).toBeTruthy();
+    expect(view.getByTestId('confirmation-dialog')).toBeTruthy();
+    expect(view.getByText('Xóa lịch học')).toBeTruthy();
+
+    await fireEvent.press(view.getByText('Hủy'));
+    expect(view.queryByTestId('confirmation-dialog')).toBeNull();
+    expect(view.getByTestId('bottom-sheet-window')).toBeTruthy();
+    expect(courseApi.removeSchedule).not.toHaveBeenCalled();
+  });
+
+  it('replaces schedule deletion confirmation with cancellable loading and closes only after success', async () => {
+    let resolveDelete!: () => void;
+    (courseApi.removeSchedule as jest.Mock).mockImplementation(() => new Promise<void>((resolve) => {
+      resolveDelete = resolve;
+    }));
+    const view = await renderWithQuery(<AdminCourseDetailScreen courseId="basic" />);
+
+    await fireEvent.press(await view.findByLabelText('Xem chi tiết lịch Thứ Ba'));
+    await fireEvent.press(view.getByLabelText('Xóa lịch học'));
+    await fireEvent.press(view.getByText('Xóa'));
+
+    await waitFor(() => {
+      expect(courseApi.removeSchedule).toHaveBeenCalledWith(
+        'schedule-1',
+        expect.objectContaining({ signal: expect.any(Object) }),
+      );
+      expect(view.queryByTestId('confirmation-dialog')).toBeNull();
+      expect(view.getByText('Đang xóa lịch học...')).toBeTruthy();
+    });
+
+    // Keep the background refetch pending so this assertion verifies the
+    // synchronous detail-cache update rather than a later network response.
+    (courseApi.get as jest.Mock).mockImplementationOnce(() => new Promise(() => {}));
+
+    await act(async () => {
+      resolveDelete();
+    });
+
+    await waitFor(() => {
+      expect(view.queryByTestId('bottom-sheet-window')).toBeNull();
+      expect(mockToastShow).toHaveBeenCalledWith(
+        expect.objectContaining({ message: 'Xóa lịch học thành công', variant: 'success' }),
+      );
+      expect(view.queryByLabelText('Xem chi tiết lịch Thứ Ba')).toBeNull();
+      expect((activeQueryClient?.getQueryData(['courses', 'basic']) as { courseSchedules: unknown[] })
+        .courseSchedules).toHaveLength(0);
+    });
+  });
+
+  it('keeps Schedule Detail open without an error toast when schedule deletion is cancelled', async () => {
+    (courseApi.removeSchedule as jest.Mock).mockImplementation((_id, options) => new Promise((_resolve, reject) => {
+      options?.signal?.addEventListener('abort', () => {
+        const error = new Error('Canceled');
+        error.name = 'AbortError';
+        reject(error);
+      });
+    }));
+    const view = await renderWithQuery(<AdminCourseDetailScreen courseId="basic" />);
+
+    await fireEvent.press(await view.findByLabelText('Xem chi tiết lịch Thứ Ba'));
+    await fireEvent.press(view.getByLabelText('Xóa lịch học'));
+    await fireEvent.press(view.getByText('Xóa'));
+    await waitFor(() => expect(view.getByText('Đang xóa lịch học...')).toBeTruthy());
+
+    await fireEvent.press(view.getByLabelText('Hủy'));
+    await waitFor(() => {
+      expect(view.getByTestId('bottom-sheet-window')).toBeTruthy();
+      expect(view.queryByText('Đang xóa lịch học...')).toBeNull();
+      expect(mockToastShow).not.toHaveBeenCalledWith(expect.objectContaining({ variant: 'error' }));
+    });
+  });
+
+  it('keeps Schedule Detail open and reports a 409 conflict from schedule deletion', async () => {
+    const conflict = Object.assign(new Error('Lịch học đã có buổi học liên quan.'), {
+      isAxiosError: true,
+      response: { status: 409 },
+    });
+    (courseApi.removeSchedule as jest.Mock).mockRejectedValue(conflict);
+    const view = await renderWithQuery(<AdminCourseDetailScreen courseId="basic" />);
+
+    await fireEvent.press(await view.findByLabelText('Xem chi tiết lịch Thứ Ba'));
+    await fireEvent.press(view.getByLabelText('Xóa lịch học'));
+    await fireEvent.press(view.getByText('Xóa'));
+
+    await waitFor(() => {
+      expect(view.getByTestId('bottom-sheet-window')).toBeTruthy();
+      expect(view.queryByText('Đang xóa lịch học...')).toBeNull();
+      expect(mockToastShow).toHaveBeenCalledWith(
+        expect.objectContaining({
+          message: 'Lịch học đã có buổi học liên quan.',
+          variant: 'error',
+        }),
+      );
+    });
   });
 
   it('opens course edit bottom sheet and pre-fills the course level', async () => {
