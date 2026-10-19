@@ -1,32 +1,43 @@
-import type { WalletTransactionDirection } from '@/features/wallet/constants/wallet.constants';
-import type { CourseView } from '@/features/course/domain/course.types';
+import type { CourseView } from "@/features/course/domain/course.types";
+import type {
+  Belt,
+  PersonStatus,
+} from "@/features/person/constants/person.constants";
+import type { PositionSimpleResponse } from "@/features/position/api/position.dto";
+import type { WalletTransactionDirection } from "@/features/wallet/constants/wallet.constants";
 
 export type {
   CourseCatalogTab,
   CoursePackageView,
   CourseStaffMemberView,
   CourseView,
-} from '@/features/course/domain/course.types';
+} from "@/features/course/domain/course.types";
 
-export type CommerceContext = 'admin-student' | 'admin-course' | 'account';
-export type StudentCourseTab = 'current' | 'history';
-export type TransactionFilter = 'all' | 'credit' | 'debit';
+export type CommerceContext = "admin-student" | "admin-course" | "account";
+export type StudentCourseTab = "current" | "history";
+export type TransactionFilter = "all" | "credit" | "debit";
 
 export type StudentSummaryView = {
   personId: string;
-  studentCode: string;
+  personCode: string;
   fullName: string;
   beltLabel: string;
-  branchName: string;
   statusLabel: string;
 };
 
-export type CourseRegistrationStudentView = StudentSummaryView;
+export type CourseRegistrationStudentView = StudentSummaryView & {
+  birthDate?: string;
+  gender?: boolean | null;
+  faceImagePath?: string | null;
+  currentBelt?: Belt;
+  status?: PersonStatus;
+  position?: PositionSimpleResponse | null;
+};
 
 export type WalletSummaryView = {
   walletId: string;
   balance: number;
-  currency: 'VND';
+  currency: "VND";
 };
 
 export type WalletTransactionView = {
@@ -41,8 +52,8 @@ export type WalletTransactionView = {
 
 export type CourseRegistrationCourseView = Pick<
   CourseView,
-  'courseId' | 'courseName' | 'branchName' | 'scheduleLabel' | 'statusLabel'
-> & { schedules: Array<{ courseScheduleId: string; label: string }> };
+  "courseId" | "courseName" | "branchName" | "scheduleLabel" | "statusLabel"
+> & { schedules: { courseScheduleId: string; label: string }[] };
 
 export type CourseEnrollmentView = {
   enrollmentId: string;
@@ -99,4 +110,3 @@ export type WalletTransactionsProps = StudentRouteProps & {
   context?: "admin-student" | "account";
   initialFilter?: TransactionFilter;
 };
-

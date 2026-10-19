@@ -20,14 +20,14 @@ describe("groupCourseSchedulesByBranch", () => {
 
     expect(grouped).toEqual([
       {
-        branchName: "Cơ sở 2",
-        countLabel: "2 ca học",
-        schedules: [schedule("schedule-1", "Cơ sở 2"), schedule("schedule-3", " cơ sở 2 ")],
-      },
-      {
         branchName: "Cơ sở 1",
         countLabel: "1 ca học",
         schedules: [schedule("schedule-2", "Cơ sở 1")],
+      },
+      {
+        branchName: "Cơ sở 2",
+        countLabel: "2 ca học",
+        schedules: [schedule("schedule-1", "Cơ sở 2"), schedule("schedule-3", " cơ sở 2 ")],
       },
       {
         branchName: "Chưa cập nhật cơ sở",

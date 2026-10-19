@@ -31,5 +31,10 @@ export function groupCourseSchedulesByBranch(
     group.countLabel = `${group.schedules.length} ca học`;
   }
 
-  return groups;
+  const UNASSIGNED_BRANCH = "Chưa cập nhật cơ sở";
+  return groups.sort((a, b) => {
+    if (a.branchName === UNASSIGNED_BRANCH && b.branchName !== UNASSIGNED_BRANCH) return 1;
+    if (b.branchName === UNASSIGNED_BRANCH && a.branchName !== UNASSIGNED_BRANCH) return -1;
+    return a.branchName.localeCompare(b.branchName, "vi-VN", { sensitivity: "base", numeric: true });
+  });
 }

@@ -1,3 +1,12 @@
+import { useEffect, useState, type ReactNode } from "react";
+import {
+  ActivityIndicator,
+  Image,
+  Pressable,
+  StyleSheet,
+  TextInput,
+  View,
+} from "react-native";
 import {
   ChevronRight,
   Database,
@@ -6,20 +15,12 @@ import {
   User,
   Wallet,
 } from "reicon-react-native";
-import { useEffect, useState, type ReactNode } from "react";
-import {
-  ActivityIndicator,
-  Pressable,
-  StyleSheet,
-  TextInput,
-  View,
-} from "react-native";
 
-import { BottomSheetWindow } from "@/shared/ui/BottomSheetWindow";
-import { AppIcon } from "@/shared/ui/AppIcon";
-import { ThemedText } from "@/shared/ui/ThemedText";
-import { useDebounce } from "@/shared/hooks/useDebounce";
 import StackScreenLayout from "@/routes/navigation/layouts/StackScreenLayout";
+import { useDebounce } from "@/shared/hooks/useDebounce";
+import { AppIcon } from "@/shared/ui/AppIcon";
+import { BottomSheetWindow } from "@/shared/ui/BottomSheetWindow";
+import { ThemedText } from "@/shared/ui/ThemedText";
 import { Colors, effects, hexToRgba, radii, typography } from "@/theme";
 import type { AppIconElement } from "@/theme/icons";
 
@@ -29,6 +30,12 @@ import {
   StatusBadge,
   SurfaceCard,
 } from "../components/StudentCommercePrimitives";
+import {
+  usePurchaseCourseRegistration,
+  useRegistrationCoursePrices,
+  useRegistrationCourseSearch,
+  useRegistrationStudentSearch,
+} from "../queries/courseRegistrationQueries";
 import type {
   CoursePackageView,
   CourseRegistrationCourseView,
@@ -41,12 +48,6 @@ import {
   getPackage,
   getSelectedCourse,
 } from "../utils/studentCommerceUtils";
-import {
-  usePurchaseCourseRegistration,
-  useRegistrationCoursePrices,
-  useRegistrationCourseSearch,
-  useRegistrationStudentSearch,
-} from "../queries/courseRegistrationQueries";
 
 type RegistrationSearchSheetProps<T> = {
   visible: boolean;
@@ -79,10 +80,13 @@ export function StudentCourseRegistrationScreen({
   const [courseSearch, setCourseSearch] = useState("");
   const [selectedStudent, setSelectedStudent] =
     useState<CourseRegistrationStudentView>();
-  const [selectedCourse, setSelectedCourse] =
-    useState<CourseRegistrationCourseView | undefined>(() => initialCourse ? { ...initialCourse, schedules: [] } : undefined);
-  const [selectedPackage, setSelectedPackage] = useState<CoursePackageView | undefined>(
-    () => (initialPackageId ? getPackage(initialCourse, initialPackageId) : undefined),
+  const [selectedCourse, setSelectedCourse] = useState<
+    CourseRegistrationCourseView | undefined
+  >(() => (initialCourse ? { ...initialCourse, schedules: [] } : undefined));
+  const [selectedPackage, setSelectedPackage] = useState<
+    CoursePackageView | undefined
+  >(() =>
+    initialPackageId ? getPackage(initialCourse, initialPackageId) : undefined,
   );
   const [selectedScheduleIds, setSelectedScheduleIds] = useState<string[]>([]);
 
@@ -98,17 +102,21 @@ export function StudentCourseRegistrationScreen({
   const purchaseMutation = usePurchaseCourseRegistration();
 
   const fallbackPackages = selectedCourse
-    ? getSelectedCourse(state.courses, selectedCourse.courseId)?.packages ?? []
+    ? (getSelectedCourse(state.courses, selectedCourse.courseId)?.packages ??
+      [])
     : [];
-  const packageOptions = selectedCourse ? pricesQuery.data ?? fallbackPackages : [];
+  const packageOptions = selectedCourse
+    ? (pricesQuery.data ?? fallbackPackages)
+    : [];
   const selectedPrice = selectedPackage?.amount ?? 0;
   const balance = state.wallet.balance;
   const canConfirm = Boolean(
     selectedStudent &&
-      selectedCourse &&
-      selectedPackage &&
-      ((selectedCourse.schedules?.length ?? 0) === 0 || selectedScheduleIds.length > 0) &&
-      !purchaseMutation.isPending,
+    selectedCourse &&
+    selectedPackage &&
+    ((selectedCourse.schedules?.length ?? 0) === 0 ||
+      selectedScheduleIds.length > 0) &&
+    !purchaseMutation.isPending,
   );
 
   return (
@@ -124,7 +132,7 @@ export function StudentCourseRegistrationScreen({
           />
         </Section>
 
-        <WalletBalanceCard amount={balance} />
+        {selectedStudent ? <WalletBalanceCard amount={balance} /> : null}
 
         <RegistrationNotice activeCourseCount={2} />
 
@@ -244,47 +252,62 @@ function ScheduleSelection({
   disabled,
   onChange,
 }: {
-  schedules: CourseRegistrationCourseView['schedules'];
+  schedules: CourseRegistrationCourseView["schedules"];
   selectedIds: string[];
   disabled: boolean;
   onChange: (ids: string[]) => void;
 }) {
   if (disabled || schedules.length === 0) {
-    return <SurfaceCard soft style={styles.scheduleStateCard}>
-      <ThemedText type="bodySmall" style={styles.secondaryText}>
-        Chọn khóa học để xem các lịch có thể đăng ký.
-      </ThemedText>
-    </SurfaceCard>;
+    return (
+      <SurfaceCard soft style={styles.scheduleStateCard}>
+        <ThemedText type="bodySmall" style={styles.secondaryText}>
+          Chọn khóa học để xem các lịch có thể đăng ký.
+        </ThemedText>
+      </SurfaceCard>
+    );
   }
-  return <View style={styles.scheduleList}>
-    {schedules.map((schedule) => {
-      const selected = selectedIds.includes(schedule.courseScheduleId);
-      return <Pressable
-        key={schedule.courseScheduleId}
-        accessibilityRole="checkbox"
-        accessibilityLabel={`Chọn lịch ${schedule.label}`}
-        accessibilityState={{ checked: selected }}
-        onPress={() => onChange(selected
-          ? selectedIds.filter((id) => id !== schedule.courseScheduleId)
-          : [...selectedIds, schedule.courseScheduleId])}
-        style={({ pressed }) => [styles.scheduleRow, selected ? styles.scheduleRowSelected : null, pressed ? styles.pressed : null]}
-      >
-        <View style={[styles.checkbox, selected ? styles.checkboxSelected : null]}>
-          {selected ? <View style={styles.checkboxDot} /> : null}
-        </View>
-        <ThemedText type="bodySmall" style={styles.blackText}>{schedule.label}</ThemedText>
-      </Pressable>;
-    })}
-  </View>;
+  return (
+    <View style={styles.scheduleList}>
+      {schedules.map((schedule) => {
+        const selected = selectedIds.includes(schedule.courseScheduleId);
+        return (
+          <Pressable
+            key={schedule.courseScheduleId}
+            accessibilityRole="checkbox"
+            accessibilityLabel={`Chọn lịch ${schedule.label}`}
+            accessibilityState={{ checked: selected }}
+            onPress={() =>
+              onChange(
+                selected
+                  ? selectedIds.filter((id) => id !== schedule.courseScheduleId)
+                  : [...selectedIds, schedule.courseScheduleId],
+              )
+            }
+            style={({ pressed }) => [
+              styles.scheduleRow,
+              selected ? styles.scheduleRowSelected : null,
+              pressed ? styles.pressed : null,
+            ]}
+          >
+            <View
+              style={[
+                styles.checkbox,
+                selected ? styles.checkboxSelected : null,
+              ]}
+            >
+              {selected ? <View style={styles.checkboxDot} /> : null}
+            </View>
+            <ThemedText type="bodySmall" style={styles.blackText}>
+              {schedule.label}
+            </ThemedText>
+          </Pressable>
+        );
+      })}
+    </View>
+  );
 }
 
-function Section({
-  title,
-  children,
-}: {
-  title: string;
-  children: ReactNode;
-}) {
+function Section({ title, children }: { title: string; children: ReactNode }) {
   return (
     <View style={styles.section}>
       <ThemedText type="heading" style={styles.sectionTitle}>
@@ -314,7 +337,11 @@ function StudentSelectCard({
         <View style={styles.flex}>
           {student ? (
             <>
-              <ThemedText type="title" numberOfLines={1} style={styles.blackText}>
+              <ThemedText
+                type="title"
+                numberOfLines={1}
+                style={styles.blackText}
+              >
                 {student.fullName}
               </ThemedText>
               <ThemedText
@@ -322,7 +349,7 @@ function StudentSelectCard({
                 numberOfLines={1}
                 style={styles.secondaryText}
               >
-                {student.studentCode} · {student.beltLabel}
+                {student.personCode} · {student.beltLabel}
               </ThemedText>
             </>
           ) : (
@@ -337,7 +364,12 @@ function StudentSelectCard({
           )}
         </View>
         {student ? <StatusBadge label={student.statusLabel} /> : null}
-        <AppIcon icon={<ChevronRight />} width={10} height={18} color={Colors.light.text} />
+        <AppIcon
+          icon={<ChevronRight />}
+          width={10}
+          height={18}
+          color={Colors.light.text}
+        />
       </SurfaceCard>
     </Pressable>
   );
@@ -375,7 +407,8 @@ function CourseSelectCard({
             </ThemedText>
           ) : null}
         </View>
-        <AppIcon icon={<ChevronRight />}
+        <AppIcon
+          icon={<ChevronRight />}
           width={10}
           height={18}
           color={Colors.light.textSecondary}
@@ -401,7 +434,11 @@ function WalletBalanceCard({ amount }: { amount: number }) {
   );
 }
 
-function RegistrationNotice({ activeCourseCount }: { activeCourseCount: number }) {
+function RegistrationNotice({
+  activeCourseCount,
+}: {
+  activeCourseCount: number;
+}) {
   return (
     <View style={styles.notice}>
       <AppIcon icon={<InfoCircle />} size={25} color={Colors.light.primary} />
@@ -410,7 +447,8 @@ function RegistrationNotice({ activeCourseCount }: { activeCourseCount: number }
           Có thể học nhiều khóa cùng lúc
         </ThemedText>
         <ThemedText type="bodySmall" style={styles.noticeText}>
-          Đăng ký này sẽ thêm một khóa học mới, không thay thế {activeCourseCount} khóa học đang học.
+          Đăng ký này sẽ thêm một khóa học mới, không thay thế{" "}
+          {activeCourseCount} khóa học đang học.
         </ThemedText>
       </View>
     </View>
@@ -485,10 +523,7 @@ function PackageGrid({
                   {item.label}
                 </ThemedText>
                 <View
-                  style={[
-                    styles.radio,
-                    selected ? styles.radioSelected : null,
-                  ]}
+                  style={[styles.radio, selected ? styles.radioSelected : null]}
                 >
                   {selected ? <View style={styles.radioDot} /> : null}
                 </View>
@@ -496,11 +531,13 @@ function PackageGrid({
               <ThemedText type="heading" style={styles.packagePrice}>
                 {formatVnd(item.amount)}
               </ThemedText>
-              {selected ? <View style={styles.selectedPill}>
-                <ThemedText type="action" style={styles.selectedPillText}>
-                  Đã chọn
-                </ThemedText>
-              </View> : null}
+              {selected ? (
+                <View style={styles.selectedPill}>
+                  <ThemedText type="action" style={styles.selectedPillText}>
+                    Đã chọn
+                  </ThemedText>
+                </View>
+              ) : null}
             </SurfaceCard>
           </Pressable>
         );
@@ -551,7 +588,11 @@ function RegistrationSearchSheet<T>({
     >
       <View style={styles.sheetBody}>
         <View style={styles.searchBox}>
-          <AppIcon icon={<Filter />} size={18} color={Colors.light.textSecondary} />
+          <AppIcon
+            icon={<Filter />}
+            size={18}
+            color={Colors.light.textSecondary}
+          />
           <TextInput
             value={draftSearch}
             onChangeText={setDraftSearch}
@@ -634,19 +675,24 @@ function StudentOptionRow({
         soft
         style={selected ? styles.optionCardSelected : styles.optionCard}
       >
-        <IconCircle icon={<User weight="Filled" />} size={44} />
+        {student.faceImagePath ? (
+          <Image source={{ uri: student.faceImagePath }} style={styles.avatarImage} />
+        ) : (
+          <IconCircle icon={<User weight="Filled" />} size={44} />
+        )}
         <View style={styles.flex}>
           <ThemedText type="title" numberOfLines={1} style={styles.blackText}>
             {student.fullName}
           </ThemedText>
-          <ThemedText type="bodySmall" numberOfLines={1} style={styles.secondaryText}>
-            {student.studentCode} · {student.beltLabel}
-          </ThemedText>
-          <ThemedText type="bodySmall" numberOfLines={1} style={styles.secondaryText}>
-            {student.branchName}
+          <ThemedText
+            type="bodySmall"
+            numberOfLines={1}
+            style={styles.secondaryText}
+          >
+            {student.personCode}
           </ThemedText>
         </View>
-        <StatusBadge label={student.statusLabel} />
+        <StatusBadge label={student.beltLabel} />
       </SurfaceCard>
     </Pressable>
   );
@@ -678,12 +724,19 @@ function CourseOptionRow({
           <ThemedText type="title" numberOfLines={1} style={styles.blackText}>
             {course.courseName}
           </ThemedText>
-          <ThemedText type="bodySmall" numberOfLines={1} style={styles.secondaryText}>
-            {[course.branchName, course.scheduleLabel].filter(Boolean).join(" · ")}
+          <ThemedText
+            type="bodySmall"
+            numberOfLines={1}
+            style={styles.secondaryText}
+          >
+            {[course.branchName, course.scheduleLabel]
+              .filter(Boolean)
+              .join(" · ")}
           </ThemedText>
         </View>
         <StatusBadge label={course.statusLabel} />
-        <AppIcon icon={<ChevronRight />}
+        <AppIcon
+          icon={<ChevronRight />}
           width={10}
           height={18}
           color={Colors.light.textSecondary}
@@ -701,8 +754,17 @@ function IconCircle({
   size?: number;
 }) {
   return (
-    <View style={[styles.iconCircle, { width: size, height: size, borderRadius: size / 2 }]}>
-      <AppIcon icon={icon} size={Math.round(size * 0.5)} color={Colors.light.primary} />
+    <View
+      style={[
+        styles.iconCircle,
+        { width: size, height: size, borderRadius: size / 2 },
+      ]}
+    >
+      <AppIcon
+        icon={icon}
+        size={Math.round(size * 0.5)}
+        color={Colors.light.primary}
+      />
     </View>
   );
 }
@@ -788,12 +850,12 @@ const styles = StyleSheet.create({
   },
   scheduleStateCard: {
     minHeight: 68,
-    justifyContent: 'center',
+    justifyContent: "center",
   },
   scheduleRow: {
     minHeight: 48,
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: 12,
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: Colors.light.divider,
@@ -808,8 +870,8 @@ const styles = StyleSheet.create({
   checkbox: {
     width: 22,
     height: 22,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
     borderRadius: 4,
     borderWidth: 2,
     borderColor: Colors.light.divider,
@@ -922,6 +984,11 @@ const styles = StyleSheet.create({
   },
   optionList: {
     gap: 10,
+  },
+  avatarImage: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
   },
   optionCard: {
     flexDirection: "row",

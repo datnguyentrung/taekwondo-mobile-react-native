@@ -42,7 +42,7 @@ export function WalletBalanceCard({
               numberOfLines={2}
               style={styles.studentName}
             >
-              {student.fullName} · {student.studentCode}
+              {student.fullName} · {student.personCode}
             </ThemedText>
             <View style={styles.statusPill}>
               <View style={styles.statusDot} />

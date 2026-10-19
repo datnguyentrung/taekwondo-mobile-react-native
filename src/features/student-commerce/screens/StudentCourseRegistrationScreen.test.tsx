@@ -5,15 +5,15 @@ import type { CourseResponse } from '@/features/course/api/course.dto';
 import { courseApi } from '@/features/course/api/courseApi';
 import type { CoursePriceResponse } from '@/features/course-price/api/course-price.dto';
 import { coursePriceApi } from '@/features/course-price/api/coursePriceApi';
-import type { StudentOverview } from '@/features/student/api/student.dto';
-import { studentApi } from '@/features/student/api/studentApi';
+import type { PersonSimpleResponse } from '@/features/person/api/person.dto';
+import { personApi } from '@/features/person/api/personApi';
 import { walletApi } from '@/features/wallet/api/walletApi';
 import type { PageResponse } from '@/infrastructure/http/pagination.types';
 
 import {
   mapCoursePriceToPackage,
   mapCourseResponseToRegistrationCourse,
-  mapStudentOverviewToRegistrationStudent,
+  mapPersonToRegistrationStudent,
 } from '../queries/courseRegistrationQueries';
 import { StudentCourseRegistrationScreen } from './StudentCourseRegistrationScreen';
 
@@ -38,8 +38,8 @@ jest.mock('@/shared/ui/BottomSheetWindow', () => ({
   },
 }));
 
-jest.mock('@/features/student/api/studentApi', () => ({
-  studentApi: { getList: jest.fn() },
+jest.mock('@/features/person/api/personApi', () => ({
+  personApi: { list: jest.fn() },
 }));
 
 jest.mock('@/features/course/api/courseApi', () => ({
@@ -54,7 +54,7 @@ jest.mock('@/features/wallet/api/walletApi', () => ({
   walletApi: { purchaseCourse: jest.fn() },
 }));
 
-const studentApiGetListMock = studentApi.getList as jest.Mock;
+const personApiListMock = personApi.list as jest.Mock;
 const courseApiListMock = courseApi.list as jest.Mock;
 const coursePriceApiListMock = coursePriceApi.list as jest.Mock;
 const walletPurchaseCourseMock = walletApi.purchaseCourse as jest.Mock;
@@ -100,20 +100,16 @@ async function renderWithClient(
   return { ...screen, queryClient };
 }
 
-const student: StudentOverview = {
+const person: PersonSimpleResponse = {
   personId: 'person-vq-00123',
-  studentCode: 'VQ_00123',
   faceImagePath: null,
-  avatarUrl: null,
-  nationalCode: null,
   fullName: 'Nguyễn Văn An',
   birthDate: '2014-01-01',
-  phoneNumber: '0900000000',
-  belt: 'C6',
-  roleName: 'Học viên',
-  studentStatus: 'ACTIVE',
-  branchName: 'Văn Quán',
-  classSchedules: [],
+  gender: true,
+  personCode: 'VQ_00123',
+  currentBelt: 'C6',
+  status: 'ACTIVE',
+  position: null,
 };
 
 const course: CourseResponse = {
@@ -146,13 +142,12 @@ const coursePrice: CoursePriceResponse = {
 };
 
 describe('course registration view-model mappers', () => {
-  it('maps student, course, and course price responses for registration UI', () => {
-    expect(mapStudentOverviewToRegistrationStudent(student)).toMatchObject({
+  it('maps person, course, and course price responses for registration UI', () => {
+    expect(mapPersonToRegistrationStudent(person)).toMatchObject({
       personId: 'person-vq-00123',
       fullName: 'Nguyễn Văn An',
-      studentCode: 'VQ_00123',
+      personCode: 'VQ_00123',
       beltLabel: 'Xanh dương 1',
-      branchName: 'Văn Quán',
       statusLabel: 'Đang hoạt động',
     });
     expect(mapCourseResponseToRegistrationCourse(course)).toMatchObject({
@@ -174,12 +169,7 @@ describe('StudentCourseRegistrationScreen', () => {
   beforeEach(() => {
     jest.useRealTimers();
     jest.clearAllMocks();
-    studentApiGetListMock.mockResolvedValue({
-      activeStudentCount: 1,
-      reservedStudentCount: 0,
-      droppedStudentCount: 0,
-      students: page([student]),
-    });
+    personApiListMock.mockResolvedValue(page([person]));
     courseApiListMock.mockResolvedValue(page([course]));
     coursePriceApiListMock.mockResolvedValue(page([coursePrice]));
     walletPurchaseCourseMock.mockResolvedValue({
@@ -250,6 +240,21 @@ describe('StudentCourseRegistrationScreen', () => {
         }),
       ),
     );
+
+    screen.queryClient.clear();
+  });
+
+  it('searches active students through the person endpoint', async () => {
+    const screen = await renderWithClient();
+
+    await press(screen.getByLabelText('Chọn học viên'));
+    await waitFor(() => expect(personApiListMock).toHaveBeenCalledWith({
+      search: undefined,
+      status: 'ACTIVE',
+      isStudent: true,
+      page: 0,
+      size: 20,
+    }));
 
     screen.queryClient.clear();
   });

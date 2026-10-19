@@ -1,1 +1,1 @@
-export type { StudentDetail as Student, StudentOverview, StudentSummary } from '../api/student.dto';
+export type { StudentSummary } from '../api/student-summary.dto';

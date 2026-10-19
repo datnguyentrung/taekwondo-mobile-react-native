@@ -48,7 +48,7 @@ export function StudentCoursesScreen({ studentCode }: StudentRouteProps) {
           onPress={() =>
             router.push(
               asHref(
-                `/students/${studentCode ?? state.selectedStudent.studentCode}/courses/${enrollment.enrollmentId}`,
+                `/students/${studentCode ?? state.selectedStudent.personCode}/courses/${enrollment.enrollmentId}`,
               ),
             )
           }

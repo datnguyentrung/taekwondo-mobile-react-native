@@ -5,10 +5,9 @@ import type { CourseSimpleResponse } from '@/features/course/api/course.dto';
 import { CourseLevelLabel, CourseStatusLabel } from '@/features/course/constants/course.constants';
 import { coursePriceApi } from '@/features/course-price/api/coursePriceApi';
 import type { CoursePriceSimpleResponse } from '@/features/course-price/api/course-price.dto';
-import { studentApi } from '@/features/student/api/studentApi';
-import type { StudentOverview } from '@/features/student/api/student.dto';
-import { StudentStatusLabel } from '@/features/student/constants/student.constants';
-import { BeltLabel } from '@/features/person/constants/person.constants';
+import { personApi } from '@/features/person/api/personApi';
+import type { PersonSimpleResponse } from '@/features/person/api/person.dto';
+import { BeltLabel, PersonStatusLabel } from '@/features/person/constants/person.constants';
 import { walletApi } from '@/features/wallet/api/walletApi';
 import type { WalletCoursePurchaseRequest } from '@/features/wallet/api/wallet-command.dto';
 
@@ -30,18 +29,21 @@ export const courseRegistrationKeys = {
     [...courseRegistrationKeys.all, 'course-prices', courseId ?? ''] as const,
 };
 
-export function mapStudentOverviewToRegistrationStudent(
-  student: StudentOverview,
+export function mapPersonToRegistrationStudent(
+  person: PersonSimpleResponse,
 ): CourseRegistrationStudentView {
   return {
-    personId: student.personId,
-    studentCode: student.studentCode,
-    fullName: student.fullName,
-    beltLabel: BeltLabel[student.belt],
-    branchName: student.branchName,
-    statusLabel: student.studentStatus === 'ACTIVE'
-      ? 'Đang hoạt động'
-      : StudentStatusLabel[student.studentStatus],
+    personId: person.personId,
+    personCode: person.personCode ?? person.personId,
+    fullName: person.fullName,
+    beltLabel: BeltLabel[person.currentBelt],
+    statusLabel: PersonStatusLabel[person.status],
+    birthDate: person.birthDate,
+    gender: person.gender,
+    faceImagePath: person.faceImagePath,
+    currentBelt: person.currentBelt,
+    status: person.status,
+    position: person.position,
   };
 }
 
@@ -96,14 +98,15 @@ export function useRegistrationStudentSearch(search: string, enabled = true) {
   return useQuery({
     queryKey: courseRegistrationKeys.students(normalizedSearch),
     queryFn: async () => {
-      const response = await studentApi.getList({
+      const response = await personApi.list({
         search: normalizedSearch || undefined,
         status: 'ACTIVE',
+        isStudent: true,
         page: 0,
         size: REGISTRATION_PAGE_SIZE,
       });
 
-      return response.students.content.map(mapStudentOverviewToRegistrationStudent);
+      return response.content.map(mapPersonToRegistrationStudent);
     },
     enabled,
     staleTime: 30_000,

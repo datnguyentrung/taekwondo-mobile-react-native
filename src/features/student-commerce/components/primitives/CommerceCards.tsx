@@ -43,7 +43,7 @@ export function StudentSummaryCard({
           {student.fullName}
         </ThemedText>
         <ThemedText type="bodySmall" numberOfLines={1} style={styles.blackText}>
-          {student.studentCode} · {student.beltLabel}
+          {student.personCode} · {student.beltLabel}
         </ThemedText>
       </View>
       <StatusBadge label={student.statusLabel} />

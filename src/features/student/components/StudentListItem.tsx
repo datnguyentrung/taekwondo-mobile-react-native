@@ -42,7 +42,7 @@ export function StudentListItem({
   const fullName = student.fullName;
   const beltText = student.beltLabel;
   const statusLabel = student.statusLabel;
-  const subtitle = student.branchName;
+  const subtitle = student.personCode;
   const faceImagePath =
     "faceImagePath" in student
       ? (student as { faceImagePath?: string | null }).faceImagePath

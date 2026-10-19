@@ -46,6 +46,12 @@ export const BeltLabel: Record<Belt, string> = {
 export type PersonStatus = 'ACTIVE' | 'INACTIVE' | 'SUSPENDED';
 export type PersonKind = 'STUDENT' | 'SYSTEM_EMPLOYEE';
 
+export const PersonStatusLabel: Record<PersonStatus, string> = {
+  ACTIVE: 'Đang hoạt động',
+  INACTIVE: 'Không hoạt động',
+  SUSPENDED: 'Tạm ngưng',
+};
+
 export const ALL_BELTS: readonly Belt[] = [
   'C10',
   'C9',

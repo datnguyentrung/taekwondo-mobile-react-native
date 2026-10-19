@@ -21,7 +21,7 @@ export function StudentDetailScreen({ studentCode }: StudentRouteProps) {
   const router = useRouter();
   const state = getCommerceState();
   const student =
-    state.students.find((item) => item.studentCode === studentCode) ??
+    state.students.find((item) => item.personCode === studentCode) ??
     state.selectedStudent;
   const activeEnrollments = state.enrollments
     .filter((item) => !item.history)
@@ -38,14 +38,14 @@ export function StudentDetailScreen({ studentCode }: StudentRouteProps) {
           title="Nạp tiền"
           variant="outline"
           onPress={() =>
-            router.push(asHref(`/students/${student.studentCode}/top-up`))
+            router.push(asHref(`/students/${student.personCode}/top-up`))
           }
         />
         <PrimaryActionButton
           title="Đăng ký khóa học"
           onPress={() =>
             router.push(
-              asHref(`/students/${student.studentCode}/course-registration`),
+              asHref(`/students/${student.personCode}/course-registration`),
             )
           }
         />
@@ -65,7 +65,7 @@ export function StudentDetailScreen({ studentCode }: StudentRouteProps) {
         </ThemedText>
         <Pressable
           onPress={() =>
-            router.push(asHref(`/students/${student.studentCode}/wallet`))
+            router.push(asHref(`/students/${student.personCode}/wallet`))
           }
         >
           <ThemedText type="action" style={styles.primaryText}>
@@ -80,7 +80,7 @@ export function StudentDetailScreen({ studentCode }: StudentRouteProps) {
           title="Khóa học đang học"
           count={activeEnrollments.length}
           onPress={() =>
-            router.push(asHref(`/students/${student.studentCode}/courses`))
+            router.push(asHref(`/students/${student.personCode}/courses`))
           }
         />
         <NavigationMenuItem
@@ -102,7 +102,7 @@ export function StudentDetailScreen({ studentCode }: StudentRouteProps) {
               onPress={() =>
                 router.push(
                   asHref(
-                    `/students/${student.studentCode}/courses/${enrollment.enrollmentId}`,
+                    `/students/${student.personCode}/courses/${enrollment.enrollmentId}`,
                   ),
                 )
               }

@@ -1,1 +1,1 @@
-export type { CoachDetail as Coach, CoachSummary } from '../api/coach.dto';
+export type { CoachSummary } from '../api/coach-summary.dto';

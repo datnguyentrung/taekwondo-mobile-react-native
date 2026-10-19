@@ -1,6 +1,4 @@
 export { CoachListScreen } from './screens/CoachListScreen';
-export * from './api/coach.dto';
-export * from './api/coachApi';
+export type { CoachSummary } from './api/coach-summary.dto';
 export * from './constants/coach.constants';
-export type { Coach } from './domain/coach.types';
 

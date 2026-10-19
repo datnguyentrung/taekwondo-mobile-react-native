@@ -27,7 +27,7 @@ type WalletOverviewProps = StudentRouteProps & {
 function WalletOverview({ studentCode, context }: WalletOverviewProps) {
   const router = useRouter();
   const state = useCommerceState();
-  const routeStudentCode = studentCode ?? state.selectedStudent.studentCode;
+  const routeStudentCode = studentCode ?? state.selectedStudent.personCode;
   const activeEnrollments = state.enrollments
     .filter((item) => !item.history)
     .slice(0, 2);
