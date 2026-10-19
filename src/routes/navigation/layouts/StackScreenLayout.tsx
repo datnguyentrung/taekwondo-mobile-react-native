@@ -85,9 +85,16 @@ export default function StackScreenLayout({
           >
             <AppIcon icon={<ChevronLeft />} color={actionColor} />
           </Pressable>
-          <ThemedText type="heading" style={[styles.title, isDarkHeader ? styles.darkTitle : null]}>
-            {title}
-          </ThemedText>
+          <View style={styles.titleContainer} pointerEvents="none">
+            <ThemedText
+              type="heading"
+              numberOfLines={1}
+              ellipsizeMode="tail"
+              style={[styles.title, isDarkHeader ? styles.darkTitle : null]}
+            >
+              {title}
+            </ThemedText>
+          </View>
           <View style={styles.actions}>
             {Array.isArray(rightActions)
               ? rightActions.map((action) => (
@@ -154,6 +161,12 @@ const styles = StyleSheet.create({
     minHeight: 44,
     alignItems: "flex-start",
     justifyContent: "center",
+  },
+  titleContainer: {
+    maxWidth: "64%",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: 8,
   },
   title: {
     color: Colors.light.text,

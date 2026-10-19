@@ -7,7 +7,7 @@ import { AppIcon } from "@/shared/ui/AppIcon";
 import { ThemedText } from "@/shared/ui/ThemedText";
 import { activeEffect, Colors, Spacing } from "@/theme";
 
-const PREVIEW_LIMIT = 5;
+const PREVIEW_LIMIT = 3;
 
 type Props = {
   title: string;
@@ -44,7 +44,7 @@ export function CourseDetailSectionLayout({
       </View>
       <View style={styles.divider} />
       {previewRows.length ? (
-        <View style={styles.rows}>
+        <View>
           {previewRows.map((row, index) => (
             <View key={index}>
               {row}

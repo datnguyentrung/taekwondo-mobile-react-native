@@ -257,7 +257,7 @@ export function StudentListScreen() {
                 student={student}
                 onPress={() =>
                   router.push(
-                    `/students/${student.personCode || student.personId}`,
+                    `/students/${student.personId}?title=${encodeURIComponent(student.fullName)}` as any,
                   )
                 }
               />

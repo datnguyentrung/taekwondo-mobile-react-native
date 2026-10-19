@@ -12,13 +12,10 @@ import { CourseScheduleFormSheet } from "@/features/course/components/CourseSche
 import { Permission } from "@/features/authorization/domain/permissions";
 import { useCan } from "@/features/authorization/hooks/useAccess";
 import type { CourseRouteProps } from "@/features/student-commerce/types";
-import {
-  asHref,
-  getCommerceState,
-  getCourse,
-} from "@/features/student-commerce/utils/studentCommerceUtils";
+import { asHref } from "@/features/student-commerce/utils/studentCommerceUtils";
 import { useScreenRefresh } from "@/infrastructure/query/useScreenRefresh";
 import StackScreenLayout from "@/routes/navigation/layouts/StackScreenLayout";
+import { resolveDetailTitle } from "@/routes/navigation/utils/screenTitle";
 import { CancellableLoadingOverlay } from "@/shared/ui/CancellableLoadingOverlay";
 import { ConfirmationDialog } from "@/shared/ui/ConfirmationDialog";
 import { useToast } from "@/shared/ui/Toast";
@@ -39,14 +36,12 @@ export function AdminCourseDetailScreen({ courseId }: CourseRouteProps) {
   const router = useRouter();
   const toast = useToast();
   const [isEditSheetVisible, setIsEditSheetVisible] = useState(false);
+  const [isPackageSheetVisible, setIsPackageSheetVisible] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [scheduleToEdit, setScheduleToEdit] = useState<CourseScheduleView>();
   const [isDeleting, setIsDeleting] = useState(false);
   const deleteAbortControllerRef = useRef<AbortController | null>(null);
   const scheduleDeleteAbortControllerRef = useRef<AbortController | null>(null);
-
-  const state = getCommerceState();
-  const mockCourse = getCourse(state.courses, courseId);
 
   const courseQuery = useCourseDetail(courseId);
   const { registerCourse } = useCourseCacheActions();
@@ -63,15 +58,12 @@ export function AdminCourseDetailScreen({ courseId }: CourseRouteProps) {
   const { data: apiCourse, isLoading } = courseQuery;
   const { refreshing, onRefresh } = useScreenRefresh([courseQuery]);
 
-  const course: CourseView = useMemo(() => {
+  const course: CourseView | undefined = useMemo(() => {
     if (apiCourse) {
-      // Map API CourseResponse to CourseView, reusing packages from mock if available
-      return mapCourseApiToView(apiCourse, mockCourse?.packages ?? []);
+      return mapCourseApiToView(apiCourse);
     }
-    return mockCourse;
-  }, [apiCourse, mockCourse]);
-
-  const registrationDisabled = course?.catalogStatus === "ended";
+    return undefined;
+  }, [apiCourse]);
 
   const editInitialData = useMemo(() => {
     let defaultStatus: CourseStatus = "OPEN";
@@ -147,9 +139,11 @@ export function AdminCourseDetailScreen({ courseId }: CourseRouteProps) {
     request: { classScheduleId: string; startDate: string; endDate: string | null; status: "ACTIVE" | "INACTIVE" },
     successMessage: string,
   ) => {
+    const targetCourseId = course?.courseId ?? courseId;
+    if (!targetCourseId) return;
     try {
       await updateSchedule.mutateAsync({
-        courseId: course?.courseId ?? courseId,
+        courseId: targetCourseId,
         courseScheduleId: target.courseScheduleId,
         request,
       });
@@ -158,7 +152,7 @@ export function AdminCourseDetailScreen({ courseId }: CourseRouteProps) {
     } catch (error) {
       toast.show({ message: getApiErrorMessage(error, "Không thể cập nhật lịch học. Vui lòng thử lại."), variant: "error" });
     }
-  }, [toast, updateSchedule]);
+  }, [course?.courseId, courseId, toast, updateSchedule]);
 
   const handleToggleScheduleStatus = useCallback((target: CourseScheduleView) => {
     const nextStatus = target.status === "ACTIVE" ? "INACTIVE" : "ACTIVE";
@@ -208,7 +202,7 @@ export function AdminCourseDetailScreen({ courseId }: CourseRouteProps) {
   return (
     <>
       <StackScreenLayout
-        title="Chi tiết khóa học"
+        title={resolveDetailTitle(course, { fallback: "Khóa học" })}
         contentContainerStyle={styles.content}
         refreshing={refreshing}
         onRefresh={onRefresh}
@@ -217,12 +211,10 @@ export function AdminCourseDetailScreen({ courseId }: CourseRouteProps) {
             editTitle="Chỉnh sửa"
             editAccessibilityLabel="Chỉnh sửa khóa học"
             onEditPress={() => setIsEditSheetVisible(true)}
-            registerTitle="Đăng ký học viên"
-            registerAccessibilityLabel="Đăng ký học viên"
-            registerDisabled={registrationDisabled}
-            onRegisterPress={() =>
-              router.push(asHref(`/courses/${course?.courseId ?? courseId}/register`))
-            }
+            packageTitle="Gói học"
+            packageAccessibilityLabel="Xem danh sách gói học"
+            packageDisabled={!course || course.packages.length === 0}
+            onPackagePress={() => setIsPackageSheetVisible(true)}
             onDeletePress={() => setIsDeleteDialogOpen(true)}
             deleteDisabled={isDeleting}
           />
@@ -231,6 +223,9 @@ export function AdminCourseDetailScreen({ courseId }: CourseRouteProps) {
         {course ? (
           <CourseDetailContent
             course={course}
+            packageSheetVisible={isPackageSheetVisible}
+            onOpenPackageSheet={() => setIsPackageSheetVisible(true)}
+            onClosePackageSheet={() => setIsPackageSheetVisible(false)}
             topContent={
               isLoading && !apiCourse ? (
                 <View style={styles.loadingContainer}>

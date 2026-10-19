@@ -2,6 +2,7 @@ import { useRouter } from "expo-router";
 import { Pressable, StyleSheet } from "react-native";
 
 import StackScreenLayout from "@/routes/navigation/layouts/StackScreenLayout";
+import { resolveDetailTitle } from "@/routes/navigation/utils/screenTitle";
 import { ThemedText } from "@/shared/ui/ThemedText";
 import { Colors } from "@/theme";
 
@@ -26,7 +27,7 @@ export function CourseDetailScreen({
 
   return (
     <StackScreenLayout
-      title="Chi tiết khóa học"
+      title={resolveDetailTitle(enrollment, { fallback: "Khóa học" })}
       contentContainerStyle={styles.content}
     >
       <SurfaceCard>

@@ -209,32 +209,12 @@ describe('AdminCourseDetailScreen', () => {
     activeQueryClient = null;
   });
 
-  it('disables registration action for ended courses', async () => {
-    const view = await renderWithQuery(<AdminCourseDetailScreen courseId="ended-basic" />);
-
-    const registerButton = await view.findByLabelText('Đăng ký học viên');
-    expect(registerButton.props.accessibilityState).toEqual({ disabled: true });
-
-    await fireEvent.press(registerButton);
-    expect(mockPush).not.toHaveBeenCalled();
-  });
-
-  it('opens packages from course detail and navigates to package detail', async () => {
+  it('disables package action button when course has no packages', async () => {
     const view = await renderWithQuery(<AdminCourseDetailScreen courseId="basic" />);
 
-    const viewPackagesButton = await view.findByLabelText('Xem gói học');
-    await fireEvent.press(viewPackagesButton);
-
-    const selectPackage = await view.findByLabelText('Chọn gói 6 tháng');
-    expect(selectPackage).toBeTruthy();
-    await fireEvent.press(selectPackage);
-
-    await waitFor(() =>
-      expect(selectPackage.props.accessibilityState).toEqual({ selected: true }),
-    );
-    await fireEvent.press(view.getByLabelText('Chọn gói này'));
-
-    expect(mockPush).toHaveBeenCalledWith('/courses/basic/packages/basic-6m');
+    const packageButton = await view.findByLabelText('Xem danh sách gói học');
+    expect(packageButton).toBeTruthy();
+    expect(packageButton.props.accessibilityState).toEqual({ disabled: true });
   });
 
   it('shows schedule staff roles and derives roster counts from assignments', async () => {

@@ -4,5 +4,5 @@ import { StudentDetailScreen } from '@/features/student';
 
 export default function StudentDetailRoute() {
   const { studentCode } = useLocalSearchParams<{ studentCode?: string }>();
-  return <StudentDetailScreen studentCode={studentCode ?? 'VQ_00123'} />;
+  return <StudentDetailScreen studentCode={studentCode} />;
 }

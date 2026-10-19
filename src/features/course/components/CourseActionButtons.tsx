@@ -9,9 +9,17 @@ export interface CourseActionButtonsProps {
   editAccessibilityLabel?: string;
   editDisabled?: boolean;
   onEditPress?: () => void;
+  packageTitle?: string;
+  packageAccessibilityLabel?: string;
+  packageDisabled?: boolean;
+  onPackagePress?: () => void;
+  /** @deprecated use packageTitle */
   registerTitle?: string;
+  /** @deprecated use packageAccessibilityLabel */
   registerAccessibilityLabel?: string;
+  /** @deprecated use packageDisabled */
   registerDisabled?: boolean;
+  /** @deprecated use onPackagePress */
   onRegisterPress?: () => void;
   deleteAccessibilityLabel?: string;
   deleteDisabled?: boolean;
@@ -23,14 +31,24 @@ export function CourseActionButtons({
   editAccessibilityLabel = "Chỉnh sửa khóa học",
   editDisabled = false,
   onEditPress,
-  registerTitle = "Đăng ký học viên",
-  registerAccessibilityLabel = "Đăng ký học viên",
-  registerDisabled = false,
+  packageTitle,
+  packageAccessibilityLabel,
+  packageDisabled,
+  onPackagePress,
+  registerTitle,
+  registerAccessibilityLabel,
+  registerDisabled,
   onRegisterPress,
   deleteAccessibilityLabel = "Xóa khóa học",
   deleteDisabled = false,
   onDeletePress,
 }: CourseActionButtonsProps) {
+  const finalPackageTitle = packageTitle ?? registerTitle ?? "Gói học";
+  const finalPackageAccessibilityLabel =
+    packageAccessibilityLabel ?? registerAccessibilityLabel ?? "Xem gói học";
+  const finalPackageDisabled = packageDisabled ?? registerDisabled ?? false;
+  const handlePackagePress = onPackagePress ?? onRegisterPress;
+
   return (
     <FloatingActionBar
       actions={[
@@ -43,11 +61,11 @@ export function CourseActionButtons({
           flex: 1,
         },
         {
-          label: registerTitle,
-          accessibilityLabel: registerAccessibilityLabel,
+          label: finalPackageTitle,
+          accessibilityLabel: finalPackageAccessibilityLabel,
           variant: "primary",
-          disabled: registerDisabled,
-          onPress: onRegisterPress,
+          disabled: finalPackageDisabled,
+          onPress: handlePackagePress,
           flex: 1.3,
         },
         ...(onDeletePress

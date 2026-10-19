@@ -6,7 +6,8 @@ import {
   NoteText,
   User,
 } from "reicon-react-native";
-import { Pressable, StyleSheet, View } from "react-native";
+import { Image, Pressable, StyleSheet, View } from "react-native";
+import { getPersonInitials } from "@/features/person/components/PersonListItem";
 
 import { AppIcon } from "@/shared/ui/AppIcon";
 import { ThemedText } from "@/shared/ui/ThemedText";
