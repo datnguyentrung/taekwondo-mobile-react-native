@@ -14,6 +14,11 @@ export function useMqttRuntime(): void {
       return undefined;
     }
 
+    if (!env.mqttEnabled) {
+      mqttClient.disconnect();
+      return undefined;
+    }
+
     if (!env.mqttBrokerUrl || !env.mqttDefaultTopic) {
       if (__DEV__) {
         console.warn(

@@ -24,6 +24,12 @@ export function SensorStreamScreen() {
             Trạng thái lắng nghe MQTT
           </ThemedText>
           <ThemedText style={styles.statusText}>
+            Trạng thái:{' '}
+            <ThemedText style={env.mqttEnabled ? styles.highlightText : styles.disabledText}>
+              {env.mqttEnabled ? 'Đang bật' : 'Đã tắt qua cấu hình (.env)'}
+            </ThemedText>
+          </ThemedText>
+          <ThemedText style={styles.statusText}>
             Topic:{' '}
             <ThemedText style={styles.highlightText}>
               {env.mqttDefaultTopic ?? 'Chưa cấu hình'}
@@ -77,6 +83,11 @@ const styles = StyleSheet.create({
     ...typography.body,
     color: Colors.light.primary,
     fontWeight: '600',
+  },
+  disabledText: {
+    ...typography.body,
+    color: Colors.light.textSecondary,
+    fontStyle: 'italic',
   },
   payloadBox: {
     backgroundColor: Colors.light.backgroundElement,

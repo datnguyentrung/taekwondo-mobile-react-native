@@ -209,12 +209,15 @@ describe('AdminCourseDetailScreen', () => {
     activeQueryClient = null;
   });
 
-  it('disables package action button when course has no packages', async () => {
+  it('navigates to package list screen when package action button is pressed', async () => {
     const view = await renderWithQuery(<AdminCourseDetailScreen courseId="basic" />);
 
     const packageButton = await view.findByLabelText('Xem danh sách gói học');
     expect(packageButton).toBeTruthy();
-    expect(packageButton.props.accessibilityState).toEqual({ disabled: true });
+    expect(packageButton.props.accessibilityState).toEqual({ disabled: false });
+
+    await fireEvent.press(packageButton);
+    expect(mockPush).toHaveBeenCalledWith(expect.stringContaining('/packages'));
   });
 
   it('shows schedule staff roles and derives roster counts from assignments', async () => {

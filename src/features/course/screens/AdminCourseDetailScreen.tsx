@@ -36,7 +36,6 @@ export function AdminCourseDetailScreen({ courseId }: CourseRouteProps) {
   const router = useRouter();
   const toast = useToast();
   const [isEditSheetVisible, setIsEditSheetVisible] = useState(false);
-  const [isPackageSheetVisible, setIsPackageSheetVisible] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [scheduleToEdit, setScheduleToEdit] = useState<CourseScheduleView>();
   const [isDeleting, setIsDeleting] = useState(false);
@@ -213,8 +212,13 @@ export function AdminCourseDetailScreen({ courseId }: CourseRouteProps) {
             onEditPress={() => setIsEditSheetVisible(true)}
             packageTitle="Gói học"
             packageAccessibilityLabel="Xem danh sách gói học"
-            packageDisabled={!course || course.packages.length === 0}
-            onPackagePress={() => setIsPackageSheetVisible(true)}
+            packageDisabled={!course}
+            onPackagePress={() => {
+              const targetId = course?.courseId ?? courseId;
+              if (targetId) {
+                router.push(asHref(`/courses/${targetId}/packages`));
+              }
+            }}
             onDeletePress={() => setIsDeleteDialogOpen(true)}
             deleteDisabled={isDeleting}
           />
@@ -223,9 +227,6 @@ export function AdminCourseDetailScreen({ courseId }: CourseRouteProps) {
         {course ? (
           <CourseDetailContent
             course={course}
-            packageSheetVisible={isPackageSheetVisible}
-            onOpenPackageSheet={() => setIsPackageSheetVisible(true)}
-            onClosePackageSheet={() => setIsPackageSheetVisible(false)}
             topContent={
               isLoading && !apiCourse ? (
                 <View style={styles.loadingContainer}>

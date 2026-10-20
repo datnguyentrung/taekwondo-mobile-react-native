@@ -1,4 +1,4 @@
-﻿import { javaApi } from '@/infrastructure/http/httpClient';
+import { javaApi } from '@/infrastructure/http/httpClient';
 import type { PageResponse } from '@/infrastructure/http/pagination.types';
 
 import type {
@@ -26,7 +26,7 @@ export const coursePriceApi = {
     const response = await javaApi.put<CoursePriceResponse>(`/course-prices/${coursePriceId}`, request);
     return response.data;
   },
-  async remove(coursePriceId: string): Promise<void> {
-    await javaApi.delete(`/course-prices/${coursePriceId}`);
+  async remove(coursePriceId: string, options?: { signal?: AbortSignal }): Promise<void> {
+    await javaApi.delete(`/course-prices/${coursePriceId}`, options);
   },
 };

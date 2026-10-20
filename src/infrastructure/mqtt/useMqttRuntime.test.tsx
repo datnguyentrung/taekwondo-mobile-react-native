@@ -6,6 +6,7 @@ import { useMqttRuntime } from './useMqttRuntime';
 
 jest.mock('@/config/env', () => ({
   env: {
+    mqttEnabled: true,
     mqttBrokerUrl: 'wss://broker.example.com/mqtt',
     mqttDefaultTopic: 'shared/topic',
   },
@@ -51,5 +52,20 @@ describe('useMqttRuntime', () => {
     expect(mqttClientMock.disconnect).toHaveBeenCalled();
 
     unmount();
+  });
+
+  it('does not connect when mqttEnabled is false', async () => {
+    const { env } = jest.requireMock('@/config/env') as { env: { mqttEnabled: boolean } };
+    env.mqttEnabled = false;
+
+    const { unmount } = await renderHook(() => useMqttRuntime());
+
+    await act(async () => {
+      useAuthStore.setState({ status: 'authenticated' });
+    });
+
+    expect(mqttClientMock.connect).not.toHaveBeenCalled();
+    unmount();
+    env.mqttEnabled = true;
   });
 });

@@ -16,7 +16,7 @@ export function useMqttToast(options: UseMqttToastOptions = {}) {
   const {
     topic = env.mqttDefaultTopic,
     brokerUrl = env.mqttBrokerUrl,
-    enabled = true,
+    enabled = env.mqttEnabled,
   } = options;
 
   const toast = useToast();
