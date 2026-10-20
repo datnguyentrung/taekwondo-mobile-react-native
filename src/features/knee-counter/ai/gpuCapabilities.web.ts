@@ -36,5 +36,6 @@ export async function detectComputeCapabilities(): Promise<ComputeCapabilities> 
     p50LatencyMs: null,
     p95LatencyMs: null,
     modelInputSize: null,
+    runtime: null,
   };
 }

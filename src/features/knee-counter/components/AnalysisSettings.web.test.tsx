@@ -18,7 +18,7 @@ describe("AnalysisSettings", () => {
     const screen = await render(<AnalysisSettings config={DEFAULT_KNEE_COUNTER_CONFIG} backendOptions={["webgl", "wasm"]} expanded onToggle={jest.fn()} onConfigChange={onConfigChange} />);
     fireEvent.press(screen.getByText("6"));
     expect(onConfigChange).toHaveBeenCalledWith({ participantCount: 6 });
-    fireEvent.press(screen.getByText("quality"));
-    expect(onConfigChange).toHaveBeenCalledWith({ profile: "quality" });
+    fireEvent.press(screen.getByText("Bật"));
+    expect(onConfigChange).toHaveBeenCalledWith({ flipHorizontal: true });
   });
 });

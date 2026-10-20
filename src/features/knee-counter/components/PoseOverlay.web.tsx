@@ -17,17 +17,17 @@ export function PoseOverlay({ slots, width, height }: { slots: ParticipantSlot[]
     slots.forEach((slot) => {
       const pose = slot.pose;
       if (!pose) return;
-      const color = slot.leftEvaluation === "PASS" || slot.rightEvaluation === "PASS" ? "#16A34A" : "#D71113";
+      const color = slot.leftPhase === "ABOVE" || slot.rightPhase === "ABOVE" ? "#16A34A" : slot.status === "MISSING" ? "#D97706" : slot.status === "CONFLICT" ? "#D71113" : "#2563EB";
       context.strokeStyle = color;
       context.fillStyle = color;
       context.lineWidth = 3;
       SKELETON_EDGES.forEach(([from, to]) => {
         const start = pose.keypoints[from];
         const end = pose.keypoints[to];
-        if (!start || !end || start.score < 0.6 || end.score < 0.6) return;
+        if (!start || !end || start.score < 0.45 || end.score < 0.45) return;
         context.beginPath(); context.moveTo(start.x, start.y); context.lineTo(end.x, end.y); context.stroke();
       });
-      pose.keypoints.forEach((point) => { if (point.score >= 0.6) { context.beginPath(); context.arc(point.x, point.y, 4, 0, Math.PI * 2); context.fill(); } });
+      pose.keypoints.forEach((point) => { if (point.score >= 0.45) { context.beginPath(); context.arc(point.x, point.y, 4, 0, Math.PI * 2); context.fill(); } });
       if (pose.boundingBox) {
         context.strokeRect(pose.boundingBox.xMin, pose.boundingBox.yMin, pose.boundingBox.xMax - pose.boundingBox.xMin, pose.boundingBox.yMax - pose.boundingBox.yMin);
         context.font = "600 16px Roboto, sans-serif";

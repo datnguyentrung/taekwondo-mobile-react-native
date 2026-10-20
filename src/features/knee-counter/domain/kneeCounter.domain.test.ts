@@ -1,52 +1,8 @@
-import { checkKneeHeight } from "./kneeGeometry";
-import { exportRepEventsCsv, isSynchronizedGroup } from "./groupEvaluator";
-import { advanceLegState, initialLegCounterState } from "./motionStateMachine";
+import { calculateKneeSignal } from "./kneeSignal";
+import { advanceLegState, initialLegCounterState } from "./kneeStateMachine";
+import { DEFAULT_KNEE_COUNTER_CONFIG } from "../config/kneeCounterConfig";
+import type { NormalizedPose } from "../types/kneeCounter.types";
 
-const point = (x: number, y: number, score = 0.9) => ({ x, y, score });
-const baseArgs = {
-  leg: "left" as const,
-  participantId: "participant-1",
-  trackId: 7,
-  sessionStartedAt: "2026-10-18T00:00:00.000Z",
-  thresholdPercent: 0,
-  profile: "balanced" as const,
-  backend: "webgl" as const,
-  ratio: 0.2,
-  result: "CONFIRMED" as const,
-  config: { minStableFrames: 2, minHoldMs: 50, minRepIntervalMs: 150, hysteresisRatio: 0.1 },
-};
-
-describe("knee counter domain", () => {
-  it("returns PASS, FAIL and UNKNOWN from normalized knee height", () => {
-    expect(checkKneeHeight(point(0, 0), point(0, 100), point(0, 90), 0, 0.6).evaluation).toBe("PASS");
-    expect(checkKneeHeight(point(0, 0), point(0, 100), point(0, 110), 0, 0.6).evaluation).toBe("FAIL");
-    expect(checkKneeHeight(point(0, 0), point(0, 100), point(0, 90, 0.2), 0, 0.6).evaluation).toBe("UNKNOWN");
-  });
-
-  it("counts one confirmed rep and waits for the knee to come down", () => {
-    let state = initialLegCounterState();
-    state = advanceLegState(state, { evaluation: "FAIL", ratio: -0.2, thresholdRatio: 0, confidence: 0.9 }, 0, baseArgs.leg, baseArgs.participantId, baseArgs.trackId, baseArgs.sessionStartedAt, baseArgs.thresholdPercent, baseArgs.profile, baseArgs.backend, baseArgs.config).state;
-    state = advanceLegState(state, { evaluation: "PASS", ratio: 0.2, thresholdRatio: 0, confidence: 0.9 }, 10, baseArgs.leg, baseArgs.participantId, baseArgs.trackId, baseArgs.sessionStartedAt, baseArgs.thresholdPercent, baseArgs.profile, baseArgs.backend, baseArgs.config).state;
-    const confirmed = advanceLegState(state, { evaluation: "PASS", ratio: 0.2, thresholdRatio: 0, confidence: 0.9 }, 70, baseArgs.leg, baseArgs.participantId, baseArgs.trackId, baseArgs.sessionStartedAt, baseArgs.thresholdPercent, baseArgs.profile, baseArgs.backend, baseArgs.config);
-    expect(confirmed.event?.leg).toBe("left");
-    expect(confirmed.state.reps).toBe(1);
-    const held = advanceLegState(confirmed.state, { evaluation: "PASS", ratio: 0.2, thresholdRatio: 0, confidence: 0.9 }, 200, baseArgs.leg, baseArgs.participantId, baseArgs.trackId, baseArgs.sessionStartedAt, baseArgs.thresholdPercent, baseArgs.profile, baseArgs.backend, baseArgs.config);
-    expect(held.event).toBeUndefined();
-  });
-
-  it("recognizes synchronized participants within the configured window", () => {
-    const events = [
-      { ...baseArgs, detectedAtMs: 1000, result: "CONFIRMED" as const },
-      { ...baseArgs, participantId: "participant-2", detectedAtMs: 1200, result: "CONFIRMED" as const },
-    ];
-    expect(isSynchronizedGroup(events, ["participant-1", "participant-2"], 1300, 300, "left")).toBe(true);
-    expect(isSynchronizedGroup(events, ["participant-1", "participant-2"], 1501, 300, "left")).toBe(false);
-  });
-
-  it("exports a local CSV without backend data", () => {
-    const csv = exportRepEventsCsv([{ ...baseArgs, detectedAtMs: 100, ratio: 0.2 }]);
-    expect(csv).toContain("participantId");
-    expect(csv).toContain("participant-1");
-    expect(csv).toContain("CONFIRMED");
-  });
-});
+const pose = (kneeY: number, hipY = .55): NormalizedPose => { const keypoints = Array.from({ length: 17 }, () => ({ x: .5, y: .5, score: .95 })); keypoints[5] = { x: .45, y: .3, score: .95 }; keypoints[11] = { x: .45, y: hipY, score: .95 }; keypoints[13] = { x: .45, y: kneeY, score: .95 }; return { detectorTrackId: "a", poseScore: .95, detectedAtMs: 0, boundingBox: null, keypoints }; };
+const context = { sessionId: "s", sessionStartedAt: "now", laneId: "lane-1", participantId: "VĐV 1", detectorTrackId: "a", thresholdPercent: 0, backend: "webgl" as const, inputSize: 320 as const, engine: "movenet-multipose-lightning" as const, config: DEFAULT_KNEE_COUNTER_CONFIG };
+describe("high knee state machine", () => { it("counts one frame above then down exactly once", () => { let state = initialLegCounterState(); state = advanceLegState(state, calculateKneeSignal(pose(.8), "left", 0, DEFAULT_KNEE_COUNTER_CONFIG), context).state; state = advanceLegState(state, calculateKneeSignal(pose(.45), "left", 60, DEFAULT_KNEE_COUNTER_CONFIG), context).state; const result = advanceLegState(state, calculateKneeSignal(pose(.8), "left", 120, DEFAULT_KNEE_COUNTER_CONFIG), context); expect(result.event?.id).toBe("s:lane-1:left:1"); expect(result.state.reps).toBe(1); }); it("uses current hip, not a calibrated hip", () => { expect(calculateKneeSignal(pose(.45, .5), "left", 0, DEFAULT_KNEE_COUNTER_CONFIG).ratio).toBeGreaterThan(0); }); });

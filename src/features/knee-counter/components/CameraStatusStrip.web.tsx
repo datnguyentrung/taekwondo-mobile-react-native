@@ -40,13 +40,13 @@ function Metric({ label, value, live = false }: { label: string; value: string; 
 }
 
 const styles = StyleSheet.create({
-  strip: { flexDirection: "row", alignItems: "stretch", flexWrap: "wrap", gap: Spacing.three, padding: Spacing.three, backgroundColor: "#182331", borderRadius: radii.md },
-  metric: { flexGrow: 1, minWidth: 112, justifyContent: "center", gap: Spacing.one, paddingRight: Spacing.three, borderRightWidth: StyleSheet.hairlineWidth, borderRightColor: "rgba(255,255,255,0.24)" },
+  strip: { flexDirection: "row", alignItems: "center", flexWrap: "wrap", gap: Spacing.two, paddingVertical: Spacing.two, paddingHorizontal: Spacing.three, backgroundColor: "#182331", borderRadius: radii.md },
+  metric: { flexGrow: 1, minWidth: 72, justifyContent: "center", gap: 4, paddingRight: Spacing.two, borderRightWidth: StyleSheet.hairlineWidth, borderRightColor: "rgba(255,255,255,0.24)" },
   metricLabel: { color: "rgba(255,255,255,0.68)" },
   metricValueRow: { flexDirection: "row", alignItems: "center", gap: Spacing.one },
   metricValue: { color: Colors.light.surface },
   liveDot: { width: 10, height: 10, borderRadius: 5, backgroundColor: "#22C55E" },
-  primaryAction: { minHeight: 48, minWidth: 160, flexGrow: 1, alignItems: "center", justifyContent: "center", borderRadius: radii.md, paddingHorizontal: Spacing.three, backgroundColor: Colors.light.primary },
+  primaryAction: { minHeight: 44, minWidth: 130, flexGrow: 1, alignItems: "center", justifyContent: "center", borderRadius: radii.md, paddingHorizontal: Spacing.three, backgroundColor: Colors.light.primary },
   primaryText: { color: Colors.light.surface },
   pressed: { opacity: 0.78 },
   disabled: { opacity: 0.5 },
