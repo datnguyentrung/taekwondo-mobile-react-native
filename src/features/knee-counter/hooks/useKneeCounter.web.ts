@@ -32,8 +32,13 @@ const EMPTY_METRICS: SessionMetrics = {
   idSwitches: 0,
   laneConflicts: 0,
 };
+export type UseKneeCounterOptions = {
+  onFallbackToCpu?: (reason: string) => void;
+};
+
 export function useKneeCounter(
   videoRef: React.RefObject<HTMLVideoElement | null>,
+  options?: UseKneeCounterOptions,
 ) {
   const [config, setConfig] = useState<KneeCounterSessionConfig>(
     DEFAULT_KNEE_COUNTER_CONFIG,
@@ -43,6 +48,7 @@ export function useKneeCounter(
   const [capabilities, setCapabilities] = useState<ComputeCapabilities | null>(
     null,
   );
+  const [fallbackToCpu, setFallbackToCpu] = useState(false);
   const [slots, setSlots] = useState<ParticipantSlot[]>([]);
   const [trace, setTrace] = useState<KneeTraceSample[]>([]);
   const [events, setEvents] = useState<RepEvent[]>([]);
@@ -58,6 +64,25 @@ export function useKneeCounter(
   const sessionIdRef = useRef("");
   const sessionStartedAtRef = useRef("");
   const lastUpdateRef = useRef(0);
+  const capabilitiesRef = useRef<ComputeCapabilities | null>(null);
+  const hasNotifiedFallbackRef = useRef(false);
+  const onFallbackToCpuRef = useRef(options?.onFallbackToCpu);
+
+  useEffect(() => {
+    onFallbackToCpuRef.current = options?.onFallbackToCpu;
+  }, [options?.onFallbackToCpu]);
+
+  const notifyCpuFallback = useCallback((customReason?: string) => {
+    setFallbackToCpu(true);
+    if (hasNotifiedFallbackRef.current) return;
+    hasNotifiedFallbackRef.current = true;
+    const caps = capabilitiesRef.current;
+    const noGpuHardware = caps && !caps.webglSupported && !caps.webgpuAdapterAvailable;
+    const defaultReason = noGpuHardware
+      ? "Không phát hiện GPU hỗ trợ. Đã chuyển sang xử lý bằng CPU (WASM), hiệu năng có thể bị giảm."
+      : "Không thể sử dụng GPU hoặc khởi tạo GPU thất bại. Đã chuyển sang xử lý bằng CPU (WASM).";
+    onFallbackToCpuRef.current?.(customReason ?? defaultReason);
+  }, []);
   const updateConfig = useCallback(
     (patch: Partial<KneeCounterSessionConfig>) => {
       if (!countingRef.current)
@@ -156,7 +181,16 @@ export function useKneeCounter(
       sessionIdRef.current,
       sessionStartedAtRef.current,
     );
-    const ready = await runtime.init(config.backendPreference);
+    const ready = await runtime.init(
+      config.backendPreference,
+      capabilitiesRef.current
+        ? {
+            webglSupported: capabilitiesRef.current.webglSupported,
+            webgpuAdapterAvailable:
+              capabilitiesRef.current.webgpuAdapterAvailable,
+          }
+        : undefined,
+    );
     mainRuntimeRef.current = runtime;
     setCapabilities((current) =>
       current
@@ -168,13 +202,18 @@ export function useKneeCounter(
           }
         : current,
     );
+    if (ready.fallbackToCpu || ready.backend === "wasm") {
+      notifyCpuFallback();
+    }
     setStatus("aligning");
     startLoop("preview");
-  }, [config, startLoop]);
+  }, [config, notifyCpuFallback, startLoop]);
   const start = useCallback(async () => {
     if (!videoRef.current) return;
     dispose();
     workerReadyRef.current = false;
+    hasNotifiedFallbackRef.current = false;
+    setFallbackToCpu(false);
     setError(null);
     setSlots([]);
     setTrace([]);
@@ -185,7 +224,9 @@ export function useKneeCounter(
     sessionStartedAtRef.current = new Date().toISOString();
     setStatus("loading-model");
     try {
-      setCapabilities(await detectComputeCapabilities());
+      const caps = await detectComputeCapabilities();
+      capabilitiesRef.current = caps;
+      setCapabilities(caps);
       const worker = createKneeCounterWorker(
         (message) => {
           if (message.type === "detector-ready") {
@@ -200,10 +241,16 @@ export function useKneeCounter(
                   }
                 : current,
             );
+            if (message.fallbackToCpu || message.backend === "wasm") {
+              notifyCpuFallback();
+            }
             setStatus("benchmarking");
             void sendFrame(performance.now(), "benchmark");
           } else if (message.type === "runtime-ready") {
             setMetrics(message.metrics);
+            if (message.fallbackToCpu || message.backend === "wasm") {
+              notifyCpuFallback();
+            }
             setStatus("aligning");
             startLoop("preview");
           } else if (message.type === "frame-result") publish(message);
@@ -230,6 +277,10 @@ export function useKneeCounter(
         sessionStartedAt: sessionStartedAtRef.current,
         config,
         backendPreference: config.backendPreference,
+        capabilities: {
+          webglSupported: caps.webglSupported,
+          webgpuAdapterAvailable: caps.webgpuAdapterAvailable,
+        },
       });
       window.setTimeout(() => {
         if (workerRef.current === worker && !workerReadyRef.current)
@@ -238,7 +289,7 @@ export function useKneeCounter(
     } catch {
       await fallbackToMainThread();
     }
-  }, [config, dispose, fallbackToMainThread, publish, sendFrame, startLoop, videoRef]);
+  }, [config, dispose, fallbackToMainThread, notifyCpuFallback, publish, sendFrame, startLoop, videoRef]);
   const pause = useCallback(() => {
     if (status !== "running") return;
     countingRef.current = false;
@@ -316,6 +367,7 @@ export function useKneeCounter(
     groupPassCount: passCount,
     synchronizedGroupPass,
     trace,
+    fallbackToCpu,
     start,
     stop,
     pause,

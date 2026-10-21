@@ -4,6 +4,7 @@ import { Pressable, ScrollView, StyleSheet, useWindowDimensions, View } from "re
 
 import { FlipH } from "reicon-react-native";
 
+import { useToast } from "@/shared/ui/Toast";
 import StackScreenLayout from "@/routes/navigation/layouts/StackScreenLayout";
 import { Colors, Spacing, radii } from "@/theme";
 import { AppIcon } from "@/shared/ui/AppIcon";
@@ -20,8 +21,17 @@ import { AnalysisSettings } from "../components/AnalysisSettings.web";
 import { CameraStatusStrip } from "../components/CameraStatusStrip.web";
 
 export function KneeCounterScreen() {
+  const toast = useToast();
   const camera = useCamera();
-  const counter = useKneeCounter(camera.videoRef);
+  const counter = useKneeCounter(camera.videoRef, {
+    onFallbackToCpu: (message) => {
+      toast.show({
+        message,
+        variant: "warning",
+        duration: 5000,
+      });
+    },
+  });
   const { width, height } = useWindowDimensions();
   const compact = width < 1100 || height < 620;
   const [settingsExpanded, setSettingsExpanded] = useState(false);
@@ -112,7 +122,11 @@ export function KneeCounterScreen() {
               thresholdPercent={counter.config.thresholdPercent}
               mirrored={counter.config.flipHorizontal}
             />
-            <View style={styles.videoMeta}><ThemedText type="caption" style={styles.videoMetaText}>{camera.running ? "LIVE" : "SẴN SÀNG"}</ThemedText><ThemedText type="caption" style={styles.videoMetaText}>{videoSize.width} x {videoSize.height} · 30 FPS</ThemedText></View>
+            <View style={styles.videoMeta}>
+              <ThemedText type="caption" style={styles.videoMetaText}>{camera.running ? "LIVE" : "SẴN SÀNG"}</ThemedText>
+              <ThemedText type="caption" style={styles.videoMetaText}>{videoSize.width} x {videoSize.height} · 30 FPS</ThemedText>
+              {counter.fallbackToCpu ? <ThemedText type="caption" style={styles.cpuBadgeText}>CPU (WASM)</ThemedText> : null}
+            </View>
             <View style={styles.videoTopRight}>
               <Pressable
                 accessibilityRole="button"
@@ -190,6 +204,7 @@ const styles = StyleSheet.create({
   videoFrameFallback: { width: "100%", height: "100%", maxHeight: "100%", maxWidth: "100%", aspectRatio: 16 / 9 },
   videoMeta: { position: "absolute", top: 12, left: 12, flexDirection: "row", gap: Spacing.two, paddingHorizontal: Spacing.two, paddingVertical: Spacing.one, borderRadius: radii.pill, backgroundColor: "rgba(0,0,0,0.72)" },
   videoMetaText: { color: Colors.light.surface },
+  cpuBadgeText: { color: "#F59E0B", fontWeight: "600" },
   videoTopRight: { position: "absolute", top: 12, right: 12, flexDirection: "row", gap: Spacing.two, zIndex: 10 },
   flipBadge: { flexDirection: "row", alignItems: "center", gap: Spacing.one, paddingHorizontal: Spacing.two, paddingVertical: Spacing.one, borderRadius: radii.pill, backgroundColor: "rgba(0,0,0,0.72)", borderWidth: 1, borderColor: "rgba(255,255,255,0.2)" },
   flipBadgeActive: { backgroundColor: Colors.light.surface, borderColor: Colors.light.primary },

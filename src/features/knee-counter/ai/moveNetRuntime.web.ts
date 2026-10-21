@@ -1,4 +1,3 @@
-import type * as PoseDetection from "@tensorflow-models/pose-detection";
 import type { ComputeBackend, KneeCounterSessionConfig, NormalizedPose } from "../types/kneeCounter.types";
 import { initializeBackend } from "./backendSelector.web";
 

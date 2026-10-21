@@ -14,9 +14,19 @@ const emit = (message: KneeWorkerResponse) => worker.postMessage(message);
 
 async function initialize(message: Extract<KneeWorkerRequest, { type: "init" }>) {
   dispose(); config = message.config; sessionId = message.sessionId; sessionStartedAt = message.sessionStartedAt;
+  const capabilities = message.capabilities ?? {
+    webglSupported: true,
+    webgpuAdapterAvailable: Boolean((self as unknown as { navigator?: Navigator }).navigator?.gpu),
+  };
   let lastError: unknown;
-  for (const candidate of backendOrder(message.backendPreference, { webglSupported: true, webgpuAdapterAvailable: Boolean((self as unknown as { navigator?: Navigator }).navigator?.gpu) })) {
-    try { runtime = await createMoveNetRuntime(candidate, 448, config); backend = candidate; laneManager = new LaneManager(config); emit({ type: "detector-ready", backend: candidate, inputSize: 448 }); return; }
+  for (const candidate of backendOrder(message.backendPreference, capabilities)) {
+    try {
+      runtime = await createMoveNetRuntime(candidate, 448, config);
+      backend = candidate;
+      laneManager = new LaneManager(config);
+      emit({ type: "detector-ready", backend: candidate, inputSize: 448, fallbackToCpu: candidate === "wasm" });
+      return;
+    }
     catch (error) { lastError = error; runtime?.dispose(); runtime = null; }
   }
   throw lastError ?? new Error("Không thể tải MoveNet.");
@@ -29,7 +39,7 @@ async function processFrame(message: Extract<KneeWorkerRequest, { type: "frame" 
     const candidates = deduplicateCandidates(poses.map(poseToCandidate).filter((candidate): candidate is NonNullable<typeof candidate> => candidate !== null));
     const result = laneManager.update(candidates, message.timestampMs, message.purpose === "count", { sessionId, sessionStartedAt, backend, inputSize: runtime.inputSize });
     const currentMetrics = metrics.record(performance.now() - started, 0, result.conflicts);
-    if (message.purpose === "benchmark") emit({ type: "runtime-ready", backend, inputSize: runtime.inputSize, metrics: currentMetrics });
+    if (message.purpose === "benchmark") emit({ type: "runtime-ready", backend, inputSize: runtime.inputSize, metrics: currentMetrics, fallbackToCpu: backend === "wasm" });
     else emit({ type: "frame-result", timestampMs: message.timestampMs, lanes: result.lanes, events: result.events, metrics: currentMetrics, trace: result.trace });
   } catch (error) { emit({ type: "error", code: "FRAME_FAILED", message: error instanceof Error ? error.message : "Không thể phân tích khung hình." }); }
   finally { message.frame.close(); emit({ type: "frame-complete" }); }

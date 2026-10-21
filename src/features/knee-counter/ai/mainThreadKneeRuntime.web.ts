@@ -9,9 +9,29 @@ export class MainThreadKneeRuntime {
   private runtime: MoveNetRuntime | null = null; private lanes: LaneManager | null = null; private readonly metrics = new RuntimeMetricsCollector();
   private backend: ComputeBackend | null = null; private inputSize: 320 | 384 | 448 = 384;
   constructor(private config: KneeCounterSessionConfig, private sessionId: string, private sessionStartedAt: string) {}
-  async init(preference: BackendPreference) {
+  async init(
+    preference: BackendPreference,
+    capabilities?: { webglSupported: boolean; webgpuAdapterAvailable: boolean }
+  ) {
     let error: unknown;
-    for (const backend of backendOrder(preference, { webglSupported: true, webgpuAdapterAvailable: Boolean(navigator.gpu) })) try { this.runtime = await createMoveNetRuntime(backend, 384, this.config); this.backend = backend; this.lanes = new LaneManager(this.config); return { backend, inputSize: 384 as const }; } catch (cause) { error = cause; this.runtime?.dispose(); }
+    const resolvedCapabilities = capabilities ?? {
+      webglSupported: true,
+      webgpuAdapterAvailable: Boolean(navigator.gpu),
+    };
+    for (const backend of backendOrder(preference, resolvedCapabilities))
+      try {
+        this.runtime = await createMoveNetRuntime(backend, 384, this.config);
+        this.backend = backend;
+        this.lanes = new LaneManager(this.config);
+        return {
+          backend,
+          inputSize: 384 as const,
+          fallbackToCpu: backend === "wasm",
+        };
+      } catch (cause) {
+        error = cause;
+        this.runtime?.dispose();
+      }
     throw error ?? new Error("Không thể khởi tạo MoveNet.");
   }
   async process(video: HTMLVideoElement, timestampMs: number, counting: boolean): Promise<{ lanes: ParticipantSlot[]; events: RepEvent[]; metrics: RuntimeMetrics; trace: KneeTraceSample[] }> {

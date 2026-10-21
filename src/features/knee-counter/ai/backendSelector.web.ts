@@ -1,7 +1,23 @@
 import type { ComputeBackend, BackendPreference } from "../types/kneeCounter.types";
 
-export function backendOrder(preference: BackendPreference, capabilities: { webglSupported: boolean; webgpuAdapterAvailable: boolean }): ComputeBackend[] {
-  if (preference !== "auto") return [preference];
+export function backendOrder(
+  preference: BackendPreference,
+  capabilities: { webglSupported: boolean; webgpuAdapterAvailable: boolean }
+): ComputeBackend[] {
+  if (preference === "wasm") return ["wasm"];
+  if (preference === "webgpu") {
+    return [
+      capabilities.webgpuAdapterAvailable ? "webgpu" : null,
+      capabilities.webglSupported ? "webgl" : null,
+      "wasm",
+    ].filter((value): value is ComputeBackend => Boolean(value));
+  }
+  if (preference === "webgl") {
+    return [
+      capabilities.webglSupported ? "webgl" : null,
+      "wasm",
+    ].filter((value): value is ComputeBackend => Boolean(value));
+  }
   return [
     capabilities.webgpuAdapterAvailable ? "webgpu" : null,
     capabilities.webglSupported ? "webgl" : null,
