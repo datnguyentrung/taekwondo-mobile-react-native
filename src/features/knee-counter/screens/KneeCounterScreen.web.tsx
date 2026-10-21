@@ -105,7 +105,13 @@ export function KneeCounterScreen() {
               playsInline
               muted
             />
-            <PoseOverlay slots={counter.slots} width={videoSize.width} height={videoSize.height} />
+            <PoseOverlay
+              slots={counter.slots}
+              width={videoSize.width}
+              height={videoSize.height}
+              thresholdPercent={counter.config.thresholdPercent}
+              mirrored={counter.config.flipHorizontal}
+            />
             <View style={styles.videoMeta}><ThemedText type="caption" style={styles.videoMetaText}>{camera.running ? "LIVE" : "SẴN SÀNG"}</ThemedText><ThemedText type="caption" style={styles.videoMetaText}>{videoSize.width} x {videoSize.height} · 30 FPS</ThemedText></View>
             <View style={styles.videoTopRight}>
               <Pressable
@@ -141,14 +147,19 @@ export function KneeCounterScreen() {
         {camera.error ? <ThemedText accessibilityRole="alert" type="bodySmall" style={styles.error}>{camera.error}</ThemedText> : null}
         {counter.error ? <ThemedText accessibilityRole="alert" type="bodySmall" style={styles.error}>{counter.error}</ThemedText> : null}
         <CameraStatusStrip detectedCount={counter.detectedCount} status={counter.status} totalReps={totalReps} elapsedSeconds={elapsedSeconds} running={camera.running} busy={counter.status === "loading-model" || counter.status === "benchmarking"} onPrimaryAction={camera.running && counter.status === "paused" ? counter.resume : camera.running ? stop : start} />
-        <View style={styles.actionRow}>{camera.running && counter.status !== "paused" ? <Action label="Tạm dừng" onPress={counter.pause} disabled={counter.status !== "running"} /> : null}{camera.running ? <Action label="Dừng" onPress={() => void stop()} /> : null}</View>
+        <View style={styles.actionRow}>
+          {camera.running && counter.status === "aligning" ? <Action label="Bắt đầu đếm" onPress={counter.beginCounting} /> : null}
+          {camera.running && counter.status === "countdown" ? <Action label="Đang chuẩn bị..." onPress={() => undefined} disabled /> : null}
+          {camera.running && counter.status !== "paused" ? <Action label="Tạm dừng" onPress={counter.pause} disabled={counter.status !== "running"} /> : null}
+          {camera.running ? <Action label="Dừng" onPress={() => void stop()} /> : null}
+        </View>
       </View>
     </View>
     <ScrollView style={[styles.sidebarScroll, compact && styles.sidebarScrollCompact]} contentContainerStyle={styles.sidebarContent} showsVerticalScrollIndicator={false}>
       <AnalysisSettings config={counter.config} backendOptions={[]} cameraLabels={cameraLabels} selectedCameraId={selectedCameraLabel} expanded={settingsExpanded} onToggle={() => setSettingsExpanded((value) => !value)} onConfigChange={counter.updateConfig} onCameraChange={(label) => { const device = camera.devices.find((candidate, index) => (candidate.label || `Camera ${index + 1}`) === label); if (device) { camera.setDeviceId(device.deviceId); void stop(); } }} />
       <KneeCounterDashboard slots={counter.slots} detectedCount={counter.detectedCount} totalReps={counter.totalReps} passCount={counter.passCount} groupPassCount={counter.groupPassCount} synchronizedGroupPass={counter.synchronizedGroupPass} mode={counter.config.mode} status={counter.status} onReset={() => { counter.reset(); setSessionStartedAt(null); }} onExport={exportCsv} />
       <Pressable accessibilityRole="button" accessibilityState={{ expanded: showDiagnostics }} onPress={() => setShowDiagnostics((value) => !value)} style={styles.diagnosticsToggle}><ThemedText type="bodySmall" style={styles.secondary}>{showDiagnostics ? "Ẩn chẩn đoán" : "Hiện chẩn đoán"}</ThemedText></Pressable>
-      {showDiagnostics ? <KneeCounterDiagnostics capabilities={counter.capabilities} /> : null}
+      {showDiagnostics ? <KneeCounterDiagnostics capabilities={counter.capabilities} trace={counter.trace} /> : null}
     </ScrollView>
   </View>;
   return <StackScreenLayout title="AI Knee Counter" scrollEnabled={compact} refreshEnabled={false} contentContainerStyle={[styles.content, compact && styles.contentCompact]}>{workspace}</StackScreenLayout>;

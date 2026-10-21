@@ -12,6 +12,12 @@ export interface LeaveRequestCreateRequest {
   leaveContext: string;
 }
 
+export interface StudentLeaveRequestCreateRequest {
+  leaveBookingId: string;
+  makeupClassSessionId: string;
+  leaveContext: string;
+}
+
 export interface LeaveRequestReviewCommand {
   reviewNote?: string | null;
 }

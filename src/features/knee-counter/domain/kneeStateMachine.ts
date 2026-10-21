@@ -1,23 +1,38 @@
 import type { KneeCounterSessionConfig, KneeSignal, LegCounterState, RepEvent } from "../types/kneeCounter.types";
 
-export const initialLegCounterState = (): LegCounterState => ({ phase: "NEEDS_DOWN", reps: 0, lastValidAtMs: null, lastRepAtMs: null, crossedAtMs: null, peakRatio: null, peakConfidence: 0, droppedSamples: 0, sequence: 0 });
-export const resetPendingCycle = (state: LegCounterState): LegCounterState => ({ ...state, phase: "NEEDS_DOWN", crossedAtMs: null, peakRatio: null, peakConfidence: 0 });
+export const initialLegCounterState = (): LegCounterState => ({ phase: "NEEDS_DOWN", reps: 0, lastValidAtMs: null, lastRepAtMs: null, crossedAtMs: null, peakRatio: null, peakConfidence: 0, droppedSamples: 0, sequence: 0, pendingDirection: null, pendingSinceMs: null, pendingSamples: 0 });
+export const resetPendingCycle = (state: LegCounterState): LegCounterState => ({ ...state, phase: "NEEDS_DOWN", crossedAtMs: null, peakRatio: null, peakConfidence: 0, pendingDirection: null, pendingSinceMs: null, pendingSamples: 0 });
 export type LegCounterContext = Omit<RepEvent, "id" | "leg" | "crossedAtMs" | "completedAtMs" | "peakRatio" | "confidence" | "result"> & { sessionId: string; config: KneeCounterSessionConfig };
 
 export function advanceLegState(state: LegCounterState, signal: KneeSignal, context: LegCounterContext): { state: LegCounterState; event: RepEvent | null } {
   if (!signal.valid || signal.ratio === null) {
-    const next = { ...state, droppedSamples: state.droppedSamples + 1 };
+    const next = { ...state, droppedSamples: state.droppedSamples + 1, pendingDirection: null, pendingSinceMs: null, pendingSamples: 0 };
     return { state: next.lastValidAtMs !== null && signal.timestampMs - next.lastValidAtMs > context.config.maxSignalGapMs ? resetPendingCycle(next) : next, event: null };
   }
-  const nextBase = { ...state, lastValidAtMs: signal.timestampMs, droppedSamples: 0 };
-  if (state.phase === "NEEDS_DOWN") return { state: signal.ratio <= signal.exitThreshold ? { ...nextBase, phase: "READY" } : nextBase, event: null };
-  if (state.phase === "READY") return { state: signal.ratio >= signal.enterThreshold ? { ...nextBase, phase: "ABOVE", crossedAtMs: signal.timestampMs, peakRatio: signal.ratio, peakConfidence: signal.confidence } : nextBase, event: null };
-  const peakRatio = Math.max(state.peakRatio ?? signal.ratio, signal.ratio);
-  const peakConfidence = signal.ratio >= (state.peakRatio ?? -Infinity) ? signal.confidence : state.peakConfidence;
-  if (signal.ratio > signal.exitThreshold) return { state: { ...nextBase, peakRatio, peakConfidence }, event: null };
-  const rearmed = { ...nextBase, phase: "READY" as const, crossedAtMs: null, peakRatio: null, peakConfidence: 0 };
-  if (state.lastRepAtMs !== null && signal.timestampMs - state.lastRepAtMs < context.config.minRepIntervalMs) return { state: rearmed, event: null };
-  const sequence = state.sequence + 1;
-  const event: RepEvent = { ...context, id: `${context.sessionId}:${context.laneId}:${signal.leg}:${sequence}`, leg: signal.leg, crossedAtMs: state.crossedAtMs ?? signal.timestampMs, completedAtMs: signal.timestampMs, peakRatio, confidence: peakConfidence, result: "CONFIRMED" };
-  return { state: { ...rearmed, reps: state.reps + 1, sequence, lastRepAtMs: signal.timestampMs }, event };
+  const recovered = state.lastValidAtMs !== null && signal.timestampMs - state.lastValidAtMs > context.config.maxSignalGapMs ? resetPendingCycle(state) : state;
+  const nextBase = { ...recovered, lastValidAtMs: signal.timestampMs, droppedSamples: 0 };
+  if (recovered.phase === "NEEDS_DOWN") {
+    const transition = confirmTransition(nextBase, "DOWN", signal.ratio <= signal.exitThreshold, signal, context.config);
+    return { state: transition.confirmed ? { ...transition.state, phase: "READY" } : transition.state, event: null };
+  }
+  if (recovered.phase === "READY") {
+    const transition = confirmTransition(nextBase, "UP", signal.ratio >= signal.enterThreshold, signal, context.config);
+    if (!transition.confirmed) return { state: transition.state, event: null };
+    if (recovered.lastRepAtMs !== null && signal.timestampMs - recovered.lastRepAtMs < context.config.minRepIntervalMs) return { state: { ...transition.state, phase: "ABOVE", crossedAtMs: signal.timestampMs, peakRatio: signal.ratio, peakConfidence: signal.confidence }, event: null };
+    const sequence = recovered.sequence + 1;
+    const event: RepEvent = { ...context, id: `${context.sessionId}:${context.laneId}:${signal.leg}:${sequence}`, leg: signal.leg, crossedAtMs: signal.timestampMs, completedAtMs: signal.timestampMs, peakRatio: signal.ratio, confidence: signal.confidence, result: "CONFIRMED" };
+    return { state: { ...transition.state, phase: "ABOVE", reps: recovered.reps + 1, sequence, lastRepAtMs: signal.timestampMs, crossedAtMs: signal.timestampMs, peakRatio: signal.ratio, peakConfidence: signal.confidence }, event };
+  }
+  if (signal.ratio > signal.exitThreshold) return { state: { ...nextBase, peakRatio: Math.max(recovered.peakRatio ?? signal.ratio, signal.ratio), pendingDirection: null, pendingSinceMs: null, pendingSamples: 0 }, event: null };
+  const transition = confirmTransition(nextBase, "DOWN", true, signal, context.config);
+  return { state: transition.confirmed ? { ...transition.state, phase: "READY", crossedAtMs: null, peakRatio: null, peakConfidence: 0 } : transition.state, event: null };
+}
+
+function confirmTransition(state: LegCounterState, direction: "UP" | "DOWN", crossed: boolean, signal: KneeSignal, config: KneeCounterSessionConfig) {
+  if (!crossed) return { state: { ...state, pendingDirection: null, pendingSinceMs: null, pendingSamples: 0 }, confirmed: false };
+  if (signal.quality === "trusted" || config.weakConfirmationSamples <= 1) return { state: { ...state, pendingDirection: null, pendingSinceMs: null, pendingSamples: 0 }, confirmed: true };
+  const continued = state.pendingDirection === direction && state.pendingSinceMs !== null && signal.timestampMs - state.pendingSinceMs <= config.weakConfirmationWindowMs;
+  const pendingSamples = continued ? state.pendingSamples + 1 : 1;
+  const next = { ...state, pendingDirection: direction, pendingSinceMs: continued ? state.pendingSinceMs : signal.timestampMs, pendingSamples };
+  return { state: pendingSamples >= config.weakConfirmationSamples ? { ...next, pendingDirection: null, pendingSinceMs: null, pendingSamples: 0 } : next, confirmed: pendingSamples >= config.weakConfirmationSamples };
 }

@@ -19,6 +19,21 @@ export interface WalletCoursePurchaseRequest {
   note?: string | null;
 }
 
+export interface WalletRecurringScheduleSelection {
+  requirementId: string;
+  courseScheduleId: string;
+}
+
+export interface WalletTrainingPlanPurchaseRequest {
+  studentPersonId: string;
+  trainingPlanId: string;
+  homeCourseId: string;
+  startDate: string;
+  recurringSchedules: WalletRecurringScheduleSelection[];
+  externalReference: string;
+  note?: string | null;
+}
+
 export interface WalletRefundRequest {
   originalDebitTransactionId: string;
   note?: string | null;

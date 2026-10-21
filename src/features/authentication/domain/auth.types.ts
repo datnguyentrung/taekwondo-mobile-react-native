@@ -10,6 +10,8 @@ export type AuthUserStatus =
   | (string & {});
 
 export type SystemRole =
+  | 'SUPER_ADMIN'
+  | 'SYSTEM_ADMIN'
   | 'ROLE_STUDENT'
   | 'ROLE_PARENT'
   | 'ROLE_ASSISTANT'

@@ -18,12 +18,11 @@ type AnalysisSettingsProps = {
 export function AnalysisSettings({ config, backendOptions, cameraLabels = [], selectedCameraId, expanded, onToggle, onConfigChange, onCameraChange }: AnalysisSettingsProps) {
   return <View style={styles.panel}>
     <Pressable accessibilityRole="button" accessibilityState={{ expanded }} onPress={onToggle} style={({ pressed }) => [styles.header, pressed && styles.pressed]}>
-      <View><ThemedText type="title" style={styles.title}>Cài đặt phân tích</ThemedText><ThemedText type="caption" style={styles.summary}>{config.participantCount} người · ngưỡng {config.thresholdPercent}%</ThemedText></View>
+      <View><ThemedText type="title" style={styles.title}>Cài đặt phân tích</ThemedText><ThemedText type="caption" style={styles.summary}>Tự nhận tối đa 6 người · ngưỡng {config.thresholdPercent}%</ThemedText></View>
       <ThemedText type="title" style={styles.chevron}>{expanded ? "⌃" : "⌄"}</ThemedText>
     </Pressable>
     {expanded ? <View style={styles.body}>
-      <ControlGroup title="Số người"><OptionRow values={[2, 3, 4, 5, 6].map(String)} selected={String(config.participantCount)} onSelect={(value) => onConfigChange({ participantCount: Number(value) as KneeCounterSessionConfig["participantCount"] })} /></ControlGroup>
-      <ControlGroup title={`Ngưỡng gối: ${config.thresholdPercent}%`}><OptionRow values={[-30, -20, -10, 0, 10, 20, 30].map((value) => `${value}%`)} selected={`${config.thresholdPercent}%`} onSelect={(value) => onConfigChange({ thresholdPercent: Number.parseInt(value, 10) })} /></ControlGroup>
+      <ControlGroup title={`Ngưỡng gối: ${config.thresholdPercent}%`}><OptionRow values={[-40, -35, -30, -25, -20, -10, 0, 10, 20, 30].map((value) => `${value}%`)} selected={`${config.thresholdPercent}%`} onSelect={(value) => onConfigChange({ thresholdPercent: Number.parseInt(value, 10) })} /></ControlGroup>
       <ControlGroup title="Chế độ đếm"><OptionRow values={["Cá nhân", "Nhóm đạt", "Đồng bộ"]} selected={config.mode === "individual" ? "Cá nhân" : config.mode === "current-group-pass" ? "Nhóm đạt" : "Đồng bộ"} onSelect={(value) => onConfigChange({ mode: value === "Cá nhân" ? "individual" : value === "Nhóm đạt" ? "current-group-pass" : "synchronized-group" })} /></ControlGroup>
       <ControlGroup title="Lật ngang camera"><OptionRow values={["Tắt", "Bật"]} selected={config.flipHorizontal ? "Bật" : "Tắt"} onSelect={(value) => onConfigChange({ flipHorizontal: value === "Bật" })} /></ControlGroup>
       {cameraLabels.length > 1 ? <ControlGroup title="Camera"><OptionRow values={cameraLabels} selected={cameraLabels[cameraLabels.findIndex((label) => label === selectedCameraId)] ?? cameraLabels[0]} onSelect={(value) => onCameraChange?.(value)} /></ControlGroup> : null}

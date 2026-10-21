@@ -22,10 +22,11 @@ function formatDuration(seconds: number) {
 
 export function CameraStatusStrip({ detectedCount, status, totalReps, elapsedSeconds, running, busy = false, onPrimaryAction }: CameraStatusStripProps) {
   const actionLabel = running ? (status === "paused" ? "Tiếp tục" : "Dừng camera") : "Bật camera";
+  const statusLabel = status === "running" ? "Đang đếm" : status === "paused" ? "Đã tạm dừng" : status === "countdown" ? "Sắp bắt đầu" : status === "aligning" ? "Đang căn chỉnh" : status === "loading-model" || status === "benchmarking" ? "Đang tải model" : "Sẵn sàng";
   return (
     <View style={styles.strip}>
       <Metric label="Số người phát hiện" value={String(detectedCount)} />
-      <Metric label="Trạng thái" value={status === "running" ? "Đang chạy" : status === "paused" ? "Đã tạm dừng" : status === "starting" ? "Đang khởi động" : "Sẵn sàng"} live={status === "running"} />
+      <Metric label="Trạng thái" value={statusLabel} live={status === "running"} />
       <Metric label="Tổng số gối" value={String(totalReps)} />
       <Metric label="Thời gian" value={formatDuration(elapsedSeconds)} />
       <Pressable accessibilityRole="button" accessibilityState={{ busy, disabled: busy }} disabled={busy} onPress={() => void onPrimaryAction()} style={({ pressed }) => [styles.primaryAction, pressed && styles.pressed, busy && styles.disabled]}>

@@ -7,6 +7,7 @@ import type {
   LeaveRequestResponse,
   LeaveRequestSimpleResponse,
   LeaveRequestReviewCommand,
+  StudentLeaveRequestCreateRequest,
 } from './leave-request.dto';
 
 export const leaveRequestApi = {
@@ -20,6 +21,10 @@ export const leaveRequestApi = {
   },
   async create(request: LeaveRequestCreateRequest): Promise<LeaveRequestResponse> {
     const response = await javaApi.post<LeaveRequestResponse>('/leave-requests', request);
+    return response.data;
+  },
+  async createStudent(request: StudentLeaveRequestCreateRequest): Promise<LeaveRequestResponse> {
+    const response = await javaApi.post<LeaveRequestResponse>('/leave-requests/student', request);
     return response.data;
   },
   async approve(leaveRequestId: string, command?: LeaveRequestReviewCommand): Promise<LeaveRequestResponse> {

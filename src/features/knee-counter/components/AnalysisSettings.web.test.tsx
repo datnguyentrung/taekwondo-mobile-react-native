@@ -16,8 +16,7 @@ describe("AnalysisSettings", () => {
   it("emits config patches from selected options", async () => {
     const onConfigChange = jest.fn();
     const screen = await render(<AnalysisSettings config={DEFAULT_KNEE_COUNTER_CONFIG} backendOptions={["webgl", "wasm"]} expanded onToggle={jest.fn()} onConfigChange={onConfigChange} />);
-    fireEvent.press(screen.getByText("6"));
-    expect(onConfigChange).toHaveBeenCalledWith({ participantCount: 6 });
+    expect(screen.queryByText("6")).toBeNull();
     fireEvent.press(screen.getByText("Bật"));
     expect(onConfigChange).toHaveBeenCalledWith({ flipHorizontal: true });
   });

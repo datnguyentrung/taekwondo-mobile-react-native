@@ -16,6 +16,7 @@ import {
   Wallet,
 } from "reicon-react-native";
 
+import { TrainingPlanRegistrationScreen } from './TrainingPlanRegistrationScreen';
 import StackScreenLayout from "@/routes/navigation/layouts/StackScreenLayout";
 import { useDebounce } from "@/shared/hooks/useDebounce";
 import { AppIcon } from "@/shared/ui/AppIcon";
@@ -64,7 +65,7 @@ type RegistrationSearchSheetProps<T> = {
   onRetry?: () => void;
 };
 
-export function StudentCourseRegistrationScreen({
+function LegacyCourseRegistrationScreen({
   studentCode: _studentCode,
   initialCourseId,
   initialPackageId,
@@ -244,6 +245,13 @@ export function StudentCourseRegistrationScreen({
       />
     </>
   );
+}
+
+/** Compatibility entry point retained for existing course-registration deep links. */
+export function StudentCourseRegistrationScreen(
+  props: StudentRouteProps & { initialCourseId?: string; initialPackageId?: string },
+) {
+  return <TrainingPlanRegistrationScreen {...props} />;
 }
 
 function ScheduleSelection({

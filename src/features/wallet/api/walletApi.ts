@@ -4,6 +4,7 @@ import type { PageResponse } from '@/infrastructure/http/pagination.types';
 import type {
   WalletCommandTransactionResponse,
   WalletCoursePurchaseRequest,
+  WalletTrainingPlanPurchaseRequest,
   WalletRefundRequest,
   WalletTopUpRequest,
 } from './wallet-command.dto';
@@ -41,6 +42,10 @@ export const walletApi = {
   },
   async purchaseCourse(request: WalletCoursePurchaseRequest): Promise<WalletCommandTransactionResponse> {
     const response = await javaApi.post<WalletCommandTransactionResponse>('/wallets/course-purchases', request);
+    return response.data;
+  },
+  async purchaseTrainingPlan(request: WalletTrainingPlanPurchaseRequest): Promise<WalletCommandTransactionResponse> {
+    const response = await javaApi.post<WalletCommandTransactionResponse>('/wallets/training-plan-purchases', request);
     return response.data;
   },
   async refund(request: WalletRefundRequest): Promise<WalletCommandTransactionResponse> {

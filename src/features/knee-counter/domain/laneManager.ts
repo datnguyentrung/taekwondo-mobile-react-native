@@ -1,78 +1,73 @@
+import { MAX_TRACKED_PEOPLE } from "../config/kneeCounterConfig";
 import { calculateKneeSignal, missingKneeSignal, MOVENET_KEYPOINT } from "./kneeSignal";
 import { advanceLegState, initialLegCounterState, resetPendingCycle } from "./kneeStateMachine";
-import type { ComputeBackend, KneeCounterSessionConfig, LaneDefinition, NormalizedPose, ParticipantSlot, PersonPose, RepEvent } from "../types/kneeCounter.types";
+import type { ComputeBackend, KneeCounterSessionConfig, KneeSignal, KneeTraceLeg, KneeTraceSample, LegCounterState, NormalizedPose, ParticipantSlot, PersonPose, RepEvent } from "../types/kneeCounter.types";
 
 export type PoseCandidate = { pose: NormalizedPose; centerX: number; centerY: number };
-export type LaneAssignment = { lane: LaneDefinition; candidate: PoseCandidate | null; conflict: boolean };
+export const createLaneDefinitions = (count: number) => Array.from({ length: count }, (_, index) => ({ laneId: `lane-${index + 1}`, label: `VĐV ${index + 1}`, index, left: index / count, right: (index + 1) / count, centerX: (index + .5) / count }));
+const validHip = (point: { x: number; y: number; score: number } | undefined) => Boolean(point && Number.isFinite(point.x) && Number.isFinite(point.y) && point.score >= .25);
+export function poseToCandidate(pose: NormalizedPose): PoseCandidate | null { const hips = [pose.keypoints[MOVENET_KEYPOINT.leftHip], pose.keypoints[MOVENET_KEYPOINT.rightHip]].filter(validHip); return hips.length ? { pose, centerX: hips.reduce((sum, hip) => sum + hip.x, 0) / hips.length, centerY: hips.reduce((sum, hip) => sum + hip.y, 0) / hips.length } : null; }
+function iou(a: NonNullable<NormalizedPose["boundingBox"]>, b: NonNullable<NormalizedPose["boundingBox"]>) { const left = Math.max(a.xMin, b.xMin); const right = Math.min(a.xMax, b.xMax); const top = Math.max(a.yMin, b.yMin); const bottom = Math.min(a.yMax, b.yMax); const intersection = Math.max(0, right - left) * Math.max(0, bottom - top); const union = (a.xMax - a.xMin) * (a.yMax - a.yMin) + (b.xMax - b.xMin) * (b.yMax - b.yMin) - intersection; return union ? intersection / union : 0; }
+export function deduplicateCandidates(candidates: PoseCandidate[], max = MAX_TRACKED_PEOPLE) { const unique: PoseCandidate[] = []; for (const candidate of [...candidates].sort((a, b) => b.pose.poseScore - a.pose.poseScore)) { if (unique.some((chosen) => candidate.pose.boundingBox && chosen.pose.boundingBox && iou(candidate.pose.boundingBox, chosen.pose.boundingBox) > .6)) continue; unique.push(candidate); if (unique.length >= max) break; } return unique; }
+// Kept for the former unit test; the runtime no longer uses fixed horizontal lanes.
+export function assignCandidatesToLanes(candidates: PoseCandidate[], lanes: ReturnType<typeof createLaneDefinitions>, _flipHorizontal: boolean) { return lanes.map((lane) => ({ lane, candidate: candidates.find((candidate) => candidate.centerX >= lane.left && candidate.centerX <= lane.right) ?? null, conflict: false })); }
 
-export function createLaneDefinitions(count: number): LaneDefinition[] {
-  return Array.from({ length: count }, (_, index) => ({ laneId: `lane-${index + 1}`, label: `VĐV ${index + 1}`, index, left: index / count, right: (index + 1) / count, centerX: (index + .5) / count }));
-}
-
-function validHip(point: { x: number; y: number; score: number } | undefined) { return Boolean(point && Number.isFinite(point.x) && Number.isFinite(point.y) && point.score >= .25); }
-export function poseToCandidate(pose: NormalizedPose): PoseCandidate | null {
-  const leftHip = pose.keypoints[MOVENET_KEYPOINT.leftHip]; const rightHip = pose.keypoints[MOVENET_KEYPOINT.rightHip];
-  const hips = [leftHip, rightHip].filter(validHip);
-  if (!hips.length) return null;
-  return { pose, centerX: hips.reduce((sum, hip) => sum + hip.x, 0) / hips.length, centerY: hips.reduce((sum, hip) => sum + hip.y, 0) / hips.length };
-}
-function iou(a: NonNullable<NormalizedPose["boundingBox"]>, b: NonNullable<NormalizedPose["boundingBox"]>) {
-  const left = Math.max(a.xMin, b.xMin); const right = Math.min(a.xMax, b.xMax); const top = Math.max(a.yMin, b.yMin); const bottom = Math.min(a.yMax, b.yMax);
-  const intersection = Math.max(0, right - left) * Math.max(0, bottom - top);
-  const union = Math.max(0, a.xMax - a.xMin) * Math.max(0, a.yMax - a.yMin) + Math.max(0, b.xMax - b.xMin) * Math.max(0, b.yMax - b.yMin) - intersection;
-  return union ? intersection / union : 0;
-}
-export function deduplicateCandidates(candidates: PoseCandidate[], max: number) {
-  const unique: PoseCandidate[] = [];
-  for (const candidate of [...candidates].sort((a, b) => b.pose.poseScore - a.pose.poseScore)) {
-    if (unique.some((chosen) => candidate.pose.boundingBox && chosen.pose.boundingBox && iou(candidate.pose.boundingBox, chosen.pose.boundingBox) > .6)) continue;
-    unique.push(candidate); if (unique.length >= max) break;
-  }
-  return unique;
-}
-export function assignCandidatesToLanes(candidates: PoseCandidate[], lanes: LaneDefinition[], flipHorizontal: boolean): LaneAssignment[] {
-  const pairs = candidates.flatMap((candidate, candidateIndex) => {
-    const x = flipHorizontal ? 1 - candidate.centerX : candidate.centerX;
-    return lanes.filter((lane) => x >= lane.left && x <= lane.right).map((lane) => ({ candidateIndex, laneIndex: lane.index, distance: Math.abs(x - lane.centerX) }));
-  }).sort((a, b) => a.distance - b.distance);
-  const usedCandidates = new Set<number>(); const usedLanes = new Set<number>(); const assigned = new Map<number, PoseCandidate>();
-  for (const pair of pairs) if (!usedCandidates.has(pair.candidateIndex) && !usedLanes.has(pair.laneIndex)) { usedCandidates.add(pair.candidateIndex); usedLanes.add(pair.laneIndex); assigned.set(pair.laneIndex, candidates[pair.candidateIndex]); }
-  return lanes.map((lane) => {
-    const inLane = candidates.filter((candidate) => { const x = flipHorizontal ? 1 - candidate.centerX : candidate.centerX; return x >= lane.left && x <= lane.right; });
-    return { lane, candidate: assigned.get(lane.index) ?? null, conflict: inLane.length > 1 };
-  });
-}
-
-type LaneMemory = { slot: ParticipantSlot; left: ReturnType<typeof initialLegCounterState>; right: ReturnType<typeof initialLegCounterState> };
+type RatioSample = { ratio: number; timestampMs: number };
+type Memory = { slot: ParticipantSlot; left: ReturnType<typeof initialLegCounterState>; right: ReturnType<typeof initialLegCounterState>; leftRatios: RatioSample[]; rightRatios: RatioSample[]; lastCenter: { x: number; y: number }; detectorIds: Set<string> };
 export class LaneManager {
-  private readonly memories: Map<string, LaneMemory>;
-  constructor(private readonly lanes: LaneDefinition[], private readonly config: KneeCounterSessionConfig) {
-    this.memories = new Map(lanes.map((lane) => [lane.laneId, { slot: emptySlot(lane), left: initialLegCounterState(), right: initialLegCounterState() }]));
-  }
-  resetPendingCycles() { this.memories.forEach((memory) => { memory.left = resetPendingCycle(memory.left); memory.right = resetPendingCycle(memory.right); }); }
-  update(assignments: LaneAssignment[], timestampMs: number, counting: boolean, context: { sessionId: string; sessionStartedAt: string; backend: ComputeBackend | null; inputSize: 320 | 384 | null }): { lanes: ParticipantSlot[]; events: RepEvent[]; conflicts: number } {
-    const events: RepEvent[] = []; let conflicts = 0;
-    for (const assignment of assignments) {
-      const memory = this.memories.get(assignment.lane.laneId)!; const { slot } = memory; const candidate = assignment.candidate;
-      const legContext = () => ({ sessionId: context.sessionId, sessionStartedAt: context.sessionStartedAt, laneId: assignment.lane.laneId, participantId: assignment.lane.label, detectorTrackId: candidate?.pose.detectorTrackId ?? null, thresholdPercent: this.config.thresholdPercent, backend: context.backend, inputSize: context.inputSize, engine: "movenet-multipose-lightning" as const, config: this.config });
-      if (assignment.conflict) conflicts += 1;
-      if (!candidate) {
-        const missing = slot.lastSeenAtMs !== null && timestampMs - slot.lastSeenAtMs > this.config.laneMissingMs;
-        if (counting) { memory.left = advanceLegState(memory.left, missingKneeSignal("left", timestampMs, this.config), legContext()).state; memory.right = advanceLegState(memory.right, missingKneeSignal("right", timestampMs, this.config), legContext()).state; }
-        memory.slot = { ...slot, pose: null, trackId: null, status: assignment.conflict ? "CONFLICT" : missing ? "MISSING" : "EMPTY", leftPhase: memory.left.phase, rightPhase: memory.right.phase };
-        continue;
-      }
-      const pose = toPersonPose(candidate); const stableFrames = slot.trackId === pose.trackId ? slot.stableFrames + 1 : 1;
-      let leftSignal = calculateKneeSignal(pose, "left", timestampMs, this.config); let rightSignal = calculateKneeSignal(pose, "right", timestampMs, this.config);
-      if (counting) {
-        const left = advanceLegState(memory.left, leftSignal, legContext()); memory.left = left.state; if (left.event) events.push(left.event);
-        const right = advanceLegState(memory.right, rightSignal, legContext()); memory.right = right.state; if (right.event) events.push(right.event);
-      }
-      const ready = stableFrames >= this.config.readyStableFrames && (leftSignal.valid || rightSignal.valid);
-      memory.slot = { ...slot, trackId: pose.trackId, pose, confidence: Math.max(leftSignal.confidence, rightSignal.confidence), lastSeenAtMs: timestampMs, stableFrames, status: assignment.conflict ? "CONFLICT" : counting ? "ACTIVE" : ready ? "READY" : "ALIGNING", leftPhase: memory.left.phase, rightPhase: memory.right.phase, leftReps: memory.left.reps, rightReps: memory.right.reps, leftRatio: leftSignal.ratio, rightRatio: rightSignal.ratio };
+  private readonly memories = new Map<string, Memory>(); private nextId = 1; private trace: KneeTraceSample[] = [];
+  constructor(private readonly config: KneeCounterSessionConfig) {}
+  resetPendingCycles() { this.memories.forEach((memory) => { memory.left = resetPendingCycle(memory.left); memory.right = resetPendingCycle(memory.right); memory.leftRatios = []; memory.rightRatios = []; }); }
+  getTrace() { return [...this.trace]; }
+  update(candidates: PoseCandidate[], timestampMs: number, counting: boolean, context: { sessionId: string; sessionStartedAt: string; backend: ComputeBackend | null; inputSize: 320 | 384 | 448 | null }) {
+    const events: RepEvent[] = []; const used = new Set<string>();
+    for (const candidate of candidates) {
+      const memory = this.match(candidate, used, timestampMs); if (!memory) continue; used.add(memory.slot.participantId);
+      const pose = toPersonPose(candidate, memory.slot.participantId); const stableFrames = memory.slot.trackId === pose.trackId ? memory.slot.stableFrames + 1 : 1;
+      const rawLeftSignal = calculateKneeSignal(pose, "left", timestampMs, this.config); const rawRightSignal = calculateKneeSignal(pose, "right", timestampMs, this.config);
+      const leftSignal = smoothSignal(rawLeftSignal, memory.leftRatios, this.config); const rightSignal = smoothSignal(rawRightSignal, memory.rightRatios, this.config);
+      const leftBefore = memory.left; const rightBefore = memory.right;
+      const eventContext = (leg: "left" | "right") => ({ sessionId: context.sessionId, sessionStartedAt: context.sessionStartedAt, laneId: memory.slot.laneId, participantId: memory.slot.participantId, detectorTrackId: candidate.pose.detectorTrackId, thresholdPercent: this.config.thresholdPercent, backend: context.backend, inputSize: context.inputSize, engine: "movenet-multipose-lightning" as const, config: this.config, leg });
+      let leftEvent: RepEvent | null = null; let rightEvent: RepEvent | null = null;
+      if (counting) { const left = advanceLegState(memory.left, leftSignal, eventContext("left")); memory.left = left.state; leftEvent = left.event; if (left.event) events.push(left.event); const right = advanceLegState(memory.right, rightSignal, eventContext("right")); memory.right = right.state; rightEvent = right.event; if (right.event) events.push(right.event); }
+      memory.lastCenter = { x: candidate.centerX, y: candidate.centerY }; if (candidate.pose.detectorTrackId) memory.detectorIds.add(candidate.pose.detectorTrackId);
+      memory.slot = { ...memory.slot, trackId: pose.trackId, pose, confidence: Math.max(leftSignal.confidence, rightSignal.confidence), lastSeenAtMs: timestampMs, stableFrames, status: counting ? "ACTIVE" : stableFrames >= this.config.readyStableFrames ? "READY" : "ALIGNING", leftPhase: memory.left.phase, rightPhase: memory.right.phase, leftReps: memory.left.reps, rightReps: memory.right.reps, leftRatio: leftSignal.ratio, rightRatio: rightSignal.ratio };
+      this.recordTrace(memory, candidate.pose, timestampMs, rawLeftSignal, rawRightSignal, leftSignal, rightSignal, leftBefore, rightBefore, leftEvent, rightEvent, counting);
     }
-    return { lanes: this.lanes.map((lane) => this.memories.get(lane.laneId)!.slot), events, conflicts };
+    for (const [pId, memory] of this.memories.entries()) {
+      if (!used.has(pId) && memory.slot.lastSeenAtMs !== null) {
+        const gap = timestampMs - memory.slot.lastSeenAtMs;
+        const missing = gap > this.config.laneMissingMs;
+        const leftBefore = memory.left; const rightBefore = memory.right;
+        const leftSignal = missingKneeSignal("left", timestampMs, this.config); const rightSignal = missingKneeSignal("right", timestampMs, this.config);
+        if (counting) {
+          const common = { sessionId: context.sessionId, sessionStartedAt: context.sessionStartedAt, laneId: memory.slot.laneId, participantId: memory.slot.participantId, detectorTrackId: null, thresholdPercent: this.config.thresholdPercent, backend: context.backend, inputSize: context.inputSize, engine: "movenet-multipose-lightning" as const, config: this.config };
+          memory.left = advanceLegState(memory.left, leftSignal, common).state;
+          memory.right = advanceLegState(memory.right, rightSignal, common).state;
+        }
+        if (gap <= this.config.laneMissingMs * 2.5) {
+          this.recordMissingTrace(memory, timestampMs, leftSignal, rightSignal, leftBefore, rightBefore, counting);
+        }
+        if (missing) memory.slot = { ...memory.slot, status: "MISSING", trackId: null, pose: null, leftPhase: memory.left.phase, rightPhase: memory.right.phase };
+        if (gap > this.config.laneMissingMs * 6) {
+          this.memories.delete(pId);
+        }
+      }
+    }
+    return { lanes: [...this.memories.values()].map((memory) => memory.slot).sort((a, b) => a.slotIndex - b.slotIndex), events, conflicts: 0, trace: this.getTrace() };
+  }
+  private match(candidate: PoseCandidate, used: Set<string>, timestampMs: number) { const id = candidate.pose.detectorTrackId; let best = [...this.memories.values()].find((memory) => !used.has(memory.slot.participantId) && Boolean(id && memory.detectorIds.has(id))); if (!best) best = [...this.memories.values()].filter((memory) => !used.has(memory.slot.participantId) && memory.slot.lastSeenAtMs !== null && timestampMs - memory.slot.lastSeenAtMs <= this.config.laneMissingMs).sort((a, b) => distance(a.lastCenter, candidate) - distance(b.lastCenter, candidate))[0]; if (best && distance(best.lastCenter, candidate) <= .18) return best; if (this.memories.size >= MAX_TRACKED_PEOPLE) return null; const index = this.nextId++; const participantId = `participant-${index}`; const memory: Memory = { slot: { participantId, laneId: participantId, label: `VĐV ${index}`, slotIndex: index - 1, status: "ALIGNING", trackId: null, pose: null, leftReps: 0, rightReps: 0, leftPhase: "NEEDS_DOWN", rightPhase: "NEEDS_DOWN", leftRatio: null, rightRatio: null, confidence: null, stableFrames: 0, lastSeenAtMs: null }, left: initialLegCounterState(), right: initialLegCounterState(), leftRatios: [], rightRatios: [], lastCenter: { x: candidate.centerX, y: candidate.centerY }, detectorIds: new Set(id ? [id] : []) }; this.memories.set(participantId, memory); return memory; }
+  private recordTrace(memory: Memory, pose: NormalizedPose, timestampMs: number, rawLeft: KneeSignal, rawRight: KneeSignal, left: KneeSignal, right: KneeSignal, leftBefore: LegCounterState, rightBefore: LegCounterState, leftEvent: RepEvent | null, rightEvent: RepEvent | null, counting: boolean) { const point = (index: number) => { const value = pose.keypoints[index]; return value ? { x: value.x, y: value.y, score: value.score } : { x: null, y: null, score: 0 }; }; this.pushTrace({ algorithmVersion: 2, config: traceConfig(this.config), timestampMs, source: "POSE", participantId: memory.slot.participantId, detectorTrackId: pose.detectorTrackId, trackId: memory.slot.trackId, poseScore: pose.poseScore, boundingBox: pose.boundingBox, center: memory.lastCenter, points: { leftShoulder: point(5), rightShoulder: point(6), leftHip: point(11), rightHip: point(12), leftKnee: point(13), rightKnee: point(14), leftAnkle: point(15), rightAnkle: point(16) }, left: traceLeg(rawLeft, left, leftBefore, memory.left, leftEvent), right: traceLeg(rawRight, right, rightBefore, memory.right, rightEvent), counting }); }
+  private recordMissingTrace(memory: Memory, timestampMs: number, left: KneeSignal, right: KneeSignal, leftBefore: LegCounterState, rightBefore: LegCounterState, counting: boolean) { const missingPoint = { x: null, y: null, score: 0 }; this.pushTrace({ algorithmVersion: 2, config: traceConfig(this.config), timestampMs, source: "MISSING", participantId: memory.slot.participantId, detectorTrackId: null, trackId: memory.slot.trackId, poseScore: null, boundingBox: null, center: memory.lastCenter, points: { leftShoulder: missingPoint, rightShoulder: missingPoint, leftHip: missingPoint, rightHip: missingPoint, leftKnee: missingPoint, rightKnee: missingPoint, leftAnkle: missingPoint, rightAnkle: missingPoint }, left: traceLeg(left, left, leftBefore, memory.left, null), right: traceLeg(right, right, rightBefore, memory.right, null), counting }); }
+  private pushTrace(sample: KneeTraceSample) {
+    this.trace.push(sample);
+    if (this.trace.length > 20_000) {
+      this.trace.splice(0, this.trace.length - 20_000);
+    }
   }
 }
-function emptySlot(lane: LaneDefinition): ParticipantSlot { return { participantId: lane.laneId, label: lane.label, slotIndex: lane.index, laneId: lane.laneId, status: "EMPTY", trackId: null, pose: null, leftReps: 0, rightReps: 0, leftPhase: "NEEDS_DOWN", rightPhase: "NEEDS_DOWN", leftRatio: null, rightRatio: null, confidence: null, stableFrames: 0, lastSeenAtMs: null }; }
-function toPersonPose(candidate: PoseCandidate): PersonPose { return { ...candidate.pose, trackId: candidate.pose.detectorTrackId, centerX: candidate.centerX, normalizedBoundingBox: candidate.pose.boundingBox }; }
+function traceLeg(raw: KneeSignal, smoothed: KneeSignal, before: LegCounterState, after: LegCounterState, event: RepEvent | null): KneeTraceLeg { return { reason: smoothed.reason, valid: smoothed.valid, confidence: smoothed.confidence, kneeConfidence: smoothed.kneeConfidence, quality: smoothed.quality, rawRatio: raw.ratio, smoothedRatio: smoothed.ratio, enterThreshold: smoothed.enterThreshold, exitThreshold: smoothed.exitThreshold, phaseBefore: before.phase, phaseAfter: after.phase, repsBefore: before.reps, repsAfter: after.reps, droppedSamples: after.droppedSamples, lastValidAtMs: after.lastValidAtMs, pendingDirection: after.pendingDirection, pendingSamples: after.pendingSamples, eventId: event?.id ?? null }; }
+function traceConfig(config: KneeCounterSessionConfig) { const { thresholdPercent, minPoseScore, minShoulderScore, minHipScore, minKneeTrustedScore, minKneeWeakScore, weakConfirmationSamples, weakConfirmationWindowMs, smoothingWindowMs, hysteresisRatio, minRepIntervalMs, maxSignalGapMs } = config; return { thresholdPercent, minPoseScore, minShoulderScore, minHipScore, minKneeTrustedScore, minKneeWeakScore, weakConfirmationSamples, weakConfirmationWindowMs, smoothingWindowMs, hysteresisRatio, minRepIntervalMs, maxSignalGapMs }; }
+function distance(point: { x: number; y: number }, candidate: PoseCandidate) { return Math.hypot(point.x - candidate.centerX, point.y - candidate.centerY); }
+function smoothSignal<T extends { valid: boolean; ratio: number | null; timestampMs: number }>(signal: T, history: RatioSample[], config: KneeCounterSessionConfig): T { if (!signal.valid || signal.ratio === null) return signal; const samples = history.filter((sample) => signal.timestampMs - sample.timestampMs <= config.smoothingWindowMs); const prev = samples.at(-1)?.ratio ?? signal.ratio; samples.push({ ratio: signal.ratio, timestampMs: signal.timestampMs }); history.splice(0, history.length, ...samples.slice(-3)); const smoothedRatio = signal.ratio >= prev ? signal.ratio : 0.6 * signal.ratio + 0.4 * prev; return { ...signal, ratio: smoothedRatio }; }
+function toPersonPose(candidate: PoseCandidate, participantId: string): PersonPose { return { ...candidate.pose, trackId: candidate.pose.detectorTrackId ?? participantId, centerX: candidate.centerX, normalizedBoundingBox: candidate.pose.boundingBox }; }

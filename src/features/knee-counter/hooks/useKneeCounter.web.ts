@@ -14,6 +14,7 @@ import type {
   ComputeCapabilities,
   KneeCounterSessionConfig,
   ParticipantSlot,
+  KneeTraceSample,
   RepEvent,
   SessionMetrics,
   SessionStatus,
@@ -31,26 +32,6 @@ const EMPTY_METRICS: SessionMetrics = {
   idSwitches: 0,
   laneConflicts: 0,
 };
-const slotsFor = (count: number): ParticipantSlot[] =>
-  Array.from({ length: count }, (_, index) => ({
-    participantId: `lane-${index + 1}`,
-    laneId: `lane-${index + 1}`,
-    label: `VĐV ${index + 1}`,
-    slotIndex: index,
-    status: "EMPTY",
-    trackId: null,
-    pose: null,
-    leftReps: 0,
-    rightReps: 0,
-    leftPhase: "NEEDS_DOWN",
-    rightPhase: "NEEDS_DOWN",
-    leftRatio: null,
-    rightRatio: null,
-    confidence: null,
-    stableFrames: 0,
-    lastSeenAtMs: null,
-  }));
-
 export function useKneeCounter(
   videoRef: React.RefObject<HTMLVideoElement | null>,
 ) {
@@ -62,13 +43,15 @@ export function useKneeCounter(
   const [capabilities, setCapabilities] = useState<ComputeCapabilities | null>(
     null,
   );
-  const [slots, setSlots] = useState<ParticipantSlot[]>(() => slotsFor(2));
+  const [slots, setSlots] = useState<ParticipantSlot[]>([]);
+  const [trace, setTrace] = useState<KneeTraceSample[]>([]);
   const [events, setEvents] = useState<RepEvent[]>([]);
   const [metrics, setMetrics] = useState<SessionMetrics>(EMPTY_METRICS);
   const workerRef = useRef<Worker | null>(null);
   const mainRuntimeRef = useRef<MainThreadKneeRuntime | null>(null);
   const stopLoopRef = useRef<(() => void) | null>(null);
   const inFlightRef = useRef(false);
+  const pendingFrameRef = useRef<{ frame: ImageBitmap; timestampMs: number; width: number; height: number; purpose: "benchmark" | "preview" | "count" } | null>(null);
   const countingRef = useRef(false);
   const workerReadyRef = useRef(false);
   const ledgerRef = useRef(new RepEventLedger());
@@ -86,6 +69,8 @@ export function useKneeCounter(
     stopLoopRef.current?.();
     stopLoopRef.current = null;
     inFlightRef.current = false;
+    pendingFrameRef.current?.frame.close();
+    pendingFrameRef.current = null;
     workerRef.current?.postMessage({ type: "dispose" });
     workerRef.current?.terminate();
     workerRef.current = null;
@@ -102,6 +87,7 @@ export function useKneeCounter(
       lastUpdateRef.current = message.timestampMs;
       setSlots(message.lanes);
       setMetrics(message.metrics);
+      if (message.trace) setTrace(message.trace);
       if (message.events.length)
         setEvents(ledgerRef.current.append(message.events));
     },
@@ -110,34 +96,25 @@ export function useKneeCounter(
   const sendFrame = useCallback(
     async (timestampMs: number, purpose: "benchmark" | "preview" | "count") => {
       const video = videoRef.current;
-      if (!video || video.readyState < 2 || inFlightRef.current) return;
-      inFlightRef.current = true;
+      if (!video || video.readyState < 2) return;
       try {
         if (workerRef.current) {
           const frame = await createImageBitmap(video);
-          workerRef.current.postMessage(
-            {
-              type: "frame",
-              frame,
-              timestampMs,
-              width: video.videoWidth,
-              height: video.videoHeight,
-              purpose,
-            },
-            [frame],
-          );
+          const payload = { frame, timestampMs, width: video.videoWidth, height: video.videoHeight, purpose };
+          if (inFlightRef.current) {
+            pendingFrameRef.current?.frame.close();
+            pendingFrameRef.current = payload;
+            return;
+          }
+          inFlightRef.current = true;
+          workerRef.current.postMessage({ type: "frame", ...payload }, [frame]);
           return;
         }
-        const result = await mainRuntimeRef.current?.process(
-          video,
-          timestampMs,
-          purpose === "count",
-        );
+        inFlightRef.current = true;
+        const result = await mainRuntimeRef.current?.process(video, timestampMs, purpose === "count");
         if (result) publish({ type: "frame-result", timestampMs, ...result });
       } catch (cause) {
-        setError(
-          cause instanceof Error ? cause.message : "Không thể đọc camera.",
-        );
+        setError(cause instanceof Error ? cause.message : "Không thể đọc camera.");
       } finally {
         if (!workerRef.current) inFlightRef.current = false;
       }
@@ -171,7 +148,7 @@ export function useKneeCounter(
     },
     [sendFrame, videoRef],
   );
-  const useFallback = useCallback(async () => {
+  const fallbackToMainThread = useCallback(async () => {
     workerRef.current?.terminate();
     workerRef.current = null;
     const runtime = new MainThreadKneeRuntime(
@@ -186,7 +163,7 @@ export function useKneeCounter(
         ? {
             ...current,
             selectedBackend: ready.backend,
-            modelInputSize: 320,
+            modelInputSize: ready.inputSize,
             runtime: "main-thread",
           }
         : current,
@@ -199,7 +176,8 @@ export function useKneeCounter(
     dispose();
     workerReadyRef.current = false;
     setError(null);
-    setSlots(slotsFor(config.participantCount));
+    setSlots([]);
+    setTrace([]);
     setEvents([]);
     setMetrics(EMPTY_METRICS);
     ledgerRef.current.clear();
@@ -229,12 +207,20 @@ export function useKneeCounter(
             setStatus("aligning");
             startLoop("preview");
           } else if (message.type === "frame-result") publish(message);
-          else if (message.type === "frame-complete")
-            inFlightRef.current = false;
-          else if (message.type === "error") void useFallback();
+          else if (message.type === "frame-complete") {
+            const pending = pendingFrameRef.current;
+            pendingFrameRef.current = null;
+            if (pending && workerRef.current) {
+              inFlightRef.current = true;
+              workerRef.current.postMessage({ type: "frame", ...pending }, [pending.frame]);
+            } else {
+              inFlightRef.current = false;
+            }
+          }
+          else if (message.type === "error") void fallbackToMainThread();
         },
         () => {
-          void useFallback();
+          void fallbackToMainThread();
         },
       );
       workerRef.current = worker;
@@ -247,12 +233,12 @@ export function useKneeCounter(
       });
       window.setTimeout(() => {
         if (workerRef.current === worker && !workerReadyRef.current)
-          void useFallback();
+          void fallbackToMainThread();
       }, 10_000);
     } catch {
-      await useFallback();
+      await fallbackToMainThread();
     }
-  }, [config, dispose, publish, sendFrame, startLoop, useFallback, videoRef]);
+  }, [config, dispose, fallbackToMainThread, publish, sendFrame, startLoop, videoRef]);
   const pause = useCallback(() => {
     if (status !== "running") return;
     countingRef.current = false;
@@ -268,6 +254,10 @@ export function useKneeCounter(
     setStatus("aligning");
     startLoop("preview");
   }, [startLoop, status]);
+  const beginCounting = useCallback(() => {
+    if (status !== "aligning") return;
+    setStatus("countdown");
+  }, [status]);
   const stop = useCallback(async () => {
     dispose();
     countingRef.current = false;
@@ -276,25 +266,22 @@ export function useKneeCounter(
   const reset = useCallback(() => {
     ledgerRef.current.clear();
     setEvents([]);
-    setSlots(slotsFor(config.participantCount));
+    setSlots([]);
+    setTrace([]);
     workerRef.current?.postMessage({
       type: "reset",
       sessionId: crypto.randomUUID(),
       sessionStartedAt: new Date().toISOString(),
     });
-  }, [config.participantCount]);
+  }, []);
   useEffect(() => () => dispose(), [dispose]);
   const detectedCount = useMemo(
     () => slots.filter((slot) => slot.pose).length,
     [slots],
   );
   const passCount = useMemo(() => countCurrentGroupPass(slots), [slots]);
-  const ready =
-    slots.length > 0 &&
-    slots.every((slot) => slot.status === "READY" || slot.status === "ACTIVE");
   useEffect(() => {
-    if (status !== "aligning" || !ready) return;
-    setStatus("countdown");
+    if (status !== "countdown") return;
     const timer = window.setTimeout(() => {
       countingRef.current = true;
       stopLoopRef.current?.();
@@ -302,16 +289,17 @@ export function useKneeCounter(
       setStatus("running");
     }, 3000);
     return () => window.clearTimeout(timer);
-  }, [ready, startLoop, status]);
+  }, [startLoop, status]);
+  const latestEventAtMs = events.at(-1)?.crossedAtMs ?? 0;
   const synchronizedGroupPass = useMemo(
     () =>
       isSynchronizedGroup(
         events,
         slots.map((slot) => slot.laneId),
-        performance.now(),
+        latestEventAtMs,
         config.synchronizedWindowMs,
       ),
-    [config.synchronizedWindowMs, events, slots],
+    [config.synchronizedWindowMs, events, latestEventAtMs, slots],
   );
   return {
     config,
@@ -327,10 +315,12 @@ export function useKneeCounter(
     totalReps: events.length,
     groupPassCount: passCount,
     synchronizedGroupPass,
+    trace,
     start,
     stop,
     pause,
     resume,
+    beginCounting,
     reset,
   };
 }
