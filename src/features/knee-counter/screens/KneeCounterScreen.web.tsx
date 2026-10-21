@@ -19,6 +19,7 @@ import { PoseOverlay } from "../components/PoseOverlay.web";
 import { AnalysisSettings } from "../components/AnalysisSettings.web";
 import { CameraStatusStrip } from "../components/CameraStatusStrip.web";
 import { playRefereeBuzzer } from "../utils/buzzerAudio.web";
+import type { CameraFpsOption } from "../types/kneeCounter.types";
 
 export function KneeCounterScreen() {
   const toast = useToast();
@@ -30,10 +31,23 @@ export function KneeCounterScreen() {
     running: isCameraRunning,
     error: cameraError,
     settings: cameraSettings,
+    capabilities: cameraCapabilities,
     start: startCamera,
     stop: stopCamera,
   } = useCamera();
+  const [cameraTargetFps, setCameraTargetFps] = useState<CameraFpsOption>(30);
+  const supportedCameraFps = useMemo<CameraFpsOption[]>(() => {
+    const range = cameraCapabilities?.frameRate;
+    if (!range || typeof range.max !== "number") return [];
+    const max = range.max;
+    const min = typeof range.min === "number" ? range.min : 0;
+    return [15, 30, 45, 60, 90].filter((fps) => fps >= min && fps <= max) as CameraFpsOption[];
+  }, [cameraCapabilities]);
+  const activeCameraFps = supportedCameraFps.length && !supportedCameraFps.includes(cameraTargetFps)
+    ? supportedCameraFps.at(-1)!
+    : cameraTargetFps;
   const counter = useKneeCounter(videoRef, {
+    requestedCameraFps: activeCameraFps,
     onFallbackToCpu: (message) => {
       toast.show({
         message,
@@ -44,7 +58,7 @@ export function KneeCounterScreen() {
   });
   const { width, height } = useWindowDimensions();
   const compact = width < 1100 || height < 620;
-  const [settingsExpanded, setSettingsExpanded] = useState(false);
+  const [settingsExpanded, setSettingsExpanded] = useState(true);
   const [showDiagnostics, setShowDiagnostics] = useState(false);
   const [videoSize, setVideoSize] = useState({ width: 1280, height: 720 });
   const [containerSize, setContainerSize] = useState({ width: 0, height: 0 });
@@ -139,7 +153,7 @@ export function KneeCounterScreen() {
     return <StackScreenLayout title="AI Knee Counter"><View style={styles.center}><ThemedText type="heading" style={styles.title}>Tính năng chưa được bật</ThemedText><ThemedText type="body" style={styles.secondary}>Quản trị viên cần bật EXPO_PUBLIC_KNEE_COUNTER_ENABLED cho môi trường Web.</ThemedText></View></StackScreenLayout>;
   }
   const start = async () => {
-    if (await startCamera()) {
+    if (await startCamera(activeCameraFps)) {
       await counter.start();
       setRemainingSeconds(countdownSeconds);
       hasPlayedBuzzerRef.current = false;
@@ -299,6 +313,11 @@ export function KneeCounterScreen() {
           }}
           remainingSeconds={remainingSeconds}
           running={isCameraRunning}
+          configuredCameraFps={cameraSettings?.frameRate ?? null}
+          actualCameraFps={counter.metrics.videoCallbackFps ?? counter.metrics.cameraFps}
+          inferenceFps={counter.metrics.inferenceFps}
+          workerBusyDrops={counter.metrics.workerBusyDrops ?? counter.metrics.droppedFrames}
+          capabilityFps={{ min: typeof cameraCapabilities?.frameRate?.min === "number" ? cameraCapabilities.frameRate.min : null, max: typeof cameraCapabilities?.frameRate?.max === "number" ? cameraCapabilities.frameRate.max : null }}
           busy={counter.status === "loading-model" || counter.status === "benchmarking"}
           onPrimaryAction={isCameraRunning && counter.status === "paused" ? counter.resume : isCameraRunning ? stop : start}
         />
@@ -311,7 +330,7 @@ export function KneeCounterScreen() {
       </View>
     </View>
     <ScrollView style={[styles.sidebarScroll, compact && styles.sidebarScrollCompact]} contentContainerStyle={styles.sidebarContent} showsVerticalScrollIndicator={false}>
-      <AnalysisSettings config={counter.config} backendOptions={[]} cameraLabels={cameraLabels} selectedCameraId={selectedCameraLabel} expanded={settingsExpanded} onToggle={() => setSettingsExpanded((value) => !value)} onConfigChange={counter.updateConfig} onCameraChange={(label) => { const device = cameraDevices.find((candidate, index) => (candidate.label || `Camera ${index + 1}`) === label); if (device) { setCameraDeviceId(device.deviceId); void stop(); } }} />
+      <AnalysisSettings config={counter.config} backendOptions={[]} cameraLabels={cameraLabels} selectedCameraId={selectedCameraLabel} expanded={settingsExpanded} onToggle={() => setSettingsExpanded((value) => !value)} onConfigChange={counter.updateConfig} cameraFps={activeCameraFps} cameraFpsOptions={supportedCameraFps} onCameraFpsChange={setCameraTargetFps} onCameraChange={(label) => { const device = cameraDevices.find((candidate, index) => (candidate.label || `Camera ${index + 1}`) === label); if (device) { setCameraDeviceId(device.deviceId); void stop(); } }} />
       <KneeCounterDashboard slots={counter.slots} detectedCount={counter.detectedCount} totalReps={counter.totalReps} passCount={counter.passCount} groupPassCount={counter.groupPassCount} synchronizedGroupPass={counter.synchronizedGroupPass} mode={counter.config.mode} status={counter.status} onReset={handleReset} onExport={exportCsv} />
       <Pressable accessibilityRole="button" accessibilityState={{ expanded: showDiagnostics }} onPress={() => setShowDiagnostics((value) => !value)} style={styles.diagnosticsToggle}><ThemedText type="bodySmall" style={styles.secondary}>{showDiagnostics ? "Ẩn chẩn đoán" : "Hiện chẩn đoán"}</ThemedText></Pressable>
       {showDiagnostics ? <KneeCounterDiagnostics capabilities={counter.capabilities} trace={counter.trace} /> : null}

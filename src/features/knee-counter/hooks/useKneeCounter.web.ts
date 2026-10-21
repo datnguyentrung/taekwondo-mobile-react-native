@@ -18,6 +18,7 @@ import type {
   RepEvent,
   SessionMetrics,
   SessionStatus,
+  CameraFpsRange,
 } from "../types/kneeCounter.types";
 
 const EMPTY_METRICS: SessionMetrics = {
@@ -31,9 +32,15 @@ const EMPTY_METRICS: SessionMetrics = {
   invalidSignalRate: null,
   idSwitches: 0,
   laneConflicts: 0,
+  videoCallbackFps: null,
+  videoFrameGapMs: null,
+  presentedFrames: null,
+  droppedVideoFrames: null,
+  workerBusyDrops: 0,
 };
 export type UseKneeCounterOptions = {
   onFallbackToCpu?: (reason: string) => void;
+  requestedCameraFps?: number;
 };
 
 export function useKneeCounter(
@@ -68,10 +75,12 @@ export function useKneeCounter(
   const capabilitiesRef = useRef<ComputeCapabilities | null>(null);
   const hasNotifiedFallbackRef = useRef(false);
   const onFallbackToCpuRef = useRef(options?.onFallbackToCpu);
+  const requestedCameraFpsRef = useRef(options?.requestedCameraFps ?? null);
 
   useEffect(() => {
     onFallbackToCpuRef.current = options?.onFallbackToCpu;
-  }, [options?.onFallbackToCpu]);
+    requestedCameraFpsRef.current = options?.requestedCameraFps ?? null;
+  }, [options?.onFallbackToCpu, options?.requestedCameraFps]);
 
   const notifyCpuFallback = useCallback((customReason?: string) => {
     setFallbackToCpu(true);
@@ -109,15 +118,32 @@ export function useKneeCounter(
       const frameTimes = cameraFrameTimesRef.current;
       const elapsed = frameTimes.length > 1 ? frameTimes.at(-1)! - frameTimes[0] : 0;
       const cameraFps = elapsed > 0 ? Math.round((frameTimes.length - 1) * 10000 / elapsed) / 10 : null;
-      const measured = { ...message.metrics, cameraFps, droppedFrames: droppedFramesRef.current };
+      const frameGaps = frameTimes.slice(1).map((time, index) => time - frameTimes[index]);
+      const video = videoRef.current;
+      const track = video?.srcObject instanceof MediaStream ? video.srcObject.getVideoTracks()[0] : null;
+      const settings = track?.getSettings() ?? null;
+      const capabilities = track?.getCapabilities?.();
+      const quality = video?.getVideoPlaybackQuality?.();
+      const capabilityFrameRate: CameraFpsRange = {
+        min: typeof capabilities?.frameRate?.min === "number" ? capabilities.frameRate.min : null,
+        max: typeof capabilities?.frameRate?.max === "number" ? capabilities.frameRate.max : null,
+      };
+      const measured = {
+        ...message.metrics,
+        cameraFps,
+        videoCallbackFps: cameraFps,
+        videoFrameGapMs: frameGaps.length ? Math.round(frameGaps.reduce((sum, gap) => sum + gap, 0) / frameGaps.length * 10) / 10 : null,
+        presentedFrames: quality?.totalVideoFrames ?? null,
+        droppedVideoFrames: quality?.droppedVideoFrames ?? null,
+        workerBusyDrops: droppedFramesRef.current,
+        droppedFrames: droppedFramesRef.current,
+      };
       setMetrics(measured);
       if (message.trace) {
-        const video = videoRef.current;
-        const settings = video?.srcObject instanceof MediaStream ? video.srcObject.getVideoTracks()[0]?.getSettings() : null;
         setTrace((previous) => message.trace!.map((sample, index) => {
           const prior = previous[index];
           if (prior?.timestampMs === sample.timestampMs && prior.participantId === sample.participantId) return prior;
-          return sample.algorithmVersion === 3 ? { ...sample, camera: { width: settings?.width ?? video?.videoWidth ?? 0, height: settings?.height ?? video?.videoHeight ?? 0, frameRate: settings?.frameRate ?? null }, runtime: { cameraFps, inferenceFps: measured.inferenceFps, averageLatencyMs: measured.averageLatencyMs, droppedFrames: measured.droppedFrames } } : sample;
+          return sample.algorithmVersion === 3 ? { ...sample, camera: { width: settings?.width ?? video?.videoWidth ?? 0, height: settings?.height ?? video?.videoHeight ?? 0, frameRate: settings?.frameRate ?? null, requestedFrameRate: requestedCameraFpsRef.current, capabilityFrameRate, actualFrameRate: cameraFps, presentedFrames: quality?.totalVideoFrames ?? null, droppedVideoFrames: quality?.droppedVideoFrames ?? null }, runtime: { cameraFps, inferenceFps: measured.inferenceFps, averageLatencyMs: measured.averageLatencyMs, droppedFrames: measured.droppedFrames, videoCallbackFps: measured.videoCallbackFps, videoFrameGapMs: measured.videoFrameGapMs, presentedFrames: measured.presentedFrames, droppedVideoFrames: measured.droppedVideoFrames, workerBusyDrops: measured.workerBusyDrops } } : sample;
         }));
       }
       if (message.events.length)

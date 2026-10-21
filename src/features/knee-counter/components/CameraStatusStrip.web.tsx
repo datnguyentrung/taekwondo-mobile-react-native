@@ -12,6 +12,11 @@ type CameraStatusStripProps = {
   running: boolean;
   busy?: boolean;
   onPrimaryAction: () => void | Promise<void>;
+  configuredCameraFps?: number | null;
+  actualCameraFps?: number | null;
+  inferenceFps?: number | null;
+  workerBusyDrops?: number;
+  capabilityFps?: { min: number | null; max: number | null };
 };
 
 function formatDuration(seconds: number) {
@@ -30,6 +35,11 @@ export function CameraStatusStrip({
   running,
   busy = false,
   onPrimaryAction,
+  configuredCameraFps = null,
+  actualCameraFps = null,
+  inferenceFps = null,
+  workerBusyDrops = 0,
+  capabilityFps,
 }: CameraStatusStripProps) {
   const actionLabel = running ? (status === "paused" ? "Tiếp tục" : "Dừng camera") : "Bật camera";
   const statusLabel = status === "running" ? "Đang đếm" : status === "paused" ? "Đã tạm dừng" : status === "countdown" ? "Sắp bắt đầu" : status === "aligning" ? "Đang căn chỉnh" : status === "loading-model" || status === "benchmarking" ? "Đang tải model" : "Sẵn sàng";
@@ -41,6 +51,9 @@ export function CameraStatusStrip({
     <View style={styles.strip}>
       <Metric label="Số người phát hiện" value={String(detectedCount)} />
       <Metric label="Trạng thái" value={statusLabel} live={isRunning} />
+      <Metric label="FPS camera thực" value={actualCameraFps ? `${actualCameraFps.toFixed(1)} / ${configuredCameraFps ? configuredCameraFps.toFixed(0) : "—"}` : "—"} />
+      <Metric label="FPS xử lý" value={inferenceFps ? inferenceFps.toFixed(1) : "—"} />
+      <Metric label="Khung bỏ" value={`${workerBusyDrops}${capabilityFps?.max ? ` · max ${capabilityFps.max}` : ""}`} />
 
       {/* Target countdown seconds input */}
       <View style={styles.metric}>

@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import type { CameraFpsOption } from "../types/kneeCounter.types";
 
 export function useCamera() {
   const videoRef = useRef<HTMLVideoElement | null>(null);
@@ -9,6 +10,7 @@ export function useCamera() {
   const runningRef = useRef(false);
   const [error, setError] = useState<string | null>(null);
   const [settings, setSettings] = useState<MediaTrackSettings | null>(null);
+  const [capabilities, setCapabilities] = useState<MediaTrackCapabilities | null>(null);
 
   const enumerate = useCallback(async () => {
     if (!navigator.mediaDevices?.enumerateDevices) return;
@@ -27,7 +29,7 @@ export function useCamera() {
     runningRef.current = false;
   }, []);
 
-  const start = useCallback(async () => {
+  const start = useCallback(async (requestedFps: CameraFpsOption = 30) => {
     setError(null);
     if (!navigator.mediaDevices?.getUserMedia) {
       setError("Trình duyệt không hỗ trợ webcam.");
@@ -37,7 +39,7 @@ export function useCamera() {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
         audio: false,
-        video: { width: { ideal: 1280 }, height: { ideal: 720 }, frameRate: { ideal: 60, max: 60 }, ...(deviceId ? { deviceId: { exact: deviceId } } : {}) },
+        video: { width: { ideal: 1280 }, height: { ideal: 720 }, frameRate: { ideal: requestedFps, max: requestedFps }, ...(deviceId ? { deviceId: { exact: deviceId } } : {}) },
       });
       streamRef.current = stream;
       if (!videoRef.current) throw new Error("Không tìm thấy vùng hiển thị camera.");
@@ -45,7 +47,9 @@ export function useCamera() {
       videoRef.current.muted = true;
       videoRef.current.playsInline = true;
       await videoRef.current.play();
-      setSettings(stream.getVideoTracks()[0]?.getSettings() ?? null);
+      const track = stream.getVideoTracks()[0];
+      setSettings(track?.getSettings() ?? null);
+      setCapabilities(track?.getCapabilities?.() ?? null);
       await enumerate();
       setRunning(true);
       runningRef.current = true;
@@ -64,5 +68,10 @@ export function useCamera() {
     return () => { document.removeEventListener("visibilitychange", onVisibility); stop(); };
   }, [enumerate, stop]);
 
-  return { videoRef, devices, deviceId, setDeviceId, running, error, settings, start, stop };
+  const selectDeviceId = useCallback((nextDeviceId: string | undefined) => {
+    setDeviceId(nextDeviceId);
+    setCapabilities(null);
+  }, []);
+
+  return { videoRef, devices, deviceId, setDeviceId: selectDeviceId, running, error, settings, capabilities, start, stop };
 }

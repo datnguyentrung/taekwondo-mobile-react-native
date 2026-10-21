@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 
 import { legKneeReference, MOVENET_KEYPOINT } from "../domain/kneeSignal";
 import type { BoundingBox, KneeCounterSessionConfig, NormalizedPoint, ParticipantSlot } from "../types/kneeCounter.types";
-import { videoContainRect } from "./overlayGeometry";
+import { stabilizeOverlayLine, videoContainRect } from "./overlayGeometry";
 
 const TARGET_KEYPOINTS = [
   MOVENET_KEYPOINT.leftHip,
@@ -39,6 +39,7 @@ export function PoseOverlay({
 }) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const lastPointsRef = useRef(new Map<string, { point: NormalizedPoint; seenAt: number }>());
+  const guideLinesRef = useRef(new Map<string, { y: number; updatedAtMs: number }>());
   const [size, setSize] = useState({ width: 0, height: 0 });
 
   useEffect(() => {
@@ -74,20 +75,26 @@ export function PoseOverlay({
       const bounds = pose.boundingBox ?? fallbackBounds(visiblePoints);
       const hips = [pose.keypoints[MOVENET_KEYPOINT.leftHip], pose.keypoints[MOVENET_KEYPOINT.rightHip]].filter(isVisible);
 
-      (["left", "right"] as const).forEach((leg) => {
-        const reference = legKneeReference(pose, leg, config);
-        if (!reference.hip || reference.torsoHeight === null || reference.torsoHeight < 0.05) return;
-        // The threshold uses the same hip and torso as calculateKneeSignal.
-        // At 0%, each leg's line is exactly at that leg's hip.
-        const kneeY = reference.hip.y - (config.thresholdPercent / 100) * reference.torsoHeight;
-        const kneeIndex = leg === "left" ? MOVENET_KEYPOINT.leftKnee : MOVENET_KEYPOINT.rightKnee;
-        const horizontalPoints = [reference.hip, pose.keypoints[kneeIndex], ...hips].filter(isVisible);
-        if (!horizontalPoints.length) return;
+      const references = (["left", "right"] as const)
+        .map((leg) => legKneeReference(pose, leg, config))
+        .filter((reference): reference is { hip: NormalizedPoint; shoulder: NormalizedPoint | null; torsoHeight: number } =>
+          reference.hip !== null && reference.torsoHeight !== null && reference.torsoHeight >= 0.05,
+        );
+      if (references.length) {
+        // This is UI-only: the counter retains two independent leg thresholds.
+        const targetY = references.reduce(
+          (sum, reference) => sum + reference.hip.y - (config.thresholdPercent / 100) * reference.torsoHeight,
+          0,
+        ) / references.length;
+        const guide = stabilizeOverlayLine(guideLinesRef.current.get(slot.participantId), targetY, performance.now());
+        guideLinesRef.current.set(slot.participantId, guide);
+        const horizontalPoints = [...hips, ...TARGET_KEYPOINTS.map((index) => pose.keypoints[index]).filter(isVisible)];
+        if (horizontalPoints.length) {
         const xMin = Math.max(0, Math.min(...horizontalPoints.map((point) => point.x)) - 0.08);
         const xMax = Math.min(1, Math.max(...horizontalPoints.map((point) => point.x)) + 0.08);
         const x1 = toX(xMin);
         const x2 = toX(xMax);
-        const y = toY(Math.max(0, Math.min(1, kneeY)));
+        const y = toY(Math.max(0, Math.min(1, guide.y)));
 
         context.lineCap = "round";
         context.strokeStyle = "rgba(255, 255, 255, 0.96)";
@@ -96,7 +103,8 @@ export function PoseOverlay({
         context.strokeStyle = "#111111";
         context.lineWidth = 5;
         context.beginPath(); context.moveTo(Math.min(x1, x2), y); context.lineTo(Math.max(x1, x2), y); context.stroke();
-      });
+        }
+      }
 
       context.strokeStyle = "#FFFFFF";
       context.lineWidth = 3;
