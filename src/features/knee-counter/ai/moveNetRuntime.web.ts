@@ -18,7 +18,7 @@ export async function createMoveNetRuntime(backend: ComputeBackend, inputSize: 3
     minPoseScore: 0.20,
   });
   return { backend, inputSize, dispose: () => detector.dispose(), estimate: async (input, detectedAtMs, width, height, maxPoses) => {
-    const poses = await detector.estimatePoses(input as unknown as HTMLVideoElement, { maxPoses, flipHorizontal: false });
-    return poses.map((pose) => ({ detectorTrackId: pose.id == null ? null : String(pose.id), poseScore: pose.score ?? 0, detectedAtMs, keypoints: pose.keypoints.map((point) => ({ x: Math.max(0, Math.min(1, point.x / Math.max(1, width))), y: Math.max(0, Math.min(1, point.y / Math.max(1, height))), score: point.score ?? 0, name: point.name })), boundingBox: pose.box ? normalizeBoundingBox(pose.box, width, height) : null }));
+    const poses = await detector.estimatePoses(input as unknown as HTMLVideoElement, { maxPoses, flipHorizontal: false }, detectedAtMs);
+    return poses.map((pose) => ({ detectorTrackId: pose.id == null ? null : String(pose.id), poseScore: pose.score ?? 0, detectedAtMs, imageAspectRatio: width / Math.max(1, height), keypoints: pose.keypoints.map((point) => ({ x: Math.max(0, Math.min(1, point.x / Math.max(1, width))), y: Math.max(0, Math.min(1, point.y / Math.max(1, height))), score: point.score ?? 0, name: point.name })), boundingBox: pose.box ? normalizeBoundingBox(pose.box, width, height) : null }));
   }};
 }

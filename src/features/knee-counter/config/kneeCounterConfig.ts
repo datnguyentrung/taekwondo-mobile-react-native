@@ -1,13 +1,13 @@
 import type { KneeCounterSessionConfig } from "../types/kneeCounter.types";
 
 export const DEFAULT_KNEE_COUNTER_CONFIG: KneeCounterSessionConfig = {
-  thresholdPercent: -30,
+  thresholdPercent: -35,
   minPoseScore: 0.20,
   minShoulderScore: 0.25,
   minHipScore: 0.20,
   minKneeTrustedScore: 0.25,
   minKneeWeakScore: 0.01,
-  weakConfirmationSamples: 1,
+  weakConfirmationSamples: 2,
   weakConfirmationWindowMs: 150,
   smoothingWindowMs: 150,
   minRepIntervalMs: 180,

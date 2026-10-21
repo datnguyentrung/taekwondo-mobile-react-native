@@ -11,6 +11,7 @@ export type KneeWorkerRequest =
       capabilities?: { webglSupported: boolean; webgpuAdapterAvailable: boolean };
     }
   | { type: "frame"; frame: ImageBitmap; timestampMs: number; width: number; height: number; purpose: FramePurpose }
+  | { type: "update-config"; config: KneeCounterSessionConfig }
   | { type: "pause" } | { type: "resume" } | { type: "reset"; sessionId: string; sessionStartedAt: string } | { type: "reset-pending-cycle" } | { type: "dispose" };
 export type KneeWorkerResponse =
   | { type: "detector-ready"; backend: ComputeBackend; inputSize: 320 | 384 | 448; fallbackToCpu?: boolean }

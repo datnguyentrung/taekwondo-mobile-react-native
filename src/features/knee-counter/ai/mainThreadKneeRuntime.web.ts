@@ -7,7 +7,7 @@ import { backendOrder } from "./backendSelector.web";
 
 export class MainThreadKneeRuntime {
   private runtime: MoveNetRuntime | null = null; private lanes: LaneManager | null = null; private readonly metrics = new RuntimeMetricsCollector();
-  private backend: ComputeBackend | null = null; private inputSize: 320 | 384 | 448 = 384;
+  private backend: ComputeBackend | null = null; private inputSize: 320 | 384 | 448 = 448;
   constructor(private config: KneeCounterSessionConfig, private sessionId: string, private sessionStartedAt: string) {}
   async init(
     preference: BackendPreference,
@@ -20,12 +20,12 @@ export class MainThreadKneeRuntime {
     };
     for (const backend of backendOrder(preference, resolvedCapabilities))
       try {
-        this.runtime = await createMoveNetRuntime(backend, 384, this.config);
+        this.runtime = await createMoveNetRuntime(backend, 448, this.config);
         this.backend = backend;
         this.lanes = new LaneManager(this.config);
         return {
           backend,
-          inputSize: 384 as const,
+          inputSize: 448 as const,
           fallbackToCpu: backend === "wasm",
         };
       } catch (cause) {
@@ -41,5 +41,7 @@ export class MainThreadKneeRuntime {
     const result = this.lanes.update(candidates, timestampMs, counting, { sessionId: this.sessionId, sessionStartedAt: this.sessionStartedAt, backend: this.backend, inputSize: this.inputSize });
     return { lanes: result.lanes, events: result.events, metrics: this.metrics.record(performance.now() - started, 0, result.conflicts), trace: result.trace };
   }
-  resetPendingCycles() { this.lanes?.resetPendingCycles(); } dispose() { this.runtime?.dispose(); this.runtime = null; }
+  resetPendingCycles() { this.lanes?.resetPendingCycles(); }
+  updateConfig(newConfig: KneeCounterSessionConfig) { this.config = newConfig; this.lanes?.updateConfig(newConfig); }
+  dispose() { this.runtime?.dispose(); this.runtime = null; }
 }

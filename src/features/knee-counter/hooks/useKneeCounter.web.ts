@@ -57,7 +57,8 @@ export function useKneeCounter(
   const mainRuntimeRef = useRef<MainThreadKneeRuntime | null>(null);
   const stopLoopRef = useRef<(() => void) | null>(null);
   const inFlightRef = useRef(false);
-  const pendingFrameRef = useRef<{ frame: ImageBitmap; timestampMs: number; width: number; height: number; purpose: "benchmark" | "preview" | "count" } | null>(null);
+  const cameraFrameTimesRef = useRef<number[]>([]);
+  const droppedFramesRef = useRef(0);
   const countingRef = useRef(false);
   const workerReadyRef = useRef(false);
   const ledgerRef = useRef(new RepEventLedger());
@@ -83,19 +84,13 @@ export function useKneeCounter(
       : "Không thể sử dụng GPU hoặc khởi tạo GPU thất bại. Đã chuyển sang xử lý bằng CPU (WASM).";
     onFallbackToCpuRef.current?.(customReason ?? defaultReason);
   }, []);
-  const updateConfig = useCallback(
-    (patch: Partial<KneeCounterSessionConfig>) => {
-      if (!countingRef.current)
-        setConfig((current) => ({ ...current, ...patch }));
-    },
-    [],
-  );
+
   const dispose = useCallback(() => {
     stopLoopRef.current?.();
     stopLoopRef.current = null;
     inFlightRef.current = false;
-    pendingFrameRef.current?.frame.close();
-    pendingFrameRef.current = null;
+    cameraFrameTimesRef.current = [];
+    droppedFramesRef.current = 0;
     workerRef.current?.postMessage({ type: "dispose" });
     workerRef.current?.terminate();
     workerRef.current = null;
@@ -111,34 +106,43 @@ export function useKneeCounter(
         return;
       lastUpdateRef.current = message.timestampMs;
       setSlots(message.lanes);
-      setMetrics(message.metrics);
-      if (message.trace) setTrace(message.trace);
+      const frameTimes = cameraFrameTimesRef.current;
+      const elapsed = frameTimes.length > 1 ? frameTimes.at(-1)! - frameTimes[0] : 0;
+      const cameraFps = elapsed > 0 ? Math.round((frameTimes.length - 1) * 10000 / elapsed) / 10 : null;
+      const measured = { ...message.metrics, cameraFps, droppedFrames: droppedFramesRef.current };
+      setMetrics(measured);
+      if (message.trace) {
+        const video = videoRef.current;
+        const settings = video?.srcObject instanceof MediaStream ? video.srcObject.getVideoTracks()[0]?.getSettings() : null;
+        setTrace((previous) => message.trace!.map((sample, index) => {
+          const prior = previous[index];
+          if (prior?.timestampMs === sample.timestampMs && prior.participantId === sample.participantId) return prior;
+          return sample.algorithmVersion === 3 ? { ...sample, camera: { width: settings?.width ?? video?.videoWidth ?? 0, height: settings?.height ?? video?.videoHeight ?? 0, frameRate: settings?.frameRate ?? null }, runtime: { cameraFps, inferenceFps: measured.inferenceFps, averageLatencyMs: measured.averageLatencyMs, droppedFrames: measured.droppedFrames } } : sample;
+        }));
+      }
       if (message.events.length)
         setEvents(ledgerRef.current.append(message.events));
     },
-    [],
+    [videoRef],
   );
   const sendFrame = useCallback(
     async (timestampMs: number, purpose: "benchmark" | "preview" | "count") => {
       const video = videoRef.current;
       if (!video || video.readyState < 2) return;
+      if (inFlightRef.current) { droppedFramesRef.current += 1; return; }
+      inFlightRef.current = true;
       try {
         if (workerRef.current) {
           const frame = await createImageBitmap(video);
           const payload = { frame, timestampMs, width: video.videoWidth, height: video.videoHeight, purpose };
-          if (inFlightRef.current) {
-            pendingFrameRef.current?.frame.close();
-            pendingFrameRef.current = payload;
-            return;
-          }
-          inFlightRef.current = true;
-          workerRef.current.postMessage({ type: "frame", ...payload }, [frame]);
+          if (workerRef.current) workerRef.current.postMessage({ type: "frame", ...payload }, [frame]);
+          else { frame.close(); inFlightRef.current = false; }
           return;
         }
-        inFlightRef.current = true;
         const result = await mainRuntimeRef.current?.process(video, timestampMs, purpose === "count");
         if (result) publish({ type: "frame-result", timestampMs, ...result });
       } catch (cause) {
+        inFlightRef.current = false;
         setError(cause instanceof Error ? cause.message : "Không thể đọc camera.");
       } finally {
         if (!workerRef.current) inFlightRef.current = false;
@@ -159,6 +163,7 @@ export function useKneeCounter(
       };
       const tick = (time: number) => {
         if (stopped) return;
+        cameraFrameTimesRef.current = [...cameraFrameTimesRef.current.filter((value) => time - value <= 3000), time];
         void sendFrame(time, purpose);
         if (rich.requestVideoFrameCallback)
           videoHandle = rich.requestVideoFrameCallback(tick);
@@ -173,9 +178,30 @@ export function useKneeCounter(
     },
     [sendFrame, videoRef],
   );
+  const updateConfig = useCallback(
+    (patch: Partial<KneeCounterSessionConfig>) => {
+      if (countingRef.current) {
+        countingRef.current = false;
+        stopLoopRef.current?.();
+        workerRef.current?.postMessage({ type: "pause" });
+        workerRef.current?.postMessage({ type: "reset-pending-cycle" });
+        mainRuntimeRef.current?.resetPendingCycles();
+        setStatus("aligning");
+        startLoop("preview");
+      }
+      setConfig((current) => {
+        const next = { ...current, ...patch };
+        workerRef.current?.postMessage({ type: "update-config", config: next });
+        mainRuntimeRef.current?.updateConfig(next);
+        return next;
+      });
+    },
+    [startLoop],
+  );
   const fallbackToMainThread = useCallback(async () => {
     workerRef.current?.terminate();
     workerRef.current = null;
+    inFlightRef.current = false;
     const runtime = new MainThreadKneeRuntime(
       config,
       sessionIdRef.current,
@@ -254,16 +280,7 @@ export function useKneeCounter(
             setStatus("aligning");
             startLoop("preview");
           } else if (message.type === "frame-result") publish(message);
-          else if (message.type === "frame-complete") {
-            const pending = pendingFrameRef.current;
-            pendingFrameRef.current = null;
-            if (pending && workerRef.current) {
-              inFlightRef.current = true;
-              workerRef.current.postMessage({ type: "frame", ...pending }, [pending.frame]);
-            } else {
-              inFlightRef.current = false;
-            }
-          }
+          else if (message.type === "frame-complete") inFlightRef.current = false;
           else if (message.type === "error") void fallbackToMainThread();
         },
         () => {

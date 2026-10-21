@@ -30,6 +30,8 @@ export function advanceLegState(state: LegCounterState, signal: KneeSignal, cont
 
 function confirmTransition(state: LegCounterState, direction: "UP" | "DOWN", crossed: boolean, signal: KneeSignal, config: KneeCounterSessionConfig) {
   if (!crossed) return { state: { ...state, pendingDirection: null, pendingSinceMs: null, pendingSamples: 0 }, confirmed: false };
+  if (signal.held) return { state, confirmed: false };
+  if (direction === "UP" && signal.quality === "weak" && !signal.corroborated) return { state: { ...state, pendingDirection: null, pendingSinceMs: null, pendingSamples: 0 }, confirmed: false };
   if (signal.quality === "trusted" || config.weakConfirmationSamples <= 1) return { state: { ...state, pendingDirection: null, pendingSinceMs: null, pendingSamples: 0 }, confirmed: true };
   const continued = state.pendingDirection === direction && state.pendingSinceMs !== null && signal.timestampMs - state.pendingSinceMs <= config.weakConfirmationWindowMs;
   const pendingSamples = continued ? state.pendingSamples + 1 : 1;

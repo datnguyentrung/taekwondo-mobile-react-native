@@ -54,6 +54,30 @@ export const missingKneeSignal = (
   config: KneeCounterSessionConfig,
 ) => invalid(leg, timestampMs, config, "MISSING_FRAME");
 
+/** The scoring and drawing paths share this pelvis reference. Distances are in image-height units. */
+export function kneeReference(pose: NormalizedPose, config: KneeCounterSessionConfig) {
+  const hips = [pose.keypoints[MOVENET_KEYPOINT.leftHip], pose.keypoints[MOVENET_KEYPOINT.rightHip]]
+    .filter((point) => isValid(point, config.minHipScore));
+  if (!hips.length) return null;
+  const hip = {
+    x: hips.reduce((sum, point) => sum + point.x, 0) / hips.length,
+    y: hips.reduce((sum, point) => sum + point.y, 0) / hips.length,
+    score: Math.min(...hips.map((point) => point.score)),
+  };
+  const shoulders = [pose.keypoints[MOVENET_KEYPOINT.leftShoulder], pose.keypoints[MOVENET_KEYPOINT.rightShoulder]]
+    .filter((point) => isValid(point, config.minShoulderScore));
+  const aspect = pose.imageAspectRatio && Number.isFinite(pose.imageAspectRatio) ? pose.imageAspectRatio : 16 / 9;
+  let torsoHeight: number | null = null;
+  if (shoulders.length) {
+    const shoulderX = shoulders.reduce((sum, point) => sum + point.x, 0) / shoulders.length;
+    const shoulderY = shoulders.reduce((sum, point) => sum + point.y, 0) / shoulders.length;
+    torsoHeight = Math.hypot((shoulderX - hip.x) * aspect, shoulderY - hip.y);
+  } else if (hips.length === 2) {
+    torsoHeight = Math.hypot((hips[0].x - hips[1].x) * aspect, hips[0].y - hips[1].y) * 2;
+  }
+  return { hip, torsoHeight, shoulderScore: shoulders.length ? Math.min(...shoulders.map((point) => point.score)) : null };
+}
+
 export function calculateKneeSignal(
   pose: NormalizedPose,
   leg: Leg,
@@ -69,22 +93,11 @@ export function calculateKneeSignal(
       pose.poseScore,
     );
   const isLeft = leg === "left";
-  const primaryShoulder =
-    pose.keypoints[
-      isLeft ? MOVENET_KEYPOINT.leftShoulder : MOVENET_KEYPOINT.rightShoulder
-    ];
-  const oppositeShoulder =
-    pose.keypoints[
-      isLeft ? MOVENET_KEYPOINT.rightShoulder : MOVENET_KEYPOINT.leftShoulder
-    ];
-  const primaryHip =
-    pose.keypoints[
-      isLeft ? MOVENET_KEYPOINT.leftHip : MOVENET_KEYPOINT.rightHip
-    ];
-  const oppositeHip =
-    pose.keypoints[
-      isLeft ? MOVENET_KEYPOINT.rightHip : MOVENET_KEYPOINT.leftHip
-    ];
+  const reference = kneeReference(pose, config);
+  if (!reference) return invalid(leg, timestampMs, config, "HIP_LOW_CONFIDENCE");
+  const { hip, torsoHeight, shoulderScore } = reference;
+  if (torsoHeight === null) return invalid(leg, timestampMs, config, "SHOULDER_LOW_CONFIDENCE");
+  if (torsoHeight < 0.05) return invalid(leg, timestampMs, config, "TORSO_TOO_SMALL");
   const knee =
     pose.keypoints[
       isLeft ? MOVENET_KEYPOINT.leftKnee : MOVENET_KEYPOINT.rightKnee
@@ -93,25 +106,7 @@ export function calculateKneeSignal(
     pose.keypoints[
       isLeft ? MOVENET_KEYPOINT.rightKnee : MOVENET_KEYPOINT.leftKnee
     ];
-  const ankle =
-    pose.keypoints[
-      isLeft ? MOVENET_KEYPOINT.leftAnkle : MOVENET_KEYPOINT.rightAnkle
-    ];
-
-  let hip = primaryHip;
-  if (!isValid(hip, config.minHipScore)) {
-    if (isValid(oppositeHip, config.minHipScore)) {
-      hip = oppositeHip;
-    } else {
-      return invalid(
-        leg,
-        timestampMs,
-        config,
-        "HIP_LOW_CONFIDENCE",
-        (primaryHip as NormalizedPoint | undefined)?.score ?? 0,
-      );
-    }
-  }
+  const ankle = pose.keypoints[isLeft ? MOVENET_KEYPOINT.leftAnkle : MOVENET_KEYPOINT.rightAnkle];
 
   // Proximity Guard: prevent false counts when participant walks too close to camera
   const proximityHipMaxY = config.proximityHipMaxY ?? 0.65;
@@ -129,44 +124,7 @@ export function calculateKneeSignal(
     );
   }
 
-  let shoulder = primaryShoulder;
-  if (!isValid(shoulder, config.minShoulderScore)) {
-    if (isValid(oppositeShoulder, config.minShoulderScore)) {
-      shoulder = oppositeShoulder;
-    }
-  }
-
-  let torsoHeight: number;
-  if (isValid(shoulder, config.minShoulderScore)) {
-    torsoHeight = Math.hypot(shoulder.x - hip.x, shoulder.y - hip.y);
-  } else if (isValid(oppositeHip, config.minHipScore)) {
-    // 4-point fallback: inter-hip distance * 2.0 approximates torso height
-    const interHipWidth = Math.hypot(
-      primaryHip.x - oppositeHip.x,
-      primaryHip.y - oppositeHip.y,
-    );
-    torsoHeight = interHipWidth * 2.0;
-  } else {
-    return invalid(
-      leg,
-      timestampMs,
-      config,
-      "SHOULDER_LOW_CONFIDENCE",
-      (primaryShoulder as NormalizedPoint | undefined)?.score ?? 0,
-    );
-  }
-
-  if (torsoHeight < 0.05)
-    return invalid(leg, timestampMs, config, "TORSO_TOO_SMALL");
-
-  const isAnkleElevated =
-    isValid(ankle, 0.04) && (hip.y - ankle.y) / torsoHeight > -1.1;
-  const effectiveKneeScore =
-    isAnkleElevated && knee
-      ? Math.max(knee.score, config.minKneeWeakScore)
-      : (knee?.score ?? 0);
-
-  if (!isValid(knee, config.minKneeWeakScore) && !isAnkleElevated) {
+  if (!isValid(knee, config.minKneeWeakScore)) {
     return invalid(
       leg,
       timestampMs,
@@ -177,20 +135,9 @@ export function calculateKneeSignal(
   }
 
   const enterThreshold = config.thresholdPercent / 100;
-  let ratio = (hip.y - knee.y) / torsoHeight;
-
-  // Pelvis bobbing compensation: when sprinting at high cadence, vertical bounce
-  // moves the pelvis up. If opposite leg is down (chân trụ), knee elevation is corroborated.
-  if (
-    oppositeKnee &&
-    isValid(oppositeKnee, config.minKneeWeakScore) &&
-    oppositeKnee.y > knee.y
-  ) {
-    const kneeDiff = (oppositeKnee.y - knee.y) / torsoHeight;
-    if (kneeDiff > 0.35) {
-      ratio = Math.max(ratio, -0.65 + kneeDiff * 0.8);
-    }
-  }
+  const ratio = (hip.y - knee.y) / torsoHeight;
+  const isAnkleElevated = isValid(ankle, config.minKneeTrustedScore) && ankle.y < hip.y + torsoHeight * 1.1;
+  const oppositeLegDown = isValid(oppositeKnee, config.minKneeTrustedScore) && oppositeKnee.y > knee.y + torsoHeight * 0.35;
 
   const quality = knee.score >= config.minKneeTrustedScore ? "trusted" : "weak";
   return {
@@ -199,15 +146,14 @@ export function calculateKneeSignal(
     ratio,
     enterThreshold,
     exitThreshold: enterThreshold - config.hysteresisRatio,
-    confidence: Math.min(
-      shoulder?.score ?? hip.score,
-      hip.score,
-      Math.max(knee.score, effectiveKneeScore),
-    ),
+    confidence: Math.min(shoulderScore ?? hip.score, hip.score, knee.score),
     kneeConfidence: knee.score,
     quality,
     timestampMs,
     reason: "VALID",
-    isAnkleElevated,
+    isAnkleElevated: isAnkleElevated || oppositeLegDown,
+    corroborated: false,
+    hipReferenceY: hip.y,
+    torsoHeight,
   };
 }

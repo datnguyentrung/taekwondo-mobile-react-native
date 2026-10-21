@@ -1,7 +1,8 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 
-import { MOVENET_KEYPOINT } from "../domain/kneeSignal";
-import type { BoundingBox, NormalizedPoint, ParticipantSlot } from "../types/kneeCounter.types";
+import { kneeReference, MOVENET_KEYPOINT } from "../domain/kneeSignal";
+import type { BoundingBox, KneeCounterSessionConfig, NormalizedPoint, ParticipantSlot } from "../types/kneeCounter.types";
+import { videoContainRect } from "./overlayGeometry";
 
 const TARGET_KEYPOINTS = [
   MOVENET_KEYPOINT.leftHip,
@@ -27,54 +28,57 @@ export function PoseOverlay({
   slots,
   width,
   height,
-  thresholdPercent,
+  config,
   mirrored,
 }: {
   slots: ParticipantSlot[];
   width: number;
   height: number;
-  thresholdPercent: number;
+  config: KneeCounterSessionConfig;
   mirrored: boolean;
 }) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const lastPointsRef = useRef(new Map<string, { point: NormalizedPoint; seenAt: number }>());
+  const [size, setSize] = useState({ width: 0, height: 0 });
 
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
-    canvas.width = width;
-    canvas.height = height;
+    const observer = new ResizeObserver(() => setSize({ width: canvas.clientWidth, height: canvas.clientHeight }));
+    observer.observe(canvas);
+    setSize({ width: canvas.clientWidth, height: canvas.clientHeight });
+    return () => observer.disconnect();
+  }, []);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const canvasWidth = size.width || width;
+    const canvasHeight = size.height || height;
+    canvas.width = canvasWidth;
+    canvas.height = canvasHeight;
     const context = canvas.getContext("2d");
     if (!context) return;
-    context.clearRect(0, 0, width, height);
+    context.clearRect(0, 0, canvasWidth, canvasHeight);
+    const image = videoContainRect(canvasWidth, canvasHeight, width, height);
+    const { width: imageWidth, height: imageHeight, x: offsetX, y: offsetY } = image;
 
-    const toX = (x: number) => (mirrored ? 1 - x : x) * width;
-    const toY = (y: number) => y * height;
-    const dotRadius = Math.max(7, Math.round(Math.min(width, height) * 0.012));
+    const toX = (x: number) => offsetX + (mirrored ? 1 - x : x) * imageWidth;
+    const toY = (y: number) => offsetY + y * imageHeight;
+    const dotRadius = Math.max(7, Math.round(Math.min(imageWidth, imageHeight) * 0.012));
 
     slots.forEach((slot) => {
       const pose = slot.pose;
       if (!pose) return;
       const visiblePoints = pose.keypoints.filter(isVisible);
       const bounds = pose.boundingBox ?? fallbackBounds(visiblePoints);
-      const leftShoulder = pose.keypoints[MOVENET_KEYPOINT.leftShoulder];
-      const rightShoulder = pose.keypoints[MOVENET_KEYPOINT.rightShoulder];
-      const leftHip = pose.keypoints[MOVENET_KEYPOINT.leftHip];
-      const rightHip = pose.keypoints[MOVENET_KEYPOINT.rightHip];
-      const hips = [leftHip, rightHip].filter(isVisible);
+      const reference = kneeReference(pose, config);
+      const hips = [pose.keypoints[MOVENET_KEYPOINT.leftHip], pose.keypoints[MOVENET_KEYPOINT.rightHip]].filter(isVisible);
 
       // The threshold is the exact kneeY used by calculateKneeSignal:
       // kneeY = hipY - thresholdPercent * torsoHeight. At 0%, it is hip height.
-      if (hips.length) {
-        const hipY = hips.reduce((sum, point) => sum + point.y, 0) / hips.length;
-        const torsoLengths = [
-          isVisible(leftShoulder) && isVisible(leftHip) ? Math.hypot(leftShoulder.x - leftHip.x, leftShoulder.y - leftHip.y) : null,
-          isVisible(rightShoulder) && isVisible(rightHip) ? Math.hypot(rightShoulder.x - rightHip.x, rightShoulder.y - rightHip.y) : null,
-        ].filter((value): value is number => value !== null);
-        const torsoHeight = torsoLengths.length
-          ? torsoLengths.reduce((sum, value) => sum + value, 0) / torsoLengths.length
-          : Math.max(0.05, (bounds?.yMax ?? hipY + 0.25) - (bounds?.yMin ?? hipY - 0.25));
-        const kneeY = hipY - (thresholdPercent / 100) * torsoHeight;
+      if (reference && reference.torsoHeight !== null && reference.torsoHeight >= 0.05) {
+        const kneeY = reference.hip.y - (config.thresholdPercent / 100) * reference.torsoHeight;
         const horizontalPoints = [...hips, ...TARGET_KEYPOINTS
           .map((index) => pose.keypoints[index])
           .filter(isVisible)];
@@ -118,18 +122,24 @@ export function PoseOverlay({
       if (!bounds) return;
       const x1 = toX(bounds.xMin);
       const x2 = toX(bounds.xMax);
-      const labelX = mirrored ? Math.min(x1, x2) - 12 : Math.max(x1, x2) + 12;
-      const labelY = Math.max(52, toY(bounds.yMin) + 44);
-      context.fillStyle = "#FFFFFF";
-      context.strokeStyle = "#111111";
-      context.lineWidth = 6;
-      context.font = "800 52px system-ui, sans-serif";
-      context.textAlign = mirrored ? "right" : "left";
+      const headCenterX = (x1 + x2) / 2;
+      const fontSize = Math.max(72, Math.min(96, Math.round(Math.min(imageWidth, imageHeight) * 0.1)));
+      const labelY = Math.max(fontSize + 8, toY(bounds.yMin) - 16);
       const count = String(slot.leftReps + slot.rightReps);
-      context.strokeText(count, labelX, labelY);
-      context.fillText(count, labelX, labelY);
+      const digitColors = ["#FACC15", "#38BDF8", "#4ADE80", "#FB923C", "#E879F9", "#34D399"];
+      const digitColor = digitColors[slot.slotIndex % digitColors.length];
+
+      context.font = `900 ${fontSize}px Roboto, system-ui, sans-serif`;
+      context.textAlign = "center";
+      context.lineJoin = "round";
+      context.miterLimit = 2;
+      context.strokeStyle = "#000000";
+      context.lineWidth = 12;
+      context.strokeText(count, headCenterX, labelY);
+      context.fillStyle = digitColor;
+      context.fillText(count, headCenterX, labelY);
     });
-  }, [height, mirrored, slots, thresholdPercent, width]);
+  }, [config, height, mirrored, size, slots, width]);
 
   return <canvas ref={canvasRef} aria-hidden="true" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", pointerEvents: "none" }} />;
 }

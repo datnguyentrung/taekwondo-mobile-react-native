@@ -51,6 +51,7 @@ worker.onmessage = ({ data }: MessageEvent<KneeWorkerRequest>) => {
   else if (data.type === "pause") paused = true;
   else if (data.type === "resume") paused = false;
   else if (data.type === "reset") { sessionId = data.sessionId; sessionStartedAt = data.sessionStartedAt; laneManager = config ? new LaneManager(config) : null; }
+  else if (data.type === "update-config") { config = data.config; laneManager?.updateConfig(data.config); }
   else if (data.type === "reset-pending-cycle") laneManager?.resetPendingCycles();
   else if (data.type === "dispose") { dispose(); worker.close(); }
 };

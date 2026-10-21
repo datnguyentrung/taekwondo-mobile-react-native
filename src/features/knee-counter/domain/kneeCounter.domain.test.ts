@@ -8,15 +8,17 @@ const context = { sessionId: "s", sessionStartedAt: "now", laneId: "lane-1", par
 describe("high knee state machine", () => { it("counts when the knee crosses upward and rearms only after it lowers", () => { let state = initialLegCounterState(); state = advanceLegState(state, calculateKneeSignal(pose(.8), "left", 0, DEFAULT_KNEE_COUNTER_CONFIG), context).state; const result = advanceLegState(state, calculateKneeSignal(pose(.45), "left", 60, DEFAULT_KNEE_COUNTER_CONFIG), context); expect(result.event?.id).toBe("s:lane-1:left:1"); expect(result.state.reps).toBe(1); state = result.state; expect(advanceLegState(state, calculateKneeSignal(pose(.42), "left", 120, DEFAULT_KNEE_COUNTER_CONFIG), context).event).toBeNull(); state = advanceLegState(state, calculateKneeSignal(pose(.8), "left", 180, DEFAULT_KNEE_COUNTER_CONFIG), context).state; expect(state.phase).toBe("READY"); }); it("uses current hip, not a calibrated hip", () => { expect(calculateKneeSignal(pose(.45, .5), "left", 0, DEFAULT_KNEE_COUNTER_CONFIG).ratio).toBeGreaterThan(0); }); });
 
 describe("weak-knee confirmation and gaps", () => {
-  it("requires two weak frames before counting an upward crossing", () => {
+  it("requires a rising, supported weak trajectory and two frames before counting", () => {
     const weak2Config = { ...DEFAULT_KNEE_COUNTER_CONFIG, weakConfirmationSamples: 2 };
     const weak2Context = { ...context, config: weak2Config };
     let state = initialLegCounterState();
     state = advanceLegState(state, calculateKneeSignal(pose(.8), "left", 0, weak2Config), weak2Context).state;
-    const first = advanceLegState(state, calculateKneeSignal(pose(.45, .55, .2), "left", 60, weak2Config), weak2Context);
+    const firstSignal = { ...calculateKneeSignal(pose(.45, .55, .2), "left", 60, weak2Config), corroborated: true };
+    const first = advanceLegState(state, firstSignal, weak2Context);
     expect(first.event).toBeNull();
     expect(first.state.pendingDirection).toBe("UP");
-    const second = advanceLegState(first.state, calculateKneeSignal(pose(.44, .55, .2), "left", 120, weak2Config), weak2Context);
+    const secondSignal = { ...calculateKneeSignal(pose(.44, .55, .2), "left", 120, weak2Config), corroborated: true };
+    const second = advanceLegState(first.state, secondSignal, weak2Context);
     expect(second.event?.id).toBe("s:lane-1:left:1");
     expect(second.state.reps).toBe(1);
   });
@@ -78,10 +80,10 @@ describe("proximity guard and 4-point mode", () => {
     const signal = calculateKneeSignal(noShoulderPose, "left", 0, DEFAULT_KNEE_COUNTER_CONFIG);
     expect(signal.valid).toBe(true);
     expect(signal.reason).toBe("VALID");
-    expect(signal.ratio).toBeCloseTo(0.10 / 0.30, 1);
+    expect(signal.ratio).toBeCloseTo(0.10 / (0.30 * 16 / 9), 1);
   });
 
-  it("compensates for pelvis bobbing when running with opposite knee down", () => {
+  it("does not promote a low knee using the opposite leg", () => {
     const sprintPose: NormalizedPose = {
       detectorTrackId: "a",
       poseScore: 0.95,
@@ -98,8 +100,7 @@ describe("proximity guard and 4-point mode", () => {
 
     const signal = calculateKneeSignal(sprintPose, "left", 0, DEFAULT_KNEE_COUNTER_CONFIG);
     expect(signal.valid).toBe(true);
-    // Standard ratio would be (0.35 - 0.50)/0.25 = -0.60, but with differential boost it reaches above -0.30:
-    expect(signal.ratio).toBeGreaterThanOrEqual(-0.30);
+    expect(signal.ratio).toBeCloseTo(-0.60, 2);
   });
 });
 

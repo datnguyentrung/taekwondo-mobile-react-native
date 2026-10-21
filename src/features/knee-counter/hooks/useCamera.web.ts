@@ -8,6 +8,7 @@ export function useCamera() {
   const [running, setRunning] = useState(false);
   const runningRef = useRef(false);
   const [error, setError] = useState<string | null>(null);
+  const [settings, setSettings] = useState<MediaTrackSettings | null>(null);
 
   const enumerate = useCallback(async () => {
     if (!navigator.mediaDevices?.enumerateDevices) return;
@@ -22,6 +23,7 @@ export function useCamera() {
     streamRef.current = null;
     if (videoRef.current) videoRef.current.srcObject = null;
     setRunning(false);
+    setSettings(null);
     runningRef.current = false;
   }, []);
 
@@ -35,7 +37,7 @@ export function useCamera() {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
         audio: false,
-        video: { width: { ideal: 1280 }, height: { ideal: 720 }, frameRate: { ideal: 30, max: 30 }, ...(deviceId ? { deviceId: { exact: deviceId } } : {}) },
+        video: { width: { ideal: 1280 }, height: { ideal: 720 }, frameRate: { ideal: 60, max: 60 }, ...(deviceId ? { deviceId: { exact: deviceId } } : {}) },
       });
       streamRef.current = stream;
       if (!videoRef.current) throw new Error("Không tìm thấy vùng hiển thị camera.");
@@ -43,6 +45,7 @@ export function useCamera() {
       videoRef.current.muted = true;
       videoRef.current.playsInline = true;
       await videoRef.current.play();
+      setSettings(stream.getVideoTracks()[0]?.getSettings() ?? null);
       await enumerate();
       setRunning(true);
       runningRef.current = true;
@@ -61,5 +64,5 @@ export function useCamera() {
     return () => { document.removeEventListener("visibilitychange", onVisibility); stop(); };
   }, [enumerate, stop]);
 
-  return { videoRef, devices, deviceId, setDeviceId, running, error, start, stop };
+  return { videoRef, devices, deviceId, setDeviceId, running, error, settings, start, stop };
 }
