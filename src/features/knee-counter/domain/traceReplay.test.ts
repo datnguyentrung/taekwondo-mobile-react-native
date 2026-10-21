@@ -98,6 +98,23 @@ describe("real user trace replay", () => {
     expect(downResult.lanes[0].leftReps).toBe(1);
   });
 
+  it("recovers one short missed peak only after a supported rise then fall", () => {
+    const manager = new LaneManager(DEFAULT_KNEE_COUNTER_CONFIG);
+    manager.update([createPose(0, { x: .5, y: .72, score: .9 }, { x: .43, y: .72, score: .9 })], 0, true, context);
+    manager.update([createPose(10, { x: .5, y: .72, score: .9 }, { x: .43, y: .72, score: .9 })], 10, true, context);
+
+    // The actual peak falls between samples. The preceding sample is close to
+    // the threshold but below it, so the normal state machine must not count.
+    manager.update([createPose(20, { x: .5, y: .5565, score: .10 }, { x: .43, y: .5565, score: .9 })], 20, true, context);
+    const result = manager.update([createPose(30, { x: .5, y: .65, score: .10 }, { x: .43, y: .756, score: .9 })], 30, true, context);
+
+    expect(result.trace.at(-1)?.left.recovery?.reason).toBe("TRAJECTORY");
+    expect(result.events).toHaveLength(1);
+    expect(result.events[0].result).toBe("RECOVERED");
+    expect(result.lanes[0].leftReps).toBe(1);
+    expect(result.trace.at(-1)?.left.recovery).toMatchObject({ attempted: true, accepted: true, reason: "TRAJECTORY" });
+  });
+
   it("falls back to opposite hip when primary hip dips during pelvic twist", () => {
     const manager = new LaneManager(DEFAULT_KNEE_COUNTER_CONFIG);
 

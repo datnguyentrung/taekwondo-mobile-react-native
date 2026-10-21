@@ -3,11 +3,13 @@ import { createMoveNetRuntime } from "./moveNetRuntime.web";
 
 const mockEstimatePoses = jest.fn();
 jest.mock("./backendSelector.web", () => ({ initializeBackend: jest.fn(async () => undefined) }));
-jest.mock("@tensorflow-models/pose-detection", () => ({
-  SupportedModels: { MoveNet: "MoveNet" },
-  TrackerType: { Keypoint: "Keypoint" },
-  movenet: { modelType: { MULTIPOSE_LIGHTNING: "MULTIPOSE_LIGHTNING" } },
-  createDetector: jest.fn(async () => ({ estimatePoses: mockEstimatePoses, dispose: jest.fn() })),
+jest.mock("./poseDetectionLoader.web", () => ({
+  loadPoseDetection: jest.fn(async () => ({
+    SupportedModels: { MoveNet: "MoveNet" },
+    TrackerType: { Keypoint: "Keypoint" },
+    movenet: { modelType: { MULTIPOSE_LIGHTNING: "MULTIPOSE_LIGHTNING" } },
+    createDetector: jest.fn(async () => ({ estimatePoses: mockEstimatePoses, dispose: jest.fn() })),
+  })),
 }));
 
 describe("MoveNet frame timestamps", () => {

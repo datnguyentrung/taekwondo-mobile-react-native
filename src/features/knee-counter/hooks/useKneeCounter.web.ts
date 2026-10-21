@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { createKneeCounterWorker } from "../ai/createKneeCounterWorker.web";
+import { createKneeAnalysisWorker } from "../ai/createKneeAnalysisWorker.web";
+import type { KneeAnalysisWorkerResponse } from "../ai/kneeAnalysisWorkerProtocol";
 import { detectComputeCapabilities } from "../ai/gpuCapabilities.web";
 import type { KneeWorkerResponse } from "../ai/kneeWorkerProtocol";
 import { MainThreadKneeRuntime } from "../ai/mainThreadKneeRuntime.web";
@@ -42,6 +44,7 @@ export type UseKneeCounterOptions = {
   onFallbackToCpu?: (reason: string) => void;
   requestedCameraFps?: number;
 };
+type VideoFrameMeta = { frameId: number; timestampMs: number; captureTimestampMs: number; mediaTime: number | null; purpose: "benchmark" | "preview" | "count" };
 
 export function useKneeCounter(
   videoRef: React.RefObject<HTMLVideoElement | null>,
@@ -61,17 +64,24 @@ export function useKneeCounter(
   const [events, setEvents] = useState<RepEvent[]>([]);
   const [metrics, setMetrics] = useState<SessionMetrics>(EMPTY_METRICS);
   const workerRef = useRef<Worker | null>(null);
+  const analysisWorkerRef = useRef<Worker | null>(null);
   const mainRuntimeRef = useRef<MainThreadKneeRuntime | null>(null);
   const stopLoopRef = useRef<(() => void) | null>(null);
   const inFlightRef = useRef(false);
+  const latestFrameRef = useRef<VideoFrameMeta | null>(null);
+  const processLatestFrameRef = useRef<(() => void) | null>(null);
+  const frameSequenceRef = useRef(0);
+  const submittedFramesRef = useRef(0);
+  const completedFramesRef = useRef(0);
+  const replacedFramesRef = useRef(0);
   const cameraFrameTimesRef = useRef<number[]>([]);
   const droppedFramesRef = useRef(0);
   const countingRef = useRef(false);
   const workerReadyRef = useRef(false);
+  const analysisReadyRef = useRef(false);
   const ledgerRef = useRef(new RepEventLedger());
   const sessionIdRef = useRef("");
   const sessionStartedAtRef = useRef("");
-  const lastUpdateRef = useRef(0);
   const capabilitiesRef = useRef<ComputeCapabilities | null>(null);
   const hasNotifiedFallbackRef = useRef(false);
   const onFallbackToCpuRef = useRef(options?.onFallbackToCpu);
@@ -98,22 +108,24 @@ export function useKneeCounter(
     stopLoopRef.current?.();
     stopLoopRef.current = null;
     inFlightRef.current = false;
+    latestFrameRef.current = null;
+    processLatestFrameRef.current = null;
     cameraFrameTimesRef.current = [];
     droppedFramesRef.current = 0;
+    submittedFramesRef.current = 0;
+    completedFramesRef.current = 0;
+    replacedFramesRef.current = 0;
     workerRef.current?.postMessage({ type: "dispose" });
     workerRef.current?.terminate();
     workerRef.current = null;
+    analysisWorkerRef.current?.postMessage({ type: "dispose" });
+    analysisWorkerRef.current?.terminate();
+    analysisWorkerRef.current = null;
     mainRuntimeRef.current?.dispose();
     mainRuntimeRef.current = null;
   }, []);
   const publish = useCallback(
-    (message: Extract<KneeWorkerResponse, { type: "frame-result" }>) => {
-      if (
-        message.timestampMs - lastUpdateRef.current < 100 &&
-        !message.events.length
-      )
-        return;
-      lastUpdateRef.current = message.timestampMs;
+    (message: Extract<KneeAnalysisWorkerResponse, { type: "frame-result" }> | Extract<KneeWorkerResponse, { type: "frame-result" }>) => {
       setSlots(message.lanes);
       const frameTimes = cameraFrameTimesRef.current;
       const elapsed = frameTimes.length > 1 ? frameTimes.at(-1)! - frameTimes[0] : 0;
@@ -135,16 +147,15 @@ export function useKneeCounter(
         videoFrameGapMs: frameGaps.length ? Math.round(frameGaps.reduce((sum, gap) => sum + gap, 0) / frameGaps.length * 10) / 10 : null,
         presentedFrames: quality?.totalVideoFrames ?? null,
         droppedVideoFrames: quality?.droppedVideoFrames ?? null,
-        workerBusyDrops: droppedFramesRef.current,
-        droppedFrames: droppedFramesRef.current,
+        workerBusyDrops: replacedFramesRef.current,
+        droppedFrames: replacedFramesRef.current,
+        inferenceSubmittedFrames: submittedFramesRef.current,
+        inferenceReplacedFrames: replacedFramesRef.current,
+        inferenceCompletedFrames: completedFramesRef.current,
       };
       setMetrics(measured);
       if (message.trace) {
-        setTrace((previous) => message.trace!.map((sample, index) => {
-          const prior = previous[index];
-          if (prior?.timestampMs === sample.timestampMs && prior.participantId === sample.participantId) return prior;
-          return sample.algorithmVersion === 3 ? { ...sample, camera: { width: settings?.width ?? video?.videoWidth ?? 0, height: settings?.height ?? video?.videoHeight ?? 0, frameRate: settings?.frameRate ?? null, requestedFrameRate: requestedCameraFpsRef.current, capabilityFrameRate, actualFrameRate: cameraFps, presentedFrames: quality?.totalVideoFrames ?? null, droppedVideoFrames: quality?.droppedVideoFrames ?? null }, runtime: { cameraFps, inferenceFps: measured.inferenceFps, averageLatencyMs: measured.averageLatencyMs, droppedFrames: measured.droppedFrames, videoCallbackFps: measured.videoCallbackFps, videoFrameGapMs: measured.videoFrameGapMs, presentedFrames: measured.presentedFrames, droppedVideoFrames: measured.droppedVideoFrames, workerBusyDrops: measured.workerBusyDrops } } : sample;
-        }));
+        setTrace((previous) => [...previous, ...message.trace!.map((sample) => sample.algorithmVersion >= 3 ? { ...sample, camera: { width: settings?.width ?? video?.videoWidth ?? 0, height: settings?.height ?? video?.videoHeight ?? 0, frameRate: settings?.frameRate ?? null, requestedFrameRate: requestedCameraFpsRef.current, capabilityFrameRate, actualFrameRate: cameraFps, presentedFrames: quality?.totalVideoFrames ?? null, droppedVideoFrames: quality?.droppedVideoFrames ?? null }, runtime: { cameraFps, inferenceFps: measured.inferenceFps, averageLatencyMs: measured.averageLatencyMs, droppedFrames: measured.droppedFrames, videoCallbackFps: measured.videoCallbackFps, videoFrameGapMs: measured.videoFrameGapMs, presentedFrames: measured.presentedFrames, droppedVideoFrames: measured.droppedVideoFrames, workerBusyDrops: measured.workerBusyDrops, executionMode: measured.executionMode, bitmapLatencyMs: measured.bitmapLatencyMs, queueWaitMs: measured.queueWaitMs, inferenceLatencyMs: measured.inferenceLatencyMs, analysisLatencyMs: measured.analysisLatencyMs, frameAgeMs: measured.frameAgeMs, inferenceSubmittedFrames: measured.inferenceSubmittedFrames, inferenceReplacedFrames: measured.inferenceReplacedFrames, inferenceCompletedFrames: measured.inferenceCompletedFrames } } : sample)].slice(-20_000));
       }
       if (message.events.length)
         setEvents(ledgerRef.current.append(message.events));
@@ -152,30 +163,57 @@ export function useKneeCounter(
     [videoRef],
   );
   const sendFrame = useCallback(
-    async (timestampMs: number, purpose: "benchmark" | "preview" | "count") => {
+    async (meta: VideoFrameMeta) => {
       const video = videoRef.current;
       if (!video || video.readyState < 2) return;
-      if (inFlightRef.current) { droppedFramesRef.current += 1; return; }
+      if (inFlightRef.current) {
+        if (latestFrameRef.current) replacedFramesRef.current += 1;
+        latestFrameRef.current = meta;
+        droppedFramesRef.current = replacedFramesRef.current;
+        return;
+      }
       inFlightRef.current = true;
       try {
         if (workerRef.current) {
+          const bitmapStartedAt = performance.now();
           const frame = await createImageBitmap(video);
-          const payload = { frame, timestampMs, width: video.videoWidth, height: video.videoHeight, purpose };
-          if (workerRef.current) workerRef.current.postMessage({ type: "frame", ...payload }, [frame]);
+          const payload = { frame, ...meta, bitmapLatencyMs: performance.now() - bitmapStartedAt, dispatchedAtMs: performance.now(), width: video.videoWidth, height: video.videoHeight };
+          if (workerRef.current) { submittedFramesRef.current += 1; workerRef.current.postMessage({ type: "frame", ...payload }, [frame]); }
           else { frame.close(); inFlightRef.current = false; }
           return;
         }
-        const result = await mainRuntimeRef.current?.process(video, timestampMs, purpose === "count");
-        if (result) publish({ type: "frame-result", timestampMs, ...result });
+        submittedFramesRef.current += 1;
+        const result = await mainRuntimeRef.current?.process(video, meta.timestampMs, meta.purpose === "count");
+        if (result) publish({ type: "frame-result", timestampMs: meta.timestampMs, ...result });
       } catch (cause) {
         inFlightRef.current = false;
         setError(cause instanceof Error ? cause.message : "Không thể đọc camera.");
       } finally {
-        if (!workerRef.current) inFlightRef.current = false;
+        if (!workerRef.current) {
+          inFlightRef.current = false;
+          processLatestFrameRef.current?.();
+        }
       }
     },
     [publish, videoRef],
   );
+  const processLatestFrame = useCallback(() => {
+    if (inFlightRef.current) return;
+    const pending = latestFrameRef.current;
+    if (!pending) return;
+    latestFrameRef.current = null;
+    const video = videoRef.current;
+    void sendFrame({ ...pending, timestampMs: performance.now(), captureTimestampMs: performance.now(), mediaTime: video?.currentTime ?? null });
+  }, [sendFrame, videoRef]);
+  useEffect(() => {
+    processLatestFrameRef.current = processLatestFrame;
+    return () => { processLatestFrameRef.current = null; };
+  }, [processLatestFrame]);
+  const completeFrame = useCallback(() => {
+    inFlightRef.current = false;
+    completedFramesRef.current += 1;
+    processLatestFrame();
+  }, [processLatestFrame]);
   const startLoop = useCallback(
     (purpose: "preview" | "count") => {
       const video = videoRef.current;
@@ -184,13 +222,14 @@ export function useKneeCounter(
       let raf = 0;
       let videoHandle = 0;
       const rich = video as HTMLVideoElement & {
-        requestVideoFrameCallback?: (callback: (now: number) => void) => number;
+        requestVideoFrameCallback?: (callback: (now: number, metadata: { mediaTime?: number }) => void) => number;
         cancelVideoFrameCallback?: (handle: number) => void;
       };
-      const tick = (time: number) => {
+      const tick = (time: number, metadata?: { mediaTime?: number }) => {
         if (stopped) return;
         cameraFrameTimesRef.current = [...cameraFrameTimesRef.current.filter((value) => time - value <= 3000), time];
-        void sendFrame(time, purpose);
+        frameSequenceRef.current += 1;
+        void sendFrame({ frameId: frameSequenceRef.current, timestampMs: time, captureTimestampMs: time, mediaTime: metadata?.mediaTime ?? video.currentTime ?? null, purpose });
         if (rich.requestVideoFrameCallback)
           videoHandle = rich.requestVideoFrameCallback(tick);
         else raf = requestAnimationFrame(tick);
@@ -210,7 +249,9 @@ export function useKneeCounter(
         countingRef.current = false;
         stopLoopRef.current?.();
         workerRef.current?.postMessage({ type: "pause" });
+        analysisWorkerRef.current?.postMessage({ type: "pause" });
         workerRef.current?.postMessage({ type: "reset-pending-cycle" });
+        analysisWorkerRef.current?.postMessage({ type: "reset-pending-cycle" });
         mainRuntimeRef.current?.resetPendingCycles();
         setStatus("aligning");
         startLoop("preview");
@@ -218,6 +259,7 @@ export function useKneeCounter(
       setConfig((current) => {
         const next = { ...current, ...patch };
         workerRef.current?.postMessage({ type: "update-config", config: next });
+        analysisWorkerRef.current?.postMessage({ type: "update-config", config: next });
         mainRuntimeRef.current?.updateConfig(next);
         return next;
       });
@@ -227,6 +269,9 @@ export function useKneeCounter(
   const fallbackToMainThread = useCallback(async () => {
     workerRef.current?.terminate();
     workerRef.current = null;
+    analysisWorkerRef.current?.postMessage({ type: "dispose" });
+    analysisWorkerRef.current?.terminate();
+    analysisWorkerRef.current = null;
     inFlightRef.current = false;
     const runtime = new MainThreadKneeRuntime(
       config,
@@ -264,6 +309,7 @@ export function useKneeCounter(
     if (!videoRef.current) return;
     dispose();
     workerReadyRef.current = false;
+    analysisReadyRef.current = false;
     hasNotifiedFallbackRef.current = false;
     setFallbackToCpu(false);
     setError(null);
@@ -279,6 +325,16 @@ export function useKneeCounter(
       const caps = await detectComputeCapabilities();
       capabilitiesRef.current = caps;
       setCapabilities(caps);
+      const analysisWorker = createKneeAnalysisWorker(
+        (message) => {
+          if (message.type === "analysis-ready") analysisReadyRef.current = true;
+          else if (message.type === "frame-result") publish(message);
+          else if (message.type === "error") void fallbackToMainThread();
+        },
+        () => { void fallbackToMainThread(); },
+      );
+      analysisWorkerRef.current = analysisWorker;
+      analysisWorker.postMessage({ type: "init", sessionId: sessionIdRef.current, sessionStartedAt: sessionStartedAtRef.current, config });
       const worker = createKneeCounterWorker(
         (message) => {
           if (message.type === "detector-ready") {
@@ -297,16 +353,24 @@ export function useKneeCounter(
               notifyCpuFallback();
             }
             setStatus("benchmarking");
-            void sendFrame(performance.now(), "benchmark");
+            frameSequenceRef.current += 1;
+            const now = performance.now();
+            void sendFrame({ frameId: frameSequenceRef.current, timestampMs: now, captureTimestampMs: now, mediaTime: videoRef.current?.currentTime ?? null, purpose: "benchmark" });
           } else if (message.type === "runtime-ready") {
+            if (!analysisReadyRef.current) {
+              void fallbackToMainThread();
+              return;
+            }
             setMetrics(message.metrics);
             if (message.fallbackToCpu || message.backend === "wasm") {
               notifyCpuFallback();
             }
             setStatus("aligning");
             startLoop("preview");
+          } else if (message.type === "pose-result") {
+            analysisWorkerRef.current?.postMessage({ type: "poses", frame: message });
           } else if (message.type === "frame-result") publish(message);
-          else if (message.type === "frame-complete") inFlightRef.current = false;
+          else if (message.type === "frame-complete") completeFrame();
           else if (message.type === "error") void fallbackToMainThread();
         },
         () => {
@@ -332,18 +396,21 @@ export function useKneeCounter(
     } catch {
       await fallbackToMainThread();
     }
-  }, [config, dispose, fallbackToMainThread, notifyCpuFallback, publish, sendFrame, startLoop, videoRef]);
+  }, [completeFrame, config, dispose, fallbackToMainThread, notifyCpuFallback, publish, sendFrame, startLoop, videoRef]);
   const pause = useCallback(() => {
     if (status !== "running") return;
     countingRef.current = false;
     stopLoopRef.current?.();
     workerRef.current?.postMessage({ type: "pause" });
+    analysisWorkerRef.current?.postMessage({ type: "pause" });
     setStatus("paused");
   }, [status]);
   const resume = useCallback(() => {
     if (status !== "paused") return;
     workerRef.current?.postMessage({ type: "resume" });
+    analysisWorkerRef.current?.postMessage({ type: "resume" });
     workerRef.current?.postMessage({ type: "reset-pending-cycle" });
+    analysisWorkerRef.current?.postMessage({ type: "reset-pending-cycle" });
     mainRuntimeRef.current?.resetPendingCycles();
     setStatus("aligning");
     startLoop("preview");
@@ -362,10 +429,19 @@ export function useKneeCounter(
     setEvents([]);
     setSlots([]);
     setTrace([]);
+    const sessionId = crypto.randomUUID();
+    const sessionStartedAt = new Date().toISOString();
+    sessionIdRef.current = sessionId;
+    sessionStartedAtRef.current = sessionStartedAt;
     workerRef.current?.postMessage({
       type: "reset",
-      sessionId: crypto.randomUUID(),
-      sessionStartedAt: new Date().toISOString(),
+      sessionId,
+      sessionStartedAt,
+    });
+    analysisWorkerRef.current?.postMessage({
+      type: "reset",
+      sessionId,
+      sessionStartedAt,
     });
   }, []);
   useEffect(() => () => dispose(), [dispose]);

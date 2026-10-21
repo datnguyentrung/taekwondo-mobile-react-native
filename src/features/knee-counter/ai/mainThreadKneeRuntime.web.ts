@@ -39,7 +39,8 @@ export class MainThreadKneeRuntime {
     const poses = await this.runtime.estimate(video, timestampMs, video.videoWidth, video.videoHeight, MAX_TRACKED_PEOPLE);
     const candidates = deduplicateCandidates(poses.map(poseToCandidate).filter((candidate): candidate is NonNullable<typeof candidate> => candidate !== null));
     const result = this.lanes.update(candidates, timestampMs, counting, { sessionId: this.sessionId, sessionStartedAt: this.sessionStartedAt, backend: this.backend, inputSize: this.inputSize });
-    return { lanes: result.lanes, events: result.events, metrics: this.metrics.record(performance.now() - started, 0, result.conflicts), trace: result.trace };
+    const inferenceLatencyMs = performance.now() - started;
+    return { lanes: result.lanes, events: result.events, metrics: { ...this.metrics.record(inferenceLatencyMs, 0, result.conflicts), executionMode: "main-thread", inferenceLatencyMs: Math.round(inferenceLatencyMs * 10) / 10 }, trace: result.traceDelta };
   }
   resetPendingCycles() { this.lanes?.resetPendingCycles(); }
   updateConfig(newConfig: KneeCounterSessionConfig) { this.config = newConfig; this.lanes?.updateConfig(newConfig); }

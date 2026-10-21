@@ -1,5 +1,6 @@
 import type { ComputeBackend, KneeCounterSessionConfig, NormalizedPose } from "../types/kneeCounter.types";
 import { initializeBackend } from "./backendSelector.web";
+import { loadPoseDetection } from "./poseDetectionLoader.web";
 
 export type MoveNetRuntime = { backend: ComputeBackend; inputSize: 320 | 384 | 448; estimate: (input: HTMLVideoElement | ImageBitmap, timestampMs: number, width: number, height: number, maxPoses: number) => Promise<NormalizedPose[]>; dispose: () => void };
 export function normalizeBoundingBox(box: { xMin: number; yMin: number; xMax: number; yMax: number }, width: number, height: number) {
@@ -8,7 +9,7 @@ export function normalizeBoundingBox(box: { xMin: number; yMin: number; xMax: nu
   return { xMin: Math.max(0, Math.min(1, box.xMin / x)), yMin: Math.max(0, Math.min(1, box.yMin / y)), xMax: Math.max(0, Math.min(1, box.xMax / x)), yMax: Math.max(0, Math.min(1, box.yMax / y)) };
 }
 export async function createMoveNetRuntime(backend: ComputeBackend, inputSize: 320 | 384 | 448, _config: KneeCounterSessionConfig): Promise<MoveNetRuntime> {
-  await initializeBackend(backend); const poseDetection = await import("@tensorflow-models/pose-detection");
+  await initializeBackend(backend); const poseDetection = await loadPoseDetection();
   const detector = await poseDetection.createDetector(poseDetection.SupportedModels.MoveNet, {
     modelType: poseDetection.movenet.modelType.MULTIPOSE_LIGHTNING,
     enableTracking: true,

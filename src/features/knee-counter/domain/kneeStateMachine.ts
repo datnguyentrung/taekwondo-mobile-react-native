@@ -28,6 +28,49 @@ export function advanceLegState(state: LegCounterState, signal: KneeSignal, cont
   return { state: transition.confirmed ? { ...transition.state, phase: "READY", crossedAtMs: null, peakRatio: null, peakConfidence: 0 } : transition.state, event: null };
 }
 
+/**
+ * Confirms a very short peak that fell between two MoveNet results. The caller
+ * has already established a rising and then falling trajectory; this guard only
+ * owns the counter state and duplicate protection.
+ */
+export function recoverLegPeak(
+  state: LegCounterState,
+  recovery: { leg: KneeSignal["leg"]; timestampMs: number; estimatedPeakRatio: number; confidence: number },
+  context: LegCounterContext,
+): { state: LegCounterState; event: RepEvent | null } {
+  if (state.phase !== "READY") return { state, event: null };
+  if (recovery.estimatedPeakRatio < context.config.thresholdPercent / 100) return { state, event: null };
+  if (state.lastRepAtMs !== null && recovery.timestampMs - state.lastRepAtMs < context.config.minRepIntervalMs)
+    return { state, event: null };
+  const sequence = state.sequence + 1;
+  const event: RepEvent = {
+    ...context,
+    id: `${context.sessionId}:${context.laneId}:${recovery.leg}:${sequence}`,
+    leg: recovery.leg,
+    crossedAtMs: recovery.timestampMs,
+    completedAtMs: recovery.timestampMs,
+    peakRatio: recovery.estimatedPeakRatio,
+    confidence: recovery.confidence,
+    result: "RECOVERED",
+  };
+  return {
+    state: {
+      ...state,
+      phase: "ABOVE",
+      reps: state.reps + 1,
+      sequence,
+      lastRepAtMs: recovery.timestampMs,
+      crossedAtMs: recovery.timestampMs,
+      peakRatio: recovery.estimatedPeakRatio,
+      peakConfidence: recovery.confidence,
+      pendingDirection: null,
+      pendingSinceMs: null,
+      pendingSamples: 0,
+    },
+    event,
+  };
+}
+
 function confirmTransition(state: LegCounterState, direction: "UP" | "DOWN", crossed: boolean, signal: KneeSignal, config: KneeCounterSessionConfig) {
   if (!crossed) return { state: { ...state, pendingDirection: null, pendingSinceMs: null, pendingSamples: 0 }, confirmed: false };
   if (signal.held) return { state, confirmed: false };
