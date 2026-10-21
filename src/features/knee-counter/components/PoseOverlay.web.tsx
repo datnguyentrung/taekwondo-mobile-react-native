@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 
-import { kneeReference, MOVENET_KEYPOINT } from "../domain/kneeSignal";
+import { legKneeReference, MOVENET_KEYPOINT } from "../domain/kneeSignal";
 import type { BoundingBox, KneeCounterSessionConfig, NormalizedPoint, ParticipantSlot } from "../types/kneeCounter.types";
 import { videoContainRect } from "./overlayGeometry";
 
@@ -72,16 +72,17 @@ export function PoseOverlay({
       if (!pose) return;
       const visiblePoints = pose.keypoints.filter(isVisible);
       const bounds = pose.boundingBox ?? fallbackBounds(visiblePoints);
-      const reference = kneeReference(pose, config);
       const hips = [pose.keypoints[MOVENET_KEYPOINT.leftHip], pose.keypoints[MOVENET_KEYPOINT.rightHip]].filter(isVisible);
 
-      // The threshold is the exact kneeY used by calculateKneeSignal:
-      // kneeY = hipY - thresholdPercent * torsoHeight. At 0%, it is hip height.
-      if (reference && reference.torsoHeight !== null && reference.torsoHeight >= 0.05) {
+      (["left", "right"] as const).forEach((leg) => {
+        const reference = legKneeReference(pose, leg, config);
+        if (!reference.hip || reference.torsoHeight === null || reference.torsoHeight < 0.05) return;
+        // The threshold uses the same hip and torso as calculateKneeSignal.
+        // At 0%, each leg's line is exactly at that leg's hip.
         const kneeY = reference.hip.y - (config.thresholdPercent / 100) * reference.torsoHeight;
-        const horizontalPoints = [...hips, ...TARGET_KEYPOINTS
-          .map((index) => pose.keypoints[index])
-          .filter(isVisible)];
+        const kneeIndex = leg === "left" ? MOVENET_KEYPOINT.leftKnee : MOVENET_KEYPOINT.rightKnee;
+        const horizontalPoints = [reference.hip, pose.keypoints[kneeIndex], ...hips].filter(isVisible);
+        if (!horizontalPoints.length) return;
         const xMin = Math.max(0, Math.min(...horizontalPoints.map((point) => point.x)) - 0.08);
         const xMax = Math.min(1, Math.max(...horizontalPoints.map((point) => point.x)) + 0.08);
         const x1 = toX(xMin);
@@ -95,7 +96,7 @@ export function PoseOverlay({
         context.strokeStyle = "#111111";
         context.lineWidth = 5;
         context.beginPath(); context.moveTo(Math.min(x1, x2), y); context.lineTo(Math.max(x1, x2), y); context.stroke();
-      }
+      });
 
       context.strokeStyle = "#FFFFFF";
       context.lineWidth = 3;

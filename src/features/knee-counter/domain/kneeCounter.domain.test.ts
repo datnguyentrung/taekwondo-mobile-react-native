@@ -13,11 +13,11 @@ describe("weak-knee confirmation and gaps", () => {
     const weak2Context = { ...context, config: weak2Config };
     let state = initialLegCounterState();
     state = advanceLegState(state, calculateKneeSignal(pose(.8), "left", 0, weak2Config), weak2Context).state;
-    const firstSignal = { ...calculateKneeSignal(pose(.45, .55, .2), "left", 60, weak2Config), corroborated: true };
+    const firstSignal = { ...calculateKneeSignal(pose(.45, .55, .2), "left", 60, weak2Config), corroborated: true, confirmationReason: "geometry" as const };
     const first = advanceLegState(state, firstSignal, weak2Context);
     expect(first.event).toBeNull();
     expect(first.state.pendingDirection).toBe("UP");
-    const secondSignal = { ...calculateKneeSignal(pose(.44, .55, .2), "left", 120, weak2Config), corroborated: true };
+    const secondSignal = { ...calculateKneeSignal(pose(.44, .55, .2), "left", 120, weak2Config), corroborated: true, confirmationReason: "geometry" as const };
     const second = advanceLegState(first.state, secondSignal, weak2Context);
     expect(second.event?.id).toBe("s:lane-1:left:1");
     expect(second.state.reps).toBe(1);
@@ -37,7 +37,7 @@ describe("weak-knee confirmation and gaps", () => {
     let state = initialLegCounterState();
     state = advanceLegState(state, calculateKneeSignal(pose(.8), "left", 0, DEFAULT_KNEE_COUNTER_CONFIG), context).state;
     const first = advanceLegState(state, calculateKneeSignal(pose(.45), "left", 60, DEFAULT_KNEE_COUNTER_CONFIG), context);
-    const held = advanceLegState(first.state, calculateKneeSignal(pose(.4), "left", 400, DEFAULT_KNEE_COUNTER_CONFIG), context);
+    const held = advanceLegState(first.state, { ...calculateKneeSignal(pose(.4), "left", 400, DEFAULT_KNEE_COUNTER_CONFIG), held: true }, context);
     expect(first.state.reps).toBe(1);
     expect(held.event).toBeNull();
     expect(held.state.reps).toBe(1);
@@ -80,10 +80,10 @@ describe("proximity guard and 4-point mode", () => {
     const signal = calculateKneeSignal(noShoulderPose, "left", 0, DEFAULT_KNEE_COUNTER_CONFIG);
     expect(signal.valid).toBe(true);
     expect(signal.reason).toBe("VALID");
-    expect(signal.ratio).toBeCloseTo(0.10 / (0.30 * 16 / 9), 1);
+    expect(signal.ratio).toBeCloseTo(0.10 / 0.30, 1);
   });
 
-  it("does not promote a low knee using the opposite leg", () => {
+  it("uses the supporting leg when pelvis bounce hides a fast raised knee", () => {
     const sprintPose: NormalizedPose = {
       detectorTrackId: "a",
       poseScore: 0.95,
@@ -100,7 +100,43 @@ describe("proximity guard and 4-point mode", () => {
 
     const signal = calculateKneeSignal(sprintPose, "left", 0, DEFAULT_KNEE_COUNTER_CONFIG);
     expect(signal.valid).toBe(true);
-    expect(signal.ratio).toBeCloseTo(-0.60, 2);
+    expect(signal.geometricRatio).toBeCloseTo(-0.60, 2);
+    expect(signal.supportRatio).toBeGreaterThan(signal.geometricRatio!);
+    expect(signal.supportsWeakKnee).toBe(true);
+  });
+});
+
+describe("single weak peaks", () => {
+  it("counts a one-frame weak peak when the supporting leg compensates pelvis bounce", () => {
+    const weakConfig = { ...DEFAULT_KNEE_COUNTER_CONFIG, weakConfirmationSamples: 1 };
+    const supportingPose = pose(.5, .35, .2);
+    supportingPose.keypoints[5] = { x: .45, y: .10, score: .95 };
+    supportingPose.keypoints[14] = { x: .55, y: .72, score: .95 };
+    let state = initialLegCounterState();
+    state = advanceLegState(state, calculateKneeSignal(pose(.8), "left", 0, weakConfig), { ...context, config: weakConfig }).state;
+    const signal = { ...calculateKneeSignal(supportingPose, "left", 60, weakConfig), quality: "weak" as const, confirmationReason: "support" as const };
+    const result = advanceLegState(state, signal, { ...context, config: weakConfig });
+    expect(signal.supportsWeakKnee).toBe(true);
+    expect(result.event?.id).toBe("s:lane-1:left:1");
+  });
+
+  it("counts a one-frame weak peak when it crosses geometrically", () => {
+    const weakConfig = { ...DEFAULT_KNEE_COUNTER_CONFIG, weakConfirmationSamples: 1 };
+    let state = initialLegCounterState();
+    state = advanceLegState(state, calculateKneeSignal(pose(.8), "left", 0, weakConfig), { ...context, config: weakConfig }).state;
+    const weakPeak = { ...calculateKneeSignal(pose(.45, .55, .2), "left", 60, weakConfig), confirmationReason: "geometry" as const };
+    const result = advanceLegState(state, weakPeak, { ...context, config: weakConfig });
+    expect(result.event?.id).toBe("s:lane-1:left:1");
+  });
+
+  it("does not count an unsupported weak sample", () => {
+    const weakConfig = { ...DEFAULT_KNEE_COUNTER_CONFIG, weakConfirmationSamples: 1 };
+    let state = initialLegCounterState();
+    state = advanceLegState(state, calculateKneeSignal(pose(.8), "left", 0, weakConfig), { ...context, config: weakConfig }).state;
+    const weakPeak = { ...calculateKneeSignal(pose(.45, .55, .2), "left", 60, weakConfig), confirmationReason: undefined };
+    const result = advanceLegState(state, weakPeak, { ...context, config: weakConfig });
+    expect(result.event).toBeNull();
+    expect(result.state.reps).toBe(0);
   });
 });
 

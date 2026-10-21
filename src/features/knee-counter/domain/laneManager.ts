@@ -69,7 +69,7 @@ export class LaneManager {
     }
   }
 }
-function traceLeg(raw: KneeSignal, smoothed: KneeSignal, before: LegCounterState, after: LegCounterState, event: RepEvent | null): KneeTraceLeg { return { reason: smoothed.reason, valid: smoothed.valid, confidence: smoothed.confidence, kneeConfidence: smoothed.kneeConfidence, quality: smoothed.quality, rawRatio: raw.ratio, smoothedRatio: smoothed.ratio, enterThreshold: smoothed.enterThreshold, exitThreshold: smoothed.exitThreshold, phaseBefore: before.phase, phaseAfter: after.phase, repsBefore: before.reps, repsAfter: after.reps, droppedSamples: after.droppedSamples, lastValidAtMs: after.lastValidAtMs, pendingDirection: after.pendingDirection, pendingSamples: after.pendingSamples, eventId: event?.id ?? null, held: smoothed.held, corroborated: smoothed.corroborated }; }
+function traceLeg(raw: KneeSignal, smoothed: KneeSignal, before: LegCounterState, after: LegCounterState, event: RepEvent | null): KneeTraceLeg { return { reason: smoothed.reason, valid: smoothed.valid, confidence: smoothed.confidence, kneeConfidence: smoothed.kneeConfidence, quality: smoothed.quality, rawRatio: raw.ratio, geometricRatio: raw.geometricRatio ?? null, supportRatio: raw.supportRatio ?? null, smoothedRatio: smoothed.ratio, enterThreshold: smoothed.enterThreshold, exitThreshold: smoothed.exitThreshold, phaseBefore: before.phase, phaseAfter: after.phase, repsBefore: before.reps, repsAfter: after.reps, droppedSamples: after.droppedSamples, lastValidAtMs: after.lastValidAtMs, pendingDirection: after.pendingDirection, pendingSamples: after.pendingSamples, eventId: event?.id ?? null, held: smoothed.held, corroborated: smoothed.corroborated, confirmationReason: smoothed.confirmationReason }; }
 function traceConfig(config: KneeCounterSessionConfig) { const { thresholdPercent, minPoseScore, minShoulderScore, minHipScore, minKneeTrustedScore, minKneeWeakScore, weakConfirmationSamples, weakConfirmationWindowMs, smoothingWindowMs, hysteresisRatio, minRepIntervalMs, maxSignalGapMs } = config; return { thresholdPercent, minPoseScore, minShoulderScore, minHipScore, minKneeTrustedScore, minKneeWeakScore, weakConfirmationSamples, weakConfirmationWindowMs, smoothingWindowMs, hysteresisRatio, minRepIntervalMs, maxSignalGapMs }; }
 function distance(point: { x: number; y: number }, candidate: PoseCandidate) { return Math.hypot(point.x - candidate.centerX, point.y - candidate.centerY); }
 function smoothSignal<T extends KneeSignal>(signal: T, history: RatioSample[], config: KneeCounterSessionConfig): T { if (!signal.valid || signal.ratio === null || signal.held) return signal; const samples = history.filter((sample) => signal.timestampMs - sample.timestampMs <= config.smoothingWindowMs); const prev = samples.at(-1)?.ratio ?? signal.ratio; samples.push({ ratio: signal.ratio, timestampMs: signal.timestampMs }); history.splice(0, history.length, ...samples.slice(-3)); const smoothedRatio = signal.ratio >= prev ? signal.ratio : 0.6 * signal.ratio + 0.4 * prev; return { ...signal, ratio: smoothedRatio }; }
@@ -77,10 +77,14 @@ function holdSignal(signal: KneeSignal, trusted: KneeSignal | null): KneeSignal 
   if (signal.valid || !trusted || trusted.ratio === null || signal.timestampMs - trusted.timestampMs > 180) return signal;
   return { ...signal, valid: true, ratio: trusted.ratio, quality: "weak", confidence: trusted.confidence, kneeConfidence: trusted.kneeConfidence, held: true };
 }
-function resolveSignal(signal: KneeSignal, history: RatioSample[], trusted: KneeSignal | null): KneeSignal {
+function resolveSignal(signal: KneeSignal, _history: RatioSample[], trusted: KneeSignal | null): KneeSignal {
   if (!signal.valid) return holdSignal(signal, trusted);
   if (signal.quality === "trusted" || signal.ratio === null) return signal;
-  const rising = history.some((previous) => signal.timestampMs - previous.timestampMs <= 180 && signal.ratio! > previous.ratio + 0.06);
-  return { ...signal, corroborated: Boolean(rising && signal.isAnkleElevated) };
+  const confirmationReason = signal.supportsWeakKnee
+    ? "support"
+    : signal.geometricRatio !== undefined && signal.geometricRatio >= signal.enterThreshold
+      ? "geometry"
+      : undefined;
+  return { ...signal, corroborated: Boolean(confirmationReason), confirmationReason };
 }
 function toPersonPose(candidate: PoseCandidate, participantId: string): PersonPose { return { ...candidate.pose, trackId: candidate.pose.detectorTrackId ?? participantId, centerX: candidate.centerX, normalizedBoundingBox: candidate.pose.boundingBox }; }

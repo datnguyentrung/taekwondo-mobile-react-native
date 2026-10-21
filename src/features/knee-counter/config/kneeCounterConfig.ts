@@ -7,7 +7,7 @@ export const DEFAULT_KNEE_COUNTER_CONFIG: KneeCounterSessionConfig = {
   minHipScore: 0.20,
   minKneeTrustedScore: 0.25,
   minKneeWeakScore: 0.01,
-  weakConfirmationSamples: 2,
+  weakConfirmationSamples: 1,
   weakConfirmationWindowMs: 150,
   smoothingWindowMs: 150,
   minRepIntervalMs: 180,

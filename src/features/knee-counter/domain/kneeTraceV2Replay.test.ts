@@ -47,10 +47,10 @@ describe("v2 session trace replay", () => {
       expect(leg?.eventId).toBe(event.id);
       if (leg?.quality === "weak") expect(leg.corroborated).toBe(true);
       expect(leg?.held).not.toBe(true);
-      if (threshold === 0 && sample?.hipReferenceY != null) {
-        const knee = sample.points[event.leg === "left" ? "leftKnee" : "rightKnee"];
-        expect(knee.y).not.toBeNull();
-        expect(knee.y!).toBeLessThanOrEqual(sample.hipReferenceY);
+      if (threshold === 0) {
+        // A v1-style event can be confirmed by the supporting leg even when
+        // the geometric knee point is just below its own hip.
+        expect(Math.max(leg?.geometricRatio ?? -Infinity, leg?.supportRatio ?? -Infinity)).toBeGreaterThanOrEqual(0);
       }
     }
   });
