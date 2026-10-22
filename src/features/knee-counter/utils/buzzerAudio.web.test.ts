@@ -1,4 +1,4 @@
-import { playCountdownCue, playFinalCountdownTick, playRefereeBuzzer, unlockSessionAudio } from "./buzzerAudio.web";
+import { playCountdownCue, playRefereeBuzzer, unlockSessionAudio } from "./buzzerAudio.web";
 
 describe("playRefereeBuzzer", () => {
   it("runs without crashing when AudioContext is mocked or unavailable", () => {
@@ -6,6 +6,5 @@ describe("playRefereeBuzzer", () => {
     expect(() => unlockSessionAudio()).not.toThrow();
     expect(() => playCountdownCue("3")).not.toThrow();
     expect(() => playCountdownCue("GO!")).not.toThrow();
-    expect(() => playFinalCountdownTick()).not.toThrow();
   });
 });

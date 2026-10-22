@@ -20,7 +20,7 @@ import { PoseOverlay } from "../components/PoseOverlay.web";
 import { CameraSessionOverlay } from "../components/CameraSessionOverlay.web";
 import { AnalysisSettings } from "../components/AnalysisSettings.web";
 import { CameraStatusStrip } from "../components/CameraStatusStrip.web";
-import { playCountdownCue, playFinalCountdownTick, playRefereeBuzzer, unlockSessionAudio } from "../utils/buzzerAudio.web";
+import { playCountdownCue, playRefereeBuzzer, unlockSessionAudio } from "../utils/buzzerAudio.web";
 import { formatSessionDuration } from "../utils/sessionClock.web";
 import type { CameraFpsOption } from "../types/kneeCounter.types";
 
@@ -136,7 +136,7 @@ export function KneeCounterScreen() {
     }
     if (finalCountdownTickRef.current === sessionClock.remainingSeconds) return;
     finalCountdownTickRef.current = sessionClock.remainingSeconds;
-    playFinalCountdownTick();
+    playCountdownCue("1");
   }, [counter.status, sessionClock.remainingSeconds]);
 
   const progressPercent = countdownSeconds > 0
@@ -144,7 +144,7 @@ export function KneeCounterScreen() {
     : 0;
   const isTimeUp = counter.status === "finished";
   const isUrgent = sessionClock.remainingSeconds <= 5 && sessionClock.remainingSeconds > 0 && counter.status === "running";
-  const showVideoTimer = counter.status === "running" || counter.status === "paused" || counter.status === "finished";
+  const showVideoTimer = isCameraRunning;
 
   const exportCsv = () => {
     const csv = exportRepEventsCsv(counter.events);
@@ -276,6 +276,25 @@ export function KneeCounterScreen() {
                 </ThemedText>
               </View>
             ) : null}
+            {isCameraRunning && counter.status === "aligning" ? (
+              <View pointerEvents="box-none" style={styles.startCountingOverlay}>
+                <ThemedText type="bodySmall" style={styles.startCountingHint}>Sẵn sàng khi khung hình đã ổn định</ThemedText>
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel="Bắt đầu đếm"
+                  accessibilityState={{ disabled: countdownSeconds < 1 }}
+                  disabled={countdownSeconds < 1}
+                  onPress={handleBeginCounting}
+                  style={({ pressed }) => [
+                    styles.startCountingButton,
+                    countdownSeconds < 1 && styles.disabled,
+                    pressed && styles.pressed,
+                  ]}
+                >
+                  <ThemedText type="action" style={styles.startCountingButtonText}>Bắt đầu đếm</ThemedText>
+                </Pressable>
+              </View>
+            ) : null}
             <View style={[styles.videoControls, videoHovered && styles.videoControlsVisible]} pointerEvents={videoHovered ? "auto" : "none"}>
               <Pressable
                 accessibilityRole="button"
@@ -337,17 +356,14 @@ export function KneeCounterScreen() {
             setCountdownSeconds(sec);
             if (counter.status !== "finished") sessionClock.startNewSession(sec);
           }}
-          remainingSeconds={sessionClock.remainingSeconds}
           running={isCameraRunning}
           inferenceFps={counter.metrics.inferenceFps}
           busy={counter.status === "loading-model" || counter.status === "benchmarking"}
           onPrimaryAction={isCameraRunning && counter.status === "paused" ? handleResume : isCameraRunning ? stop : start}
         />
         <View style={styles.actionRow}>
-          {isCameraRunning && counter.status === "aligning" ? <Action label="Bắt đầu đếm" onPress={handleBeginCounting} disabled={countdownSeconds < 1} /> : null}
-          {isCameraRunning && counter.status === "countdown" ? <Action label="Đang chuẩn bị..." onPress={() => undefined} disabled /> : null}
           {isCameraRunning && counter.status !== "paused" ? <Action label="Tạm dừng" onPress={counter.pause} disabled={counter.status !== "running"} /> : null}
-          {isCameraRunning && counter.status === "finished" ? <Action label="Bắt đầu lại" onPress={handleRestart} disabled={countdownSeconds < 1} /> : null}
+          {isCameraRunning && (counter.status === "paused" || counter.status === "finished") ? <Action label="Bắt đầu lại" onPress={handleRestart} disabled={countdownSeconds < 1} /> : null}
           {isCameraRunning ? <Action label="Dừng" onPress={() => void stop()} /> : null}
         </View>
       </View>
@@ -410,7 +426,11 @@ const styles = StyleSheet.create({
   sessionTimerTextFullscreen: { fontSize: 58, lineHeight: 68, letterSpacing: 0.8 },
   sessionTimerUrgentText: { color: "#FBBF24" },
   sessionTimerTimeUpText: { color: "#F87171" },
-  videoControls: { position: "absolute", zIndex: 12, right: 12, bottom: 20, flexDirection: "row", gap: Spacing.one, opacity: 0 },
+  startCountingOverlay: { position: "absolute", zIndex: 14, bottom: 28, left: 16, right: 16, alignItems: "center", gap: Spacing.one },
+  startCountingHint: { color: "rgba(255,255,255,0.9)", fontWeight: "700", textAlign: "center", textShadowColor: "rgba(0,0,0,0.72)", textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 3 },
+  startCountingButton: { minHeight: 48, minWidth: 172, alignItems: "center", justifyContent: "center", borderRadius: radii.pill, paddingHorizontal: Spacing.three, backgroundColor: Colors.light.primary, borderWidth: 1, borderColor: "rgba(255,255,255,0.42)" },
+  startCountingButtonText: { color: Colors.light.surface, fontWeight: "800" },
+  videoControls: { position: "absolute", zIndex: 16, right: 12, bottom: 20, flexDirection: "row", gap: Spacing.one, opacity: 0 },
   videoControlsVisible: { opacity: 1 },
   videoIconButton: { width: 44, height: 44, alignItems: "center", justifyContent: "center", borderRadius: radii.pill, backgroundColor: "rgba(0,0,0,0.72)", borderWidth: 1, borderColor: "rgba(255,255,255,0.2)" },
   videoIconButtonActive: { backgroundColor: Colors.light.surface, borderColor: Colors.light.primary },

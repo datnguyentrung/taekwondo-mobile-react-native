@@ -11,6 +11,9 @@ const TARGET_KEYPOINTS = [
   MOVENET_KEYPOINT.rightKnee,
 ] as const;
 
+// MoveNet's first five keypoints describe the head (nose, eyes and ears).
+const HEAD_KEYPOINTS = [0, 1, 2, 3, 4] as const;
+
 const isVisible = (point: NormalizedPoint | undefined): point is NormalizedPoint =>
   Boolean(point && point.score >= 0.10);
 
@@ -129,16 +132,31 @@ export function PoseOverlay({
       });
 
       if (!bounds) return;
-      const x1 = toX(bounds.xMin);
-      const x2 = toX(bounds.xMax);
-      const fontSize = Math.max(72, Math.min(96, Math.round(Math.min(imageWidth, imageHeight) * 0.1)));
+      const headPoints = HEAD_KEYPOINTS
+        .map((index) => pose.keypoints[index])
+        .filter(isVisible);
+      const headBounds = fallbackBounds(headPoints) ?? {
+        xMin: bounds.xMin,
+        xMax: bounds.xMax,
+        yMin: bounds.yMin,
+        yMax: Math.min(bounds.yMax, bounds.yMin + Math.max(0.12, (bounds.yMax - bounds.yMin) * 0.24)),
+      };
+      const averageTorsoHeight = references.length
+        ? references.reduce((sum, reference) => sum + reference.torsoHeight, 0) / references.length
+        : Math.max(0.08, (bounds.yMax - bounds.yMin) * 0.35);
+      // Scale the number from the person's torso, so fullscreen naturally
+      // enlarges it with the contained video image instead of using a fixed px cap.
+      const fontSize = Math.max(
+        48,
+        Math.round(Math.min(imageHeight * 0.22, averageTorsoHeight * imageHeight * 0.82)),
+      );
       const count = String(slot.leftReps + slot.rightReps);
       const label = countLabelPosition(
         {
-          left: Math.min(x1, x2),
-          right: Math.max(x1, x2),
-          top: toY(bounds.yMin),
-          bottom: toY(bounds.yMax),
+          left: Math.min(toX(headBounds.xMin), toX(headBounds.xMax)),
+          right: Math.max(toX(headBounds.xMin), toX(headBounds.xMax)),
+          top: toY(headBounds.yMin),
+          bottom: toY(headBounds.yMax),
         },
         image,
         fontSize,
@@ -152,7 +170,7 @@ export function PoseOverlay({
       context.lineJoin = "round";
       context.miterLimit = 2;
       context.strokeStyle = "#000000";
-      context.lineWidth = 12;
+      context.lineWidth = Math.max(5, Math.round(fontSize * 0.11));
       context.strokeText(count, label.x, label.y);
       context.fillStyle = digitColor;
       context.fillText(count, label.x, label.y);

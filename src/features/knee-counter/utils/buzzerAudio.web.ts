@@ -6,6 +6,31 @@ let audioCtx: AudioContext | null = null;
 
 export type CountdownCue = "3" | "2" | "1" | "GO!";
 
+/**
+ * Keeps short synthesized cues audible on small phone speakers without
+ * pushing a raw oscillator straight into digital clipping.
+ */
+function createLoudnessChain(ctx: AudioContext): {
+  input: DynamicsCompressorNode;
+  output: GainNode;
+} {
+  const compressor = ctx.createDynamicsCompressor();
+  const output = ctx.createGain();
+
+  // Compress peaks first, then apply a modest make-up level. This makes the
+  // short countdown cues more present while keeping the buzzer controlled.
+  compressor.threshold.setValueAtTime(-20, ctx.currentTime);
+  compressor.knee.setValueAtTime(18, ctx.currentTime);
+  compressor.ratio.setValueAtTime(8, ctx.currentTime);
+  compressor.attack.setValueAtTime(0.003, ctx.currentTime);
+  compressor.release.setValueAtTime(0.12, ctx.currentTime);
+  output.gain.setValueAtTime(1.25, ctx.currentTime);
+
+  compressor.connect(output);
+  output.connect(ctx.destination);
+  return { input: compressor, output };
+}
+
 function getAudioContext(): AudioContext | null {
   if (typeof window === "undefined") return null;
   const AudioCtx = window.AudioContext || (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
@@ -37,7 +62,7 @@ export function playCountdownCue(cue: CountdownCue): void {
     }
 
     const now = ctx.currentTime;
-    const duration = 0.2;
+    const duration = 0.24;
     const oscillator = ctx.createOscillator();
     const accent = ctx.createOscillator();
     const gainNode = ctx.createGain();
@@ -49,46 +74,23 @@ export function playCountdownCue(cue: CountdownCue): void {
     accent.type = "sine";
     accent.frequency.setValueAtTime(880, now);
     gainNode.gain.setValueAtTime(0.0001, now);
-    gainNode.gain.exponentialRampToValueAtTime(1, now + 0.018);
+    gainNode.gain.exponentialRampToValueAtTime(0.9, now + 0.018);
     gainNode.gain.exponentialRampToValueAtTime(0.0001, now + duration);
     accentGain.gain.setValueAtTime(0.0001, now);
-    accentGain.gain.exponentialRampToValueAtTime(1, now + 0.012);
+    accentGain.gain.exponentialRampToValueAtTime(0.7, now + 0.012);
     accentGain.gain.exponentialRampToValueAtTime(0.0001, now + duration * 0.58);
 
     oscillator.connect(gainNode);
     accent.connect(accentGain);
-    gainNode.connect(ctx.destination);
-    accentGain.connect(ctx.destination);
+    const loudness = createLoudnessChain(ctx);
+    gainNode.connect(loudness.input);
+    accentGain.connect(loudness.input);
     oscillator.start(now);
     accent.start(now);
     oscillator.stop(now + duration);
     accent.stop(now + duration);
   } catch (err) {
     console.warn("Could not play countdown audio:", err);
-  }
-}
-
-/** The original clean tick is reserved for the final ten-second countdown. */
-export function playFinalCountdownTick(): void {
-  try {
-    const ctx = getAudioContext();
-    if (!ctx) return;
-    if (ctx.state === "suspended") void ctx.resume();
-
-    const now = ctx.currentTime;
-    const oscillator = ctx.createOscillator();
-    const gainNode = ctx.createGain();
-    oscillator.type = "sine";
-    oscillator.frequency.setValueAtTime(660, now);
-    gainNode.gain.setValueAtTime(0.0001, now);
-    gainNode.gain.exponentialRampToValueAtTime(1, now + 0.015);
-    gainNode.gain.exponentialRampToValueAtTime(0.0001, now + 0.12);
-    oscillator.connect(gainNode);
-    gainNode.connect(ctx.destination);
-    oscillator.start(now);
-    oscillator.stop(now + 0.12);
-  } catch (err) {
-    console.warn("Could not play final countdown tick:", err);
   }
 }
 
@@ -127,7 +129,8 @@ export function playRefereeBuzzer(durationMs = 1200): void {
     osc1.connect(gainNode);
     osc2.connect(gainNode);
     osc3.connect(gainNode);
-    gainNode.connect(ctx.destination);
+    const loudness = createLoudnessChain(ctx);
+    gainNode.connect(loudness.input);
 
     osc1.start(now);
     osc2.start(now);
