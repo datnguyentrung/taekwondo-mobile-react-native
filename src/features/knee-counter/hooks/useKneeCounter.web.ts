@@ -419,6 +419,27 @@ export function useKneeCounter(
     if (status !== "aligning") return;
     setStatus("countdown");
   }, [status]);
+  const completeCountdown = useCallback(() => {
+    if (status !== "countdown") return;
+    countingRef.current = true;
+    workerRef.current?.postMessage({ type: "resume" });
+    analysisWorkerRef.current?.postMessage({ type: "resume" });
+    stopLoopRef.current?.();
+    startLoop("count");
+    setStatus("running");
+  }, [startLoop, status]);
+  const finish = useCallback(() => {
+    if (status !== "running") return;
+    countingRef.current = false;
+    stopLoopRef.current?.();
+    workerRef.current?.postMessage({ type: "pause" });
+    analysisWorkerRef.current?.postMessage({ type: "pause" });
+    workerRef.current?.postMessage({ type: "reset-pending-cycle" });
+    analysisWorkerRef.current?.postMessage({ type: "reset-pending-cycle" });
+    mainRuntimeRef.current?.resetPendingCycles();
+    startLoop("preview");
+    setStatus("finished");
+  }, [startLoop, status]);
   const stop = useCallback(async () => {
     dispose();
     countingRef.current = false;
@@ -444,22 +465,17 @@ export function useKneeCounter(
       sessionStartedAt,
     });
   }, []);
+  const restart = useCallback(() => {
+    if (status !== "finished") return;
+    reset();
+    setStatus("countdown");
+  }, [reset, status]);
   useEffect(() => () => dispose(), [dispose]);
   const detectedCount = useMemo(
     () => slots.filter((slot) => slot.pose).length,
     [slots],
   );
   const passCount = useMemo(() => countCurrentGroupPass(slots), [slots]);
-  useEffect(() => {
-    if (status !== "countdown") return;
-    const timer = window.setTimeout(() => {
-      countingRef.current = true;
-      stopLoopRef.current?.();
-      startLoop("count");
-      setStatus("running");
-    }, 3000);
-    return () => window.clearTimeout(timer);
-  }, [startLoop, status]);
   const latestEventAtMs = events.at(-1)?.crossedAtMs ?? 0;
   const synchronizedGroupPass = useMemo(
     () =>
@@ -492,6 +508,9 @@ export function useKneeCounter(
     pause,
     resume,
     beginCounting,
+    completeCountdown,
+    finish,
     reset,
+    restart,
   };
 }

@@ -3,27 +3,36 @@ import { Pressable, StyleSheet, TextInput, View } from "react-native";
 import { Colors, Spacing, radii } from "@/theme";
 import { ThemedText } from "@/shared/ui/ThemedText";
 
+import type { SessionStatus } from "../types/kneeCounter.types";
+import { formatSessionDuration } from "../utils/sessionClock.web";
+
 type CameraStatusStripProps = {
   detectedCount: number;
-  status: string;
+  status: SessionStatus;
   targetSeconds: number;
   onChangeTargetSeconds: (seconds: number) => void;
   remainingSeconds: number;
   running: boolean;
   busy?: boolean;
   onPrimaryAction: () => void | Promise<void>;
-  configuredCameraFps?: number | null;
-  actualCameraFps?: number | null;
   inferenceFps?: number | null;
-  workerBusyDrops?: number;
-  capabilityFps?: { min: number | null; max: number | null };
 };
 
-function formatDuration(seconds: number) {
-  const safeSeconds = Math.max(0, Math.floor(seconds));
-  const minutes = Math.floor(safeSeconds / 60).toString().padStart(2, "0");
-  const remainder = (safeSeconds % 60).toString().padStart(2, "0");
-  return `${minutes}:${remainder}`;
+function statusCopy(status: SessionStatus) {
+  if (status === "running") return "Đang theo dõi";
+  if (status === "paused") return "Đã tạm dừng";
+  if (status === "finished") return "Kết thúc";
+  if (status === "countdown") return "Đếm ngược";
+  if (status === "loading-model" || status === "benchmarking") return "Đang tải";
+  return "Đã sẵn sàng";
+}
+
+function actionCopy(status: SessionStatus, running: boolean) {
+  if (!running) return "Bật camera";
+  if (status === "paused") return "Tiếp tục";
+  if (status === "countdown") return "Đang đếm ngược…";
+  if (status === "finished") return "Kết thúc";
+  return "Dừng camera";
 }
 
 export function CameraStatusStrip({
@@ -35,186 +44,79 @@ export function CameraStatusStrip({
   running,
   busy = false,
   onPrimaryAction,
-  configuredCameraFps = null,
-  actualCameraFps = null,
   inferenceFps = null,
-  workerBusyDrops = 0,
-  capabilityFps,
 }: CameraStatusStripProps) {
-  const actionLabel = running ? (status === "paused" ? "Tiếp tục" : "Dừng camera") : "Bật camera";
-  const statusLabel = status === "running" ? "Đang đếm" : status === "paused" ? "Đã tạm dừng" : status === "countdown" ? "Sắp bắt đầu" : status === "aligning" ? "Đang căn chỉnh" : status === "loading-model" || status === "benchmarking" ? "Đang tải model" : "Sẵn sàng";
-  const isRunning = status === "running";
-  const isUrgent = isRunning && remainingSeconds <= 5 && remainingSeconds > 0;
-  const isTimeUp = remainingSeconds === 0 && (isRunning || status === "paused");
+  const isDurationLocked = status === "countdown" || status === "running" || status === "paused";
+  const isUrgent = status === "running" && remainingSeconds <= 5 && remainingSeconds > 0;
+  const isTimeUp = status === "finished";
 
   return (
     <View style={styles.strip}>
-      <Metric label="Số người phát hiện" value={String(detectedCount)} />
-      <Metric label="Trạng thái" value={statusLabel} live={isRunning} />
-      <Metric label="FPS camera thực" value={actualCameraFps ? `${actualCameraFps.toFixed(1)} / ${configuredCameraFps ? configuredCameraFps.toFixed(0) : "—"}` : "—"} />
-      <Metric label="FPS xử lý" value={inferenceFps ? inferenceFps.toFixed(1) : "—"} />
-      <Metric label="Khung bỏ" value={`${workerBusyDrops}${capabilityFps?.max ? ` · max ${capabilityFps.max}` : ""}`} />
-
-      {/* Target countdown seconds input */}
+      <Metric icon="◉" label="Số vận động viên phát hiện" value={String(detectedCount)} detail="Đang theo dõi" />
+      <Metric icon="▣" label="Trạng thái model" value={statusCopy(status)} detail={status === "loading-model" || status === "benchmarking" ? "Đang khởi tạo" : "Sẵn sàng"} />
+      <Metric icon="ϟ" label="FPS xử lý thực tế" value={inferenceFps ? `${inferenceFps.toFixed(1)} FPS` : "— FPS"} />
       <View style={styles.metric}>
-        <ThemedText type="caption" style={styles.metricLabel}>Đặt đếm ngược</ThemedText>
-        <View style={styles.targetRow}>
-          <TextInput
-            accessibilityLabel="Thời gian đếm ngược theo giây"
-            style={[styles.targetInput, isRunning && styles.targetInputDisabled]}
-            value={targetSeconds > 0 ? String(targetSeconds) : ""}
-            placeholder="30"
-            placeholderTextColor="rgba(255,255,255,0.4)"
-            keyboardType="number-pad"
-            editable={!isRunning}
-            onChangeText={(text) => {
-              const num = parseInt(text.replace(/\D/g, ""), 10);
-              onChangeTargetSeconds(isNaN(num) ? 0 : Math.min(999, Math.max(0, num)));
-            }}
-          />
-          <ThemedText type="bodySmall" style={styles.unitText}>giây</ThemedText>
-        </View>
+        <ThemedText type="caption" style={styles.metricLabel}>◷ &nbsp; Thời gian còn lại</ThemedText>
+        {isDurationLocked ? (
+          <ThemedText type="title" style={[styles.timerValue, isUrgent && styles.urgentValue, isTimeUp && styles.timeUpValue]}>{formatSessionDuration(remainingSeconds)}</ThemedText>
+        ) : (
+          <View style={styles.durationEditRow}>
+            <TextInput
+              accessibilityLabel="Thời gian đếm ngược theo giây"
+              style={styles.targetInput}
+              value={targetSeconds > 0 ? String(targetSeconds) : ""}
+              placeholder="30"
+              placeholderTextColor="rgba(255,255,255,0.4)"
+              keyboardType="number-pad"
+              editable={!isDurationLocked}
+              onChangeText={(text) => {
+                const seconds = parseInt(text.replace(/\D/g, ""), 10);
+                onChangeTargetSeconds(isNaN(seconds) ? 0 : Math.min(999, Math.max(0, seconds)));
+              }}
+            />
+            <ThemedText type="bodySmall" style={styles.unitText}>giây</ThemedText>
+          </View>
+        )}
       </View>
-
-      {/* Remaining countdown timer */}
-      <View style={styles.metric}>
-        <ThemedText type="caption" style={styles.metricLabel}>Thời gian còn lại</ThemedText>
-        <View style={styles.metricValueRow}>
-          {isRunning ? <View style={[styles.liveDot, isUrgent && styles.urgentDot, isTimeUp && styles.timeUpDot]} /> : null}
-          <ThemedText
-            type="title"
-            style={[
-              styles.metricValue,
-              isUrgent && styles.urgentValue,
-              isTimeUp && styles.timeUpValue,
-            ]}
-          >
-            {formatDuration(remainingSeconds)}
-          </ThemedText>
-        </View>
-      </View>
-
       <Pressable
         accessibilityRole="button"
-        accessibilityState={{ busy, disabled: busy }}
-        disabled={busy}
+        accessibilityState={{ busy, disabled: busy || status === "countdown" || status === "finished" }}
+        disabled={busy || status === "countdown" || status === "finished"}
         onPress={() => void onPrimaryAction()}
-        style={({ pressed }) => [
-          styles.primaryAction,
-          pressed && styles.pressed,
-          busy && styles.disabled,
-        ]}
+        style={({ pressed }) => [styles.primaryAction, (busy || status === "countdown" || status === "finished") && styles.disabled, pressed && styles.pressed]}
       >
-        <ThemedText type="action" style={styles.primaryText}>{actionLabel}</ThemedText>
+        <ThemedText type="action" style={styles.primaryText}>{actionCopy(status, running)}</ThemedText>
       </Pressable>
     </View>
   );
 }
 
-function Metric({ label, value, live = false }: { label: string; value: string; live?: boolean }) {
+function Metric({ icon, label, value, detail }: { icon: string; label: string; value: string; detail?: string }) {
   return (
     <View style={styles.metric}>
-      <ThemedText type="caption" style={styles.metricLabel}>{label}</ThemedText>
-      <View style={styles.metricValueRow}>
-        {live ? <View style={styles.liveDot} /> : null}
-        <ThemedText type="title" style={styles.metricValue}>{value}</ThemedText>
-      </View>
+      <ThemedText type="caption" style={styles.metricLabel}>{icon} &nbsp; {label}</ThemedText>
+      <ThemedText type="title" style={styles.metricValue}>{value}</ThemedText>
+      {detail ? <View style={styles.detailRow}><View style={styles.liveDot} /><ThemedText type="caption" style={styles.detailText}>{detail}</ThemedText></View> : null}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  strip: {
-    flexDirection: "row",
-    alignItems: "center",
-    flexWrap: "wrap",
-    gap: Spacing.two,
-    paddingVertical: Spacing.two,
-    paddingHorizontal: Spacing.three,
-    backgroundColor: "#182331",
-    borderRadius: radii.md,
-  },
-  metric: {
-    flexGrow: 1,
-    minWidth: 80,
-    justifyContent: "center",
-    gap: 4,
-    paddingRight: Spacing.two,
-    borderRightWidth: StyleSheet.hairlineWidth,
-    borderRightColor: "rgba(255,255,255,0.24)",
-  },
-  metricLabel: {
-    color: "rgba(255,255,255,0.68)",
-  },
-  metricValueRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: Spacing.one,
-  },
-  metricValue: {
-    color: Colors.light.surface,
-    fontWeight: "700",
-  },
-  targetRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-  },
-  targetInput: {
-    minWidth: 50,
-    height: 32,
-    backgroundColor: "rgba(255,255,255,0.12)",
-    borderRadius: radii.sm,
-    color: Colors.light.surface,
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-    fontSize: 16,
-    fontWeight: "700",
-    textAlign: "center",
-    borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.25)",
-  },
-  targetInputDisabled: {
-    opacity: 0.6,
-  },
-  unitText: {
-    color: "rgba(255,255,255,0.72)",
-  },
-  liveDot: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
-    backgroundColor: "#22C55E",
-  },
-  urgentDot: {
-    backgroundColor: "#F59E0B",
-  },
-  timeUpDot: {
-    backgroundColor: "#EF4444",
-  },
-  urgentValue: {
-    color: "#FBBF24",
-  },
-  timeUpValue: {
-    color: "#F87171",
-  },
-  primaryAction: {
-    minHeight: 44,
-    minWidth: 130,
-    flexGrow: 1,
-    alignItems: "center",
-    justifyContent: "center",
-    borderRadius: radii.md,
-    paddingHorizontal: Spacing.three,
-    backgroundColor: Colors.light.primary,
-  },
-  primaryText: {
-    color: Colors.light.surface,
-  },
-  pressed: {
-    opacity: 0.78,
-  },
-  disabled: {
-    opacity: 0.5,
-  },
+  strip: { flexDirection: "row", alignItems: "stretch", flexWrap: "wrap", gap: Spacing.two, padding: Spacing.two, borderRadius: radii.lg, backgroundColor: "#061A2D", boxShadow: "0 7px 14px rgba(6,26,45,0.16)" },
+  metric: { flex: 1, minWidth: 172, minHeight: 88, justifyContent: "center", gap: 5, paddingHorizontal: Spacing.two, paddingVertical: Spacing.one, borderRadius: radii.md, borderWidth: 1, borderColor: "rgba(255,255,255,0.11)", backgroundColor: "rgba(255,255,255,0.035)" },
+  metricLabel: { color: "rgba(255,255,255,0.72)", fontSize: 12 },
+  metricValue: { color: Colors.light.surface, fontWeight: "800", fontSize: 21, lineHeight: 26 },
+  detailRow: { flexDirection: "row", alignItems: "center", gap: 7 },
+  liveDot: { width: 10, height: 10, borderRadius: 5, backgroundColor: "#31D158" },
+  detailText: { color: "#58D96A", fontWeight: "700" },
+  durationEditRow: { flexDirection: "row", alignItems: "center", gap: 6 },
+  targetInput: { width: 74, height: 36, borderRadius: radii.sm, borderWidth: 1, borderColor: "rgba(255,197,51,0.68)", backgroundColor: "rgba(255,197,51,0.08)", color: "#FFC533", paddingHorizontal: 8, paddingVertical: 2, fontSize: 21, fontWeight: "800", textAlign: "center", fontVariant: ["tabular-nums"] },
+  unitText: { color: "rgba(255,255,255,0.72)" },
+  timerValue: { color: "#FFC533", fontWeight: "800", fontSize: 25, lineHeight: 30, fontVariant: ["tabular-nums"] },
+  urgentValue: { color: "#FBBF24" },
+  timeUpValue: { color: "#F87171" },
+  primaryAction: { flex: 1.12, minWidth: 190, minHeight: 88, alignItems: "center", justifyContent: "center", borderRadius: radii.md, paddingHorizontal: Spacing.three, backgroundColor: "#A51625" },
+  primaryText: { color: Colors.light.surface, fontSize: 18, fontWeight: "800", textAlign: "center" },
+  pressed: { opacity: 0.8 },
+  disabled: { opacity: 0.66 },
 });

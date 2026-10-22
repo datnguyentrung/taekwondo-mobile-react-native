@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 
 import { legKneeReference, MOVENET_KEYPOINT } from "../domain/kneeSignal";
 import type { BoundingBox, KneeCounterSessionConfig, NormalizedPoint, ParticipantSlot } from "../types/kneeCounter.types";
-import { stabilizeOverlayLine, videoContainRect } from "./overlayGeometry";
+import { countLabelPosition, stabilizeOverlayLine, videoContainRect } from "./overlayGeometry";
 
 const TARGET_KEYPOINTS = [
   MOVENET_KEYPOINT.leftHip,
@@ -131,22 +131,31 @@ export function PoseOverlay({
       if (!bounds) return;
       const x1 = toX(bounds.xMin);
       const x2 = toX(bounds.xMax);
-      const headCenterX = (x1 + x2) / 2;
       const fontSize = Math.max(72, Math.min(96, Math.round(Math.min(imageWidth, imageHeight) * 0.1)));
-      const labelY = Math.max(fontSize + 8, toY(bounds.yMin) - 16);
       const count = String(slot.leftReps + slot.rightReps);
+      const label = countLabelPosition(
+        {
+          left: Math.min(x1, x2),
+          right: Math.max(x1, x2),
+          top: toY(bounds.yMin),
+          bottom: toY(bounds.yMax),
+        },
+        image,
+        fontSize,
+        count.length,
+      );
       const digitColors = ["#FACC15", "#38BDF8", "#4ADE80", "#FB923C", "#E879F9", "#34D399"];
       const digitColor = digitColors[slot.slotIndex % digitColors.length];
 
       context.font = `900 ${fontSize}px Roboto, system-ui, sans-serif`;
-      context.textAlign = "center";
+      context.textAlign = label.textAlign;
       context.lineJoin = "round";
       context.miterLimit = 2;
       context.strokeStyle = "#000000";
       context.lineWidth = 12;
-      context.strokeText(count, headCenterX, labelY);
+      context.strokeText(count, label.x, label.y);
       context.fillStyle = digitColor;
-      context.fillText(count, headCenterX, labelY);
+      context.fillText(count, label.x, label.y);
     });
   }, [config, height, mirrored, size, slots, width]);
 

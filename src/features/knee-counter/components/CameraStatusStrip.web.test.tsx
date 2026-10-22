@@ -16,9 +16,8 @@ describe("CameraStatusStrip", () => {
       />
     );
 
-    expect(screen.getByText("Đặt đếm ngược")).toBeTruthy();
-    expect(screen.getByText("Thời gian còn lại")).toBeTruthy();
-    expect(screen.getByText("00:30")).toBeTruthy();
+    expect(screen.getByText(/Thời gian còn lại/)).toBeTruthy();
+    expect(screen.getByLabelText("Thời gian đếm ngược theo giây").props.value).toBe("30");
     expect(screen.getByText("2")).toBeTruthy();
   });
 
@@ -55,5 +54,23 @@ describe("CameraStatusStrip", () => {
     );
 
     expect(screen.getByText("00:04")).toBeTruthy();
+  });
+
+  it("labels an expired session as finished and keeps the duration editable", async () => {
+    const screen = await render(
+      <CameraStatusStrip
+        detectedCount={1}
+        status="finished"
+        targetSeconds={30}
+        onChangeTargetSeconds={() => undefined}
+        remainingSeconds={0}
+        running={true}
+        onPrimaryAction={() => undefined}
+      />,
+    );
+
+    expect(screen.getAllByText("Kết thúc")).toHaveLength(2);
+    expect(screen.getByLabelText("Thời gian đếm ngược theo giây").props.value).toBe("30");
+    expect(screen.getByLabelText("Thời gian đếm ngược theo giây").props.editable).toBe(true);
   });
 });

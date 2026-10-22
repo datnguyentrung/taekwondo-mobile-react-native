@@ -13,12 +13,15 @@ import { kneeCounterEnabled } from "../config/featureFlags";
 import { exportRepEventsCsv } from "../domain/groupEvaluator";
 import { useCamera } from "../hooks/useCamera.web";
 import { useKneeCounter } from "../hooks/useKneeCounter.web";
+import { useSessionClock } from "../hooks/useSessionClock.web";
 import { KneeCounterDashboard } from "../components/KneeCounterDashboard.web";
 import { KneeCounterDiagnostics } from "../components/KneeCounterDiagnostics.web";
 import { PoseOverlay } from "../components/PoseOverlay.web";
+import { CameraSessionOverlay } from "../components/CameraSessionOverlay.web";
 import { AnalysisSettings } from "../components/AnalysisSettings.web";
 import { CameraStatusStrip } from "../components/CameraStatusStrip.web";
-import { playRefereeBuzzer } from "../utils/buzzerAudio.web";
+import { playCountdownCue, playFinalCountdownTick, playRefereeBuzzer, unlockSessionAudio } from "../utils/buzzerAudio.web";
+import { formatSessionDuration } from "../utils/sessionClock.web";
 import type { CameraFpsOption } from "../types/kneeCounter.types";
 
 export function KneeCounterScreen() {
@@ -63,9 +66,19 @@ export function KneeCounterScreen() {
   const [videoSize, setVideoSize] = useState({ width: 1280, height: 720 });
   const [containerSize, setContainerSize] = useState({ width: 0, height: 0 });
   const [countdownSeconds, setCountdownSeconds] = useState(30);
-  const [remainingSeconds, setRemainingSeconds] = useState(30);
-  const hasPlayedBuzzerRef = useRef(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [videoHovered, setVideoHovered] = useState(false);
+  const resumePendingRef = useRef(false);
+  const finalCountdownTickRef = useRef<number | null>(null);
+  const sessionClock = useSessionClock({
+    status: counter.status,
+    targetSeconds: countdownSeconds,
+    onCountdownComplete: counter.completeCountdown,
+    onTimeUp: () => {
+      playRefereeBuzzer(1200);
+      counter.finish();
+    },
+  });
 
   const frameDimensions = useMemo(() => {
     if (compact || !containerSize.width || !containerSize.height) {
@@ -113,33 +126,25 @@ export function KneeCounterScreen() {
   }, []);
 
   useEffect(() => {
-    if (counter.status !== "running") {
-      hasPlayedBuzzerRef.current = false;
+    if (sessionClock.countdownCue) playCountdownCue(sessionClock.countdownCue);
+  }, [sessionClock.countdownCue]);
+
+  useEffect(() => {
+    if (counter.status !== "running" || sessionClock.remainingSeconds > 10 || sessionClock.remainingSeconds < 1) {
+      finalCountdownTickRef.current = null;
       return;
     }
-
-    const startedAt = Date.now();
-    hasPlayedBuzzerRef.current = false;
-
-    const timer = window.setInterval(() => {
-      const elapsed = (Date.now() - startedAt) / 1000;
-      const rem = Math.max(0, Math.ceil(countdownSeconds - elapsed));
-      setRemainingSeconds(rem);
-      if (rem <= 0 && !hasPlayedBuzzerRef.current) {
-        hasPlayedBuzzerRef.current = true;
-        playRefereeBuzzer(1500);
-        counter.pause();
-      }
-    }, 100);
-
-    return () => window.clearInterval(timer);
-  }, [countdownSeconds, counter]);
+    if (finalCountdownTickRef.current === sessionClock.remainingSeconds) return;
+    finalCountdownTickRef.current = sessionClock.remainingSeconds;
+    playFinalCountdownTick();
+  }, [counter.status, sessionClock.remainingSeconds]);
 
   const progressPercent = countdownSeconds > 0
-    ? Math.min(100, Math.max(0, ((countdownSeconds - remainingSeconds) / countdownSeconds) * 100))
+    ? Math.min(100, Math.max(0, ((countdownSeconds - sessionClock.remainingSeconds) / countdownSeconds) * 100))
     : 0;
-  const isTimeUp = remainingSeconds === 0 && (counter.status === "running" || counter.status === "paused");
-  const isUrgent = remainingSeconds <= 5 && counter.status === "running";
+  const isTimeUp = counter.status === "finished";
+  const isUrgent = sessionClock.remainingSeconds <= 5 && sessionClock.remainingSeconds > 0 && counter.status === "running";
+  const showVideoTimer = counter.status === "running" || counter.status === "paused" || counter.status === "finished";
 
   const exportCsv = () => {
     const csv = exportRepEventsCsv(counter.events);
@@ -155,25 +160,35 @@ export function KneeCounterScreen() {
   const start = async () => {
     if (await startCamera(activeCameraFps)) {
       await counter.start();
-      setRemainingSeconds(countdownSeconds);
-      hasPlayedBuzzerRef.current = false;
+      sessionClock.startNewSession(countdownSeconds);
     }
   };
   const stop = async () => {
+    sessionClock.cancel();
     await counter.stop();
     stopCamera();
-    setRemainingSeconds(countdownSeconds);
-    hasPlayedBuzzerRef.current = false;
+    resumePendingRef.current = false;
   };
   const handleBeginCounting = () => {
-    setRemainingSeconds(countdownSeconds);
-    hasPlayedBuzzerRef.current = false;
+    if (countdownSeconds < 1) return;
+    unlockSessionAudio();
+    if (!resumePendingRef.current) sessionClock.startNewSession(countdownSeconds);
+    resumePendingRef.current = false;
     counter.beginCounting();
+  };
+  const handleResume = () => {
+    resumePendingRef.current = true;
+    counter.resume();
+  };
+  const handleRestart = () => {
+    if (countdownSeconds < 1) return;
+    unlockSessionAudio();
+    sessionClock.startNewSession(countdownSeconds);
+    counter.restart();
   };
   const handleReset = () => {
     counter.reset();
-    setRemainingSeconds(countdownSeconds);
-    hasPlayedBuzzerRef.current = false;
+    sessionClock.startNewSession(countdownSeconds);
   };
   const cameraLabels = cameraDevices.map((device, index) => device.label || `Camera ${index + 1}`);
   const selectedCameraLabel = cameraDevices.find((device) => device.deviceId === cameraDeviceId)?.label;
@@ -194,6 +209,7 @@ export function KneeCounterScreen() {
             }
           }}
         >
+          <div onMouseEnter={() => setVideoHovered(true)} onMouseLeave={() => setVideoHovered(false)} style={{ display: "contents" }}>
           <View
             nativeID="knee-counter-video-frame"
             {...({ id: "knee-counter-video-frame" } as Record<string, unknown>)}
@@ -228,36 +244,54 @@ export function KneeCounterScreen() {
               config={counter.config}
               mirrored={counter.config.flipHorizontal}
             />
+            <CameraSessionOverlay
+              countdownCue={sessionClock.countdownCue}
+              finished={counter.status === "finished"}
+            />
             <View style={styles.videoMeta}>
-              <ThemedText type="caption" style={styles.videoMetaText}>{isCameraRunning ? "LIVE" : "SẴN SÀNG"}</ThemedText>
-              <ThemedText type="caption" style={styles.videoMetaText}>{cameraSettings?.width ?? videoSize.width} x {cameraSettings?.height ?? videoSize.height} · camera {cameraSettings?.frameRate ? `${Math.round(cameraSettings.frameRate)} FPS` : "—"} · xử lý {counter.metrics.inferenceFps ? `${counter.metrics.inferenceFps} FPS` : "—"}</ThemedText>
-              {counter.fallbackToCpu ? <ThemedText type="caption" style={styles.cpuBadgeText}>CPU (WASM)</ThemedText> : null}
+              <View style={styles.liveDot} />
+              <ThemedText type="caption" style={styles.videoMetaText}>LIVE</ThemedText>
             </View>
-            <View style={styles.videoTopRight}>
+            {showVideoTimer ? (
+              <View
+                accessibilityRole="timer"
+                accessibilityLabel={`Thời gian còn lại ${formatSessionDuration(sessionClock.remainingSeconds)}`}
+                style={[
+                  styles.sessionTimer,
+                  isFullscreen && styles.sessionTimerFullscreen,
+                  isUrgent && styles.sessionTimerUrgent,
+                  isTimeUp && styles.sessionTimerTimeUp,
+                ]}
+              >
+                <ThemedText
+                  type="title"
+                  style={[
+                    styles.sessionTimerText,
+                    isFullscreen && styles.sessionTimerTextFullscreen,
+                    isUrgent && styles.sessionTimerUrgentText,
+                    isTimeUp && styles.sessionTimerTimeUpText,
+                  ]}
+                >
+                  {formatSessionDuration(sessionClock.remainingSeconds)}
+                </ThemedText>
+              </View>
+            ) : null}
+            <View style={[styles.videoControls, videoHovered && styles.videoControlsVisible]} pointerEvents={videoHovered ? "auto" : "none"}>
               <Pressable
                 accessibilityRole="button"
                 accessibilityLabel={isFullscreen ? "Thu nhỏ camera" : "Toàn màn hình"}
                 onPress={() => void toggleFullscreen()}
                 style={({ pressed }) => [
-                  styles.flipBadge,
-                  isFullscreen && styles.flipBadgeActive,
+                  styles.videoIconButton,
+                  isFullscreen && styles.videoIconButtonActive,
                   pressed && styles.pressed,
                 ]}
               >
                 <AppIcon
                   icon={isFullscreen ? <Minimize /> : <Maximize />}
-                  size={14}
+                  size={19}
                   color={isFullscreen ? Colors.light.primary : Colors.light.surface}
                 />
-                <ThemedText
-                  type="caption"
-                  style={[
-                    styles.flipBadgeText,
-                    isFullscreen && styles.flipBadgeTextActive,
-                  ]}
-                >
-                  {isFullscreen ? "Thu nhỏ" : "Toàn màn hình"}
-                </ThemedText>
               </Pressable>
               <Pressable
                 accessibilityRole="button"
@@ -265,25 +299,16 @@ export function KneeCounterScreen() {
                 accessibilityState={{ selected: counter.config.flipHorizontal }}
                 onPress={() => counter.updateConfig({ flipHorizontal: !counter.config.flipHorizontal })}
                 style={({ pressed }) => [
-                  styles.flipBadge,
-                  counter.config.flipHorizontal && styles.flipBadgeActive,
+                  styles.videoIconButton,
+                  counter.config.flipHorizontal && styles.videoIconButtonActive,
                   pressed && styles.pressed,
                 ]}
               >
                 <AppIcon
                   icon={<FlipH />}
-                  size={14}
+                  size={19}
                   color={counter.config.flipHorizontal ? Colors.light.primary : Colors.light.surface}
                 />
-                <ThemedText
-                  type="caption"
-                  style={[
-                    styles.flipBadgeText,
-                    counter.config.flipHorizontal && styles.flipBadgeTextActive,
-                  ]}
-                >
-                  {counter.config.flipHorizontal ? "Đang lật ngang" : "Lật ngang"}
-                </ThemedText>
               </Pressable>
             </View>
             {/* Bottom Countdown Processing Bar */}
@@ -300,6 +325,7 @@ export function KneeCounterScreen() {
             </View>
             {!isCameraRunning ? <View style={styles.videoHint}><ThemedText type="body" style={styles.videoHintText}>Bật camera để bắt đầu</ThemedText></View> : null}
           </View>
+          </div>
         </View>
         {cameraError ? <ThemedText accessibilityRole="alert" type="bodySmall" style={styles.error}>{cameraError}</ThemedText> : null}
         {counter.error ? <ThemedText accessibilityRole="alert" type="bodySmall" style={styles.error}>{counter.error}</ThemedText> : null}
@@ -309,22 +335,19 @@ export function KneeCounterScreen() {
           targetSeconds={countdownSeconds}
           onChangeTargetSeconds={(sec) => {
             setCountdownSeconds(sec);
-            if (counter.status !== "running") setRemainingSeconds(sec);
+            if (counter.status !== "finished") sessionClock.startNewSession(sec);
           }}
-          remainingSeconds={remainingSeconds}
+          remainingSeconds={sessionClock.remainingSeconds}
           running={isCameraRunning}
-          configuredCameraFps={cameraSettings?.frameRate ?? null}
-          actualCameraFps={counter.metrics.videoCallbackFps ?? counter.metrics.cameraFps}
           inferenceFps={counter.metrics.inferenceFps}
-          workerBusyDrops={counter.metrics.workerBusyDrops ?? counter.metrics.droppedFrames}
-          capabilityFps={{ min: typeof cameraCapabilities?.frameRate?.min === "number" ? cameraCapabilities.frameRate.min : null, max: typeof cameraCapabilities?.frameRate?.max === "number" ? cameraCapabilities.frameRate.max : null }}
           busy={counter.status === "loading-model" || counter.status === "benchmarking"}
-          onPrimaryAction={isCameraRunning && counter.status === "paused" ? counter.resume : isCameraRunning ? stop : start}
+          onPrimaryAction={isCameraRunning && counter.status === "paused" ? handleResume : isCameraRunning ? stop : start}
         />
         <View style={styles.actionRow}>
-          {isCameraRunning && counter.status === "aligning" ? <Action label="Bắt đầu đếm" onPress={handleBeginCounting} /> : null}
+          {isCameraRunning && counter.status === "aligning" ? <Action label="Bắt đầu đếm" onPress={handleBeginCounting} disabled={countdownSeconds < 1} /> : null}
           {isCameraRunning && counter.status === "countdown" ? <Action label="Đang chuẩn bị..." onPress={() => undefined} disabled /> : null}
           {isCameraRunning && counter.status !== "paused" ? <Action label="Tạm dừng" onPress={counter.pause} disabled={counter.status !== "running"} /> : null}
+          {isCameraRunning && counter.status === "finished" ? <Action label="Bắt đầu lại" onPress={handleRestart} disabled={countdownSeconds < 1} /> : null}
           {isCameraRunning ? <Action label="Dừng" onPress={() => void stop()} /> : null}
         </View>
       </View>
@@ -376,14 +399,21 @@ const styles = StyleSheet.create({
   bottomProgressBarFill: {
     height: "100%",
   },
-  videoMeta: { position: "absolute", top: 12, left: 12, flexDirection: "row", gap: Spacing.two, paddingHorizontal: Spacing.two, paddingVertical: Spacing.one, borderRadius: radii.pill, backgroundColor: "rgba(0,0,0,0.72)" },
-  videoMetaText: { color: Colors.light.surface },
-  cpuBadgeText: { color: "#F59E0B", fontWeight: "600" },
-  videoTopRight: { position: "absolute", top: 12, right: 12, flexDirection: "row", gap: Spacing.two, zIndex: 10 },
-  flipBadge: { flexDirection: "row", alignItems: "center", gap: Spacing.one, paddingHorizontal: Spacing.two, paddingVertical: Spacing.one, borderRadius: radii.pill, backgroundColor: "rgba(0,0,0,0.72)", borderWidth: 1, borderColor: "rgba(255,255,255,0.2)" },
-  flipBadgeActive: { backgroundColor: Colors.light.surface, borderColor: Colors.light.primary },
-  flipBadgeText: { color: Colors.light.surface, fontWeight: "600" },
-  flipBadgeTextActive: { color: Colors.light.primary },
+  videoMeta: { position: "absolute", top: 12, left: 12, flexDirection: "row", alignItems: "center", gap: 7, paddingHorizontal: Spacing.two, paddingVertical: Spacing.one, borderRadius: radii.pill, backgroundColor: "rgba(0,0,0,0.68)" },
+  liveDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: "#31D158" },
+  videoMetaText: { color: Colors.light.surface, fontWeight: "800", letterSpacing: 0.7 },
+  sessionTimer: { position: "absolute", zIndex: 11, top: 12, right: 12, width: 104, height: 104, alignItems: "center", justifyContent: "center", borderRadius: radii.lg, backgroundColor: "rgba(0,0,0,0.78)", borderWidth: 1, borderColor: "rgba(255,255,255,0.2)" },
+  sessionTimerFullscreen: { top: 20, right: 20, width: 168, height: 168, borderRadius: radii.xl },
+  sessionTimerUrgent: { borderColor: "#F59E0B" },
+  sessionTimerTimeUp: { borderColor: Colors.light.error },
+  sessionTimerText: { color: Colors.light.surface, fontVariant: ["tabular-nums"], fontSize: 35, lineHeight: 42, fontWeight: "900", letterSpacing: 0.5 },
+  sessionTimerTextFullscreen: { fontSize: 58, lineHeight: 68, letterSpacing: 0.8 },
+  sessionTimerUrgentText: { color: "#FBBF24" },
+  sessionTimerTimeUpText: { color: "#F87171" },
+  videoControls: { position: "absolute", zIndex: 12, right: 12, bottom: 20, flexDirection: "row", gap: Spacing.one, opacity: 0 },
+  videoControlsVisible: { opacity: 1 },
+  videoIconButton: { width: 44, height: 44, alignItems: "center", justifyContent: "center", borderRadius: radii.pill, backgroundColor: "rgba(0,0,0,0.72)", borderWidth: 1, borderColor: "rgba(255,255,255,0.2)" },
+  videoIconButtonActive: { backgroundColor: Colors.light.surface, borderColor: Colors.light.primary },
   videoHint: { ...StyleSheet.absoluteFill, alignItems: "center", justifyContent: "center" },
   videoHintText: { color: Colors.light.surface },
   error: { color: Colors.light.error },

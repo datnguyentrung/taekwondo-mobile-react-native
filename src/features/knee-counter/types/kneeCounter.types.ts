@@ -1,6 +1,6 @@
 export type ComputeBackend = "webgl" | "webgpu" | "wasm";
 export type BackendPreference = "auto" | ComputeBackend;
-export type SessionStatus = "idle" | "opening-camera" | "loading-model" | "benchmarking" | "aligning" | "countdown" | "running" | "paused" | "stopped" | "error";
+export type SessionStatus = "idle" | "opening-camera" | "loading-model" | "benchmarking" | "aligning" | "countdown" | "running" | "paused" | "finished" | "stopped" | "error";
 export type CounterMode = "individual" | "current-group-pass" | "synchronized-group";
 export type Leg = "left" | "right";
 export type LegPhase = "NEEDS_DOWN" | "READY" | "ABOVE";

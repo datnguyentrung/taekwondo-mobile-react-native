@@ -16,3 +16,31 @@ export function stabilizeOverlayLine(previous: StableOverlayLine | undefined, ta
   const nextY = previous.y + Math.max(-maxStep, Math.min(maxStep, (targetY - previous.y) * 0.18));
   return { y: nextY, updatedAtMs: timestampMs };
 }
+
+export type CountLabelPosition = { x: number; y: number; textAlign: CanvasTextAlign };
+
+/** Place a count outside a tracked person's face, preferring the visual right side. */
+export function countLabelPosition(
+  bounds: { left: number; right: number; top: number; bottom: number },
+  image: { x: number; y: number; width: number; height: number },
+  fontSize: number,
+  digitCount: number,
+): CountLabelPosition {
+  const padding = Math.max(12, Math.round(fontSize * 0.22));
+  const halfLabelWidth = Math.max(fontSize * 0.42, digitCount * fontSize * 0.34);
+  const imageLeft = image.x;
+  const imageRight = image.x + image.width;
+  const rightX = bounds.right + padding + halfLabelWidth;
+  const leftX = bounds.left - padding - halfLabelWidth;
+  const x = rightX + halfLabelWidth <= imageRight
+    ? rightX
+    : leftX - halfLabelWidth >= imageLeft
+      ? leftX
+      : Math.max(imageLeft + halfLabelWidth, Math.min(imageRight - halfLabelWidth, rightX));
+  const y = Math.max(
+    image.y + fontSize,
+    Math.min(image.y + image.height - padding, bounds.top + (bounds.bottom - bounds.top) * 0.58 + fontSize * 0.32),
+  );
+
+  return { x, y, textAlign: "center" };
+}
