@@ -260,7 +260,71 @@ features/match-operator/
 
 Không tạo feature, route hoặc folder này trước khi có yêu cầu sản phẩm.
 
-## 14. Tài liệu liên quan
+## 14. Canonical Stack Screen UI Rules
+
+Hai rule dưới đây là hợp đồng UI bắt buộc cho màn hình dùng `StackScreenLayout`. Chúng lấy `CourseCatalogScreen` và `AdminCourseDetailScreen` làm mẫu chuẩn hiện hành. Chỉ thay đổi data flow, permission, labels và route; không tạo lại spacing, footer hay action style cục bộ.
+
+### 14.1 List screen: mode → search + create → list
+
+Áp dụng cho màn quản lý/danh sách có lọc theo trạng thái hoặc mode, ví dụ Khóa học, Gói học, Học viên, Huấn luyện viên, Vai trò & quyền, Chức vụ và Người dùng.
+
+Thứ tự children của `StackScreenLayout` luôn là:
+
+```text
+1. Segmented mode selector
+2. Search field + optional create (+) button trong cùng một hàng
+3. Loading / empty / filtered-empty / list content
+```
+
+`StackScreenLayout` là chủ sở hữu spacing mặc định của nhóm này: `paddingHorizontal: 20`, `paddingTop: 16`, `paddingBottom: 32`, `gap: 20`. List screen không lặp lại bốn giá trị này trong `contentContainerStyle`; chỉ override khi có yêu cầu layout thật sự khác.
+
+Yêu cầu composition:
+
+- Dùng `SegmentedTabs` / `SegmentedControl` shared cho mode selector. Không tạo chip row hay tab style riêng để mô phỏng segmented control.
+- Thanh search và nút `+` là một row, căn đáy, `gap: 12`. Input `flex: 1`; nút tạo `48x48`, dùng `radii.md`, `Colors.light.primary`, icon `Plus` 22px, `hitSlop: 8`, pressed opacity `0.82` và scale `0.97`.
+- Search phải là `TextInput` có `value` và `onChangeText`; placeholder không được đưa vào `value`, không dùng `editable={false}` cho search thực. Dùng `returnKeyType="search"`, màu placeholder semantic và accessibility label rõ nghĩa.
+- Mode selector và search row phải cách nhau 20px từ `StackScreenLayout`; search row và loading/empty/list cũng cách 20px. Không thêm margin ngẫu nhiên giữa từng child để bù spacing.
+- Nút `+` chỉ render khi caller có quyền tạo và phải mở luồng tạo thực (thường là `BottomSheetWindow`); không render nút không có hành động. Khi không có quyền, search field vẫn chiếm toàn bộ chiều rộng.
+- Feature giữ query key, debounce/filter, permission và route. Shared UI không biết endpoint hay business status của feature.
+
+Không import `CourseCatalogSearchField` từ feature Khóa học vào feature khác. Nếu nhiều feature cần cùng toolbar, promote một primitive không chứa thuật ngữ nghiệp vụ vào `src/shared/ui`; nếu chưa promote, tái tạo composition đúng contract trên bằng primitives shared.
+
+### 14.2 Detail screen: floating actions via `FloatingActionBar`
+
+Áp dụng cho stack/detail screen có hành động chính ở đáy, ví dụ Chi tiết Khóa học, Chi tiết Gói học, Chi tiết lịch hoặc detail CRUD tương đương.
+
+`StackScreenLayout.floatingContent` phải nhận `FloatingActionBar` hoặc feature-local adapter chỉ cấu hình `FloatingActionBar` (ví dụ `CourseActionButtons`). Không dựng `View` footer, `AdminButton` row, safe-area padding hoặc nền mờ riêng trong screen.
+
+Canonical order/action shape:
+
+```text
+Edit (outline, flex 1) → primary business action (primary, flex 1.3) → optional delete icon
+```
+
+- Nút sửa là `outline`; action nghiệp vụ chính là `primary`; label, route và permission thuộc feature.
+- Action xoá, khi được phép, là icon-only `Trash6`: `label: ""`, accessibility label có nghĩa, variant `ghost`, `44x44`, không border/nền, icon 30px dùng `Colors.light.error`. Không hiển thị chữ xoá ở footer.
+- `FloatingActionBar` sở hữu nền bán trong suốt, horizontal padding, gap, pressed feedback và bottom safe-area. Không hard-code các giá trị này tại màn detail.
+- Detail có floating footer phải tăng `paddingBottom` content đủ để phần cuối không bị footer che (canonical minimum `128`; tăng thêm chỉ khi action bar/UX thực sự cần).
+- Xoá là destructive flow bắt buộc: mở `ConfirmationDialog`, sau xác nhận gọi mutation/API của feature, hiển thị `CancellableLoadingOverlay` trong lúc request, hỗ trợ abort qua `AbortController`/`AbortSignal` khi API hỗ trợ, hiển thị toast thành công/lỗi, invalidation cache và điều hướng sau thành công. Khi mutation pending, disable action xoá.
+- Feature-local adapter được tạo khi labels, permission hoặc mutation contract mang nghĩa nghiệp vụ. Chỉ promote vào `src/shared/ui` khi có ít nhất hai feature dùng cùng semantics, theo rule Shared ở mục 7.
+
+### 14.3 Bottom sheet stack: sheet mới phủ sheet cũ
+
+Khi một thao tác trong `BottomSheetWindow` mở flow mới, sheet mới phải được bật/render trước khi sheet cũ bị ẩn hoặc hủy. Sheet mới được render sau sheet cũ trong JSX để native `Modal` nằm trên cùng.
+
+- Sheet cũ vẫn visible khi mở sheet mới.
+- Sheet mới phải có nút `Hủy`/close; khi hủy chỉ đóng sheet mới và quay lại sheet cũ.
+- Chỉ đóng sheet cũ sau khi flow mới hoàn tất thành công hoặc người dùng xác nhận rời flow.
+- Không dùng `setTimeout` để giả lập stack; mỗi sheet tự sở hữu `onClose`, loading, error và cleanup.
+
+Checklist review cho hai family này:
+
+1. Không có local copy của segmented/search-plus/floating footer styling.
+2. `StackScreenLayout` được dùng cho header, scroll và spacing; feature chỉ cung cấp content và business callbacks.
+3. Accessibility state, disabled/loading/empty/error và permission guard được giữ nguyên.
+4. Typecheck và test của feature/action destructive liên quan phải pass.
+
+## 15. Tài liệu liên quan
 
 - [Báo cáo rà soát cấu trúc](./REACT_NATIVE_PROJECT_STRUCTURE_AUDIT.md)
 - [Structure v1 — lưu tham chiếu](./REACT_NATIVE_PROJECT_STRUCTURE.md)

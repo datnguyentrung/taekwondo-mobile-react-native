@@ -28,8 +28,8 @@ export const userApi = {
     const response = await javaApi.put<UserDetail>(`/users/${userId}`, request);
     return response.data;
   },
-  async remove(userId: string): Promise<void> {
-    await javaApi.delete(`/users/${userId}`);
+  async remove(userId: string, signal?: AbortSignal): Promise<void> {
+    await javaApi.delete(`/users/${userId}`, { signal });
   },
   async changePassword(request: ChangePasswordRequest): Promise<string> {
     const response = await javaApi.post<string>('/users/me/change-password', request);

@@ -10,13 +10,13 @@ export function useTrainingPlanAddons(params: Dto.TrainingPlanAddonListParams = 
 function useInvalidate() { const client = useQueryClient(); return () => client.invalidateQueries({ queryKey: trainingPlanKeys.all }); }
 export function useCreateTrainingPlan() { const done=useInvalidate(); return useMutation({mutationFn:(r:Dto.TrainingPlanCreateRequest)=>trainingPlanApi.create(r),onSuccess:done}); }
 export function useUpdateTrainingPlan() { const done=useInvalidate(); return useMutation({mutationFn:({id,request}:{id:string;request:Dto.TrainingPlanUpdateRequest})=>trainingPlanApi.update(id,request),onSuccess:done}); }
-export function useDeleteTrainingPlan() { const done=useInvalidate(); return useMutation({mutationFn:(id:string)=>trainingPlanApi.remove(id),onSuccess:done}); }
+export function useDeleteTrainingPlan() { const done=useInvalidate(); return useMutation({mutationFn:({id,signal}:{id:string;signal?:AbortSignal})=>trainingPlanApi.remove(id,signal),onSuccess:done}); }
 export function useCreateTrainingPlanRequirement() { const done=useInvalidate(); return useMutation({mutationFn:(r:Dto.TrainingPlanRequirementCreateRequest)=>trainingPlanRequirementApi.create(r),onSuccess:done}); }
 export function useUpdateTrainingPlanRequirement() { const done=useInvalidate(); return useMutation({mutationFn:({id,request}:{id:string;request:Dto.TrainingPlanRequirementUpdateRequest})=>trainingPlanRequirementApi.update(id,request),onSuccess:done}); }
-export function useDeleteTrainingPlanRequirement() { const done=useInvalidate(); return useMutation({mutationFn:(id:string)=>trainingPlanRequirementApi.remove(id),onSuccess:done}); }
+export function useDeleteTrainingPlanRequirement() { const done=useInvalidate(); return useMutation({mutationFn:({id,signal}:{id:string;signal?:AbortSignal})=>trainingPlanRequirementApi.remove(id,signal),onSuccess:done}); }
 export function useCreateTrainingPlanAccessRule() { const done=useInvalidate(); return useMutation({mutationFn:(r:Dto.TrainingPlanAccessRuleCreateRequest)=>trainingPlanAccessRuleApi.create(r),onSuccess:done}); }
 export function useUpdateTrainingPlanAccessRule() { const done=useInvalidate(); return useMutation({mutationFn:({id,request}:{id:string;request:Dto.TrainingPlanAccessRuleUpdateRequest})=>trainingPlanAccessRuleApi.update(id,request),onSuccess:done}); }
-export function useDeleteTrainingPlanAccessRule() { const done=useInvalidate(); return useMutation({mutationFn:(id:string)=>trainingPlanAccessRuleApi.remove(id),onSuccess:done}); }
+export function useDeleteTrainingPlanAccessRule() { const done=useInvalidate(); return useMutation({mutationFn:({id,signal}:{id:string;signal?:AbortSignal})=>trainingPlanAccessRuleApi.remove(id,signal),onSuccess:done}); }
 export function useCreateTrainingPlanAddon() { const done=useInvalidate(); return useMutation({mutationFn:(r:Dto.TrainingPlanAddonCreateRequest)=>trainingPlanAddonApi.create(r),onSuccess:done}); }
 export function useUpdateTrainingPlanAddon() { const done=useInvalidate(); return useMutation({mutationFn:({id,request}:{id:string;request:Dto.TrainingPlanAddonUpdateRequest})=>trainingPlanAddonApi.update(id,request),onSuccess:done}); }
-export function useDeleteTrainingPlanAddon() { const done=useInvalidate(); return useMutation({mutationFn:(id:string)=>trainingPlanAddonApi.remove(id),onSuccess:done}); }
+export function useDeleteTrainingPlanAddon() { const done=useInvalidate(); return useMutation({mutationFn:({id,signal}:{id:string;signal?:AbortSignal})=>trainingPlanAddonApi.remove(id,signal),onSuccess:done}); }

@@ -26,7 +26,7 @@ export const roleApi = {
     const response = await javaApi.put<RoleResponse>(`/roles/${roleCode}`, request);
     return response.data;
   },
-  async remove(roleCode: string): Promise<void> {
-    await javaApi.delete(`/roles/${roleCode}`);
+  async remove(roleCode: string, signal?: AbortSignal): Promise<void> {
+    await javaApi.delete(`/roles/${roleCode}`, { signal });
   },
 };

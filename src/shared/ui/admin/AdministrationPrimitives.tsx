@@ -559,6 +559,7 @@ export function AdminConfirmDialog({
 
 export const adminStyles = StyleSheet.create({
   screen: { paddingTop: 20, paddingBottom: 32, gap: 14 },
+  listScreen: { paddingTop: 16, paddingHorizontal: 20, paddingBottom: 32, gap: 20 },
   gap: { gap: 14 },
   actions: { flexDirection: "row", gap: 10 },
   grow: { flex: 1 },

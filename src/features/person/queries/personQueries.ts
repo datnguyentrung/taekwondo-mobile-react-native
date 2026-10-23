@@ -126,8 +126,8 @@ export function useUpdatePerson() {
 export function useDeletePerson() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (personId: string) => personApi.delete(personId),
-    onSuccess: (_data, personId) => {
+    mutationFn: ({ personId, signal }: { personId: string; signal?: AbortSignal }) => personApi.delete(personId, signal),
+    onSuccess: (_data, { personId }) => {
       queryClient.invalidateQueries({ queryKey: personKeys.lists() });
       queryClient.removeQueries({ queryKey: personKeys.detail(personId) });
     },

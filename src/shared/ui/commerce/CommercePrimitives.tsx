@@ -104,14 +104,16 @@ export function FormField({
   helper,
   ...inputProps
 }: TextInputProps & {
-  label: string;
+  label?: string;
   helper?: string;
 }) {
   return (
     <View style={styles.field}>
-      <ThemedText type="bodySmall" style={styles.blackText}>
-        {label}
-      </ThemedText>
+      {label ? (
+        <ThemedText type="bodySmall" style={styles.blackText}>
+          {label}
+        </ThemedText>
+      ) : null}
       <TextInput
         placeholderTextColor={Colors.light.textSecondary}
         style={styles.input}

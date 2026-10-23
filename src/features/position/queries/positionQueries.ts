@@ -83,7 +83,13 @@ export function useDeletePosition(callbacks: {
 } = {}) {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (positionId: string) => positionApi.remove(positionId),
+    mutationFn: (
+      variables: string | { positionId: string; signal?: AbortSignal },
+    ) =>
+      positionApi.remove(
+        typeof variables === "string" ? variables : variables.positionId,
+        typeof variables === "string" ? undefined : variables.signal,
+      ),
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: positionKeys.lists() });
       await callbacks.onSuccess?.();

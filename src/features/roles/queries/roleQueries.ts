@@ -76,17 +76,29 @@ export function useUpdateRole(
   });
 }
 
+type DeleteRoleVariables = string | { roleCode: string; signal?: AbortSignal };
+
 export function useDeleteRole(
   callbacks: MutationCallbacks<void, string> = {},
 ) {
   const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: (roleCode: string) => roleApi.remove(roleCode),
-    onSuccess: async (data, roleCode) => {
+  return useMutation<void, Error, DeleteRoleVariables>({
+    mutationFn: (variables) =>
+      roleApi.remove(
+        typeof variables === "string" ? variables : variables.roleCode,
+        typeof variables === "string" ? undefined : variables.signal,
+      ),
+    onSuccess: async (data, variables) => {
+      const roleCode =
+        typeof variables === "string" ? variables : variables.roleCode;
       await queryClient.invalidateQueries({ queryKey: roleKeys.lists() });
       await callbacks.onSuccess?.(data, roleCode);
     },
-    onError: callbacks.onError,
+    onError: (error, variables) => {
+      const roleCode =
+        typeof variables === "string" ? variables : variables.roleCode;
+      callbacks.onError?.(error, roleCode);
+    },
   });
 }
 

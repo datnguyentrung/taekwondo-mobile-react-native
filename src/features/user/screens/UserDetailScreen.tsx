@@ -1,24 +1,29 @@
 import { useRouter, type Href } from "expo-router";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { View } from "react-native";
+import { Trash6 } from "reicon-react-native";
 
+import { Permission, useCan } from "@/features/authorization";
 import type { PersonSimpleResponse } from "@/features/person";
 import { useScreenRefresh } from "@/infrastructure/query/useScreenRefresh";
 import StackScreenLayout from "@/routes/navigation/layouts/StackScreenLayout";
 import {
-  AdminButton,
   AdminCard,
   AdminChip,
-  AdminConfirmDialog,
   AdminEmptyState,
   AdminListRow,
   AdminLoadingState,
   AdminSectionHeader,
   adminStyles,
 } from "@/shared/ui/admin/AdministrationPrimitives";
+import { AppIcon } from "@/shared/ui/AppIcon";
+import { CancellableLoadingOverlay } from "@/shared/ui/CancellableLoadingOverlay";
+import { ConfirmationDialog } from "@/shared/ui/ConfirmationDialog";
+import { FloatingActionBar } from "@/shared/ui/FloatingActionBar";
 import { ThemedText } from "@/shared/ui/ThemedText";
 import { useToast } from "@/shared/ui/Toast";
 import { formatDateDMY, formatDateTime } from "@/shared/utils/dateTime";
+import { Colors } from "@/theme";
 import { LinkedPersonDetailSheet } from "../components/LinkedPersonDetailSheet";
 import { useDeleteUser, useUser } from "../queries/userQueries";
 
@@ -37,6 +42,9 @@ export function UserDetailScreen() {
   const user = useUser(userId);
   const toast = useToast();
   const [confirming, setConfirming] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const deleteController = useRef<AbortController | null>(null);
+  const canDelete = useCan(Permission.USER_DELETE);
 
   const [selectedPerson, setSelectedPerson] =
     useState<PersonSimpleResponse | null>(null);
@@ -47,22 +55,90 @@ export function UserDetailScreen() {
   const linkedPeople: PersonSimpleResponse[] = user.data?.persons ?? [];
   const assignedRoles = user.data?.roles ?? [];
 
-  const remove = useDeleteUser({
-    onSuccess: async () => {
+  const remove = useDeleteUser();
+
+  const handleDelete = async () => {
+    if (!userId) return;
+
+    setConfirming(false);
+    setDeleting(true);
+    const controller = new AbortController();
+    deleteController.current = controller;
+
+    try {
+      await remove.mutateAsync({ userId, signal: controller.signal });
       toast.show({ message: "Đã xóa người dùng", variant: "success" });
       router.replace("/admin/users" as Href);
-    },
-    onError: () =>
-      toast.show({ message: "Không thể xóa người dùng này", variant: "error" }),
-  });
+    } catch (error) {
+      if ((error as { name?: string }).name !== "AbortError") {
+        toast.show({ message: "Không thể xóa người dùng này", variant: "error" });
+      }
+    } finally {
+      deleteController.current = null;
+      setDeleting(false);
+    }
+  };
 
   return (
-    <StackScreenLayout
-      title="Chi tiết người dùng"
-      contentContainerStyle={adminStyles.screen}
-      refreshing={refreshing}
-      onRefresh={onRefresh}
-    >
+    <>
+      <StackScreenLayout
+        title="Chi tiết người dùng"
+        contentContainerStyle={[adminStyles.screen, { paddingBottom: 128 }]}
+        refreshing={refreshing}
+        onRefresh={onRefresh}
+        floatingContent={
+          user.data ? (
+            <FloatingActionBar
+              actions={[
+                {
+                  label: "Chỉnh sửa",
+                  accessibilityLabel: "Chỉnh sửa người dùng",
+                  variant: "outline",
+                  onPress: () => navigate(router, `/admin/users/${userId}/edit`),
+                },
+                {
+                  label: "Gán vai trò",
+                  accessibilityLabel: "Gán vai trò cho người dùng",
+                  variant: "primary",
+                  flex: 1.3,
+                  onPress: () => navigate(router, `/admin/users/${userId}/roles`),
+                },
+                ...(canDelete
+                  ? [
+                      {
+                        key: "delete",
+                        label: "",
+                        accessibilityLabel: "Xóa người dùng",
+                        variant: "ghost" as const,
+                        disabled: deleting,
+                        flex: 0,
+                        onPress: () => setConfirming(true),
+                        style: {
+                          width: 44,
+                          minWidth: 44,
+                          paddingHorizontal: 0,
+                          backgroundColor: "transparent",
+                          borderWidth: 0,
+                        },
+                        icon: (
+                          <AppIcon
+                            icon={<Trash6 />}
+                            size={30}
+                            color={
+                              deleting
+                                ? Colors.light.textSecondary
+                                : Colors.light.error
+                            }
+                          />
+                        ),
+                      },
+                    ]
+                  : []),
+              ]}
+            />
+          ) : undefined
+        }
+      >
       {user.isPending ? (
         <AdminLoadingState />
       ) : !user.data ? (
@@ -93,19 +169,6 @@ export function UserDetailScreen() {
               </ThemedText>
             </View>
           </AdminCard>
-          <View style={adminStyles.actions}>
-            <AdminButton
-              label="Chỉnh sửa"
-              variant="secondary"
-              onPress={() => navigate(router, `/admin/users/${userId}/edit`)}
-              style={adminStyles.grow}
-            />
-            <AdminButton
-              label="Gán vai trò"
-              onPress={() => navigate(router, `/admin/users/${userId}/roles`)}
-              style={adminStyles.grow}
-            />
-          </View>
           <AdminSectionHeader
             title="Hồ sơ liên kết"
             actionLabel="Quản lý"
@@ -173,30 +236,29 @@ export function UserDetailScreen() {
               ))}
             </AdminCard>
           )}
-          <AdminButton
-            label="Xóa người dùng"
-            variant="text"
-            onPress={() => setConfirming(true)}
-          />
         </>
       )}
-      <AdminConfirmDialog
-        confirming={confirming}
-        title="Xóa người dùng?"
-        message="Tài khoản, vai trò và các liên kết hồ sơ của người dùng sẽ bị ảnh hưởng. Thao tác này không thể hoàn tác."
+      </StackScreenLayout>
+      <ConfirmationDialog
+        visible={confirming}
+        title="Xóa người dùng"
+        description="Tài khoản, vai trò và các liên kết hồ sơ của người dùng sẽ bị ảnh hưởng. Thao tác này không thể hoàn tác."
         confirmLabel="Xóa"
-        destructive
-        loading={remove.isPending}
+        confirmVariant="danger"
         onCancel={() => setConfirming(false)}
-        onConfirm={() => remove.mutate(userId as string)}
+        onConfirm={handleDelete}
       />
-
-      {/* Chi tiết hồ sơ liên kết & Popover đổi chức vụ */}
+      <CancellableLoadingOverlay
+        visible={deleting}
+        message="Đang xóa người dùng..."
+        cancelLabel="Hủy"
+        onCancel={() => deleteController.current?.abort()}
+      />
       <LinkedPersonDetailSheet
         person={selectedPerson}
         userId={userId}
         onClose={() => setSelectedPerson(null)}
       />
-    </StackScreenLayout>
+    </>
   );
 }

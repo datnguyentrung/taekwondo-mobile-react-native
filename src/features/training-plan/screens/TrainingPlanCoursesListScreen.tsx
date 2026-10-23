@@ -1,0 +1,95 @@
+import { useQuery } from "@tanstack/react-query";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { ActivityIndicator, Pressable, StyleSheet, View } from "react-native";
+import { Calendar, ChevronRight, Plus, Trash6 } from "reicon-react-native";
+import { useLocalSearchParams } from "expo-router";
+
+import { Permission, useCan } from "@/features/authorization";
+import { courseApi } from "@/features/course/api/courseApi";
+import type { CourseSimpleResponse } from "@/features/course/api/course.dto";
+import { getApiErrorMessage } from "@/infrastructure/http/httpError";
+import StackScreenLayout from "@/routes/navigation/layouts/StackScreenLayout";
+import { AppIcon } from "@/shared/ui/AppIcon";
+import { BottomSheetWindow } from "@/shared/ui/BottomSheetWindow";
+import { CancellableLoadingOverlay } from "@/shared/ui/CancellableLoadingOverlay";
+import { ConfirmationDialog } from "@/shared/ui/ConfirmationDialog";
+import { FloatingActionBar } from "@/shared/ui/FloatingActionBar";
+import { ThemedText } from "@/shared/ui/ThemedText";
+import { useToast } from "@/shared/ui/Toast";
+import { AdminButton, AdminChip, AdminEmptyState, AdminPickerField, AdminPickerSheet, AdminSearchField } from "@/shared/ui/admin/AdministrationPrimitives";
+import { activeEffect, Colors, hexToRgba, radii, Spacing } from "@/theme";
+import type { PlanAccessMode, SessionType, TrainingPlanAccessRuleSimpleResponse } from "../api/trainingPlan.dto";
+import { useCreateTrainingPlanAccessRule, useDeleteTrainingPlanAccessRule, useTrainingPlan, useUpdateTrainingPlanAccessRule } from "../queries/trainingPlanQueries";
+
+const sessions: readonly { value: SessionType; label: string }[] = [{ value: "REQUIRED", label: "Bắt buộc" }, { value: "STANDARD", label: "Tiêu chuẩn" }, { value: "OPEN", label: "Mở" }];
+const modes: readonly { value: PlanAccessMode; label: string }[] = [{ value: "HOME", label: "Học chính" }, { value: "RECURRING", label: "Giờ cố định" }, { value: "FLEX", label: "Linh hoạt" }];
+
+export function TrainingPlanCoursesListScreen() {
+  const { trainingPlanId } = useLocalSearchParams<{ trainingPlanId: string }>();
+  const toast = useToast();
+  const planQuery = useTrainingPlan(trainingPlanId);
+  const coursesQuery = useQuery({ queryKey: ["courses", "access-rule-options"], queryFn: () => courseApi.list({ page: 0, size: 200 }) });
+  const createRule = useCreateTrainingPlanAccessRule();
+  const updateRule = useUpdateTrainingPlanAccessRule();
+  const deleteRule = useDeleteTrainingPlanAccessRule();
+  const canCreate = useCan(Permission.TRAINING_PLAN_ACCESS_RULE_CREATE);
+  const canUpdate = useCan(Permission.TRAINING_PLAN_ACCESS_RULE_UPDATE);
+  const canDelete = useCan(Permission.TRAINING_PLAN_ACCESS_RULE_DELETE);
+  const deleteAbortRef = useRef<AbortController | null>(null);
+  const [searchInput, setSearchInput] = useState("");
+  const [search, setSearch] = useState("");
+  const [selected, setSelected] = useState<TrainingPlanAccessRuleSimpleResponse>();
+  const [editor, setEditor] = useState<TrainingPlanAccessRuleSimpleResponse | null | undefined>();
+  const [pickerOpen, setPickerOpen] = useState(false);
+  const [courseId, setCourseId] = useState("");
+  const [sessionType, setSessionType] = useState<SessionType>("STANDARD");
+  const [accessMode, setAccessMode] = useState<PlanAccessMode>("HOME");
+  const [confirming, setConfirming] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+
+  useEffect(() => { const id = setTimeout(() => setSearch(searchInput.trim().toLocaleLowerCase("vi-VN")), 250); return () => clearTimeout(id); }, [searchInput]);
+  const rules = useMemo(() => (planQuery.data?.accessRules ?? []).filter((rule) => !search || [rule.targetCourseName, sessionLabel(rule.sessionType), modeLabel(rule.accessMode)].join(" ").toLocaleLowerCase("vi-VN").includes(search)), [planQuery.data?.accessRules, search]);
+  const courses = useMemo(() => [...(coursesQuery.data?.content ?? [])].sort((a, b) => a.name.localeCompare(b.name, "vi")), [coursesQuery.data?.content]);
+  const course = courses.find((item) => item.courseId === courseId);
+  const openCreate = () => { setCourseId(""); setSessionType("STANDARD"); setAccessMode("HOME"); setEditor(null); };
+  const openEdit = () => { if (!selected) return; setCourseId(selected.targetCourseId); setSessionType(selected.sessionType); setAccessMode(selected.accessMode); setEditor(selected); };
+  const save = async () => {
+    if (!trainingPlanId || !courseId) { toast.show({ message: "Hãy chọn khóa học.", variant: "error" }); return; }
+    try {
+      if (editor) await updateRule.mutateAsync({ id: editor.trainingPlanAccessRuleId, request: { targetCourseId: courseId, sessionType, accessMode } });
+      else await createRule.mutateAsync({ trainingPlanId, targetCourseId: courseId, sessionType, accessMode });
+      setEditor(undefined); setSelected(undefined);
+      toast.show({ message: editor ? "Đã cập nhật khóa học áp dụng." : "Đã thêm khóa học áp dụng.", variant: "success" });
+    } catch (error) { toast.show({ message: getApiErrorMessage(error, "Không thể lưu cấu hình khóa học."), variant: "error" }); }
+  };
+  const remove = async () => {
+    if (!selected) return;
+    setConfirming(false); setDeleting(true);
+    const controller = new AbortController(); deleteAbortRef.current = controller;
+    try { await deleteRule.mutateAsync({ id: selected.trainingPlanAccessRuleId, signal: controller.signal }); setSelected(undefined); toast.show({ message: "Đã xóa khóa học áp dụng.", variant: "success" }); }
+    catch (error) { if ((error as { name?: string }).name !== "AbortError") toast.show({ message: getApiErrorMessage(error, "Không thể xóa khóa học áp dụng."), variant: "error" }); }
+    finally { deleteAbortRef.current = null; setDeleting(false); }
+  };
+  if (planQuery.isPending) return <StackScreenLayout title="Khóa học áp dụng"><View style={styles.state}><ActivityIndicator color={Colors.light.primary} /></View></StackScreenLayout>;
+  if (!planQuery.data) return <StackScreenLayout title="Khóa học áp dụng"><AdminEmptyState message="Không tìm thấy gói học." /></StackScreenLayout>;
+  return <>
+    <StackScreenLayout title="Khóa học áp dụng" contentContainerStyle={styles.content} refreshing={planQuery.isRefetching} onRefresh={async () => { await planQuery.refetch(); }}>
+      <View style={styles.searchRow}><View style={styles.searchField}><AdminSearchField value={searchInput} onChangeText={setSearchInput} placeholder="Tìm khóa học, quyền truy cập..." /></View>{canCreate ? <Pressable accessibilityRole="button" accessibilityLabel="Thêm khóa học áp dụng" onPress={openCreate} style={({ pressed }) => [styles.addButton, activeEffect(pressed, "pressed")]}><AppIcon icon={<Plus />} size={24} color={Colors.light.surface} /></Pressable> : null}</View>
+      {rules.length ? <View style={styles.list}>{rules.map((rule, index) => <View key={rule.trainingPlanAccessRuleId}><RuleRow rule={rule} onPress={() => setSelected(rule)} />{index < rules.length - 1 ? <View style={styles.separator} /> : null}</View>)}</View> : <View style={styles.state}><ThemedText type="bodySmall" style={styles.empty}>{search ? "Không tìm thấy khóa học phù hợp." : "Chưa có khóa học áp dụng."}</ThemedText></View>}
+    </StackScreenLayout>
+    <DetailSheet rule={selected} canEdit={canUpdate} canDelete={canDelete} onClose={() => setSelected(undefined)} onEdit={openEdit} onDelete={() => setConfirming(true)} />
+    <ConfirmationDialog visible={confirming} presentation="inline" title="Xóa khóa học áp dụng" description="Thao tác này không thể hoàn tác." confirmLabel="Xóa" confirmVariant="danger" onCancel={() => setConfirming(false)} onConfirm={() => void remove()} />
+    <CancellableLoadingOverlay visible={deleting} message="Đang xóa khóa học áp dụng..." onCancel={() => deleteAbortRef.current?.abort()} />
+    <EditorSheet visible={editor !== undefined} editing={Boolean(editor)} course={course} sessionType={sessionType} accessMode={accessMode} submitting={createRule.isPending || updateRule.isPending} onClose={() => setEditor(undefined)} onPickCourse={() => setPickerOpen(true)} onSessionTypeChange={setSessionType} onAccessModeChange={setAccessMode} onSubmit={() => void save()} />
+    <AdminPickerSheet visible={pickerOpen} title="Chọn khóa học" options={courses.map((item) => ({ value: item.courseId, label: item.name, description: `${item.currentStudentCount}/${item.capacity} học viên` }))} selectedValue={courseId} onSelect={setCourseId} onClose={() => setPickerOpen(false)} />
+  </>;
+}
+
+function RuleRow({ rule, onPress }: { rule: TrainingPlanAccessRuleSimpleResponse; onPress: () => void }) { return <Pressable accessibilityRole="button" accessibilityLabel={`Xem khóa học ${rule.targetCourseName}`} onPress={onPress} style={({ pressed }) => [styles.row, activeEffect(pressed, "pressed")]}><View style={styles.rowIcon}><AppIcon icon={<Calendar />} size={18} color={Colors.light.primary} /></View><View style={styles.rowMain}><View style={styles.rowCopy}><ThemedText type="bodySmall" style={styles.title} numberOfLines={1}>{rule.targetCourseName}</ThemedText><ThemedText type="caption" style={styles.muted}>{modeLabel(rule.accessMode)}</ThemedText></View><View style={styles.rowMeta}><View style={styles.badge}><ThemedText type="caption" style={styles.badgeText}>{sessionLabel(rule.sessionType)}</ThemedText></View><ThemedText type="caption" style={styles.ruleLabel}>{modeLabel(rule.accessMode)}</ThemedText></View></View><AppIcon icon={<ChevronRight />} size={18} color={Colors.light.primary} /></Pressable>; }
+function DetailSheet({ rule, canEdit, canDelete, onClose, onEdit, onDelete }: { rule?: TrainingPlanAccessRuleSimpleResponse; canEdit: boolean; canDelete: boolean; onClose: () => void; onEdit: () => void; onDelete: () => void }) { const actions = [...(canEdit ? [{ label: "Chỉnh sửa", variant: "outline" as const, onPress: onEdit }] : []), ...(canDelete ? [{ key: "delete", label: "", accessibilityLabel: "Xóa khóa học áp dụng", variant: "ghost" as const, flex: 0, onPress: onDelete, icon: <AppIcon icon={<Trash6 />} size={26} color={Colors.light.error} /> }] : [])]; return <BottomSheetWindow visible={Boolean(rule)} title="Khóa học áp dụng" heightRatio={0.5} onClose={onClose} footer={<FloatingActionBar includeBottomSafeArea={false} paddingHorizontal={0} paddingTop={8} minBottomInset={0} backgroundColor="transparent" actions={actions} />}>{rule ? <View style={styles.detail}><Detail label="Khóa học" value={rule.targetCourseName} /><Detail label="Quyền truy cập" value={sessionLabel(rule.sessionType)} /><Detail label="Hình thức học" value={modeLabel(rule.accessMode)} /></View> : null}</BottomSheetWindow>; }
+function EditorSheet({ visible, editing, course, sessionType, accessMode, submitting, onClose, onPickCourse, onSessionTypeChange, onAccessModeChange, onSubmit }: { visible: boolean; editing: boolean; course?: CourseSimpleResponse; sessionType: SessionType; accessMode: PlanAccessMode; submitting: boolean; onClose: () => void; onPickCourse: () => void; onSessionTypeChange: (value: SessionType) => void; onAccessModeChange: (value: PlanAccessMode) => void; onSubmit: () => void }) { return <BottomSheetWindow visible={visible} title={editing ? "Chỉnh sửa khóa học áp dụng" : "Thêm khóa học áp dụng"} heightRatio={0.8} onClose={onClose} footer={<AdminButton label={editing ? "Lưu thay đổi" : "Tạo mới"} loading={submitting} onPress={onSubmit} />}><View style={styles.editor}><AdminPickerField label="Khóa học *" valueLabel={course?.name} placeholder="Chọn khóa học" onPress={onPickCourse} /><ChoiceGroup label="Quyền truy cập" options={sessions} value={sessionType} onChange={onSessionTypeChange} /><ChoiceGroup label="Hình thức học" options={modes} value={accessMode} onChange={onAccessModeChange} /></View></BottomSheetWindow>; }
+function ChoiceGroup<T extends string>({ label, options, value, onChange }: { label: string; options: readonly { value: T; label: string }[]; value: T; onChange: (value: T) => void }) { return <View style={styles.choice}><ThemedText type="featureLabel">{label}</ThemedText><View style={styles.choices}>{options.map((option) => <AdminChip key={option.value} label={option.label} selected={option.value === value} onPress={() => onChange(option.value)} />)}</View></View>; }
+function Detail({ label, value }: { label: string; value: string }) { return <View style={styles.detailRow}><ThemedText type="bodySmall" style={styles.muted}>{label}</ThemedText><ThemedText type="bodySmall" style={styles.detailValue}>{value}</ThemedText></View>; }
+function sessionLabel(value: SessionType) { return sessions.find((item) => item.value === value)?.label ?? value; }
+function modeLabel(value: PlanAccessMode) { return modes.find((item) => item.value === value)?.label ?? value; }
+const styles = StyleSheet.create({ content: { paddingTop: Spacing.two, paddingBottom: Spacing.four, gap: Spacing.four }, searchRow: { flexDirection: "row", alignItems: "center", gap: Spacing.three }, searchField: { flex: 1, minWidth: 0 }, addButton: { width: 48, height: 48, alignItems: "center", justifyContent: "center", borderRadius: radii.md, backgroundColor: Colors.light.primary }, list: { overflow: "hidden" }, separator: { height: StyleSheet.hairlineWidth, backgroundColor: Colors.light.divider }, row: { minHeight: 72, flexDirection: "row", alignItems: "center", gap: Spacing.two, paddingVertical: 12 }, rowIcon: { width: 36, height: 36, alignItems: "center", justifyContent: "center", borderRadius: radii.pill, backgroundColor: hexToRgba(Colors.light.primary, 0.1) }, rowMain: { flex: 1, minWidth: 0, flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: Spacing.two }, rowCopy: { flex: 1, minWidth: 0, gap: 2 }, rowMeta: { alignItems: "flex-end", gap: 4 }, title: { color: Colors.light.text, fontWeight: "700" }, muted: { color: Colors.light.textSecondary }, badge: { borderRadius: radii.pill, backgroundColor: hexToRgba(Colors.light.primary, 0.1), paddingHorizontal: 8, paddingVertical: 3 }, badgeText: { color: Colors.light.primary, fontWeight: "700" }, ruleLabel: { color: Colors.light.primary, fontWeight: "700" }, state: { paddingVertical: 48, alignItems: "center" }, empty: { color: Colors.light.textSecondary, textAlign: "center" }, detail: { gap: 4 }, detailRow: { minHeight: 54, flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: Spacing.two, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: Colors.light.divider }, detailValue: { flex: 1, textAlign: "right", color: Colors.light.text }, editor: { gap: Spacing.four }, choice: { gap: Spacing.two }, choices: { flexDirection: "row", flexWrap: "wrap", gap: Spacing.two } });

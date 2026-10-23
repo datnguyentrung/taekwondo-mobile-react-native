@@ -25,7 +25,7 @@ export const positionApi = {
     const response = await javaApi.put<PositionResponse>(`/positions/${positionId}`, request);
     return response.data;
   },
-  async remove(positionId: string): Promise<void> {
-    await javaApi.delete(`/positions/${positionId}`);
+  async remove(positionId: string, signal?: AbortSignal): Promise<void> {
+    await javaApi.delete(`/positions/${positionId}`, { signal });
   },
 };

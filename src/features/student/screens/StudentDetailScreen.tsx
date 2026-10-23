@@ -1,28 +1,35 @@
-import { useMemo } from "react";
-import { CheckListNotes, DocText, Wallet } from "reicon-react-native";
+import { useMemo, useRef, useState } from "react";
+import { CheckListNotes, DocText, Trash6, Wallet } from "reicon-react-native";
 import { useRouter } from "expo-router";
 import { ActivityIndicator, Pressable, StyleSheet, View } from "react-native";
 
 import { BeltLabel, PersonStatusLabel } from "@/features/person/constants/person.constants";
-import { usePerson } from "@/features/person/queries/personQueries";
-import {
-  PrimaryActionButton,
-  StudentSummaryCard,
-  SurfaceCard,
-} from "@/features/student-commerce/components/StudentCommercePrimitives";
+import { Permission, useCan } from "@/features/authorization";
+import { useDeletePerson, usePerson } from "@/features/person/queries/personQueries";
+import { StudentSummaryCard, SurfaceCard } from "@/features/student-commerce/components/StudentCommercePrimitives";
 import type { StudentRouteProps, StudentSummaryView } from "@/features/student-commerce/types";
 import { asHref, formatVnd } from "@/features/student-commerce/utils/studentCommerceUtils";
 import { useScreenRefresh } from "@/infrastructure/query/useScreenRefresh";
 import StackScreenLayout from "@/routes/navigation/layouts/StackScreenLayout";
 import { useDynamicDetailTitle } from "@/routes/navigation/utils/screenTitle";
 import { AppIcon } from "@/shared/ui/AppIcon";
+import { CancellableLoadingOverlay } from "@/shared/ui/CancellableLoadingOverlay";
+import { ConfirmationDialog } from "@/shared/ui/ConfirmationDialog";
+import { FloatingActionBar } from "@/shared/ui/FloatingActionBar";
 import { NavigationMenu, NavigationMenuItem } from "@/shared/ui/NavigationMenu";
 import { ThemedText } from "@/shared/ui/ThemedText";
+import { useToast } from "@/shared/ui/Toast";
 import { Colors } from "@/theme";
 
 export function StudentDetailScreen({ studentCode }: StudentRouteProps) {
   const router = useRouter();
   const personQuery = usePerson(studentCode);
+  const deletePerson = useDeletePerson();
+  const canDelete = useCan(Permission.PERSON_DELETE);
+  const toast = useToast();
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const deleteController = useRef<AbortController | null>(null);
   const { refreshing, onRefresh } = useScreenRefresh([personQuery]);
 
   const person = personQuery.data;
@@ -40,6 +47,25 @@ export function StudentDetailScreen({ studentCode }: StudentRouteProps) {
 
   const title = useDynamicDetailTitle(student, { fallback: "Học viên" });
   const activeStudentId = student?.personId || studentCode || "";
+  const handleDelete = async () => {
+    if (!activeStudentId) return;
+    setConfirmDelete(false);
+    setDeleting(true);
+    const controller = new AbortController();
+    deleteController.current = controller;
+    try {
+      await deletePerson.mutateAsync({ personId: activeStudentId, signal: controller.signal });
+      toast.show({ message: "Đã xóa học viên.", variant: "success" });
+      router.replace(asHref("/students"));
+    } catch (error) {
+      if ((error as { name?: string }).name !== "AbortError") {
+        toast.show({ message: "Không thể xóa học viên.", variant: "error" });
+      }
+    } finally {
+      deleteController.current = null;
+      setDeleting(false);
+    }
+  };
 
   if (personQuery.isLoading && !student) {
     return (
@@ -75,26 +101,13 @@ export function StudentDetailScreen({ studentCode }: StudentRouteProps) {
       contentContainerStyle={styles.content}
       refreshing={refreshing}
       onRefresh={onRefresh}
+      floatingContent={<FloatingActionBar actions={[
+        { label: "Nạp tiền", accessibilityLabel: "Nạp tiền cho học viên", variant: "outline", onPress: () => router.push(asHref(`/students/${activeStudentId}/top-up`)) },
+        { label: "Đăng ký khóa học", accessibilityLabel: "Đăng ký khóa học cho học viên", variant: "primary", flex: 1.3, onPress: () => router.push(asHref(`/students/${activeStudentId}/course-registration`)) },
+        ...(canDelete ? [{ key: "delete", label: "", accessibilityLabel: "Xóa học viên", variant: "ghost" as const, disabled: deleting, onPress: () => setConfirmDelete(true), flex: 0, style: { width: 44, minWidth: 44, paddingHorizontal: 0, backgroundColor: "transparent", borderWidth: 0 }, icon: <AppIcon icon={<Trash6 />} size={30} color={deleting ? Colors.light.textSecondary : Colors.light.error} /> }] : []),
+      ]} />}
     >
       {student ? <StudentSummaryCard student={student} /> : null}
-
-      <View style={styles.actionRow}>
-        <PrimaryActionButton
-          title="Nạp tiền"
-          variant="outline"
-          onPress={() =>
-            router.push(asHref(`/students/${activeStudentId}/top-up`))
-          }
-        />
-        <PrimaryActionButton
-          title="Đăng ký khóa học"
-          onPress={() =>
-            router.push(
-              asHref(`/students/${activeStudentId}/course-registration`),
-            )
-          }
-        />
-      </View>
 
       <SurfaceCard>
         <View style={styles.row}>
@@ -135,26 +148,20 @@ export function StudentDetailScreen({ studentCode }: StudentRouteProps) {
           onPress={() => router.push(asHref("/history/student"))}
         />
       </NavigationMenu>
+      <ConfirmationDialog visible={confirmDelete} title="Xóa học viên" description={`Bạn có chắc muốn xóa học viên "${student?.fullName ?? "này"}" không? Thao tác này không thể hoàn tác.`} confirmLabel="Xóa" confirmVariant="danger" onCancel={() => setConfirmDelete(false)} onConfirm={handleDelete} />
+      <CancellableLoadingOverlay visible={deleting} message="Đang xóa học viên..." cancelLabel="Hủy" onCancel={() => deleteController.current?.abort()} />
     </StackScreenLayout>
   );
 }
 
 const styles = StyleSheet.create({
   content: {
-    gap: 20,
-    paddingTop: 16,
-    paddingHorizontal: 20,
-    paddingBottom: 24,
+    paddingBottom: 128,
   },
   center: {
     justifyContent: "center",
     alignItems: "center",
     minHeight: 200,
-  },
-  actionRow: {
-    flexDirection: "row",
-    gap: 12,
-    justifyContent: "center",
   },
   row: {
     flexDirection: "row",

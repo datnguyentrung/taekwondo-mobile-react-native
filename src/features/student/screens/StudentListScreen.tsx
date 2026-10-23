@@ -1,12 +1,13 @@
 import { useRouter } from "expo-router";
 import { useMemo, useState } from "react";
-import { ActivityIndicator, StyleSheet, TextInput, View } from "react-native";
-import { InfoCircle, Search, Tuning } from "reicon-react-native";
+import { ActivityIndicator, Pressable, StyleSheet, TextInput, View } from "react-native";
+import { InfoCircle, Plus, Search, Tuning } from "reicon-react-native";
 
 import { ALL_BELTS, BeltLabel } from "@/features/person/constants/person.constants";
 import type { Belt, PersonStatus } from "@/features/person/constants/person.constants";
 import { useStudents } from "@/features/person/queries/personQueries";
 import { StudentListItem } from "@/features/student/components/StudentListItem";
+import { PersonCreateSheet } from "@/features/person/components/PersonCreateSheet";
 import {
   STUDENT_TABS,
   type StudentListTab,
@@ -22,7 +23,7 @@ import {
   toggleMultiSelectFilterValue,
   type MultiSelectFilterGroup,
 } from "@/shared/ui/MultiSelectFilterContent";
-import { SegmentedControl } from "@/shared/ui/SegmentedControl";
+import { SegmentedTabs } from "@/shared/ui/commerce/CommercePrimitives";
 import { ThemedText } from "@/shared/ui/ThemedText";
 import { Colors } from "@/theme";
 
@@ -44,6 +45,7 @@ export function StudentListScreen() {
   const [searchQuery, setSearchQuery] = useState("");
   const [activeTab, setActiveTab] = useState<StudentListTab>("all");
   const [filterVisible, setFilterVisible] = useState(false);
+  const [createVisible, setCreateVisible] = useState(false);
 
   const [filters, setFilters] =
     useState<StudentMultiFilterState>(emptyStudentFilters);
@@ -220,7 +222,9 @@ export function StudentListScreen() {
           </>
         }
       >
-        <View style={styles.searchContainer}>
+        <SegmentedTabs value={activeTab} tabs={[...STUDENT_TABS]} onChange={setActiveTab} />
+        <View style={styles.searchRow}>
+          <View style={styles.searchContainer}>
           <AppIcon
             icon={<Search />}
             size={20}
@@ -236,14 +240,11 @@ export function StudentListScreen() {
             returnKeyType="search"
             clearButtonMode="while-editing"
           />
+          </View>
+          <Pressable accessibilityRole="button" accessibilityLabel="Tạo học viên" hitSlop={8} onPress={() => setCreateVisible(true)} style={({ pressed }) => [styles.createButton, pressed && styles.createButtonPressed]}>
+            <AppIcon icon={<Plus />} size={22} color={Colors.light.surface} />
+          </Pressable>
         </View>
-
-        <SegmentedControl
-          options={STUDENT_TABS}
-          value={activeTab}
-          onChange={setActiveTab}
-          style={styles.tabs}
-        />
 
         {studentsQuery.isLoading ? (
           <View style={styles.loadingContainer}>
@@ -303,18 +304,20 @@ export function StudentListScreen() {
       >
         <MultiSelectFilterContent groups={filterGroups} />
       </BottomSheetWindow>
+      <PersonCreateSheet kind="student" visible={createVisible} onClose={() => setCreateVisible(false)} />
     </>
   );
 }
 
 const styles = StyleSheet.create({
   content: {
-    gap: 12,
+    gap: 20,
     paddingTop: 16,
     paddingHorizontal: 20,
     paddingBottom: 32,
   },
   searchContainer: {
+    flex: 1,
     minHeight: 48,
     flexDirection: "row",
     alignItems: "center",
@@ -325,13 +328,15 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: Colors.light.divider,
   },
+  searchRow: { flexDirection: "row", alignItems: "center", gap: 12 },
+  createButton: { width: 48, height: 48, alignItems: "center", justifyContent: "center", borderRadius: 10, backgroundColor: Colors.light.primary },
+  createButtonPressed: { opacity: 0.82, transform: [{ scale: 0.97 }] },
   searchInput: {
     flex: 1,
     color: Colors.light.text,
     fontSize: 14,
     paddingVertical: 10,
   },
-  tabs: {},
   studentList: {
     gap: 12,
   },

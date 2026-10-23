@@ -48,7 +48,7 @@ export function UserListScreen() {
   return (
     <StackScreenLayout
       title="Người dùng"
-      contentContainerStyle={adminStyles.screen}
+      contentContainerStyle={adminStyles.listScreen}
       refreshing={refreshing}
       onRefresh={onRefresh}
     >

@@ -186,7 +186,9 @@ const styles = StyleSheet.create({
   },
   content: {
     paddingHorizontal: 20,
-    // paddingBottom: 24,
+    paddingTop: 16,
+    paddingBottom: 32,
+    gap: 20,
   },
   pressed: {
     opacity: 0.75,

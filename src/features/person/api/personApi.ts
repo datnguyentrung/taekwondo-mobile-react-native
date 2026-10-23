@@ -35,11 +35,11 @@ export const personApi = {
     const response = await javaApi.put<PersonResponse>(`/persons/${personId}`, request);
     return response.data;
   },
-  async delete(personId: string): Promise<void> {
-    await javaApi.delete(`/persons/${personId}`);
+  async delete(personId: string, signal?: AbortSignal): Promise<void> {
+    await javaApi.delete(`/persons/${personId}`, { signal });
   },
-  async remove(personId: string): Promise<void> {
-    return this.delete(personId);
+  async remove(personId: string, signal?: AbortSignal): Promise<void> {
+    return this.delete(personId, signal);
   },
   async identify(file?: MobileUploadFile, personCode?: string): Promise<PersonResponse> {
     const response = await javaApi.post<PersonResponse>(

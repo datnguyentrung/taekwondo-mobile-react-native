@@ -1,9 +1,10 @@
 import { useRouter } from "expo-router";
 import { useMemo, useState } from "react";
-import { ActivityIndicator, StyleSheet, TextInput, View } from "react-native";
-import { InfoCircle, Search, Tuning } from "reicon-react-native";
+import { ActivityIndicator, Pressable, StyleSheet, TextInput, View } from "react-native";
+import { InfoCircle, Plus, Search, Tuning } from "reicon-react-native";
 
 import { PersonListItem } from "@/features/person/components/PersonListItem";
+import { PersonCreateSheet } from "@/features/person/components/PersonCreateSheet";
 import type {
   Belt,
   PersonStatus,
@@ -24,7 +25,7 @@ import {
   toggleMultiSelectFilterValue,
   type MultiSelectFilterGroup,
 } from "@/shared/ui/MultiSelectFilterContent";
-import { SegmentedControl } from "@/shared/ui/SegmentedControl";
+import { SegmentedTabs } from "@/shared/ui/commerce/CommercePrimitives";
 import { ThemedText } from "@/shared/ui/ThemedText";
 import { Colors } from "@/theme";
 
@@ -54,6 +55,7 @@ export function CoachListScreen() {
   const [searchQuery, setSearchQuery] = useState("");
   const [activeTab, setActiveTab] = useState<CoachListTab>("all");
   const [filterVisible, setFilterVisible] = useState(false);
+  const [createVisible, setCreateVisible] = useState(false);
 
   const [filters, setFilters] =
     useState<CoachMultiFilterState>(emptyCoachFilters);
@@ -229,7 +231,9 @@ export function CoachListScreen() {
           </>
         }
       >
-        <View style={styles.searchContainer}>
+        <SegmentedTabs value={activeTab} tabs={[...COACH_TABS]} onChange={setActiveTab} />
+        <View style={styles.searchRow}>
+          <View style={styles.searchContainer}>
           <AppIcon
             icon={<Search />}
             size={20}
@@ -245,14 +249,11 @@ export function CoachListScreen() {
             returnKeyType="search"
             clearButtonMode="while-editing"
           />
+          </View>
+          <Pressable accessibilityRole="button" accessibilityLabel="Tạo huấn luyện viên" hitSlop={8} onPress={() => setCreateVisible(true)} style={({ pressed }) => [styles.createButton, pressed && styles.createButtonPressed]}>
+            <AppIcon icon={<Plus />} size={22} color={Colors.light.surface} />
+          </Pressable>
         </View>
-
-        <SegmentedControl
-          options={COACH_TABS}
-          value={activeTab}
-          onChange={setActiveTab}
-          style={styles.tabs}
-        />
 
         {coachesQuery.isLoading ? (
           <View style={styles.loadingContainer}>
@@ -313,18 +314,20 @@ export function CoachListScreen() {
       >
         <MultiSelectFilterContent groups={filterGroups} />
       </BottomSheetWindow>
+      <PersonCreateSheet kind="coach" visible={createVisible} onClose={() => setCreateVisible(false)} />
     </>
   );
 }
 
 const styles = StyleSheet.create({
   content: {
-    gap: 12,
+    gap: 20,
     paddingTop: 16,
     paddingHorizontal: 20,
     paddingBottom: 32,
   },
   searchContainer: {
+    flex: 1,
     minHeight: 48,
     flexDirection: "row",
     alignItems: "center",
@@ -335,13 +338,15 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: Colors.light.divider,
   },
+  searchRow: { flexDirection: "row", alignItems: "center", gap: 12 },
+  createButton: { width: 48, height: 48, alignItems: "center", justifyContent: "center", borderRadius: 10, backgroundColor: Colors.light.primary },
+  createButtonPressed: { opacity: 0.82, transform: [{ scale: 0.97 }] },
   searchInput: {
     flex: 1,
     color: Colors.light.text,
     fontSize: 14,
     paddingVertical: 10,
   },
-  tabs: {},
   coachList: {
     gap: 12,
   },

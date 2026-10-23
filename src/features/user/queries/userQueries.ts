@@ -117,7 +117,8 @@ export function useDeleteUser(callbacks: {
 } = {}) {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (userId: string) => userApi.remove(userId),
+    mutationFn: (variables: string | { userId: string; signal?: AbortSignal }) =>
+      userApi.remove(typeof variables === "string" ? variables : variables.userId, typeof variables === "string" ? undefined : variables.signal),
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: userKeys.lists() });
       await callbacks.onSuccess?.();

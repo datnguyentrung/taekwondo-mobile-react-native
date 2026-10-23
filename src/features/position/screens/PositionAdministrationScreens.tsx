@@ -1,8 +1,14 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { useLocalSearchParams, useRouter, type Href } from 'expo-router';
+import { Trash6 } from 'reicon-react-native';
 
+import { Permission, useCan } from '@/features/authorization';
 import StackScreenLayout from '@/routes/navigation/layouts/StackScreenLayout';
+import { AppIcon } from '@/shared/ui/AppIcon';
+import { CancellableLoadingOverlay } from '@/shared/ui/CancellableLoadingOverlay';
+import { ConfirmationDialog } from '@/shared/ui/ConfirmationDialog';
+import { FloatingActionBar } from '@/shared/ui/FloatingActionBar';
 import { ThemedText } from '@/shared/ui/ThemedText';
 import { useToast } from '@/shared/ui/Toast';
 import { Colors, radii } from '@/theme';
@@ -51,7 +57,7 @@ export function PositionListScreen() {
   const [status, setStatus] = useState<'all' | 'active' | 'inactive'>('all');
   const visible = (positions.data?.content ?? []).filter((item) => containsSearch(search, item.name, item.code) && (status === 'all' || item.active === (status === 'active')));
   return (
-    <StackScreenLayout title="Chức vụ" contentContainerStyle={adminStyles.screen}>
+    <StackScreenLayout title="Chức vụ" contentContainerStyle={adminStyles.listScreen}>
       <AdminIntro>Quản lý chức vụ và tra cứu nhân sự theo vị trí công việc.</AdminIntro>
       <AdminSearchField value={search} onChangeText={setSearch} placeholder="Tìm tên hoặc mã chức vụ" />
       <View style={adminStyles.chips}>
@@ -86,24 +92,52 @@ export function PositionDetailScreen() {
   const position = usePosition(positionId);
   const toast = useToast();
   const [confirming, setConfirming] = useState(false);
-  const remove = useDeletePosition({
-    onSuccess: async () => { toast.show({ message: 'Đã xóa chức vụ', variant: 'success' }); router.replace('/admin/positions' as Href); },
-    onError: () => toast.show({ message: 'Không thể xóa chức vụ đang có nhân sự', variant: 'error' }),
-  });
+  const [deleting, setDeleting] = useState(false);
+  const deleteController = useRef<AbortController | null>(null);
+  const canDelete = useCan(Permission.POSITION_DELETE);
+  const remove = useDeletePosition();
+  const handleDelete = async () => {
+    if (!positionId) return;
+    setConfirming(false);
+    setDeleting(true);
+    const controller = new AbortController();
+    deleteController.current = controller;
+    try {
+      await remove.mutateAsync({ positionId, signal: controller.signal });
+      toast.show({ message: 'Đã xóa chức vụ', variant: 'success' });
+      router.replace('/admin/positions' as Href);
+    } catch (error) {
+      if ((error as { name?: string }).name !== 'AbortError') {
+        toast.show({ message: 'Không thể xóa chức vụ đang có nhân sự', variant: 'error' });
+      }
+    } finally {
+      deleteController.current = null;
+      setDeleting(false);
+    }
+  };
   return (
-    <StackScreenLayout title="Chi tiết chức vụ" contentContainerStyle={adminStyles.screen}>
-      {position.isPending ? <AdminLoadingState /> : !position.data ? <AdminEmptyState message="Không tìm thấy chức vụ" /> : <>
+    <>
+      <StackScreenLayout
+        title="Chi tiết chức vụ"
+        contentContainerStyle={[adminStyles.screen, { paddingBottom: 128 }]}
+        floatingContent={position.data ? <FloatingActionBar actions={[
+          { label: 'Chỉnh sửa', accessibilityLabel: 'Chỉnh sửa chức vụ', variant: 'outline', onPress: () => navigate(router, `/admin/positions/${positionId}/edit`) },
+          { label: 'Xem nhân sự', accessibilityLabel: 'Xem nhân sự theo chức vụ', variant: 'primary', flex: 1.3, onPress: () => navigate(router, `/admin/positions/${positionId}/staff`) },
+          ...(canDelete ? [{ key: 'delete', label: '', accessibilityLabel: 'Xóa chức vụ', variant: 'ghost' as const, disabled: deleting, flex: 0, onPress: () => setConfirming(true), style: { width: 44, minWidth: 44, paddingHorizontal: 0, backgroundColor: 'transparent', borderWidth: 0 }, icon: <AppIcon icon={<Trash6 />} size={30} color={deleting ? Colors.light.textSecondary : Colors.light.error} /> }] : []),
+        ]} /> : undefined}
+      >
+        {position.isPending ? <AdminLoadingState /> : !position.data ? <AdminEmptyState message="Không tìm thấy chức vụ" /> : <>
         <AdminCard style={adminStyles.gap}>
           <View style={styles.titleRow}><View style={adminStyles.grow}><ThemedText type="heading">{position.data.name}</ThemedText><ThemedText type="code" style={styles.code}>{position.data.code}</ThemedText></View><AdminChip label={position.data.active ? 'Hoạt động' : 'Ngừng dùng'} tone={position.data.active ? 'success' : 'neutral'} /></View>
           <ThemedText type="bodySmall" style={adminStyles.muted}>{position.data.description || 'Chưa có mô tả'}</ThemedText>
         </AdminCard>
         <AdminCard><AdminListRow title={`${position.data.personCount ?? 0} nhân sự`} subtitle="Đang giữ chức vụ này" onPress={() => navigate(router, `/admin/positions/${positionId}/staff`)} /></AdminCard>
         <AdminCard style={adminStyles.gap}><View style={adminStyles.labelValue}><ThemedText type="featureLabel">Ngày tạo</ThemedText><ThemedText type="bodySmall" style={adminStyles.muted}>{formatDateTime(position.data.createdAt)}</ThemedText></View><View style={adminStyles.labelValue}><ThemedText type="featureLabel">Cập nhật gần nhất</ThemedText><ThemedText type="bodySmall" style={adminStyles.muted}>{formatDateTime(position.data.updatedAt)}</ThemedText></View></AdminCard>
-        <AdminButton label="Chỉnh sửa chức vụ" onPress={() => navigate(router, `/admin/positions/${positionId}/edit`)} />
-        <AdminButton label="Xóa chức vụ" variant="text" onPress={() => setConfirming(true)} />
       </>}
-      <AdminConfirmDialog confirming={confirming} title="Xóa chức vụ?" message={`Chức vụ “${position.data?.name ?? ''}” sẽ bị xóa vĩnh viễn. Hãy bảo đảm không còn nhân sự được gán.`} confirmLabel="Xóa" destructive loading={remove.isPending} onCancel={() => setConfirming(false)} onConfirm={() => remove.mutate(positionId as string)} />
-    </StackScreenLayout>
+      </StackScreenLayout>
+      <ConfirmationDialog visible={confirming} title="Xóa chức vụ" description={`Chức vụ “${position.data?.name ?? ''}” sẽ bị xóa vĩnh viễn. Hãy bảo đảm không còn nhân sự được gán.`} confirmLabel="Xóa" confirmVariant="danger" onCancel={() => setConfirming(false)} onConfirm={handleDelete} />
+      <CancellableLoadingOverlay visible={deleting} message="Đang xóa chức vụ..." cancelLabel="Hủy" onCancel={() => deleteController.current?.abort()} />
+    </>
   );
 }
 

@@ -9,18 +9,25 @@ import { getCourseSearchPlaceholder } from "../utils/courseCatalogViewModel";
 
 export function CourseCatalogSearchField({
   tab,
+  value,
+  onChangeText,
   onCreatePress,
 }: {
   tab: CourseCatalogTab;
+  value: string;
+  onChangeText: (value: string) => void;
   onCreatePress?: () => void;
 }) {
   return (
     <View style={styles.row}>
       <View style={styles.field}>
         <FormField
-          label="Tìm kiếm"
-          value={getCourseSearchPlaceholder(tab)}
-          editable={false}
+          accessibilityLabel="Tìm kiếm khóa học"
+          value={value}
+          onChangeText={onChangeText}
+          placeholder={getCourseSearchPlaceholder(tab)}
+          returnKeyType="search"
+          clearButtonMode="while-editing"
         />
       </View>
       {onCreatePress ? (

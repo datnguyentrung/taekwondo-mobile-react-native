@@ -1,5 +1,5 @@
 import { useRouter } from "expo-router";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { ActivityIndicator, StyleSheet, View } from "react-native";
 
 import type { CourseResponse } from "@/features/course/api/course.dto";
@@ -28,6 +28,7 @@ export function CourseCatalogScreen({
   const router = useRouter();
   const state = getCommerceState();
   const [tab, setTab] = useState<CourseCatalogTab>(initialTab);
+  const [search, setSearch] = useState("");
   const [isCreateSheetVisible, setIsCreateSheetVisible] = useState(false);
   const canCreateCourse = useCan(Permission.COURSE_CREATE);
 
@@ -36,6 +37,15 @@ export function CourseCatalogScreen({
   const { refreshing, onRefresh } = useScreenRefresh([coursesQuery]);
 
   const showInitialLoading = isLoading && !data;
+  const visibleCourses = useMemo(() => {
+    const query = search.trim().toLocaleLowerCase("vi-VN");
+    if (!query) return courses;
+    return courses.filter((course) =>
+      [course.courseName, course.branchName, course.scheduleLabel, course.subtitle]
+        .filter(Boolean)
+        .some((value) => value!.toLocaleLowerCase("vi-VN").includes(query)),
+    );
+  }, [courses, search]);
 
   const handleCreateSuccess = async (createdCourse: CourseResponse) => {
     await registerCreatedCourse(createdCourse);
@@ -47,13 +57,14 @@ export function CourseCatalogScreen({
     <>
       <StackScreenLayout
         title="Khóa học"
-        contentContainerStyle={styles.content}
         refreshing={refreshing}
         onRefresh={onRefresh}
       >
         <SegmentedTabs value={tab} tabs={COURSE_CATALOG_TABS} onChange={setTab} />
         <CourseCatalogSearchField
           tab={tab}
+          value={search}
+          onChangeText={setSearch}
           onCreatePress={
             canCreateCourse ? () => setIsCreateSheetVisible(true) : undefined
           }
@@ -64,7 +75,7 @@ export function CourseCatalogScreen({
           </View>
         ) : (
           <CourseCatalogList
-            courses={courses}
+            courses={visibleCourses}
             onCoursePress={(courseId) =>
               router.push(asHref(`/courses/${courseId}`))
             }
@@ -82,12 +93,6 @@ export function CourseCatalogScreen({
 }
 
 const styles = StyleSheet.create({
-  content: {
-    gap: 20,
-    paddingTop: 16,
-    paddingHorizontal: 20,
-    paddingBottom: 32,
-  },
   loadingContainer: {
     paddingVertical: 48,
     alignItems: "center",

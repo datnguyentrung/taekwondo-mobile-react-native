@@ -1,7 +1,9 @@
 import { useLocalSearchParams, useRouter, type Href } from "expo-router";
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { StyleSheet, View } from "react-native";
+import { Trash6 } from "reicon-react-native";
 
+import { Permission, useCan } from "@/features/authorization";
 import { PermissionsTabContent } from "@/features/permissions";
 import type {
   PermissionSimpleResponse,
@@ -9,6 +11,10 @@ import type {
 import { groupPermissions } from "@/features/permissions/domain/permissionViewModel";
 import { usePermissionsCatalog } from "@/features/permissions/queries/permissionQueries";
 import StackScreenLayout from "@/routes/navigation/layouts/StackScreenLayout";
+import { AppIcon } from "@/shared/ui/AppIcon";
+import { CancellableLoadingOverlay } from "@/shared/ui/CancellableLoadingOverlay";
+import { ConfirmationDialog } from "@/shared/ui/ConfirmationDialog";
+import { FloatingActionBar } from "@/shared/ui/FloatingActionBar";
 import {
   AdminButton,
   AdminCard,
@@ -109,7 +115,7 @@ export function RoleListScreen({
   return (
     <StackScreenLayout
       title="Vai trò & quyền"
-      contentContainerStyle={adminStyles.screen}
+      contentContainerStyle={adminStyles.listScreen}
     >
       <AdminTabs
         items={tabs}
@@ -132,27 +138,98 @@ export function RoleDetailScreen() {
   const role = useRole(roleCode);
   const toast = useToast();
   const [confirming, setConfirming] = useState(false);
-  const remove = useDeleteRole({
-    onSuccess: async () => {
+  const [deleting, setDeleting] = useState(false);
+  const deleteController = useRef<AbortController | null>(null);
+  const canDelete = useCan(Permission.ROLE_DELETE);
+  const remove = useDeleteRole();
+
+  const handleDelete = async () => {
+    if (!roleCode) return;
+
+    setConfirming(false);
+    setDeleting(true);
+    const controller = new AbortController();
+    deleteController.current = controller;
+
+    try {
+      await remove.mutateAsync({ roleCode, signal: controller.signal });
       toast.show({ message: "Đã xóa vai trò", variant: "success" });
-      setConfirming(false);
       router.replace("/admin/roles" as Href);
-    },
-    onError: () =>
-      toast.show({
-        message: "Không thể xóa vai trò đang được sử dụng",
-        variant: "error",
-      }),
-  });
+    } catch (error) {
+      if ((error as { name?: string }).name !== "AbortError") {
+        toast.show({
+          message: "Không thể xóa vai trò đang được sử dụng",
+          variant: "error",
+        });
+      }
+    } finally {
+      deleteController.current = null;
+      setDeleting(false);
+    }
+  };
 
   const assigned = role.data?.permissions ?? [];
   const grouped = groupPermissions(assigned);
 
   return (
-    <StackScreenLayout
-      title="Chi tiết vai trò"
-      contentContainerStyle={adminStyles.screen}
-    >
+    <>
+      <StackScreenLayout
+        title="Chi tiết vai trò"
+        contentContainerStyle={[adminStyles.screen, { paddingBottom: 128 }]}
+        floatingContent={
+          role.data ? (
+            <FloatingActionBar
+              actions={[
+                {
+                  label: "Chỉnh sửa",
+                  accessibilityLabel: "Chỉnh sửa vai trò",
+                  variant: "outline",
+                  onPress: () => go(router, `/admin/roles/${roleCode}/edit`),
+                },
+                {
+                  label: "Phân quyền",
+                  accessibilityLabel: "Phân quyền cho vai trò",
+                  variant: "primary",
+                  flex: 1.3,
+                  onPress: () =>
+                    go(router, `/admin/roles/${roleCode}/permissions`),
+                },
+                ...(canDelete
+                  ? [
+                      {
+                        key: "delete",
+                        label: "",
+                        accessibilityLabel: "Xóa vai trò",
+                        variant: "ghost" as const,
+                        disabled: deleting,
+                        flex: 0,
+                        onPress: () => setConfirming(true),
+                        style: {
+                          width: 44,
+                          minWidth: 44,
+                          paddingHorizontal: 0,
+                          backgroundColor: "transparent",
+                          borderWidth: 0,
+                        },
+                        icon: (
+                          <AppIcon
+                            icon={<Trash6 />}
+                            size={30}
+                            color={
+                              deleting
+                                ? Colors.light.textSecondary
+                                : Colors.light.error
+                            }
+                          />
+                        ),
+                      },
+                    ]
+                  : []),
+              ]}
+            />
+          ) : undefined
+        }
+      >
       {role.isPending ? (
         <AdminLoadingState />
       ) : !role.data ? (
@@ -184,19 +261,6 @@ export function RoleDetailScreen() {
               </View>
             </View>
           </AdminCard>
-          <View style={adminStyles.actions}>
-            <AdminButton
-              label="Chỉnh sửa"
-              variant="secondary"
-              onPress={() => go(router, `/admin/roles/${roleCode}/edit`)}
-              style={adminStyles.grow}
-            />
-            <AdminButton
-              label="Phân quyền"
-              onPress={() => go(router, `/admin/roles/${roleCode}/permissions`)}
-              style={adminStyles.grow}
-            />
-          </View>
           <AdminSectionHeader title="Quyền đã gán" />
           {Object.entries(grouped).length === 0 ? (
             <AdminEmptyState message="Vai trò chưa được gán quyền" />
@@ -216,24 +280,25 @@ export function RoleDetailScreen() {
               </AdminCard>
             ))
           )}
-          <AdminButton
-            label="Xóa vai trò"
-            variant="text"
-            onPress={() => setConfirming(true)}
-          />
         </>
       )}
-      <AdminConfirmDialog
-        confirming={confirming}
-        title="Xóa vai trò?"
-        message={`Vai trò “${role.data?.name ?? roleCode}” sẽ bị xóa vĩnh viễn. Thao tác này không thể hoàn tác.`}
+      </StackScreenLayout>
+      <ConfirmationDialog
+        visible={confirming}
+        title="Xóa vai trò"
+        description={`Vai trò “${role.data?.name ?? roleCode}” sẽ bị xóa vĩnh viễn. Thao tác này không thể hoàn tác.`}
         confirmLabel="Xóa"
-        destructive
-        loading={remove.isPending}
+        confirmVariant="danger"
         onCancel={() => setConfirming(false)}
-        onConfirm={() => remove.mutate(roleCode as string)}
+        onConfirm={handleDelete}
       />
-    </StackScreenLayout>
+      <CancellableLoadingOverlay
+        visible={deleting}
+        message="Đang xóa vai trò..."
+        cancelLabel="Hủy"
+        onCancel={() => deleteController.current?.abort()}
+      />
+    </>
   );
 }
 
