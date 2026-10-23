@@ -47,6 +47,7 @@ function processPoses(message: Extract<KneeAnalysisWorkerRequest, { type: "poses
       timestampMs: message.frame.timestampMs,
       lanes: result.lanes,
       events: result.events,
+      reviewCandidates: "reviewCandidates" in result ? result.reviewCandidates : [],
       trace: result.traceDelta,
       metrics: {
         ...message.frame.metrics,
@@ -70,5 +71,9 @@ worker.onmessage = ({ data }: MessageEvent<KneeAnalysisWorkerRequest>) => {
     if (config) laneManager = new LaneManager(config);
   } else if (data.type === "update-config") { config = data.config; laneManager?.updateConfig(data.config); }
   else if (data.type === "reset-pending-cycle") laneManager?.resetPendingCycles();
+  else if (data.type === "resolve-ankle-review" && laneManager) {
+    const resolved = laneManager.resolveReviewCandidate(data.id, data.decision, { sessionId, sessionStartedAt, backend: null, inputSize: null });
+    emit({ type: "review-resolved", lanes: resolved.lanes, events: resolved.event ? [resolved.event] : [], reviewCandidates: resolved.reviewCandidates });
+  }
   else if (data.type === "dispose") worker.close();
 };

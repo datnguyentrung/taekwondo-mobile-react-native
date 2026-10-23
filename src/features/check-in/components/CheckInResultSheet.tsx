@@ -420,7 +420,6 @@ function CheckInResultSheetComponent({
 
 const styles = StyleSheet.create({
   content: {
-    paddingHorizontal: 20,
     paddingTop: 12,
     gap: 16,
   },

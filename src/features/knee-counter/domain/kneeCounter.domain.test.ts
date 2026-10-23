@@ -7,6 +7,37 @@ const pose = (kneeY: number, hipY = .55, kneeScore = .95): NormalizedPose => { c
 const context = { sessionId: "s", sessionStartedAt: "now", laneId: "lane-1", participantId: "VĐV 1", detectorTrackId: "a", thresholdPercent: 0, backend: "webgl" as const, inputSize: 320 as const, engine: "movenet-multipose-lightning" as const, config: DEFAULT_KNEE_COUNTER_CONFIG };
 describe("high knee state machine", () => { it("counts when the knee crosses upward and rearms only after it lowers", () => { let state = initialLegCounterState(); state = advanceLegState(state, calculateKneeSignal(pose(.8), "left", 0, DEFAULT_KNEE_COUNTER_CONFIG), context).state; const result = advanceLegState(state, calculateKneeSignal(pose(.45), "left", 60, DEFAULT_KNEE_COUNTER_CONFIG), context); expect(result.event?.id).toBe("s:lane-1:left:1"); expect(result.state.reps).toBe(1); state = result.state; expect(advanceLegState(state, calculateKneeSignal(pose(.42), "left", 120, DEFAULT_KNEE_COUNTER_CONFIG), context).event).toBeNull(); state = advanceLegState(state, calculateKneeSignal(pose(.8), "left", 180, DEFAULT_KNEE_COUNTER_CONFIG), context).state; expect(state.phase).toBe("READY"); }); it("uses current hip, not a calibrated hip", () => { expect(calculateKneeSignal(pose(.45, .5), "left", 0, DEFAULT_KNEE_COUNTER_CONFIG).ratio).toBeGreaterThan(0); }); });
 
+describe("ankle landmark mode", () => {
+  const ankleConfig = { ...DEFAULT_KNEE_COUNTER_CONFIG, measurementLandmark: "ankle" as const, thresholdPercent: 0 };
+  const anklePose = (kneeY: number, ankleY: number, ankleScore = .95) => {
+    const value = pose(kneeY);
+    value.keypoints[15] = { x: .45, y: ankleY, score: ankleScore };
+    value.keypoints[16] = { x: .55, y: .82, score: .95 };
+    return value;
+  };
+
+  it("uses the ankle height rather than the knee height", () => {
+    const grounded = anklePose(.35, .82);
+    const raised = anklePose(.82, .40);
+    expect(calculateKneeSignal(grounded, "left", 0, ankleConfig).ratio).toBeLessThan(0);
+    expect(calculateKneeSignal(raised, "left", 60, ankleConfig).ratio).toBeGreaterThan(0);
+  });
+
+  it("requires a confident ankle and rearms only after that ankle drops", () => {
+    const lowConfidence = calculateKneeSignal(anklePose(.35, .40, .001), "left", 0, ankleConfig);
+    expect(lowConfidence.valid).toBe(false);
+    expect(lowConfidence.reason).toBe("ANKLE_LOW_CONFIDENCE");
+
+    let state = initialLegCounterState();
+    state = advanceLegState(state, calculateKneeSignal(anklePose(.35, .82), "left", 0, ankleConfig), { ...context, config: ankleConfig }).state;
+    const first = advanceLegState(state, calculateKneeSignal(anklePose(.82, .40), "left", 60, ankleConfig), { ...context, config: ankleConfig });
+    expect(first.event?.id).toBe("s:lane-1:left:1");
+    expect(advanceLegState(first.state, calculateKneeSignal(anklePose(.30, .40), "left", 120, ankleConfig), { ...context, config: ankleConfig }).event).toBeNull();
+    state = advanceLegState(first.state, calculateKneeSignal(anklePose(.30, .82), "left", 180, ankleConfig), { ...context, config: ankleConfig }).state;
+    expect(state.phase).toBe("READY");
+  });
+});
+
 describe("weak-knee confirmation and gaps", () => {
   it("requires a rising, supported weak trajectory and two frames before counting", () => {
     const weak2Config = { ...DEFAULT_KNEE_COUNTER_CONFIG, weakConfirmationSamples: 2 };

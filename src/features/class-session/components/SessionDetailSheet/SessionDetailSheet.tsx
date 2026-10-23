@@ -57,6 +57,7 @@ export function SessionDetailSheet({
       title="Chi tiết lịch"
       heightRatio={0.6}
       accessibilityLabel="Cửa sổ chi tiết lịch"
+      contentPaddingHorizontal={false}
       onClose={onClose}
       footer={
         <View style={styles.footerContainer}>

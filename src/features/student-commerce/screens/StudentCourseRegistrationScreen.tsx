@@ -963,7 +963,7 @@ const styles = StyleSheet.create({
   },
   sheetBody: {
     gap: 14,
-    padding: 20,
+    paddingVertical: 18,
   },
   searchBox: {
     minHeight: 48,

@@ -211,7 +211,7 @@ function FieldError({ message }: { message: string }) {
 }
 
 const styles = StyleSheet.create({
-  form: { paddingHorizontal: 20, paddingTop: 16, paddingBottom: 24, gap: 18 },
+  form: { paddingTop: 16, paddingBottom: 24, gap: 18 },
   sectionTabs: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
   fieldGroup: { gap: 6 },
   chips: { flexDirection: "row", flexWrap: "wrap", gap: 8 },

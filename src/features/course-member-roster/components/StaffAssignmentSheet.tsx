@@ -372,7 +372,7 @@ export function StaffAssignmentSheet({
 }
 
 const styles = StyleSheet.create({
-  contentContainer: { paddingHorizontal: 20, paddingTop: Spacing.three },
+  contentContainer: { paddingTop: Spacing.three },
   content: { gap: 12 },
   state: {
     minHeight: 112,

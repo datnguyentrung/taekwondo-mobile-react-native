@@ -14,6 +14,7 @@ import {
 import { RepEventLedger } from "../domain/repEventLedger";
 import type {
   ComputeCapabilities,
+  AnkleReviewCandidate,
   KneeCounterSessionConfig,
   ParticipantSlot,
   KneeTraceSample,
@@ -62,6 +63,7 @@ export function useKneeCounter(
   const [slots, setSlots] = useState<ParticipantSlot[]>([]);
   const [trace, setTrace] = useState<KneeTraceSample[]>([]);
   const [events, setEvents] = useState<RepEvent[]>([]);
+  const [reviewCandidates, setReviewCandidates] = useState<AnkleReviewCandidate[]>([]);
   const [metrics, setMetrics] = useState<SessionMetrics>(EMPTY_METRICS);
   const workerRef = useRef<Worker | null>(null);
   const analysisWorkerRef = useRef<Worker | null>(null);
@@ -127,6 +129,7 @@ export function useKneeCounter(
   const publish = useCallback(
     (message: Extract<KneeAnalysisWorkerResponse, { type: "frame-result" }> | Extract<KneeWorkerResponse, { type: "frame-result" }>) => {
       setSlots(message.lanes);
+      if ("reviewCandidates" in message) setReviewCandidates(message.reviewCandidates);
       const frameTimes = cameraFrameTimesRef.current;
       const elapsed = frameTimes.length > 1 ? frameTimes.at(-1)! - frameTimes[0] : 0;
       const cameraFps = elapsed > 0 ? Math.round((frameTimes.length - 1) * 10000 / elapsed) / 10 : null;
@@ -316,6 +319,7 @@ export function useKneeCounter(
     setSlots([]);
     setTrace([]);
     setEvents([]);
+    setReviewCandidates([]);
     setMetrics(EMPTY_METRICS);
     ledgerRef.current.clear();
     sessionIdRef.current = crypto.randomUUID();
@@ -329,6 +333,7 @@ export function useKneeCounter(
         (message) => {
           if (message.type === "analysis-ready") analysisReadyRef.current = true;
           else if (message.type === "frame-result") publish(message);
+          else if (message.type === "review-resolved") { setSlots(message.lanes); setReviewCandidates(message.reviewCandidates); if (message.events.length) setEvents(ledgerRef.current.append(message.events)); }
           else if (message.type === "error") void fallbackToMainThread();
         },
         () => { void fallbackToMainThread(); },
@@ -448,6 +453,7 @@ export function useKneeCounter(
   const reset = useCallback(() => {
     ledgerRef.current.clear();
     setEvents([]);
+    setReviewCandidates([]);
     setSlots([]);
     setTrace([]);
     const sessionId = crypto.randomUUID();
@@ -464,12 +470,32 @@ export function useKneeCounter(
       sessionId,
       sessionStartedAt,
     });
+    mainRuntimeRef.current?.reset(sessionId, sessionStartedAt);
   }, []);
+  const resetForLandmarkChange = useCallback(() => {
+    countingRef.current = false;
+    stopLoopRef.current?.();
+    workerRef.current?.postMessage({ type: "pause" });
+    analysisWorkerRef.current?.postMessage({ type: "pause" });
+    workerRef.current?.postMessage({ type: "reset-pending-cycle" });
+    analysisWorkerRef.current?.postMessage({ type: "reset-pending-cycle" });
+    mainRuntimeRef.current?.resetPendingCycles();
+    reset();
+    if (workerRef.current || analysisWorkerRef.current || mainRuntimeRef.current) {
+      setStatus("aligning");
+      startLoop("preview");
+    }
+  }, [reset, startLoop]);
   const restart = useCallback(() => {
     if (status !== "finished") return;
     reset();
     setStatus("countdown");
   }, [reset, status]);
+  const resolveAnkleReview = useCallback((id: string, decision: "ACCEPT" | "REJECT") => {
+    if (analysisWorkerRef.current) { analysisWorkerRef.current.postMessage({ type: "resolve-ankle-review", id, decision }); return; }
+    const result = mainRuntimeRef.current?.resolveAnkleReview(id, decision); if (!result) return;
+    setSlots(result.lanes); setReviewCandidates(result.reviewCandidates); if (result.event) setEvents(ledgerRef.current.append([result.event]));
+  }, []);
   useEffect(() => () => dispose(), [dispose]);
   const detectedCount = useMemo(
     () => slots.filter((slot) => slot.pose).length,
@@ -495,6 +521,8 @@ export function useKneeCounter(
     capabilities,
     slots,
     events,
+    reviewCandidates,
+    resolveAnkleReview,
     metrics,
     detectedCount,
     passCount,
@@ -511,6 +539,7 @@ export function useKneeCounter(
     completeCountdown,
     finish,
     reset,
+    resetForLandmarkChange,
     restart,
   };
 }

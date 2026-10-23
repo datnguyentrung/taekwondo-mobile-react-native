@@ -4,6 +4,7 @@ import { CalendarCheck } from "lucide-react-native";
 import {
   Book,
   Building,
+  Layers,
   Profile2user,
   ShieldUser,
   Teacher,
@@ -42,6 +43,12 @@ export const ACTIVITIES_GROUPS: ActivitiesActionGroup[] = [
         id: "course-list",
         label: "Khóa học",
         icon: <Book />,
+      },
+      {
+        id: "training-plan-list",
+        label: "Gói học",
+        icon: <Layers />,
+        requiredPermissions: [Permission.TRAINING_PLAN_READ],
       },
       {
         id: "coach-list",

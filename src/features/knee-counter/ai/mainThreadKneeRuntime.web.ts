@@ -2,7 +2,7 @@ import { LaneManager, deduplicateCandidates, poseToCandidate } from "../domain/l
 import { MAX_TRACKED_PEOPLE } from "../config/kneeCounterConfig";
 import { RuntimeMetricsCollector } from "./runtimeMetrics";
 import { createMoveNetRuntime, type MoveNetRuntime } from "./moveNetRuntime.web";
-import type { BackendPreference, ComputeBackend, KneeCounterSessionConfig, KneeTraceSample, ParticipantSlot, RepEvent, RuntimeMetrics } from "../types/kneeCounter.types";
+import type { AnkleReviewCandidate, BackendPreference, ComputeBackend, KneeCounterSessionConfig, KneeTraceSample, ParticipantSlot, RepEvent, RuntimeMetrics } from "../types/kneeCounter.types";
 import { backendOrder } from "./backendSelector.web";
 
 export class MainThreadKneeRuntime {
@@ -34,15 +34,17 @@ export class MainThreadKneeRuntime {
       }
     throw error ?? new Error("Không thể khởi tạo MoveNet.");
   }
-  async process(video: HTMLVideoElement, timestampMs: number, counting: boolean): Promise<{ lanes: ParticipantSlot[]; events: RepEvent[]; metrics: RuntimeMetrics; trace: KneeTraceSample[] }> {
+  async process(video: HTMLVideoElement, timestampMs: number, counting: boolean): Promise<{ lanes: ParticipantSlot[]; events: RepEvent[]; reviewCandidates: AnkleReviewCandidate[]; metrics: RuntimeMetrics; trace: KneeTraceSample[] }> {
     if (!this.runtime || !this.lanes) throw new Error("Runtime chưa được khởi tạo."); const started = performance.now();
     const poses = await this.runtime.estimate(video, timestampMs, video.videoWidth, video.videoHeight, MAX_TRACKED_PEOPLE);
     const candidates = deduplicateCandidates(poses.map(poseToCandidate).filter((candidate): candidate is NonNullable<typeof candidate> => candidate !== null));
     const result = this.lanes.update(candidates, timestampMs, counting, { sessionId: this.sessionId, sessionStartedAt: this.sessionStartedAt, backend: this.backend, inputSize: this.inputSize });
     const inferenceLatencyMs = performance.now() - started;
-    return { lanes: result.lanes, events: result.events, metrics: { ...this.metrics.record(inferenceLatencyMs, 0, result.conflicts), executionMode: "main-thread", inferenceLatencyMs: Math.round(inferenceLatencyMs * 10) / 10 }, trace: result.traceDelta };
+    return { lanes: result.lanes, events: result.events, reviewCandidates: "reviewCandidates" in result ? result.reviewCandidates : [], metrics: { ...this.metrics.record(inferenceLatencyMs, 0, result.conflicts), executionMode: "main-thread", inferenceLatencyMs: Math.round(inferenceLatencyMs * 10) / 10 }, trace: result.traceDelta };
   }
   resetPendingCycles() { this.lanes?.resetPendingCycles(); }
+  reset(sessionId: string, sessionStartedAt: string) { this.sessionId = sessionId; this.sessionStartedAt = sessionStartedAt; this.lanes = new LaneManager(this.config); }
   updateConfig(newConfig: KneeCounterSessionConfig) { this.config = newConfig; this.lanes?.updateConfig(newConfig); }
+  resolveAnkleReview(id: string, decision: "ACCEPT" | "REJECT") { return this.lanes?.resolveReviewCandidate(id, decision, { sessionId: this.sessionId, sessionStartedAt: this.sessionStartedAt, backend: this.backend, inputSize: this.inputSize }); }
   dispose() { this.runtime?.dispose(); this.runtime = null; }
 }

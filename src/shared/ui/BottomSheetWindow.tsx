@@ -43,6 +43,7 @@ export type BottomSheetWindowProps = {
   overlay?: React.ReactNode;
   scrollable?: boolean;
   contentContainerStyle?: StyleProp<ViewStyle>;
+  contentPaddingHorizontal?: boolean;
   onClose: () => void;
 };
 
@@ -69,6 +70,7 @@ export function BottomSheetWindow({
   overlay,
   scrollable = true,
   contentContainerStyle,
+  contentPaddingHorizontal = true,
   onClose,
 }: BottomSheetWindowProps) {
   const toastContext = useContext(ToastContext);
@@ -210,6 +212,7 @@ export function BottomSheetWindow({
           style={styles.body}
           contentContainerStyle={[
             styles.scrollContent,
+            contentPaddingHorizontal ? styles.contentPaddingHorizontal : null,
             footer ? styles.scrollContentWithFooter : null,
             contentContainerStyle,
           ]}
@@ -223,6 +226,7 @@ export function BottomSheetWindow({
         <View
           style={[
             styles.body,
+            contentPaddingHorizontal ? styles.contentPaddingHorizontal : null,
             footer ? styles.scrollContentWithFooter : null,
             contentContainerStyle,
           ]}
@@ -336,6 +340,9 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     paddingBottom: 20,
+  },
+  contentPaddingHorizontal: {
+    paddingHorizontal: 20,
   },
   scrollContentWithFooter: {
     paddingBottom: 90,

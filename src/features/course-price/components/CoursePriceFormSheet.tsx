@@ -279,7 +279,6 @@ function CoursePriceFormSheetActive({
 
 const styles = StyleSheet.create({
   form: {
-    paddingHorizontal: Spacing.three,
     paddingTop: Spacing.two,
     paddingBottom: Spacing.four,
     gap: Spacing.three,

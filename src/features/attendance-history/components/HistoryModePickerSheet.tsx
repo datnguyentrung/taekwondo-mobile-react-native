@@ -95,7 +95,6 @@ const styles = StyleSheet.create({
   modeGrid: {
     flexDirection: "row",
     gap: 12,
-    paddingHorizontal: 20,
   },
   modeButton: {
     flex: 1,

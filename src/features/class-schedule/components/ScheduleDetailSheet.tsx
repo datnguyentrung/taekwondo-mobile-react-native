@@ -115,6 +115,7 @@ export function ScheduleDetailSheet({
       title="Chi tiết lịch"
       accessibilityLabel="Cửa sổ chi tiết lịch"
       heightRatio={0.68}
+      contentPaddingHorizontal={false}
       onClose={handleClose}
       overlay={actions?.onDelete && schedule ? (
         <>

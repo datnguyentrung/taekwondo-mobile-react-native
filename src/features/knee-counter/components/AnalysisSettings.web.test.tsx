@@ -19,5 +19,7 @@ describe("AnalysisSettings", () => {
     expect(screen.queryByText("6")).toBeNull();
     fireEvent.press(screen.getByText("Bật"));
     expect(onConfigChange).toHaveBeenCalledWith({ flipHorizontal: true });
+    fireEvent.press(screen.getByText("Cổ chân"));
+    expect(onConfigChange).toHaveBeenCalledWith({ measurementLandmark: "ankle" });
   });
 });

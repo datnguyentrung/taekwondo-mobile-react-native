@@ -30,40 +30,36 @@ export function TrainingScoreSheet({
       title="Điểm rèn luyện"
       heightRatio={0.88}
       accessibilityLabel="Điểm rèn luyện"
+      contentContainerStyle={styles.content}
       onClose={onClose}
     >
-      <ScrollView
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.content}
-      >
-        <View style={styles.summaryRow}>
-          <View style={styles.statusPill}>
-            <ThemedText type="body" style={styles.statusText}>
-              {trainingScoreMock.statusLabel}
-            </ThemedText>
-          </View>
-          <ThemedText type="body" style={styles.quarterLabel}>
-            {trainingScoreMock.quarterLabel}
-          </ThemedText>
-          <AppIcon icon={<InfoCircle />} size={30} color={Colors.light.primary} />
-        </View>
-
-        {trainingScoreMock.sections.map((section) => (
-          <TrainingScoreSection
-            key={section.title}
-            section={{ ...section, icon: scoreSectionIcons[section.icon] }}
-          />
-        ))}
-
-        <View style={styles.totalCard}>
-          <ThemedText type="body" style={styles.totalText}>
-            {trainingScoreMock.totalLabel}
-          </ThemedText>
-          <ThemedText type="body" style={styles.totalText}>
-            {trainingScoreMock.totalValue}
+      <View style={styles.summaryRow}>
+        <View style={styles.statusPill}>
+          <ThemedText type="body" style={styles.statusText}>
+            {trainingScoreMock.statusLabel}
           </ThemedText>
         </View>
-      </ScrollView>
+        <ThemedText type="body" style={styles.quarterLabel}>
+          {trainingScoreMock.quarterLabel}
+        </ThemedText>
+        <AppIcon icon={<InfoCircle />} size={30} color={Colors.light.primary} />
+      </View>
+
+      {trainingScoreMock.sections.map((section) => (
+        <TrainingScoreSection
+          key={section.title}
+          section={{ ...section, icon: scoreSectionIcons[section.icon] }}
+        />
+      ))}
+
+      <View style={styles.totalCard}>
+        <ThemedText type="body" style={styles.totalText}>
+          {trainingScoreMock.totalLabel}
+        </ThemedText>
+        <ThemedText type="body" style={styles.totalText}>
+          {trainingScoreMock.totalValue}
+        </ThemedText>
+      </View>
     </BottomSheetWindow>
   );
 }
@@ -161,7 +157,6 @@ const statusWarningColor = "#D97706";
 
 const styles = StyleSheet.create({
   content: {
-    paddingHorizontal: 20,
     paddingTop: 18,
     paddingBottom: 34,
     gap: 20,

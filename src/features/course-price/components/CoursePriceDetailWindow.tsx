@@ -106,6 +106,7 @@ export function CoursePriceDetailWindow({
       title="Chi tiết gói học"
       accessibilityLabel="Cửa sổ chi tiết gói học"
       heightRatio={0.65}
+      contentPaddingHorizontal={false}
       onClose={handleClose}
       overlay={
         coursePrice ? (

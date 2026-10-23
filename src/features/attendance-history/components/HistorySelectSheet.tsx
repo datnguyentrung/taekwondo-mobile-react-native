@@ -77,48 +77,43 @@ export function HistorySelectSheet<T extends string | number>({
       visible={visible}
       title={title}
       heightRatio={0.4}
+      contentContainerStyle={styles.options}
       onClose={handleClose}
     >
-      <ScrollView
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.options}
-      >
-        {options.map((option) => {
-          const selected = option.value === (feedbackValue ?? selectedValue);
-          return (
-            <Pressable
-              key={String(option.value)}
-              accessibilityRole="button"
-              accessibilityLabel={option.label}
-              accessibilityState={{ selected }}
-              onPress={() => handleSelect(option.value)}
-              style={({ pressed }) => [
-                styles.option,
-                selected ? styles.optionSelected : null,
-                pressed ? styles.pressed : null,
-              ]}
+      {options.map((option) => {
+        const selected = option.value === (feedbackValue ?? selectedValue);
+        return (
+          <Pressable
+            key={String(option.value)}
+            accessibilityRole="button"
+            accessibilityLabel={option.label}
+            accessibilityState={{ selected }}
+            onPress={() => handleSelect(option.value)}
+            style={({ pressed }) => [
+              styles.option,
+              selected ? styles.optionSelected : null,
+              pressed ? styles.pressed : null,
+            ]}
+          >
+            <ThemedText
+              type="body"
+              style={[styles.optionText, selected ? styles.optionTextSelected : null]}
             >
-              <ThemedText
-                type="body"
-                style={[styles.optionText, selected ? styles.optionTextSelected : null]}
-              >
-                {option.label}
-              </ThemedText>
-              {selected ? (
-                <AppIcon icon={<Check />} size={22} color={Colors.light.primary} />
-              ) : null}
-            </Pressable>
-          );
-        })}
-        <View style={styles.bottomSpacer} />
-      </ScrollView>
+              {option.label}
+            </ThemedText>
+            {selected ? (
+              <AppIcon icon={<Check />} size={22} color={Colors.light.primary} />
+            ) : null}
+          </Pressable>
+        );
+      })}
+      <View style={styles.bottomSpacer} />
     </BottomSheetWindow>
   );
 }
 
 const styles = StyleSheet.create({
   options: {
-    paddingHorizontal: 20,
     paddingTop: 18,
     gap: 10,
   },

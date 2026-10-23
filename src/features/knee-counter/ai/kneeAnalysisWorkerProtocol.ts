@@ -2,6 +2,7 @@ import type {
   ComputeBackend,
   KneeCounterSessionConfig,
   KneeTraceSample,
+  AnkleReviewCandidate,
   NormalizedPose,
   ParticipantSlot,
   RepEvent,
@@ -29,9 +30,11 @@ export type KneeAnalysisWorkerRequest =
   | { type: "resume" }
   | { type: "reset"; sessionId: string; sessionStartedAt: string }
   | { type: "reset-pending-cycle" }
+  | { type: "resolve-ankle-review"; id: string; decision: "ACCEPT" | "REJECT" }
   | { type: "dispose" };
 
 export type KneeAnalysisWorkerResponse =
   | { type: "analysis-ready" }
-  | { type: "frame-result"; frameId: number; timestampMs: number; lanes: ParticipantSlot[]; events: RepEvent[]; metrics: RuntimeMetrics; trace: KneeTraceSample[] }
+  | { type: "frame-result"; frameId: number; timestampMs: number; lanes: ParticipantSlot[]; events: RepEvent[]; reviewCandidates: AnkleReviewCandidate[]; metrics: RuntimeMetrics; trace: KneeTraceSample[] }
+  | { type: "review-resolved"; lanes: ParticipantSlot[]; events: RepEvent[]; reviewCandidates: AnkleReviewCandidate[] }
   | { type: "error"; code: string; message: string };

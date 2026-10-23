@@ -84,7 +84,6 @@ function CheckInSessionHistorySheetComponent({
 
 const styles = StyleSheet.create({
   container: {
-    paddingHorizontal: 20,
     paddingTop: 12,
   },
   emptyContainer: {

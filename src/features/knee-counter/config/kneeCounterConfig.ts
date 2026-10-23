@@ -1,6 +1,7 @@
 import type { KneeCounterSessionConfig } from "../types/kneeCounter.types";
 
 export const DEFAULT_KNEE_COUNTER_CONFIG: KneeCounterSessionConfig = {
+  measurementLandmark: "knee",
   thresholdPercent: -35,
   minPoseScore: 0.20,
   minShoulderScore: 0.25,

@@ -20,6 +20,7 @@ import { PoseOverlay } from "../components/PoseOverlay.web";
 import { CameraSessionOverlay } from "../components/CameraSessionOverlay.web";
 import { AnalysisSettings } from "../components/AnalysisSettings.web";
 import { CameraStatusStrip } from "../components/CameraStatusStrip.web";
+import { AnkleReviewQueue } from "../components/AnkleReviewQueue.web";
 import { playCountdownCue, playRefereeBuzzer, unlockSessionAudio } from "../utils/buzzerAudio.web";
 import { formatSessionDuration } from "../utils/sessionClock.web";
 import type { CameraFpsOption } from "../types/kneeCounter.types";
@@ -369,7 +370,16 @@ export function KneeCounterScreen() {
       </View>
     </View>
     <ScrollView style={[styles.sidebarScroll, compact && styles.sidebarScrollCompact]} contentContainerStyle={styles.sidebarContent} showsVerticalScrollIndicator={false}>
-      <AnalysisSettings config={counter.config} backendOptions={[]} cameraLabels={cameraLabels} selectedCameraId={selectedCameraLabel} expanded={settingsExpanded} onToggle={() => setSettingsExpanded((value) => !value)} onConfigChange={counter.updateConfig} cameraFps={activeCameraFps} cameraFpsOptions={supportedCameraFps} onCameraFpsChange={setCameraTargetFps} onCameraChange={(label) => { const device = cameraDevices.find((candidate, index) => (candidate.label || `Camera ${index + 1}`) === label); if (device) { setCameraDeviceId(device.deviceId); void stop(); } }} />
+      <AnalysisSettings config={counter.config} backendOptions={[]} cameraLabels={cameraLabels} selectedCameraId={selectedCameraLabel} expanded={settingsExpanded} onToggle={() => setSettingsExpanded((value) => !value)} onConfigChange={(patch) => {
+        const landmarkChanged = patch.measurementLandmark !== undefined && patch.measurementLandmark !== counter.config.measurementLandmark;
+        counter.updateConfig(patch);
+        if (landmarkChanged) {
+          counter.resetForLandmarkChange();
+          sessionClock.startNewSession(countdownSeconds);
+          resumePendingRef.current = false;
+        }
+      }} cameraFps={activeCameraFps} cameraFpsOptions={supportedCameraFps} onCameraFpsChange={setCameraTargetFps} onCameraChange={(label) => { const device = cameraDevices.find((candidate, index) => (candidate.label || `Camera ${index + 1}`) === label); if (device) { setCameraDeviceId(device.deviceId); void stop(); } }} />
+      <AnkleReviewQueue candidates={counter.reviewCandidates} onResolve={counter.resolveAnkleReview} />
       <KneeCounterDashboard slots={counter.slots} detectedCount={counter.detectedCount} totalReps={counter.totalReps} passCount={counter.passCount} groupPassCount={counter.groupPassCount} synchronizedGroupPass={counter.synchronizedGroupPass} mode={counter.config.mode} status={counter.status} onReset={handleReset} onExport={exportCsv} />
       <Pressable accessibilityRole="button" accessibilityState={{ expanded: showDiagnostics }} onPress={() => setShowDiagnostics((value) => !value)} style={styles.diagnosticsToggle}><ThemedText type="bodySmall" style={styles.secondary}>{showDiagnostics ? "Ẩn chẩn đoán" : "Hiện chẩn đoán"}</ThemedText></Pressable>
       {showDiagnostics ? <KneeCounterDiagnostics capabilities={counter.capabilities} trace={counter.trace} /> : null}

@@ -346,7 +346,6 @@ const styles = StyleSheet.create({
   container: {
     gap: 14,
     paddingTop: 14,
-    paddingHorizontal: 10,
   },
   profileHero: {
     flexDirection: "row",

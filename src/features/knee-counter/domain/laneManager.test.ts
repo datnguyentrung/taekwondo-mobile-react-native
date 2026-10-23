@@ -26,6 +26,7 @@ describe("dynamic participant tracking", () => {
     expect(detected.left.smoothedRatio).not.toBeNull();
     expect(detected.left.phaseBefore).toBe("NEEDS_DOWN");
     expect(detected.left.enterThreshold).toBe(DEFAULT_KNEE_COUNTER_CONFIG.thresholdPercent / 100);
+    expect(detected.config.measurementLandmark).toBe("knee");
     manager.update([], 800, true, context);
     const missing = manager.getTrace().at(-1)!;
     expect(missing.source).toBe("MISSING");

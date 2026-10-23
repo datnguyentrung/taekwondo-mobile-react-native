@@ -126,6 +126,11 @@ export default function ActivitiesScreen() {
         return;
       }
 
+      if (action.id === "training-plan-list") {
+        router.push("/admin/training-plans" as Href);
+        return;
+      }
+
       if (action.id === "student-list") {
         router.push("/students" as Href);
         return;

@@ -292,11 +292,11 @@ export function PackageCoursePicker({
 const styles = StyleSheet.create({
   sheetBody: {
     gap: 12,
-    padding: 20,
+    paddingTop: 16,
+    paddingBottom: 20,
   },
   packageSheetBody: {
     gap: 12,
-    paddingHorizontal: 16,
     paddingTop: 12,
     paddingBottom: 104,
   },

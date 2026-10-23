@@ -1,18 +1,28 @@
 import { useEffect, useRef, useState } from "react";
 
-import { legKneeReference, MOVENET_KEYPOINT } from "../domain/kneeSignal";
-import type { BoundingBox, KneeCounterSessionConfig, NormalizedPoint, ParticipantSlot } from "../types/kneeCounter.types";
+import { legMeasurementReference, measurementKeypointIndex, MOVENET_KEYPOINT } from "../domain/kneeSignal";
+import type { BoundingBox, CountingLandmark, KneeCounterSessionConfig, NormalizedPoint, ParticipantSlot } from "../types/kneeCounter.types";
 import { countLabelPosition, stabilizeOverlayLine, videoContainRect } from "./overlayGeometry";
-
-const TARGET_KEYPOINTS = [
-  MOVENET_KEYPOINT.leftHip,
-  MOVENET_KEYPOINT.rightHip,
-  MOVENET_KEYPOINT.leftKnee,
-  MOVENET_KEYPOINT.rightKnee,
-] as const;
 
 // MoveNet's first five keypoints describe the head (nose, eyes and ears).
 const HEAD_KEYPOINTS = [0, 1, 2, 3, 4] as const;
+
+export function overlayTargetKeypoints(landmark: CountingLandmark) {
+  if (landmark === "ankle") return [
+    MOVENET_KEYPOINT.leftHip,
+    MOVENET_KEYPOINT.rightHip,
+    MOVENET_KEYPOINT.leftKnee,
+    MOVENET_KEYPOINT.rightKnee,
+    MOVENET_KEYPOINT.leftAnkle,
+    MOVENET_KEYPOINT.rightAnkle,
+  ] as const;
+  return [
+    MOVENET_KEYPOINT.leftHip,
+    MOVENET_KEYPOINT.rightHip,
+    measurementKeypointIndex("left", landmark),
+    measurementKeypointIndex("right", landmark),
+  ] as const;
+}
 
 const isVisible = (point: NormalizedPoint | undefined): point is NormalizedPoint =>
   Boolean(point && point.score >= 0.10);
@@ -70,6 +80,7 @@ export function PoseOverlay({
     const toX = (x: number) => offsetX + (mirrored ? 1 - x : x) * imageWidth;
     const toY = (y: number) => offsetY + y * imageHeight;
     const dotRadius = Math.max(7, Math.round(Math.min(imageWidth, imageHeight) * 0.012));
+    const targetKeypoints = overlayTargetKeypoints(config.measurementLandmark);
 
     slots.forEach((slot) => {
       const pose = slot.pose;
@@ -79,11 +90,19 @@ export function PoseOverlay({
       const hips = [pose.keypoints[MOVENET_KEYPOINT.leftHip], pose.keypoints[MOVENET_KEYPOINT.rightHip]].filter(isVisible);
 
       const references = (["left", "right"] as const)
-        .map((leg) => legKneeReference(pose, leg, config))
+        .map((leg) => legMeasurementReference(pose, leg, config))
         .filter((reference): reference is { hip: NormalizedPoint; shoulder: NormalizedPoint | null; torsoHeight: number } =>
           reference.hip !== null && reference.torsoHeight !== null && reference.torsoHeight >= 0.05,
         );
-      if (references.length) {
+      if (config.measurementLandmark === "ankle" && slot.ankleGuide) {
+        const horizontalPoints = [...hips, ...targetKeypoints.map((index) => pose.keypoints[index]).filter(isVisible)];
+        if (horizontalPoints.length) {
+          const xMin = Math.max(0, Math.min(...horizontalPoints.map((point) => point.x)) - .08); const xMax = Math.min(1, Math.max(...horizontalPoints.map((point) => point.x)) + .08);
+          const x1 = toX(xMin); const x2 = toX(xMax);
+          const drawGuide = (value: number, color: string, dashed: boolean) => { context.setLineDash(dashed ? [10, 7] : []); context.strokeStyle = color; context.lineWidth = dashed ? 3 : 4; context.beginPath(); context.moveTo(Math.min(x1, x2), toY(value)); context.lineTo(Math.max(x1, x2), toY(value)); context.stroke(); };
+          drawGuide(slot.ankleGuide.countLineY, "#FACC15", false); drawGuide(slot.ankleGuide.resetLineY, "#38BDF8", true); context.setLineDash([]);
+        }
+      } else if (references.length) {
         // This is UI-only: the counter retains two independent leg thresholds.
         const targetY = references.reduce(
           (sum, reference) => sum + reference.hip.y - (config.thresholdPercent / 100) * reference.torsoHeight,
@@ -91,7 +110,7 @@ export function PoseOverlay({
         ) / references.length;
         const guide = stabilizeOverlayLine(guideLinesRef.current.get(slot.participantId), targetY, performance.now());
         guideLinesRef.current.set(slot.participantId, guide);
-        const horizontalPoints = [...hips, ...TARGET_KEYPOINTS.map((index) => pose.keypoints[index]).filter(isVisible)];
+        const horizontalPoints = [...hips, ...targetKeypoints.map((index) => pose.keypoints[index]).filter(isVisible)];
         if (horizontalPoints.length) {
         const xMin = Math.max(0, Math.min(...horizontalPoints.map((point) => point.x)) - 0.08);
         const xMax = Math.min(1, Math.max(...horizontalPoints.map((point) => point.x)) + 0.08);
@@ -111,7 +130,7 @@ export function PoseOverlay({
 
       context.strokeStyle = "#FFFFFF";
       context.lineWidth = 3;
-      TARGET_KEYPOINTS.forEach((index) => {
+      targetKeypoints.forEach((index) => {
         const point = pose.keypoints[index];
         const key = `${slot.participantId}:${index}`;
         const visible = point && point.score >= .25;

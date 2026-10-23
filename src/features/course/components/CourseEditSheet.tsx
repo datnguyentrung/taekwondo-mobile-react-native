@@ -347,7 +347,6 @@ function CourseEditSheetComponent({
 
 const styles = StyleSheet.create({
   formContainer: {
-    paddingHorizontal: 20,
     paddingTop: 16,
     paddingBottom: 24,
     gap: 16,
