@@ -51,7 +51,14 @@ export function TrainingPlanCoursesListScreen() {
   const courses = useMemo(() => [...(coursesQuery.data?.content ?? [])].sort((a, b) => a.name.localeCompare(b.name, "vi")), [coursesQuery.data?.content]);
   const course = courses.find((item) => item.courseId === courseId);
   const openCreate = () => { setCourseId(""); setSessionType("STANDARD"); setEditor(null); };
-  const openEdit = () => { if (!selected) return; setCourseId(selected.targetCourseId); setSessionType(selected.sessionType); setEditor(selected); };
+  const openEdit = () => {
+    if (!selected) return;
+
+    setCourseId(selected.targetCourseId);
+    setSessionType(selected.sessionType);
+    setSelected(undefined);
+    setEditor(selected);
+  };
   const save = async () => {
     if (!trainingPlanId || !courseId) { toast.show({ message: "Hãy chọn khóa học.", variant: "error" }); return; }
     try {
@@ -87,10 +94,10 @@ export function TrainingPlanCoursesListScreen() {
         <>
           <ConfirmationDialog visible={confirming} presentation="inline" title="Xóa khóa học áp dụng" description="Thao tác này không thể hoàn tác." confirmLabel="Xóa" confirmVariant="danger" onCancel={() => setConfirming(false)} onConfirm={() => void remove()} />
           <CancellableLoadingOverlay visible={deleting} message="Đang xóa khóa học áp dụng..." onCancel={() => deleteAbortRef.current?.abort()} />
-          <EditorSheet visible={editor !== undefined} editing={Boolean(editor)} course={course} courseOptions={courses.map((item) => ({ value: item.courseId, label: item.name, subtitle: `${item.currentStudentCount}/${item.capacity} học viên` }))} pickerVisible={pickerOpen} sessionType={sessionType} submitting={createRule.isPending || updateRule.isPending} onClose={() => { setEditor(undefined); setPickerOpen(false); }} onPickCourse={() => setPickerOpen(true)} onSelectCourse={setCourseId} onClosePicker={() => setPickerOpen(false)} onSessionTypeChange={setSessionType} onSubmit={() => void save()} />
         </>
       }
     />
+    <EditorSheet visible={editor !== undefined} editing={Boolean(editor)} course={course} courseOptions={courses.map((item) => ({ value: item.courseId, label: item.name, subtitle: `${item.currentStudentCount}/${item.capacity} học viên` }))} pickerVisible={pickerOpen} sessionType={sessionType} submitting={createRule.isPending || updateRule.isPending} onClose={() => { setEditor(undefined); setPickerOpen(false); }} onPickCourse={() => setPickerOpen(true)} onSelectCourse={setCourseId} onClosePicker={() => setPickerOpen(false)} onSessionTypeChange={setSessionType} onSubmit={() => void save()} />
   </>;
 }
 
@@ -115,7 +122,7 @@ function DetailSheet({ rule, canEdit, canDelete, onClose, onEdit, onDelete, over
     {rule ? <View style={styles.detail}><Detail label="Khóa học" value={rule.targetCourseName} /><Detail label="Quota áp dụng" value={sessionLabel(rule.sessionType)} /></View> : null}
   </BottomSheetWindow>;
 }
-function EditorSheet({ visible, editing, course, courseOptions, pickerVisible, sessionType, submitting, onClose, onPickCourse, onSelectCourse, onClosePicker, onSessionTypeChange, onSubmit }: { visible: boolean; editing: boolean; course?: CourseSimpleResponse; courseOptions: { value: string; label: string; subtitle: string }[]; pickerVisible: boolean; sessionType: SessionType; submitting: boolean; onClose: () => void; onPickCourse: () => void; onSelectCourse: (courseId: string) => void; onClosePicker: () => void; onSessionTypeChange: (value: SessionType) => void; onSubmit: () => void }) { return <BottomSheetWindow visible={visible} title={editing ? "Chỉnh sửa khóa học áp dụng" : "Thêm khóa học áp dụng"} heightRatio={0.8} onClose={onClose} overlay={<PickerPopover visible={pickerVisible} useModal={false} title="Chọn khóa học" subtitle="Khóa học khả dụng" options={courseOptions} selectedValue={course?.courseId} onSelect={onSelectCourse} onClose={onClosePicker} />} footer={<AdminButton label={editing ? "Lưu thay đổi" : "Tạo mới"} loading={submitting} onPress={onSubmit} />}><View style={styles.editor}><AdminPickerField label="Khóa học *" valueLabel={course?.name} placeholder="Chọn khóa học" onPress={onPickCourse} /><ChoiceGroup label="Quota áp dụng" options={sessions} value={sessionType} onChange={onSessionTypeChange} /></View></BottomSheetWindow>; }
+function EditorSheet({ visible, editing, course, courseOptions, pickerVisible, sessionType, submitting, onClose, onPickCourse, onSelectCourse, onClosePicker, onSessionTypeChange, onSubmit }: { visible: boolean; editing: boolean; course?: CourseSimpleResponse; courseOptions: { value: string; label: string; subtitle: string }[]; pickerVisible: boolean; sessionType: SessionType; submitting: boolean; onClose: () => void; onPickCourse: () => void; onSelectCourse: (courseId: string) => void; onClosePicker: () => void; onSessionTypeChange: (value: SessionType) => void; onSubmit: () => void }) { return <BottomSheetWindow visible={visible} title={editing ? "Chỉnh sửa khóa học áp dụng" : "Thêm khóa học áp dụng"} onClose={onClose} overlay={<PickerPopover visible={pickerVisible} useModal={false} title="Chọn khóa học" subtitle="Khóa học khả dụng" options={courseOptions} selectedValue={course?.courseId} onSelect={onSelectCourse} onClose={onClosePicker} />} footer={<AdminButton label={editing ? "Lưu thay đổi" : "Tạo mới"} loading={submitting} onPress={onSubmit} />}><View style={styles.editor}><AdminPickerField label="Khóa học *" valueLabel={course?.name} placeholder="Chọn khóa học" onPress={onPickCourse} /><ChoiceGroup label="Quota áp dụng" options={sessions} value={sessionType} onChange={onSessionTypeChange} /></View></BottomSheetWindow>; }
 function ChoiceGroup<T extends string>({ label, options, value, onChange }: { label: string; options: readonly { value: T; label: string }[]; value: T; onChange: (value: T) => void }) { return <View style={styles.choice}><ThemedText type="featureLabel">{label}</ThemedText><View style={styles.choices}>{options.map((option) => <AdminChip key={option.value} label={option.label} selected={option.value === value} onPress={() => onChange(option.value)} />)}</View></View>; }
 function Detail({ label, value }: { label: string; value: string }) { return <View style={styles.detailRow}><ThemedText type="bodySmall" style={styles.muted}>{label}</ThemedText><ThemedText type="bodySmall" style={styles.detailValue}>{value}</ThemedText></View>; }
 function sessionLabel(value: SessionType) { return sessions.find((item) => item.value === value)?.label ?? value; }

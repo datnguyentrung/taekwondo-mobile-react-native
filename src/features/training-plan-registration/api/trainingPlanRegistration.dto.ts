@@ -1,4 +1,6 @@
-export type SessionType = 'REQUIRED' | 'STANDARD';
+import { Weekday } from "@/features/class-schedule/constants/class-schedule.constants";
+
+export type SessionType = "REQUIRED" | "STANDARD";
 
 export interface TrainingPlanRequirement {
   requirementId: string;
@@ -20,7 +22,7 @@ export interface TrainingPlanScheduleOption {
   courseId: string;
   courseName: string;
   branchName: string;
-  dayOfWeek: string;
+  dayOfWeek: Weekday;
   startTime: string;
   endTime: string;
   sessionType: SessionType;
