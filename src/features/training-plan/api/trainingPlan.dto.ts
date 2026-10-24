@@ -1,12 +1,11 @@
 export type TrainingPlanStatus = 'ACTIVE' | 'INACTIVE';
 export type AddonStatus = 'ACTIVE' | 'INACTIVE';
 export type ScheduleLevel = 'BASIC' | 'ADVANCED' | 'EXPERT';
-export type SessionType = 'REQUIRED' | 'STANDARD' | 'OPEN';
-export type PlanAccessMode = 'HOME' | 'RECURRING' | 'FLEX';
+export type SessionType = 'REQUIRED' | 'STANDARD';
 export interface TrainingPlanBriefResponse { trainingPlanId: string; name: string; level: ScheduleLevel; status: TrainingPlanStatus }
 export interface TrainingPlanSimpleResponse extends TrainingPlanBriefResponse { durationMonths: number; includedSessionCount: number; basePrice: number; finalPrice: number }
 export interface TrainingPlanRequirementSimpleResponse { trainingPlanRequirementId: string; trainingPlanId: string; sessionType: SessionType; sessionsPerWeek: number }
-export interface TrainingPlanAccessRuleSimpleResponse { trainingPlanAccessRuleId: string; trainingPlanId: string; targetCourseId: string; targetCourseName: string; sessionType: SessionType; accessMode: PlanAccessMode }
+export interface TrainingPlanAccessRuleSimpleResponse { trainingPlanAccessRuleId: string; trainingPlanId: string; targetCourseId: string; targetCourseName: string; sessionType: SessionType }
 export interface TrainingPlanAddonSimpleResponse { trainingPlanAddonId: string; trainingPlanId: string; name: string; extraSessionsPerWeek: number; price: number; status: AddonStatus }
 export interface TrainingPlanResponse extends TrainingPlanSimpleResponse { createdAt: string; updatedAt: string; requirements: TrainingPlanRequirementSimpleResponse[]; accessRules: TrainingPlanAccessRuleSimpleResponse[]; addons: TrainingPlanAddonSimpleResponse[] }
 export interface TrainingPlanCreateRequest { name: string; level: ScheduleLevel; durationMonths: number; includedSessionCount: number; basePrice: number; finalPrice: number; status: TrainingPlanStatus }
@@ -15,7 +14,7 @@ export interface TrainingPlanRequirementResponse extends Omit<TrainingPlanRequir
 export interface TrainingPlanRequirementCreateRequest { trainingPlanId: string; sessionType: SessionType; sessionsPerWeek: number }
 export type TrainingPlanRequirementUpdateRequest = Omit<TrainingPlanRequirementCreateRequest, 'trainingPlanId'>;
 export interface TrainingPlanAccessRuleResponse extends Omit<TrainingPlanAccessRuleSimpleResponse, 'trainingPlanId' | 'targetCourseId' | 'targetCourseName'> { trainingPlan: TrainingPlanBriefResponse; targetCourse: { courseId: string; name: string } }
-export interface TrainingPlanAccessRuleCreateRequest { trainingPlanId: string; targetCourseId: string; sessionType: SessionType; accessMode: PlanAccessMode }
+export interface TrainingPlanAccessRuleCreateRequest { trainingPlanId: string; targetCourseId: string; sessionType: SessionType }
 export type TrainingPlanAccessRuleUpdateRequest = Omit<TrainingPlanAccessRuleCreateRequest, 'trainingPlanId'>;
 export interface TrainingPlanAddonResponse extends Omit<TrainingPlanAddonSimpleResponse, 'trainingPlanId'> { trainingPlan: TrainingPlanBriefResponse }
 export interface TrainingPlanAddonCreateRequest { trainingPlanId: string; name: string; extraSessionsPerWeek: number; price: number; status: AddonStatus }

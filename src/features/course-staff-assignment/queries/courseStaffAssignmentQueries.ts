@@ -6,6 +6,7 @@ import { personApi } from "@/features/person/api/personApi";
 import { courseStaffAssignmentApi } from "../api/courseStaffAssignmentApi";
 import type {
   CourseStaffAssignmentCreateRequest,
+  CourseStaffAssignmentListResponse,
   CourseStaffAssignmentUpdateRequest,
 } from "../api/course-staff-assignment.dto";
 
@@ -99,5 +100,34 @@ export function useEndCourseScheduleStaffAssignment(courseId: string) {
   return useMutation({
     mutationFn: (assignmentId: string) => courseStaffAssignmentApi.end(assignmentId),
     onSuccess: invalidate,
+  });
+}
+
+export function useDeleteCourseScheduleStaffAssignment(
+  courseId: string,
+  courseScheduleId: string,
+) {
+  const invalidate = useInvalidateAssignmentCaches(courseId);
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (assignmentId: string) => courseStaffAssignmentApi.remove(assignmentId),
+    onSuccess: async (_data, assignmentId) => {
+      queryClient.setQueryData<CourseStaffAssignmentListResponse>(
+        courseStaffAssignmentKeys.schedule(courseScheduleId),
+        (page) => {
+          if (!page) return page;
+          const content = page.content.filter(
+            (assignment) => assignment.courseStaffAssignmentId !== assignmentId,
+          );
+          return {
+            ...page,
+            content,
+            totalElements: Math.max(0, page.totalElements - (page.content.length - content.length)),
+            empty: content.length === 0,
+          };
+        },
+      );
+      await invalidate();
+    },
   });
 }

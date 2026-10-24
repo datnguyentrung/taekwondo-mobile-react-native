@@ -41,6 +41,8 @@ export type BottomSheetWindowProps = {
   children: React.ReactNode;
   footer?: React.ReactNode;
   overlay?: React.ReactNode;
+  /** Render within a parent BottomSheetWindow overlay instead of opening another native modal. */
+  presentation?: "modal" | "inline";
   scrollable?: boolean;
   contentContainerStyle?: StyleProp<ViewStyle>;
   contentPaddingHorizontal?: boolean;
@@ -68,6 +70,7 @@ export function BottomSheetWindow({
   children,
   footer,
   overlay,
+  presentation = "modal",
   scrollable = true,
   contentContainerStyle,
   contentPaddingHorizontal = true,
@@ -238,6 +241,42 @@ export function BottomSheetWindow({
     </Animated.View>
   );
 
+  const content = (
+    <ModalRootView style={styles.root}>
+      <Animated.View style={[styles.backdrop, backdropStyle]}>
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={backdropAccessibilityLabel}
+          style={StyleSheet.absoluteFill}
+          onPress={onClose}
+        />
+      </Animated.View>
+      {scrollable ? (
+        sheetContent
+      ) : (
+        <GestureDetector gesture={pan}>{sheetContent}</GestureDetector>
+      )}
+      {overlay ? (
+        <View style={StyleSheet.absoluteFill} pointerEvents="box-none">
+          {overlay}
+        </View>
+      ) : null}
+      {toastContext?.toast ? (
+        <Toast
+          key={toastContext.toast.key}
+          message={toastContext.toast.message}
+          variant={toastContext.toast.variant}
+          duration={toastContext.toast.duration}
+          onDismiss={toastContext.dismiss ?? (() => {})}
+        />
+      ) : null}
+    </ModalRootView>
+  );
+
+  if (presentation === "inline") {
+    return visible ? content : null;
+  }
+
   return (
     <Modal
       visible={visible}
@@ -246,35 +285,7 @@ export function BottomSheetWindow({
       statusBarTranslucent
       onRequestClose={onClose}
     >
-      <ModalRootView style={styles.root}>
-        <Animated.View style={[styles.backdrop, backdropStyle]}>
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel={backdropAccessibilityLabel}
-            style={StyleSheet.absoluteFill}
-            onPress={onClose}
-          />
-        </Animated.View>
-        {scrollable ? (
-          sheetContent
-        ) : (
-          <GestureDetector gesture={pan}>{sheetContent}</GestureDetector>
-        )}
-        {overlay ? (
-          <View style={StyleSheet.absoluteFill} pointerEvents="box-none">
-            {overlay}
-          </View>
-        ) : null}
-        {toastContext?.toast ? (
-          <Toast
-            key={toastContext.toast.key}
-            message={toastContext.toast.message}
-            variant={toastContext.toast.variant}
-            duration={toastContext.toast.duration}
-            onDismiss={toastContext.dismiss ?? (() => {})}
-          />
-        ) : null}
-      </ModalRootView>
+      {content}
     </Modal>
   );
 }
@@ -339,6 +350,7 @@ const styles = StyleSheet.create({
     flexShrink: 1,
   },
   scrollContent: {
+    paddingTop: 8,
     paddingBottom: 20,
   },
   contentPaddingHorizontal: {

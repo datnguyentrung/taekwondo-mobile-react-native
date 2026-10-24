@@ -27,7 +27,6 @@ export interface WalletRecurringScheduleSelection {
 export interface WalletTrainingPlanPurchaseRequest {
   studentPersonId: string;
   trainingPlanId: string;
-  homeCourseId: string;
   startDate: string;
   recurringSchedules: WalletRecurringScheduleSelection[];
   externalReference: string;

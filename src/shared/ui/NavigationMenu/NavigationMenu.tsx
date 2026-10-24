@@ -1,4 +1,3 @@
-import { ChevronRight } from "reicon-react-native";
 import {
   Children,
   cloneElement,
@@ -8,11 +7,12 @@ import {
 } from "react";
 import {
   Pressable,
-  type StyleProp,
   StyleSheet,
   View,
+  type StyleProp,
   type ViewStyle,
 } from "react-native";
+import { ChevronRight } from "reicon-react-native";
 
 import { AppIcon } from "@/shared/ui/AppIcon";
 import { ThemedText } from "@/shared/ui/ThemedText";
@@ -56,7 +56,8 @@ export function NavigationMenuItem({
   style,
 }: NavigationMenuItemProps) {
   const displayTitle = count !== undefined ? `${title} (${count})` : title;
-  const resolvedIconColor = iconColor ?? (iconBox ? Colors.light.icon : Colors.light.primary);
+  const resolvedIconColor =
+    iconColor ?? (iconBox ? Colors.light.icon : Colors.light.primary);
   const hasSubtitle = Boolean(subtitle);
 
   return (
@@ -88,14 +89,19 @@ export function NavigationMenuItem({
           {displayTitle}
         </ThemedText>
         {subtitle ? (
-          <ThemedText type="bodySmall" numberOfLines={2} style={styles.subtitle}>
+          <ThemedText
+            type="bodySmall"
+            numberOfLines={2}
+            style={styles.subtitle}
+          >
             {subtitle}
           </ThemedText>
         ) : null}
       </View>
 
       {showChevron ? (
-        <AppIcon icon={<ChevronRight />}
+        <AppIcon
+          icon={<ChevronRight />}
           width={9}
           height={15}
           color={Colors.light.icon}
@@ -115,7 +121,11 @@ export type NavigationMenuProps = {
   style?: StyleProp<ViewStyle>;
 };
 
-export function NavigationMenu({ children, items, style }: NavigationMenuProps) {
+export function NavigationMenu({
+  children,
+  items,
+  style,
+}: NavigationMenuProps) {
   if (items && items.length > 0) {
     return (
       <View style={[styles.card, style]}>
@@ -153,7 +163,7 @@ export function NavigationMenu({ children, items, style }: NavigationMenuProps) 
 
 const styles = StyleSheet.create({
   card: {
-    borderRadius: radii.xl,
+    borderRadius: radii.md,
     backgroundColor: Colors.light.surface,
     borderWidth: 1,
     borderColor: Colors.light.divider,

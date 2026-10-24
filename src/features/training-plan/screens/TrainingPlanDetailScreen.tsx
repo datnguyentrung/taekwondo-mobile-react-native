@@ -4,19 +4,18 @@ import { AppIcon } from "@/shared/ui/AppIcon";
 import { CancellableLoadingOverlay } from "@/shared/ui/CancellableLoadingOverlay";
 import { ConfirmationDialog } from "@/shared/ui/ConfirmationDialog";
 import { FloatingActionBar } from "@/shared/ui/FloatingActionBar";
+import { NavigationMenu, NavigationMenuItem } from "@/shared/ui/NavigationMenu";
 import { ThemedText } from "@/shared/ui/ThemedText";
 import { useToast } from "@/shared/ui/Toast";
 import {
   AdminCard,
-  AdminChip,
-  AdminListRow,
   AdminSectionHeader,
 } from "@/shared/ui/admin/AdministrationPrimitives";
 import { Colors, Spacing } from "@/theme";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useRef, useState } from "react";
-import { ActivityIndicator, Pressable, StyleSheet, View } from "react-native";
-import { ChevronRight, Trash6 } from "reicon-react-native";
+import { ActivityIndicator, StyleSheet, View } from "react-native";
+import { Trash6 } from "reicon-react-native";
 import { TrainingPlanFormSheet } from "../components/TrainingPlanFormSheet";
 import {
   useDeleteTrainingPlan,
@@ -154,18 +153,17 @@ export function TrainingPlanDetailScreen() {
             </View>
           ))}
         </AdminCard>
-        <AdminCard>
-          <AdminSectionHeader title="Cấu hình liên quan" />
-          <Config
-            title="Yêu cầu buổi tập"
-            count={plan.requirements.length}
+        <NavigationMenu>
+          <NavigationMenuItem
+            title="Yêu cầu & Bổ sung"
+            count={plan.requirements.length + plan.addons.length}
             onPress={() =>
               router.push(
                 `/admin/training-plans/${plan.trainingPlanId}/requirements-addons` as never,
               )
             }
           />
-          <Config
+          <NavigationMenuItem
             title="Khóa học áp dụng"
             count={plan.accessRules.length}
             onPress={() =>
@@ -174,39 +172,7 @@ export function TrainingPlanDetailScreen() {
               )
             }
           />
-          <Config
-            title="Add-on"
-            count={plan.addons.length}
-            onPress={() =>
-              router.push(
-                `/admin/training-plans/${plan.trainingPlanId}/requirements-addons` as never,
-              )
-            }
-          />
-        </AdminCard>
-        <AdminCard>
-          <AdminSectionHeader title="Tóm tắt cấu hình" />
-          {plan.requirements.map((item) => (
-            <AdminListRow
-              key={item.trainingPlanRequirementId}
-              title={session(item.sessionType)}
-              subtitle={`${item.sessionsPerWeek} buổi/tuần`}
-            />
-          ))}
-          {plan.addons.map((item) => (
-            <AdminListRow
-              key={item.trainingPlanAddonId}
-              title={item.name}
-              subtitle={`+${item.extraSessionsPerWeek} buổi/tuần · ${new Intl.NumberFormat("vi-VN").format(item.price)}đ`}
-              meta={
-                <AdminChip
-                  label={item.status === "ACTIVE" ? "Đang bán" : "Tạm dừng"}
-                  tone={item.status === "ACTIVE" ? "success" : "danger"}
-                />
-              }
-            />
-          ))}
-        </AdminCard>
+        </NavigationMenu>
       </StackScreenLayout>
       <TrainingPlanFormSheet
         visible={editing}
@@ -244,39 +210,6 @@ export function TrainingPlanDetailScreen() {
     </>
   );
 }
-function Config({
-  title,
-  count,
-  onPress,
-}: {
-  title: string;
-  count: number;
-  onPress: () => void;
-}) {
-  return (
-    <Pressable
-      accessibilityRole="button"
-      onPress={onPress}
-      style={styles.config}
-    >
-      <View style={styles.flex}>
-        <ThemedText type="featureLabel">{title}</ThemedText>
-        <ThemedText type="bodySmall" style={styles.muted}>
-          {count} mục
-        </ThemedText>
-      </View>
-      <AppIcon
-        icon={<ChevronRight />}
-        size={20}
-        color={Colors.light.textSecondary}
-      />
-    </Pressable>
-  );
-}
-const session = (v: string) =>
-  ({ REQUIRED: "Buổi bắt buộc", STANDARD: "Buổi tiêu chuẩn", OPEN: "Buổi mở" })[
-    v
-  ] ?? v;
 const styles = StyleSheet.create({
   content: { paddingTop: Spacing.two, paddingBottom: 110, gap: Spacing.two },
   info: {
@@ -288,13 +221,4 @@ const styles = StyleSheet.create({
     gap: 16,
   },
   muted: { color: Colors.light.textSecondary },
-  config: {
-    minHeight: 66,
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 12,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderColor: Colors.light.divider,
-  },
-  flex: { flex: 1, gap: 2 },
 });

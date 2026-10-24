@@ -39,6 +39,8 @@ export interface FloatingActionBarProps {
   actions?: FloatingActionItem[];
   children?: React.ReactNode;
   direction?: "row" | "column";
+  /** Use the compact 48px action treatment even when fewer than three actions are shown. */
+  compact?: boolean;
   gap?: number;
   minBottomInset?: number;
   includeBottomSafeArea?: boolean;
@@ -53,6 +55,7 @@ export function FloatingActionBar({
   actions = [],
   children,
   direction = "row",
+  compact = false,
   gap,
   minBottomInset = 16,
   includeBottomSafeArea = true,
@@ -63,7 +66,8 @@ export function FloatingActionBar({
   contentStyle,
 }: FloatingActionBarProps) {
   const insets = useSafeAreaInsets();
-  const defaultGap = gap ?? (actions.length >= 3 ? 8 : 12);
+  const isCompact = compact || actions.length >= 3;
+  const defaultGap = gap ?? (isCompact ? 8 : 12);
 
   return (
     <View
@@ -125,7 +129,7 @@ export function FloatingActionBar({
                 style={({ pressed }) => [
                   styles.buttonBase,
                   { flex },
-                  actions.length >= 3 ? styles.compactButton : null,
+                  isCompact ? styles.compactButton : null,
                   buttonStyle,
                   isInteractive ? activeEffect(pressed, "pressedScale") : null,
                   customStyle,
@@ -154,11 +158,11 @@ export function FloatingActionBar({
                     ) : null}
                     {label ? (
                       <ThemedText
-                        type={actions.length >= 3 ? "subtitle" : "heading"}
+                        type={isCompact ? "subtitle" : "heading"}
                         numberOfLines={1}
                         style={[
                           styles.buttonTextBase,
-                          actions.length >= 3 ? styles.compactButtonText : null,
+                          isCompact ? styles.compactButtonText : null,
                           textStyle,
                           customTextStyle,
                         ]}

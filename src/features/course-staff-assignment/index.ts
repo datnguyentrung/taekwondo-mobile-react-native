@@ -9,6 +9,7 @@ export {
   useCourseScheduleStaffAssignments,
   useCourseStaffAssignmentDetail,
   useCreateCourseScheduleStaffAssignment,
+  useDeleteCourseScheduleStaffAssignment,
   useEndCourseScheduleStaffAssignment,
   useStaffAssignmentCandidates,
   useUpdateCourseScheduleStaffAssignment,

@@ -8,10 +8,10 @@ export const trainingPlanRegistrationApi = {
     });
     return response.data;
   },
-  async options(planId: string, homeCourseId: string, startDate: string): Promise<TrainingPlanRegistrationOptions> {
+  async options(planId: string, startDate: string): Promise<TrainingPlanRegistrationOptions> {
     const response = await javaApi.get<TrainingPlanRegistrationOptions>(
       `/training-plans/${planId}/registration-options`,
-      { params: { homeCourseId, startDate } },
+      { params: { startDate } },
     );
     return response.data;
   },

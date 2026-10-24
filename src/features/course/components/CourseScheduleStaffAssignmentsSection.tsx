@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { ActivityIndicator, Pressable, StyleSheet, View } from "react-native";
-import { Plus } from "reicon-react-native";
+import { Plus, Trash6 } from "reicon-react-native";
 
 import type {
   CourseStaffAssignmentCreateRequest,
@@ -10,7 +10,7 @@ import {
   useCourseScheduleStaffAssignments,
   useCourseStaffAssignmentDetail,
   useCreateCourseScheduleStaffAssignment,
-  useEndCourseScheduleStaffAssignment,
+  useDeleteCourseScheduleStaffAssignment,
   useStaffAssignmentCandidates,
   useUpdateCourseScheduleStaffAssignment,
 } from "@/features/course-staff-assignment";
@@ -22,6 +22,7 @@ import {
 } from "@/features/course-staff-assignment/constants/course-staff-assignment.constants";
 import { getApiErrorMessage } from "@/infrastructure/http/httpError";
 import { AppIcon } from "@/shared/ui/AppIcon";
+import { ConfirmationDialog } from "@/shared/ui/ConfirmationDialog";
 import {
   AdminButton,
   AdminChip,
@@ -93,7 +94,7 @@ export function CourseScheduleStaffAssignmentsSection({
   const assignmentsQuery = useCourseScheduleStaffAssignments(courseScheduleId, visible && canRead);
   const createAssignment = useCreateCourseScheduleStaffAssignment(courseId);
   const updateAssignment = useUpdateCourseScheduleStaffAssignment(courseId);
-  const endAssignmentMutation = useEndCourseScheduleStaffAssignment(courseId);
+  const deleteAssignmentMutation = useDeleteCourseScheduleStaffAssignment(courseId, courseScheduleId);
   const [editingId, setEditingId] = useState<string>();
   const [isCreating, setIsCreating] = useState(false);
   const [search, setSearch] = useState("");
@@ -105,10 +106,11 @@ export function CourseScheduleStaffAssignmentsSection({
   const [assignmentStatus, setAssignmentStatus] = useState<CourseStaffAssignmentStatus>("ACTIVE");
   const [note, setNote] = useState("");
   const [attempted, setAttempted] = useState(false);
+  const [deleteConfirmationVisible, setDeleteConfirmationVisible] = useState(false);
   const detailQuery = useCourseStaffAssignmentDetail(editingId, Boolean(editingId));
   const candidatesQuery = useStaffAssignmentCandidates(search, (isCreating || Boolean(editingId)) && (canRead || canCreate));
   const isEditing = Boolean(editingId);
-  const busy = createAssignment.isPending || updateAssignment.isPending || endAssignmentMutation.isPending;
+  const busy = createAssignment.isPending || updateAssignment.isPending || deleteAssignmentMutation.isPending;
 
   const closeEditor = () => {
     setEditingId(undefined);
@@ -122,6 +124,7 @@ export function CourseScheduleStaffAssignmentsSection({
     setAssignmentStatus("ACTIVE");
     setNote("");
     setAttempted(false);
+    setDeleteConfirmationVisible(false);
   };
 
   useEffect(() => {
@@ -203,11 +206,11 @@ export function CourseScheduleStaffAssignmentsSection({
     }
   };
 
-  const endAssignment = async () => {
+  const deleteAssignment = async () => {
     if (!editingId) return;
     try {
-      await endAssignmentMutation.mutateAsync(editingId);
-      toast.show({ message: "Đã kết thúc phân công.", variant: "success" });
+      await deleteAssignmentMutation.mutateAsync(editingId);
+      toast.show({ message: "Đã xóa phân công.", variant: "success" });
       closeEditor();
     } catch (error) {
       toast.show({ message: assignmentError(error), variant: "error" });
@@ -301,9 +304,10 @@ export function CourseScheduleStaffAssignmentsSection({
       </View>
       <AdminField label="Ghi chú" value={note} placeholder="Không bắt buộc" editable={!busy} multiline onChangeText={setNote} />
       <View style={styles.actions}>
-        {isEditing && canEnd ? <AdminButton label="Kết thúc phân công" variant="secondary" disabled={busy || detailQuery.isLoading} onPress={() => void endAssignment()} style={styles.actionButton} /> : null}
         {canSave ? <AdminButton label={isEditing ? "Lưu phân công" : "Thêm phân công"} loading={busy} onPress={() => void save()} style={styles.actionButton} /> : null}
+        {isEditing && canEnd ? <Pressable accessibilityRole="button" accessibilityLabel="Xóa phân công" accessibilityState={{ disabled: busy || detailQuery.isLoading }} disabled={busy || detailQuery.isLoading} hitSlop={8} onPress={() => setDeleteConfirmationVisible(true)} style={({ pressed }) => [styles.deleteButton, pressed && styles.pressed, (busy || detailQuery.isLoading) && styles.deleteButtonDisabled]}><AppIcon icon={<Trash6 />} size={24} color={Colors.light.error} /></Pressable> : null}
       </View>
+      <ConfirmationDialog visible={deleteConfirmationVisible} title="Xóa phân công" description="Bạn có chắc chắn muốn xóa vĩnh viễn phân công này không? Thao tác không thể hoàn tác." confirmLabel="Xóa" cancelLabel="Hủy" confirmVariant="danger" pending={deleteAssignmentMutation.isPending} onCancel={() => setDeleteConfirmationVisible(false)} onConfirm={() => void deleteAssignment()} />
     </View>
   );
 }
@@ -334,6 +338,8 @@ const styles = StyleSheet.create({
   chips: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
   actions: { flexDirection: "row", gap: Spacing.two },
   actionButton: { flex: 1 },
+  deleteButton: { width: 44, height: 44, alignItems: "center", justifyContent: "center", borderRadius: radii.md, borderWidth: StyleSheet.hairlineWidth, borderColor: Colors.light.divider, backgroundColor: Colors.light.surface, borderCurve: "continuous" },
+  deleteButtonDisabled: { opacity: 0.5 },
   error: { color: Colors.light.error },
   pressed: effects.pressed,
 });

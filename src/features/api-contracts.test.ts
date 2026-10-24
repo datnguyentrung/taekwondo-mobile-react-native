@@ -5,6 +5,7 @@ import { branchApi } from "./branch/api/branchApi";
 import { classScheduleApi } from "./class-schedule/api/classScheduleApi";
 import { classSessionApi } from "./class-session/api/classSessionApi";
 import { coachTimesheetApi } from "./coach-timesheet/api/coachTimesheetApi";
+import { enrollmentScheduleChangeRequestApi } from "./enrollment-schedule-change-request/api/enrollmentScheduleChangeRequestApi";
 import { coursePriceApi } from "./course-price/api/coursePriceApi";
 import { coursePurchaseApi } from "./course-purchase/api/coursePurchaseApi";
 import { courseStaffAssignmentApi } from "./course-staff-assignment/api/courseStaffAssignmentApi";
@@ -27,6 +28,7 @@ import {
   studentAttendanceApi,
 } from "./session-attendance/api/sessionAttendanceApi";
 import { studentEnrollmentApi } from "./student-enrollment/api/studentEnrollmentApi";
+import { studentEnrollmentScheduleApi } from "./student-enrollment-schedule/api/studentEnrollmentScheduleApi";
 import { userApi } from "./user/api/userApi";
 import { walletTransactionApi } from "./wallet-transaction/api/walletTransactionApi";
 import { walletApi } from "./wallet/api/walletApi";
@@ -121,6 +123,8 @@ const contracts = [
   [sessionAttendanceApi, ["list", "get", "create", "update", "remove"]],
   [studentAttendanceApi, ["list", "get", "create", "update", "remove"]],
   [studentEnrollmentApi, ["list", "get", "create", "update", "remove"]],
+  [studentEnrollmentScheduleApi, ["list", "get"]],
+  [enrollmentScheduleChangeRequestApi, ["options", "create", "approve", "reject"]],
 ] as const;
 
 it("exposes mobile API functions for every imported Java controller", () => {

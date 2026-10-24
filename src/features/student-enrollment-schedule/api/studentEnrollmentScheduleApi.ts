@@ -1,3 +1,11 @@
 import { javaApi } from '@/infrastructure/http/httpClient';
-import type { StudentEnrollmentScheduleCreateRequest, StudentEnrollmentScheduleResponse, StudentEnrollmentScheduleSimpleResponse, StudentEnrollmentScheduleUpdateRequest } from './studentEnrollmentSchedule.dto';
-export const studentEnrollmentScheduleApi = { async list(studentEnrollmentId: string): Promise<StudentEnrollmentScheduleSimpleResponse[]> { return (await javaApi.get<StudentEnrollmentScheduleSimpleResponse[]>('/student-enrollment-schedules', { params: { studentEnrollmentId } })).data; }, async get(id: string): Promise<StudentEnrollmentScheduleResponse> { return (await javaApi.get<StudentEnrollmentScheduleResponse>(`/student-enrollment-schedules/${id}`)).data; }, async create(request: StudentEnrollmentScheduleCreateRequest): Promise<StudentEnrollmentScheduleResponse> { return (await javaApi.post<StudentEnrollmentScheduleResponse>('/student-enrollment-schedules', request)).data; }, async update(id: string, request: StudentEnrollmentScheduleUpdateRequest): Promise<StudentEnrollmentScheduleResponse> { return (await javaApi.put<StudentEnrollmentScheduleResponse>(`/student-enrollment-schedules/${id}`, request)).data; }, async remove(id: string): Promise<void> { await javaApi.delete(`/student-enrollment-schedules/${id}`); } };
+import type { StudentEnrollmentScheduleResponse, StudentEnrollmentScheduleSimpleResponse } from './studentEnrollmentSchedule.dto';
+
+export const studentEnrollmentScheduleApi = {
+  async list(studentEnrollmentId: string): Promise<StudentEnrollmentScheduleSimpleResponse[]> {
+    return (await javaApi.get<StudentEnrollmentScheduleSimpleResponse[]>('/student-enrollment-schedules', { params: { studentEnrollmentId } })).data;
+  },
+  async get(id: string): Promise<StudentEnrollmentScheduleResponse> {
+    return (await javaApi.get<StudentEnrollmentScheduleResponse>(`/student-enrollment-schedules/${id}`)).data;
+  },
+};

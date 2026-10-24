@@ -267,9 +267,7 @@ export function CoachListScreen() {
                 person={coach}
                 onPress={() => {
                   // Navigate to coach profile/detail if available, or view details
-                  router.push(
-                    `/students/${coach.personCode || coach.personId}`,
-                  );
+                  router.push(`/students/${coach.personId}`);
                 }}
               />
             ))}

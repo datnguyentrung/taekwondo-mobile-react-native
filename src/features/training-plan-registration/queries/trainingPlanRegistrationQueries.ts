@@ -1,4 +1,4 @@
-import { useMutation, useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { walletApi } from '@/features/wallet/api/walletApi';
 import type { WalletTrainingPlanPurchaseRequest } from '@/features/wallet/api/wallet-command.dto';
 import { trainingPlanRegistrationApi } from '../api/trainingPlanRegistrationApi';
@@ -6,8 +6,8 @@ import { trainingPlanRegistrationApi } from '../api/trainingPlanRegistrationApi'
 export const trainingPlanRegistrationKeys = {
   all: ['training-plan-registration'] as const,
   catalog: (studentPersonId?: string) => [...trainingPlanRegistrationKeys.all, 'catalog', studentPersonId ?? ''] as const,
-  options: (planId?: string, homeCourseId?: string, startDate?: string) =>
-    [...trainingPlanRegistrationKeys.all, 'options', planId ?? '', homeCourseId ?? '', startDate ?? ''] as const,
+  options: (planId?: string, startDate?: string) =>
+    [...trainingPlanRegistrationKeys.all, 'options', planId ?? '', startDate ?? ''] as const,
 };
 
 export function useTrainingPlanCatalog(studentPersonId?: string) {
@@ -19,14 +19,26 @@ export function useTrainingPlanCatalog(studentPersonId?: string) {
   });
 }
 
-export function useTrainingPlanOptions(planId?: string, homeCourseId?: string, startDate?: string) {
+export function useTrainingPlanOptions(planId?: string, startDate?: string) {
   return useQuery({
-    queryKey: trainingPlanRegistrationKeys.options(planId, homeCourseId, startDate),
-    queryFn: () => trainingPlanRegistrationApi.options(planId!, homeCourseId!, startDate!),
-    enabled: Boolean(planId && homeCourseId && startDate),
+    queryKey: trainingPlanRegistrationKeys.options(planId, startDate),
+    queryFn: () => trainingPlanRegistrationApi.options(planId!, startDate!),
+    enabled: Boolean(planId && startDate),
   });
 }
 
 export function usePurchaseTrainingPlan() {
-  return useMutation({ mutationFn: (request: WalletTrainingPlanPurchaseRequest) => walletApi.purchaseTrainingPlan(request) });
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (request: WalletTrainingPlanPurchaseRequest) =>
+      walletApi.purchaseTrainingPlan(request),
+    onSuccess: async () => {
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ['wallet'] }),
+        queryClient.invalidateQueries({ queryKey: ['student-enrollments'] }),
+        queryClient.invalidateQueries({ queryKey: trainingPlanRegistrationKeys.all }),
+      ]);
+    },
+  });
 }

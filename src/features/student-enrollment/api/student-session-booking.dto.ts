@@ -1,4 +1,4 @@
-export type BookingSource = 'RECURRING' | 'FLEX' | 'MAKEUP' | 'ADMIN';
+export type BookingSource = 'RECURRING' | 'MAKEUP' | 'ADMIN';
 export type BookingStatus = 'RESERVED' | 'CANCELLED' | 'SETTLED';
 export interface StudentSessionBooking {
   bookingId: string;
