@@ -2,14 +2,19 @@ import { useMemo, useRef, useState } from "react";
 import { ActivityIndicator, Pressable, StyleSheet, View } from "react-native";
 import {
   Calendar,
+  ChevronDown,
   ChevronRight,
+  ChevronUp,
   Clock,
   Layers,
   User,
 } from "reicon-react-native";
 
 import { useAuthStore } from "@/features/authentication/store/auth.store";
-import { WeekdayLabel } from "@/features/class-schedule/constants/class-schedule.constants";
+import {
+  WeekdayCode,
+  WeekdayLabel,
+} from "@/features/class-schedule/constants/class-schedule.constants";
 import { usePerson } from "@/features/person/queries/personQueries";
 import { useRegistrationStudentSearch } from "@/features/student-commerce/queries/courseRegistrationQueries";
 import type { CourseRegistrationStudentView } from "@/features/student-commerce/types";
@@ -29,7 +34,8 @@ import {
   SessionTypeLabel,
   type SessionType,
 } from "@/features/training-plan/constants/training-plan.constants";
-import { useWalletByPerson } from "@/features/wallet";
+import { levelLabel } from "@/features/training-plan/domain/trainingPlanLabels";
+import { useWalletByPerson } from "@/features/wallet/queries/walletQueries";
 import {
   getApiErrorCode,
   getApiErrorMessage,
@@ -57,6 +63,12 @@ type Student = Pick<
   CourseRegistrationStudentView,
   "personId" | "fullName" | "personCode"
 >;
+type PlanGroup = {
+  key: string;
+  name: string;
+  level: string;
+  variants: TrainingPlanCatalogItem[];
+};
 
 const today = () => new Date().toISOString().slice(0, 10);
 const money = (value?: number) =>
@@ -73,6 +85,21 @@ const dateLabel = (value: string) =>
     year: "numeric",
   }).format(new Date(`${value}T12:00:00`));
 const createReference = () => `TP-MOBILE-${Date.now()}`;
+function groupPlans(plans: TrainingPlanCatalogItem[]): PlanGroup[] {
+  const groups = new Map<string, PlanGroup>();
+  for (const plan of plans) {
+    const key = `${plan.name}-${plan.level}`;
+    const group = groups.get(key) ?? {
+      key,
+      name: plan.name,
+      level: plan.level,
+      variants: [],
+    };
+    group.variants.push(plan);
+    groups.set(key, group);
+  }
+  return [...groups.values()];
+}
 const startDateOptions = Array.from({ length: 30 }, (_, offset) => {
   const date = new Date();
   date.setHours(12, 0, 0, 0);
@@ -136,6 +163,9 @@ export function TrainingPlanRegistrationScreen({ studentCode }: Props) {
   const [confirmingPayment, setConfirmingPayment] = useState(false);
   const [datePickerOpen, setDatePickerOpen] = useState(false);
   const [selectedPlan, setSelectedPlan] = useState<TrainingPlanCatalogItem>();
+  const [collapsedPlanGroups, setCollapsedPlanGroups] = useState<Set<string>>(
+    () => new Set(),
+  );
   const [startDate, setStartDate] = useState(today());
   const [schedulesByRequirement, setSchedulesByRequirement] = useState<
     Record<string, string[]>
@@ -153,6 +183,10 @@ export function TrainingPlanRegistrationScreen({ studentCode }: Props) {
   );
   const wallet = useWalletByPerson(selectedStudent?.personId);
   const purchase = usePurchaseTrainingPlan();
+  const planGroups = useMemo(
+    () => groupPlans(catalog.data ?? []),
+    [catalog.data],
+  );
 
   const allScheduleOptions = useMemo(
     () =>
@@ -497,18 +531,30 @@ export function TrainingPlanRegistrationScreen({ studentCode }: Props) {
           emptyMessage="Hiện chưa có gói học để đăng ký."
           onRetry={() => void catalog.refetch()}
         />
-        {!catalog.isPending && !catalog.isError
-          ? catalog.data?.map((plan) => (
-              <AdminListRow
-                key={plan.trainingPlanId}
-                title={plan.name}
-                subtitle={`${plan.durationMonths} tháng · ${plan.includedSessionCount} buổi · ${money(plan.finalPrice)}`}
-                selected={plan.trainingPlanId === selectedPlan?.trainingPlanId}
-                onPress={() => choosePlan(plan)}
-                leading={<RowIcon icon={<Layers />} />}
+        {!catalog.isPending && !catalog.isError ? (
+          <View style={styles.planGroups}>
+            {planGroups.map((group) => (
+              <PlanPickerGroup
+                key={group.key}
+                group={group}
+                expanded={collapsedPlanGroups.has(group.key)}
+                selectedPlanId={selectedPlan?.trainingPlanId}
+                onToggle={() =>
+                  setCollapsedPlanGroups((current) => {
+                    const next = new Set(current);
+                    if (next.has(group.key)) {
+                      next.delete(group.key);
+                    } else {
+                      next.add(group.key);
+                    }
+                    return next;
+                  })
+                }
+                onSelect={choosePlan}
               />
-            ))
-          : null}
+            ))}
+          </View>
+        ) : null}
       </BottomSheetWindow>
       <ScheduleSheet
         requirement={options.data?.recurringRequirements.find(
@@ -706,6 +752,109 @@ function PickerSheetState({
   return null;
 }
 
+function PlanPickerGroup({
+  group,
+  expanded,
+  selectedPlanId,
+  onToggle,
+  onSelect,
+}: {
+  group: PlanGroup;
+  expanded: boolean;
+  selectedPlanId?: string;
+  onToggle: () => void;
+  onSelect: (plan: TrainingPlanCatalogItem) => void;
+}) {
+  const variants = [...group.variants].sort(
+    (first, second) =>
+      first.durationMonths - second.durationMonths ||
+      first.includedSessionCount - second.includedSessionCount,
+  );
+
+  return (
+    <CollapsiblePickerGroup
+      title={group.name}
+      subtitle={`${levelLabel(group.level)} · ${variants.length} lựa chọn`}
+      expanded={expanded}
+      accessibilityLabel={`gói ${group.name}`}
+      onToggle={onToggle}
+    >
+      {variants.map((plan, index) => {
+        const selected = plan.trainingPlanId === selectedPlanId;
+        return (
+          <View
+            key={plan.trainingPlanId}
+            style={index > 0 ? styles.planVariantDivider : undefined}
+          >
+            <AdminListRow
+              title={`${plan.durationMonths} tháng · ${plan.includedSessionCount} buổi`}
+              subtitle={
+                plan.basePrice !== plan.finalPrice
+                  ? `Giá gốc ${money(plan.basePrice)}`
+                  : ""
+              }
+              selected={selected}
+              onPress={() => onSelect(plan)}
+              leading={<RowIcon icon={<Calendar />} />}
+              meta={
+                <ThemedText type="title" style={styles.planVariantPrice}>
+                  {money(plan.finalPrice)}
+                </ThemedText>
+              }
+            />
+          </View>
+        );
+      })}
+    </CollapsiblePickerGroup>
+  );
+}
+
+function CollapsiblePickerGroup({
+  title,
+  subtitle,
+  expanded,
+  accessibilityLabel,
+  onToggle,
+  children,
+}: {
+  title: string;
+  subtitle: string;
+  expanded: boolean;
+  accessibilityLabel: string;
+  onToggle: () => void;
+  children: React.ReactNode;
+}) {
+  return (
+    <View style={styles.planGroup}>
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel={`${expanded ? "Thu gọn" : "Mở rộng"} ${accessibilityLabel}`}
+        accessibilityState={{ expanded }}
+        onPress={onToggle}
+        style={({ pressed }) => [
+          styles.planGroupHeader,
+          pressed && effects.pressed,
+        ]}
+      >
+        <View style={styles.planGroupCopy}>
+          <ThemedText type="title" numberOfLines={1}>
+            {title}
+          </ThemedText>
+          <ThemedText type="bodySmall" style={styles.helper}>
+            {subtitle}
+          </ThemedText>
+        </View>
+        <AppIcon
+          icon={expanded ? <ChevronUp /> : <ChevronDown />}
+          size={22}
+          color={Colors.light.text}
+        />
+      </Pressable>
+      {expanded ? <View style={styles.planGroupVariants}>{children}</View> : null}
+    </View>
+  );
+}
+
 function ScheduleSheet({
   requirement,
   selectedIds,
@@ -723,7 +872,15 @@ function ScheduleSheet({
   onClose: () => void;
   onToggle: (requirementId: string, limit: number, optionId: string) => void;
 }) {
-  const full = selectedIds.length === requirement?.sessionsPerWeek;
+  const [expandedGroups, setExpandedGroups] = useState<Set<string>>(
+    () => new Set(),
+  );
+  const scheduleGroups = useMemo(
+    () => groupScheduleOptions(requirement?.options ?? []),
+    [requirement?.options],
+  );
+  if (!requirement) return null;
+  const full = selectedIds.length === requirement.sessionsPerWeek;
   return (
     <BottomSheetWindow
       visible={Boolean(requirement)}
@@ -753,31 +910,87 @@ function ScheduleSheet({
         Chọn đúng {requirement?.sessionsPerWeek ?? 0} ca mỗi tuần. Bạn có thể
         tập ghép giữa các khóa được gói cho phép.
       </ThemedText>
-      {requirement?.options.map((option) => {
-        const selected = selectedIds.includes(option.courseScheduleId);
-        const disabled = !selected && full;
-        return (
-          <AdminListRow
-            key={option.courseScheduleId}
-            title={`${WeekdayLabel[option.dayOfWeek]} · ${formatTimeStringHM(option.startTime)}–${formatTimeStringHM(option.endTime)}`}
-            subtitle={`${option.courseName} · ${option.branchName}`}
-            selected={selected}
-            onPress={
-              disabled
-                ? undefined
-                : () =>
-                    onToggle(
-                      requirement.requirementId,
-                      requirement.sessionsPerWeek,
-                      option.courseScheduleId,
-                    )
+      <View style={styles.scheduleGroups}>
+        {scheduleGroups.map((group) => (
+          <CollapsiblePickerGroup
+            key={group.key}
+            title={group.courseName}
+            subtitle={group.branchName}
+            accessibilityLabel={`khóa ${group.courseName}`}
+            expanded={expandedGroups.has(group.key)}
+            onToggle={() =>
+              setExpandedGroups((current) => {
+                const next = new Set(current);
+                if (next.has(group.key)) next.delete(group.key);
+                else next.add(group.key);
+                return next;
+              })
             }
-            leading={<RowIcon icon={<Calendar />} />}
-          />
-        );
-      })}
+          >
+            {group.options.map((option, index) => {
+              const selected = selectedIds.includes(option.courseScheduleId);
+              const disabled = !selected && full;
+              return (
+                <View
+                  key={option.courseScheduleId}
+                  style={index > 0 ? styles.scheduleOptionDivider : undefined}
+                >
+                  <AdminListRow
+                    title={`${WeekdayLabel[option.dayOfWeek]} · ${formatTimeStringHM(option.startTime)}–${formatTimeStringHM(option.endTime)}`}
+                    selected={selected}
+                    onPress={
+                      disabled
+                        ? undefined
+                        : () =>
+                            onToggle(
+                              requirement.requirementId,
+                              requirement.sessionsPerWeek,
+                              option.courseScheduleId,
+                            )
+                    }
+                    leading={<RowIcon icon={<Calendar />} />}
+                  />
+                </View>
+              );
+            })}
+          </CollapsiblePickerGroup>
+        ))}
+      </View>
     </BottomSheetWindow>
   );
+}
+
+type ScheduleGroup = {
+  key: string;
+  courseName: string;
+  branchName: string;
+  options: TrainingPlanScheduleOption[];
+};
+
+function groupScheduleOptions(
+  options: TrainingPlanScheduleOption[],
+): ScheduleGroup[] {
+  const groups = new Map<string, ScheduleGroup>();
+  for (const option of options) {
+    const group = groups.get(option.courseId) ?? {
+      key: option.courseId,
+      courseName: option.courseName,
+      branchName: option.branchName,
+      options: [],
+    };
+    group.options.push(option);
+    groups.set(option.courseId, group);
+  }
+
+  return [...groups.values()].map((group) => ({
+    ...group,
+    options: [...group.options].sort(
+      (first, second) =>
+        WeekdayCode[first.dayOfWeek] - WeekdayCode[second.dayOfWeek] ||
+        first.startTime.localeCompare(second.startTime) ||
+        first.endTime.localeCompare(second.endTime),
+    ),
+  }));
 }
 
 function PaymentDetails({
@@ -877,12 +1090,54 @@ const styles = StyleSheet.create({
     borderRadius: radii.md,
     backgroundColor: Colors.light.primarySoft,
   },
+  planGroups: {
+    gap: Spacing.two,
+  },
+  planGroup: {
+    overflow: "hidden",
+    borderWidth: 1,
+    borderColor: Colors.light.divider,
+    borderRadius: radii.lg,
+    backgroundColor: Colors.light.surface,
+    ...effects.soft,
+  },
+  planGroupHeader: {
+    minHeight: 76,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: Spacing.three,
+    padding: Spacing.three,
+  },
+  planGroupCopy: {
+    flex: 1,
+    minWidth: 0,
+    gap: Spacing.one,
+  },
+  planGroupVariants: {
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: Colors.light.divider,
+  },
+  planVariantDivider: {
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: Colors.light.divider,
+  },
+  planVariantPrice: {
+    color: Colors.light.primary,
+    textAlign: "right",
+  },
   sheetState: {
     alignItems: "center",
     gap: Spacing.two,
     paddingVertical: Spacing.four,
   },
   sheetHint: { color: Colors.light.textSecondary, marginBottom: Spacing.two },
+  scheduleGroups: {
+    gap: Spacing.two,
+  },
+  scheduleOptionDivider: {
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: Colors.light.divider,
+  },
   paymentDetails: {
     gap: Spacing.three,
     padding: Spacing.four,

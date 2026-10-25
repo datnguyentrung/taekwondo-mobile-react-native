@@ -28,6 +28,7 @@ import {
   useCreateTrainingPlan,
   useTrainingPlans,
 } from "../queries/trainingPlanQueries";
+import { levelLabel } from "../domain/trainingPlanLabels";
 
 type PlanFilter = "ALL" | "ACTIVE" | "INACTIVE";
 type PlanGroup = {
@@ -189,9 +190,7 @@ export function TrainingPlanManagementScreen() {
 }
 const money = (value: number) =>
   `${new Intl.NumberFormat("vi-VN").format(value)}đ`;
-export const levelLabel = (level: string) =>
-  ({ BASIC: "Cơ bản", ADVANCED: "Nâng cao", EXPERT: "Chuyên sâu" })[level] ??
-  level;
+export { levelLabel } from "../domain/trainingPlanLabels";
 function PlanGroupCard({
   group,
   expanded,
