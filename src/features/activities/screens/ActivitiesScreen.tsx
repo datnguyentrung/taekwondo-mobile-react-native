@@ -23,7 +23,7 @@ import { usePermissions } from "@/features/authorization";
 import { HeaderActionButton } from "@/routes/navigation/components/HeaderActionButton";
 import { NotificationHeaderButton } from "@/routes/navigation/components/NotificationHeaderButton";
 import BottomTabScreenLayout from "@/routes/navigation/layouts/BottomTabScreenLayout";
-import { Colors } from "@/theme";
+import { Colors, Spacing } from "@/theme";
 import type { Href } from "expo-router";
 import { useRouter } from "expo-router";
 
@@ -231,14 +231,14 @@ export default function ActivitiesScreen() {
 
 const styles = StyleSheet.create({
   catalogSection: {
-    marginTop: 38,
+    marginTop: Spacing.four,
   },
   divider: {
     height: StyleSheet.hairlineWidth,
-    marginTop: 31,
+    marginTop: Spacing.three,
     backgroundColor: Colors.light.divider,
   },
   utilitySection: {
-    marginTop: 32,
+    marginTop: Spacing.three,
   },
 });

@@ -19,10 +19,17 @@ import { ThemedText } from "@/shared/ui/ThemedText";
 import { useToast } from "@/shared/ui/Toast";
 import { AdminButton, AdminChip, AdminEmptyState, AdminListRow, AdminPickerField, AdminSearchField } from "@/shared/ui/admin/AdministrationPrimitives";
 import { activeEffect, Colors, hexToRgba, radii, Spacing } from "@/theme";
+import {
+  SessionTypeLabel,
+  SessionTypeValues,
+} from "../constants/training-plan.constants";
 import type { SessionType, TrainingPlanAccessRuleSimpleResponse } from "../api/trainingPlan.dto";
 import { useCreateTrainingPlanAccessRule, useDeleteTrainingPlanAccessRule, useTrainingPlan, useUpdateTrainingPlanAccessRule } from "../queries/trainingPlanQueries";
 
-const sessions: readonly { value: SessionType; label: string }[] = [{ value: "REQUIRED", label: "Bắt buộc" }, { value: "STANDARD", label: "Tiêu chuẩn" }];
+const sessions = SessionTypeValues.map((value) => ({
+  value,
+  label: SessionTypeLabel[value],
+})) satisfies readonly { value: SessionType; label: string }[];
 
 export function TrainingPlanCoursesListScreen() {
   const { trainingPlanId } = useLocalSearchParams<{ trainingPlanId: string }>();

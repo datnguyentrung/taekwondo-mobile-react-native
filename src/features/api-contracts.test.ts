@@ -32,6 +32,7 @@ import { studentEnrollmentScheduleApi } from "./student-enrollment-schedule/api/
 import { userApi } from "./user/api/userApi";
 import { walletTransactionApi } from "./wallet-transaction/api/walletTransactionApi";
 import { walletApi } from "./wallet/api/walletApi";
+import { walletTopUpRequestApi } from "./wallet/api/walletTopUpRequestApi";
 
 const contracts = [
   [classScheduleApi, ["list", "getDetail", "create", "update", "remove"]],
@@ -59,15 +60,26 @@ const contracts = [
     [
       "list",
       "get",
-      "create",
-      "update",
-      "remove",
-      "topUp",
       "purchaseCourse",
       "refund",
     ],
   ],
-  [walletTransactionApi, ["list", "get", "create", "update", "remove"]],
+  [walletTransactionApi, ["list", "get"]],
+  [
+    walletTopUpRequestApi,
+    [
+      "create",
+      "uploadProof",
+      "submit",
+      "get",
+      "getByClientRequest",
+      "listMine",
+      "listForReview",
+      "approve",
+      "reject",
+      "getProofUrl",
+    ],
+  ],
   [notificationApi, ["list", "create", "getDetail", "update", "remove"]],
   [
     notificationRecipientApi,

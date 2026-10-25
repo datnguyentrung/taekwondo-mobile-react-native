@@ -4,52 +4,35 @@ import {
   Layers,
   Location,
   NoteText,
-  User,
 } from "reicon-react-native";
-import { Image, Pressable, StyleSheet, View } from "react-native";
-import { getPersonInitials } from "@/features/person/components/PersonListItem";
+import { Pressable, StyleSheet, View } from "react-native";
 
 import { AppIcon } from "@/shared/ui/AppIcon";
 import { ThemedText } from "@/shared/ui/ThemedText";
+import { formatVnd } from "@/shared/utils/currency";
 import { Colors, effects, hexToRgba, radii } from "@/theme";
 import type { AppIconElement } from "@/theme/icons";
 
 import type {
   CourseView,
-  StudentSummaryView,
   WalletTransactionView,
 } from "../../types";
-import {
-  formatCourseStartingPrice,
-  formatVnd,
-} from "../../utils/studentCommerceUtils";
 import {
   InfoRow,
   StatusBadge,
   SurfaceCard,
 } from "@/shared/ui/commerce/CommercePrimitives";
 
-export function StudentSummaryCard({
-  student,
-}: {
-  student: StudentSummaryView;
-}) {
-  return (
-    <SurfaceCard style={styles.studentSummary}>
-      <View style={styles.avatar}>
-        <AppIcon icon={<User weight="Filled" />} size={26} color={Colors.light.primary} />
-      </View>
-      <View style={styles.flex}>
-        <ThemedText type="title" numberOfLines={1} style={styles.blackText}>
-          {student.fullName}
-        </ThemedText>
-        <ThemedText type="bodySmall" numberOfLines={1} style={styles.blackText}>
-          {student.personCode} · {student.beltLabel}
-        </ThemedText>
-      </View>
-      <StatusBadge label={student.statusLabel} />
-    </SurfaceCard>
+function formatCourseStartingPrice(course: CourseView) {
+  if (course.packages.length === 0) return "Chưa có học phí";
+  const monthlyAmount = Math.min(
+    ...course.packages.map((item) => {
+      const durationMatch = item.durationLabel.match(/\d+/);
+      const durationMonths = durationMatch ? Math.max(Number(durationMatch[0]), 1) : 1;
+      return Math.round(item.amount / durationMonths);
+    }),
   );
+  return `Từ ${formatVnd(monthlyAmount)}/tháng`;
 }
 
 export function CourseIconBox({ size = 40 }: { size?: number }) {
@@ -259,20 +242,6 @@ export function PurchaseSummary({
 }
 
 const styles = StyleSheet.create({
-  studentSummary: {
-    minHeight: 88,
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 12,
-  },
-  avatar: {
-    width: 56,
-    height: 56,
-    alignItems: "center",
-    justifyContent: "center",
-    borderRadius: radii.pill,
-    backgroundColor: Colors.light.backgroundElement,
-  },
   flex: {
     flex: 1,
     minWidth: 0,

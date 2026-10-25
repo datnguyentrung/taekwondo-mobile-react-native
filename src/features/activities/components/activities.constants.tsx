@@ -1,38 +1,46 @@
 import type { ActivitiesActionGroup } from "@/features/activities/domain/activities.types";
 import { Permission } from "@/features/authorization";
-import { CalendarCheck } from "lucide-react-native";
 import {
-  Book,
+  BookOpen,
   Building,
+  CalendarTick,
+  Hierarchy,
   Layers,
-  Profile2user,
+  Profile,
+  Ranking,
   ShieldUser,
+  SignalStream,
   Teacher,
-  Trophy,
+  Target,
   Users2,
 } from "reicon-react-native";
 
 export const ACTIVITIES_GROUPS: ActivitiesActionGroup[] = [
   {
-    title: "Tính năng",
+    title: "Hoạt động & thành tích",
     actions: [
       {
         id: "attendance-history",
         label: "Lịch sử",
-        icon: <CalendarCheck />,
+        icon: <CalendarTick />,
         defaultQuick: true,
       },
       {
         id: "ranking",
         label: "Bảng xếp hạng",
-        icon: <Trophy />,
+        icon: <Ranking />,
         defaultQuick: true,
       },
       {
         id: "sparring",
         label: "Đối kháng",
-        icon: <Trophy />,
+        icon: <Target />,
       },
+    ],
+  },
+  {
+    title: "Quản lý đào tạo",
+    actions: [
       {
         id: "student-list",
         label: "Học viên",
@@ -40,9 +48,15 @@ export const ACTIVITIES_GROUPS: ActivitiesActionGroup[] = [
         defaultQuick: true,
       },
       {
+        id: "coach-list",
+        label: "Huấn luyện viên",
+        icon: <Teacher />,
+        defaultQuick: true,
+      },
+      {
         id: "course-list",
         label: "Khóa học",
-        icon: <Book />,
+        icon: <BookOpen />,
       },
       {
         id: "training-plan-list",
@@ -50,22 +64,26 @@ export const ACTIVITIES_GROUPS: ActivitiesActionGroup[] = [
         icon: <Layers />,
         requiredPermissions: [Permission.TRAINING_PLAN_READ],
       },
-      {
-        id: "coach-list",
-        label: "Huấn luyện viên",
-        icon: <Teacher />,
-        defaultQuick: true,
-      },
     ],
   },
   {
-    title: "Tiện ích chung",
+    title: "Vận hành",
     actions: [
       {
         id: "branch-list",
         label: "Cơ sở",
         icon: <Building />,
       },
+      {
+        id: "mqtt-sensor",
+        label: "Cảm biến (MQTT)",
+        icon: <SignalStream />,
+      },
+    ],
+  },
+  {
+    title: "Hệ thống & phân quyền",
+    actions: [
       {
         id: "role-permission-admin",
         label: "Vai trò & quyền",
@@ -75,19 +93,14 @@ export const ACTIVITIES_GROUPS: ActivitiesActionGroup[] = [
       {
         id: "position-admin",
         label: "Chức vụ",
-        icon: <Teacher />,
+        icon: <Hierarchy />,
         requiredPermissions: [Permission.POSITION_READ],
       },
       {
         id: "user-admin",
         label: "Người dùng",
-        icon: <Profile2user />,
+        icon: <Profile />,
         requiredPermissions: [Permission.USER_READ],
-      },
-      {
-        id: "mqtt-sensor",
-        label: "Cảm biến (MQTT)",
-        icon: <CalendarCheck />,
       },
     ],
   },

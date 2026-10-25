@@ -12,7 +12,6 @@ export {
   CourseCatalogCard,
   EnrollmentCard,
   PurchaseSummary,
-  StudentSummaryCard,
   TransactionCard,
 } from "./primitives/CommerceCards";
 export { PackageCoursePicker, PackageSheet } from "./primitives/PackageSheet";

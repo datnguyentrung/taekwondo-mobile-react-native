@@ -19,17 +19,21 @@ import {
   CourseCatalogCard,
   PackageSheet,
   SegmentedTabs,
-  StudentSummaryCard,
   TransactionCard,
 } from './StudentCommercePrimitives';
+import { StudentProfileSummaryCard } from '@/features/student/components/StudentProfileSummaryCard';
 import { studentCommerceMock } from '../fixtures/studentCommerce.fixtures';
 
 describe('StudentCommercePrimitives', () => {
   it('renders student summary card content', async () => {
-    const screen = await render(<StudentSummaryCard student={studentCommerceMock.selectedStudent} />);
+    const screen = await render(
+      <StudentProfileSummaryCard
+        student={{ ...studentCommerceMock.selectedStudent, birthDate: '2012-08-11' }}
+      />,
+    );
 
     expect(screen.getByText('Nguyễn Văn An')).toBeTruthy();
-    expect(screen.getByText('VQ_00123 · Đai xanh')).toBeTruthy();
+    expect(screen.getByText('11/08/2012 · Đai xanh')).toBeTruthy();
     expect(screen.getByText('Đang hoạt động')).toBeTruthy();
   });
 

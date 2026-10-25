@@ -1,6 +1,6 @@
 import { AxiosError, AxiosHeaders } from 'axios';
 
-import { getApiErrorMessage, getHttpErrorStatus } from './httpError';
+import { getApiErrorCode, getApiErrorMessage, getHttpErrorStatus } from './httpError';
 
 function createAxiosError(status: number): AxiosError {
   return new AxiosError(
@@ -24,6 +24,14 @@ describe('http error helpers', () => {
     expect(getHttpErrorStatus(new Error('boom'))).toBeNull();
   });
 
+  it('extracts the backend error code when present', () => {
+    const error = createAxiosError(502);
+    error.response!.data = { code: 'SUPABASE_STORAGE_UPLOAD_FAILED' };
+
+    expect(getApiErrorCode(error)).toBe('SUPABASE_STORAGE_UPLOAD_FAILED');
+    expect(getApiErrorCode(new Error('boom'))).toBeNull();
+  });
+
   it('maps 401/403/404 and network failures to user-facing messages', () => {
     expect(getApiErrorMessage(createAxiosError(401), 'fallback')).toContain(
       'đăng nhập lại',
@@ -33,6 +41,12 @@ describe('http error helpers', () => {
     );
     expect(getApiErrorMessage(createAxiosError(404), 'fallback')).toContain(
       'Không tìm thấy',
+    );
+    expect(getApiErrorMessage(createAxiosError(409), 'fallback')).toContain(
+      'đã được xử lý',
+    );
+    expect(getApiErrorMessage(createAxiosError(422), 'fallback')).toContain(
+      'Dữ liệu gửi lên không hợp lệ',
     );
     expect(
       getApiErrorMessage(new AxiosError('Network Error'), 'fallback'),

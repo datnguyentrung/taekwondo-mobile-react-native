@@ -1,7 +1,16 @@
-export type TrainingPlanStatus = 'ACTIVE' | 'INACTIVE';
-export type AddonStatus = 'ACTIVE' | 'INACTIVE';
-export type ScheduleLevel = 'BASIC' | 'ADVANCED' | 'EXPERT';
-export type SessionType = 'REQUIRED' | 'STANDARD';
+import type {
+  AddonStatus,
+  ScheduleLevel,
+  SessionType,
+  TrainingPlanStatus,
+} from "../constants/training-plan.constants";
+
+export type {
+  AddonStatus,
+  ScheduleLevel,
+  SessionType,
+  TrainingPlanStatus,
+};
 export interface TrainingPlanBriefResponse { trainingPlanId: string; name: string; level: ScheduleLevel; status: TrainingPlanStatus }
 export interface TrainingPlanSimpleResponse extends TrainingPlanBriefResponse { durationMonths: number; includedSessionCount: number; basePrice: number; finalPrice: number }
 export interface TrainingPlanRequirementSimpleResponse { trainingPlanRequirementId: string; trainingPlanId: string; sessionType: SessionType; sessionsPerWeek: number }

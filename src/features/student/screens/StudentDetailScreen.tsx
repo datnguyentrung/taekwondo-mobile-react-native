@@ -6,7 +6,9 @@ import { ActivityIndicator, Pressable, StyleSheet, View } from "react-native";
 import { BeltLabel, PersonStatusLabel } from "@/features/person/constants/person.constants";
 import { Permission, useCan } from "@/features/authorization";
 import { useDeletePerson, usePerson } from "@/features/person/queries/personQueries";
-import { StudentSummaryCard, SurfaceCard } from "@/features/student-commerce/components/StudentCommercePrimitives";
+import { useWalletByPerson } from "@/features/wallet";
+import { SurfaceCard } from "@/features/student-commerce/components/StudentCommercePrimitives";
+import { StudentProfileSummaryCard } from "../components/StudentProfileSummaryCard";
 import type { StudentRouteProps, StudentSummaryView } from "@/features/student-commerce/types";
 import { asHref, formatVnd } from "@/features/student-commerce/utils/studentCommerceUtils";
 import { useScreenRefresh } from "@/infrastructure/query/useScreenRefresh";
@@ -26,13 +28,15 @@ export function StudentDetailScreen({ studentCode }: StudentRouteProps) {
   const personQuery = usePerson(studentCode);
   const deletePerson = useDeletePerson();
   const canDelete = useCan(Permission.PERSON_DELETE);
+  const canDirectTopUp = useCan(Permission.WALLET_TOP_UP_DIRECT_CREATE);
   const toast = useToast();
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const deleteController = useRef<AbortController | null>(null);
-  const { refreshing, onRefresh } = useScreenRefresh([personQuery]);
 
   const person = personQuery.data;
+  const walletQuery = useWalletByPerson(person?.personId);
+  const { refreshing, onRefresh } = useScreenRefresh([personQuery, walletQuery]);
 
   const student: StudentSummaryView | null = useMemo(() => {
     if (!person) return null;
@@ -40,6 +44,7 @@ export function StudentDetailScreen({ studentCode }: StudentRouteProps) {
       personId: person.personId,
       personCode: person.personCode || person.personId.substring(0, 8).toUpperCase(),
       fullName: person.fullName,
+      birthDate: person.birthDate,
       beltLabel: BeltLabel[person.currentBelt] || person.currentBelt || "Chưa có đai",
       statusLabel: PersonStatusLabel[person.status] || person.status || "Đang hoạt động",
     };
@@ -102,12 +107,12 @@ export function StudentDetailScreen({ studentCode }: StudentRouteProps) {
       refreshing={refreshing}
       onRefresh={onRefresh}
       floatingContent={<FloatingActionBar actions={[
-        { label: "Nạp tiền", accessibilityLabel: "Nạp tiền cho học viên", variant: "outline", onPress: () => router.push(asHref(`/students/${activeStudentId}/top-up`)) },
+        ...(canDirectTopUp ? [{ label: "Nạp tiền", accessibilityLabel: "Nạp tiền cho học viên", variant: "outline" as const, onPress: () => router.push(asHref(`/students/${activeStudentId}/top-up`)) }] : []),
         { label: "Đăng ký khóa học", accessibilityLabel: "Đăng ký khóa học cho học viên", variant: "primary", flex: 1.3, onPress: () => router.push(asHref(`/students/${activeStudentId}/course-registration`)) },
         ...(canDelete ? [{ key: "delete", label: "", accessibilityLabel: "Xóa học viên", variant: "ghost" as const, disabled: deleting, onPress: () => setConfirmDelete(true), flex: 0, style: { width: 44, minWidth: 44, paddingHorizontal: 0, backgroundColor: "transparent", borderWidth: 0 }, icon: <AppIcon icon={<Trash6 />} size={30} color={deleting ? Colors.light.textSecondary : Colors.light.error} /> }] : []),
       ]} />}
     >
-      {student ? <StudentSummaryCard student={student} /> : null}
+      {student ? <StudentProfileSummaryCard student={student} /> : null}
 
       <SurfaceCard>
         <View style={styles.row}>
@@ -117,7 +122,11 @@ export function StudentDetailScreen({ studentCode }: StudentRouteProps) {
           </ThemedText>
         </View>
         <ThemedText type="heading" style={styles.blackText}>
-          {formatVnd(0)}
+          {walletQuery.isLoading
+            ? "Đang tải..."
+            : walletQuery.data
+              ? formatVnd(walletQuery.data.balance)
+              : "Không có dữ liệu"}
         </ThemedText>
         <ThemedText type="bodySmall" style={styles.blackText}>
           Số dư khả dụng

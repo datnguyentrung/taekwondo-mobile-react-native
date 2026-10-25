@@ -24,6 +24,10 @@ import {
 } from "@/shared/ui/commerce/CommercePrimitives";
 import { Colors, radii } from "@/theme";
 
+import {
+  SessionTypeLabel,
+  SessionTypeValues,
+} from "../constants/training-plan.constants";
 import type { SessionType } from "../api/trainingPlan.dto";
 import {
   TrainingPlanConfigurationDetailSheet,
@@ -345,7 +349,7 @@ export function TrainingPlanConfigurationScreen() {
               {editing?.kind === "requirement" ? (
                 <View style={styles.sheet}>
                   <View style={styles.chips}>
-                    {(["REQUIRED", "STANDARD"] as const).map((value) => (
+                    {SessionTypeValues.map((value) => (
                       <AdminChip
                         key={value}
                         label={label(value)}
@@ -401,7 +405,7 @@ export function TrainingPlanConfigurationScreen() {
       >
         <View style={styles.sheet}>
           <View style={styles.chips}>
-            {(["REQUIRED", "STANDARD"] as const).map((value) => (
+            {SessionTypeValues.map((value) => (
               <AdminChip
                 key={value}
                 label={label(value)}
@@ -456,10 +460,8 @@ export function TrainingPlanConfigurationScreen() {
   );
 }
 
-function label(value: string) {
-  return (
-    { REQUIRED: "Buổi bắt buộc", STANDARD: "Buổi tiêu chuẩn" }[value] ?? value
-  );
+function label(value: SessionType) {
+  return SessionTypeLabel[value];
 }
 
 function formatMoney(value: number) {

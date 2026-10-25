@@ -13,7 +13,6 @@ export type {
   StudentCourseTab,
   StudentRouteProps,
   StudentSummaryView,
-  TopUpDraft,
   TransactionFilter,
   WalletSummaryView,
   WalletTransactionsProps,

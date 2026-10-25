@@ -21,6 +21,7 @@ export type StudentSummaryView = {
   personId: string;
   personCode: string;
   fullName: string;
+  birthDate?: string | null;
   beltLabel: string;
   statusLabel: string;
 };
@@ -74,13 +75,6 @@ export type CourseEnrollmentView = {
 export type CourseRegistrationDraft = {
   courseId?: string;
   packageId?: string;
-};
-
-export type TopUpDraft = {
-  amount: number;
-  externalReference: string;
-  note: string;
-  hasTransferImage: boolean;
 };
 
 export type StudentCommerceState = {

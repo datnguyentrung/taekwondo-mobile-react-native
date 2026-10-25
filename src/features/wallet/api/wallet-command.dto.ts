@@ -4,13 +4,6 @@ import type {
   WalletTransactionType,
 } from '../constants/wallet.constants';
 
-export interface WalletTopUpRequest {
-  personId: string;
-  amount: number;
-  externalReference: string;
-  note?: string | null;
-}
-
 export interface WalletCoursePurchaseRequest {
   studentPersonId: string;
   coursePriceId: string;

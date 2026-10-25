@@ -6,6 +6,16 @@ export function getHttpErrorStatus(error: unknown): number | null {
   return isAxiosError(error) ? error.response?.status ?? null : null;
 }
 
+export function getApiErrorCode(error: unknown): string | null {
+  if (!isAxiosError(error)) return null;
+
+  const data = error.response?.data;
+  if (typeof data !== 'object' || data === null || !('code' in data)) return null;
+
+  const code = data.code;
+  return typeof code === 'string' ? code : null;
+}
+
 export function getApiErrorMessage(error: unknown, fallback: string): string {
   if (isAxiosError(error)) {
     if (!error.response) {
@@ -21,6 +31,12 @@ export function getApiErrorMessage(error: unknown, fallback: string): string {
     }
     if (status === 404) {
       return 'Không tìm thấy nội dung yêu cầu.';
+    }
+    if (status === 409) {
+      return 'Dữ liệu đã được thay đổi hoặc yêu cầu đã được xử lý. Vui lòng tải lại trạng thái.';
+    }
+    if (status === 422) {
+      return 'Dữ liệu gửi lên không hợp lệ. Vui lòng kiểm tra và thử lại.';
     }
     if (status === 429) {
       return 'Bạn đang thực hiện quá nhiều thao tác. Vui lòng thử lại sau.';

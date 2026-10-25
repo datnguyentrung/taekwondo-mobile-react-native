@@ -15,27 +15,36 @@ import { useRegistrationStudentSearch } from "@/features/student-commerce/querie
 import type { CourseRegistrationStudentView } from "@/features/student-commerce/types";
 import type {
   TrainingPlanCatalogItem,
-  TrainingPlanRecurringRequirement,
   TrainingPlanScheduleOption,
 } from "@/features/training-plan-registration";
 import {
+  findScheduleTimeConflict,
+  getTrainingPlanPurchaseErrorMessage,
+  hasScheduleTimeConflicts,
   usePurchaseTrainingPlan,
   useTrainingPlanCatalog,
   useTrainingPlanOptions,
 } from "@/features/training-plan-registration";
-import { getApiErrorMessage } from "@/infrastructure/http/httpError";
+import {
+  SessionTypeLabel,
+  type SessionType,
+} from "@/features/training-plan/constants/training-plan.constants";
+import { useWalletByPerson } from "@/features/wallet";
+import {
+  getApiErrorCode,
+  getApiErrorMessage,
+} from "@/infrastructure/http/httpError";
 import StackScreenLayout from "@/routes/navigation/layouts/StackScreenLayout";
 import { AppIcon } from "@/shared/ui/AppIcon";
 import { BottomSheetWindow } from "@/shared/ui/BottomSheetWindow";
+import { CancellableLoadingOverlay } from "@/shared/ui/CancellableLoadingOverlay";
+import { ConfirmationDialog } from "@/shared/ui/ConfirmationDialog";
 import { FloatingActionBar } from "@/shared/ui/FloatingActionBar";
 import { PickerPopover } from "@/shared/ui/PickerPopover";
 import { ThemedText } from "@/shared/ui/ThemedText";
 import { useToast } from "@/shared/ui/Toast";
 import { AdminListRow } from "@/shared/ui/admin/AdministrationPrimitives";
-import {
-  PrimaryActionButton,
-  SurfaceCard,
-} from "@/shared/ui/commerce/CommercePrimitives";
+import { SurfaceCard } from "@/shared/ui/commerce/CommercePrimitives";
 import { formatTimeStringHM } from "@/shared/utils/dateTime";
 import { Colors, effects, radii, Spacing } from "@/theme";
 
@@ -124,7 +133,7 @@ export function TrainingPlanRegistrationScreen({ studentCode }: Props) {
   const [studentSheet, setStudentSheet] = useState(false);
   const [planSheet, setPlanSheet] = useState(false);
   const [scheduleSheetFor, setScheduleSheetFor] = useState<string>();
-  const [confirmSheet, setConfirmSheet] = useState(false);
+  const [confirmingPayment, setConfirmingPayment] = useState(false);
   const [datePickerOpen, setDatePickerOpen] = useState(false);
   const [selectedPlan, setSelectedPlan] = useState<TrainingPlanCatalogItem>();
   const [startDate, setStartDate] = useState(today());
@@ -132,6 +141,7 @@ export function TrainingPlanRegistrationScreen({ studentCode }: Props) {
     Record<string, string[]>
   >({});
   const reference = useRef(createReference());
+  const purchaseAbortController = useRef<AbortController | null>(null);
   const students = useRegistrationStudentSearch(
     "",
     canChooseStudent && studentSheet,
@@ -141,7 +151,31 @@ export function TrainingPlanRegistrationScreen({ studentCode }: Props) {
     selectedPlan?.trainingPlanId,
     startDate,
   );
+  const wallet = useWalletByPerson(selectedStudent?.personId);
   const purchase = usePurchaseTrainingPlan();
+
+  const allScheduleOptions = useMemo(
+    () =>
+      options.data?.recurringRequirements.flatMap(
+        (requirement) => requirement.options,
+      ) ?? [],
+    [options.data],
+  );
+  const selectedScheduleOptions = useMemo(() => {
+    return Object.values(schedulesByRequirement)
+      .flat()
+      .map((scheduleId) =>
+        allScheduleOptions.find(
+          (option) => option.courseScheduleId === scheduleId,
+        ),
+      )
+      .filter(
+        (option): option is TrainingPlanScheduleOption => Boolean(option),
+      );
+  }, [allScheduleOptions, schedulesByRequirement]);
+  const hasScheduleConflict = hasScheduleTimeConflicts(
+    selectedScheduleOptions,
+  );
 
   const validRecurring =
     options.data?.recurringRequirements.every(
@@ -149,8 +183,23 @@ export function TrainingPlanRegistrationScreen({ studentCode }: Props) {
         (schedulesByRequirement[requirement.requirementId] ?? []).length ===
         requirement.sessionsPerWeek,
     ) ?? false;
+  const hasInsufficientBalance = Boolean(
+    selectedPlan &&
+      wallet.data &&
+      wallet.data.balance < selectedPlan.finalPrice,
+  );
+  const walletErrorMessage = wallet.isError
+    ? getTrainingPlanPurchaseErrorMessage(getApiErrorCode(wallet.error)) ??
+      "Không thể kiểm tra số dư ví. Vui lòng thử lại."
+    : null;
   const canConfirm = Boolean(
-    selectedStudent && selectedPlan && options.data && validRecurring,
+    selectedStudent &&
+      selectedPlan &&
+      options.data &&
+      validRecurring &&
+      !hasScheduleConflict &&
+      wallet.isSuccess &&
+      !hasInsufficientBalance,
   );
 
   const choosePlan = (plan: TrainingPlanCatalogItem) => {
@@ -163,36 +212,60 @@ export function TrainingPlanRegistrationScreen({ studentCode }: Props) {
     limit: number,
     optionId: string,
   ) => {
-    setSchedulesByRequirement((current) => {
-      const currentIds = current[requirementId] ?? [];
-      const next = currentIds.includes(optionId)
-        ? currentIds.filter((id) => id !== optionId)
-        : currentIds.length < limit
-          ? [...currentIds, optionId]
-          : currentIds;
-      return { ...current, [requirementId]: next };
-    });
+    const currentIds = schedulesByRequirement[requirementId] ?? [];
+    if (currentIds.includes(optionId)) {
+      setSchedulesByRequirement((current) => ({
+        ...current,
+        [requirementId]: currentIds.filter((id) => id !== optionId),
+      }));
+      return;
+    }
+    if (currentIds.length >= limit) return;
+
+    const candidate = allScheduleOptions.find(
+      (option) => option.courseScheduleId === optionId,
+    );
+    const conflict = candidate
+      ? findScheduleTimeConflict(candidate, selectedScheduleOptions)
+      : undefined;
+    if (candidate && conflict) {
+      toast.show({
+        message: `Ca ${WeekdayLabel[candidate.dayOfWeek]} ${formatTimeStringHM(candidate.startTime)}–${formatTimeStringHM(candidate.endTime)} bị trùng với ca ${formatTimeStringHM(conflict.startTime)}–${formatTimeStringHM(conflict.endTime)} đã chọn. Vui lòng chọn ca khác.`,
+        variant: "error",
+      });
+      return;
+    }
+
+    setSchedulesByRequirement((current) => ({
+      ...current,
+      [requirementId]: [...currentIds, optionId],
+    }));
   };
   const submit = () => {
     if (!selectedStudent || !selectedPlan || !options.data) return;
+    const abortController = new AbortController();
+    purchaseAbortController.current = abortController;
+    setConfirmingPayment(false);
     purchase.mutate(
       {
-        studentPersonId: selectedStudent.personId,
-        trainingPlanId: selectedPlan.trainingPlanId,
-        startDate,
-        recurringSchedules: Object.entries(schedulesByRequirement).flatMap(
-          ([requirementId, scheduleIds]) =>
-            scheduleIds.map((courseScheduleId) => ({
-              requirementId,
-              courseScheduleId,
-            })),
-        ),
-        externalReference: reference.current,
-        note: `Đăng ký gói ${selectedPlan.name}`,
+        request: {
+          studentPersonId: selectedStudent.personId,
+          trainingPlanId: selectedPlan.trainingPlanId,
+          startDate,
+          recurringSchedules: Object.entries(schedulesByRequirement).flatMap(
+            ([requirementId, scheduleIds]) =>
+              scheduleIds.map((courseScheduleId) => ({
+                requirementId,
+                courseScheduleId,
+              })),
+          ),
+          externalReference: reference.current,
+          note: `Đăng ký gói ${selectedPlan.name}`,
+        },
+        signal: abortController.signal,
       },
       {
         onSuccess: () => {
-          setConfirmSheet(false);
           reference.current = createReference();
           setSelectedPlan(undefined);
           setSchedulesByRequirement({});
@@ -202,13 +275,24 @@ export function TrainingPlanRegistrationScreen({ studentCode }: Props) {
           });
         },
         onError: (error) => {
+          if (
+            (error as { name?: string })?.name === "AbortError" ||
+            (error as { code?: string })?.code === "ERR_CANCELED"
+          ) {
+            return;
+          }
           toast.show({
-            message: getApiErrorMessage(
-              error,
-              "Không thể đăng ký gói học. Vui lòng thử lại.",
-            ),
+            message:
+              getTrainingPlanPurchaseErrorMessage(getApiErrorCode(error)) ??
+              getApiErrorMessage(
+                error,
+                "Không thể đăng ký gói học. Vui lòng thử lại.",
+              ),
             variant: "error",
           });
+        },
+        onSettled: () => {
+          purchaseAbortController.current = null;
         },
       },
     );
@@ -220,20 +304,40 @@ export function TrainingPlanRegistrationScreen({ studentCode }: Props) {
         title="Đăng ký gói học"
         contentContainerStyle={styles.screen}
         floatingContent={
-          <FloatingActionBar
-            actions={[
-              {
-                label: "Xem lại và thanh toán",
-                disabled: !canConfirm,
-                onPress: () => setConfirmSheet(true),
-              },
-            ]}
-          />
+          <FloatingActionBar>
+            <View style={styles.paymentBarContent}>
+              <View style={styles.paymentBarTotal}>
+                <ThemedText type="caption" style={styles.helper}>
+                  Tổng cộng
+                </ThemedText>
+                <ThemedText type="heading" style={styles.paymentBarAmount}>
+                  {selectedPlan ? money(selectedPlan.finalPrice) : "—"}
+                </ThemedText>
+              </View>
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel="Thanh toán gói học"
+                accessibilityState={{ disabled: !canConfirm }}
+                disabled={!canConfirm}
+                onPress={() => setConfirmingPayment(true)}
+                style={({ pressed }) => [
+                  styles.paymentButton,
+                  !canConfirm && styles.paymentButtonDisabled,
+                  pressed && canConfirm && effects.pressed,
+                ]}
+              >
+                <ThemedText type="action" style={styles.paymentButtonText}>
+                  Thanh toán
+                </ThemedText>
+              </Pressable>
+            </View>
+          </FloatingActionBar>
         }
       >
         <Section title="1. Học viên">
           <StepChoice
             icon={<User />}
+            completed={Boolean(selectedStudent)}
             title={selectedStudent?.fullName ?? "Chọn học viên"}
             subtitle={
               selectedStudent
@@ -249,6 +353,7 @@ export function TrainingPlanRegistrationScreen({ studentCode }: Props) {
         <Section title="2. Gói học">
           <StepChoice
             icon={<Layers />}
+            completed={Boolean(selectedPlan)}
             title={selectedPlan?.name ?? "Chọn gói học"}
             subtitle={
               selectedPlan
@@ -264,6 +369,7 @@ export function TrainingPlanRegistrationScreen({ studentCode }: Props) {
         <Section title="3. Ngày bắt đầu">
           <StepChoice
             icon={<Calendar />}
+            completed={Boolean(startDate)}
             title={dateLabel(startDate)}
             subtitle="Lịch phù hợp được tính lại theo ngày này"
             onPress={() => setDatePickerOpen(true)}
@@ -295,7 +401,7 @@ export function TrainingPlanRegistrationScreen({ studentCode }: Props) {
                   key={requirement.requirementId}
                   icon={<Clock />}
                   completed={complete}
-                  title={requirement.label}
+                  title={SessionTypeLabel[requirement.sessionType]}
                   subtitle={
                     complete
                       ? `Đã chốt ${ids.length}/${requirement.sessionsPerWeek} ca mỗi tuần`
@@ -307,10 +413,35 @@ export function TrainingPlanRegistrationScreen({ studentCode }: Props) {
             })}
           </Section>
         ) : null}
-        {selectedPlan && !canConfirm && !options.isFetching ? (
+        {selectedPlan && !options.isFetching && hasScheduleConflict ? (
+          <ThemedText type="bodySmall" style={styles.error}>
+            Các ca đã chọn đang bị trùng giờ. Vui lòng chọn lại lịch.
+          </ThemedText>
+        ) : selectedPlan && options.data && !validRecurring ? (
           <ThemedText type="bodySmall" style={styles.helper}>
             Chọn đủ số ca cho từng quota để tiếp tục thanh toán.
           </ThemedText>
+        ) : selectedPlan && wallet.isPending ? (
+          <ThemedText type="bodySmall" style={styles.helper}>
+            Đang kiểm tra số dư ví…
+          </ThemedText>
+        ) : selectedPlan && wallet.isError ? (
+          <ThemedText type="bodySmall" style={styles.error}>
+            {walletErrorMessage}
+          </ThemedText>
+        ) : selectedPlan && hasInsufficientBalance ? (
+          <ThemedText type="bodySmall" style={styles.error}>
+            Số dư ví không đủ. Cần nạp thêm{" "}
+            {money(selectedPlan.finalPrice - (wallet.data?.balance ?? 0))}.
+          </ThemedText>
+        ) : null}
+        {selectedPlan ? (
+          <Section title="5. Chi tiết thanh toán">
+            <PaymentDetails
+              plan={selectedPlan}
+              walletBalance={wallet.data?.balance}
+            />
+          </Section>
         ) : null}
       </StackScreenLayout>
 
@@ -404,16 +535,20 @@ export function TrainingPlanRegistrationScreen({ studentCode }: Props) {
         }}
         onClose={() => setDatePickerOpen(false)}
       />
-      <ConfirmationSheet
-        visible={confirmSheet}
-        plan={selectedPlan}
-        student={selectedStudent}
-        startDate={startDate}
-        requirements={options.data?.recurringRequirements ?? []}
-        selectedIds={schedulesByRequirement}
-        pending={purchase.isPending}
-        onClose={() => !purchase.isPending && setConfirmSheet(false)}
-        onSubmit={submit}
+      <ConfirmationDialog
+        visible={confirmingPayment}
+        title="Xác nhận thanh toán"
+        description={`Bạn xác nhận thanh toán ${money(selectedPlan?.finalPrice)} cho gói ${selectedPlan?.name ?? "đã chọn"}? Lịch cố định sẽ được chốt ngay khi giao dịch thành công.`}
+        confirmLabel="Thanh toán"
+        cancelLabel="Quay lại"
+        onCancel={() => setConfirmingPayment(false)}
+        onConfirm={submit}
+      />
+      <CancellableLoadingOverlay
+        visible={purchase.isPending}
+        message="Đang thanh toán và chốt lịch học..."
+        cancelLabel="Hủy thanh toán"
+        onCancel={() => purchaseAbortController.current?.abort()}
       />
     </>
   );
@@ -579,6 +714,7 @@ function ScheduleSheet({
 }: {
   requirement?: {
     requirementId: string;
+    sessionType: SessionType;
     label: string;
     sessionsPerWeek: number;
     options: TrainingPlanScheduleOption[];
@@ -588,22 +724,28 @@ function ScheduleSheet({
   onToggle: (requirementId: string, limit: number, optionId: string) => void;
 }) {
   const full = selectedIds.length === requirement?.sessionsPerWeek;
-  console.log("requirement", requirement);
   return (
     <BottomSheetWindow
       visible={Boolean(requirement)}
-      title={requirement?.label ?? "Chọn lịch cố định"}
+      title={
+        requirement
+          ? SessionTypeLabel[requirement.sessionType]
+          : "Chọn lịch cố định"
+      }
       heightRatio={0.76}
       onClose={onClose}
       footer={
-        <PrimaryActionButton
-          title={
-            full
-              ? "Đã chọn đủ · Xong"
-              : `Đã chọn ${selectedIds.length}/${requirement?.sessionsPerWeek ?? 0}`
-          }
-          disabled={!full}
-          onPress={onClose}
+        <FloatingActionBar
+          backgroundColor={Colors.light.surface}
+          actions={[
+            {
+              label: full
+                ? "Đã chọn đủ · Xong"
+                : `Đã chọn ${selectedIds.length}/${requirement?.sessionsPerWeek ?? 0}`,
+              disabled: !full,
+              onPress: onClose,
+            },
+          ]}
         />
       }
     >
@@ -638,96 +780,48 @@ function ScheduleSheet({
   );
 }
 
-function ConfirmationSheet({
-  visible,
+function PaymentDetails({
   plan,
-  student,
-  startDate,
-  requirements,
-  selectedIds,
-  pending,
-  onClose,
-  onSubmit,
+  walletBalance,
 }: {
-  visible: boolean;
-  plan?: TrainingPlanCatalogItem;
-  student?: Student;
-  startDate: string;
-  requirements: TrainingPlanRecurringRequirement[];
-  selectedIds: Record<string, string[]>;
-  pending: boolean;
-  onClose: () => void;
-  onSubmit: () => void;
+  plan: TrainingPlanCatalogItem;
+  walletBalance?: number;
 }) {
-  const selections = requirements.flatMap((requirement) =>
-    requirement.options
-      .filter((option) =>
-        (selectedIds[requirement.requirementId] ?? []).includes(
-          option.courseScheduleId,
-        ),
-      )
-      .map((option) => ({ requirement, option })),
-  );
+  const discount = Math.max(0, plan.basePrice - plan.finalPrice);
   return (
-    <BottomSheetWindow
-      visible={visible}
-      title="Xác nhận mua gói"
-      heightRatio={0.72}
-      onClose={onClose}
-      footer={
-        <View style={styles.sheetFooterAction}>
-          <FloatingActionBar
-            compact
-            includeBottomSafeArea={false}
-            paddingHorizontal={0}
-            paddingTop={0}
-            minBottomInset={0}
-            backgroundColor="transparent"
-            actions={[
-              {
-                label: "Thanh toán và chốt lịch",
-                loading: pending,
-                onPress: onSubmit,
-              },
-            ]}
-          />
-        </View>
-      }
-    >
-      <SurfaceCard style={styles.confirmSummary}>
-        <ThemedText type="subtitle">{plan?.name}</ThemedText>
+    <SurfaceCard style={styles.paymentDetails}>
+      <View style={styles.paymentLine}>
         <ThemedText type="bodySmall" style={styles.helper}>
-          {student?.fullName} · bắt đầu {dateLabel(startDate)}
+          Số dư ví
         </ThemedText>
-        <ThemedText type="heading" style={styles.price}>
-          {money(plan?.finalPrice)}
+        <ThemedText type="bodySmall">
+          {walletBalance === undefined ? "Đang tải…" : money(walletBalance)}
         </ThemedText>
-      </SurfaceCard>
-      <ThemedText type="title">Lịch sẽ được chốt</ThemedText>
-      {selections.map(({ requirement, option }) => (
-        <View
-          key={`${requirement.requirementId}-${option.courseScheduleId}`}
-          style={styles.confirmRow}
-        >
-          <RowIcon icon={<Clock />} />
-          <View style={styles.flex}>
-            <ThemedText type="bodySmall" style={styles.helper}>
-              {requirement.label}
-            </ThemedText>
-            <ThemedText type="title">
-              {option.dayOfWeek} · {option.startTime}–{option.endTime}
-            </ThemedText>
-            <ThemedText type="bodySmall" style={styles.helper}>
-              {option.courseName} · {option.branchName}
-            </ThemedText>
-          </View>
+      </View>
+      <View style={styles.paymentLine}>
+        <ThemedText type="bodySmall" style={styles.helper}>
+          Giá gói học
+        </ThemedText>
+        <ThemedText type="bodySmall">{money(plan.basePrice)}</ThemedText>
+      </View>
+      {discount > 0 ? (
+        <View style={styles.paymentLine}>
+          <ThemedText type="bodySmall" style={styles.helper}>
+            Ưu đãi
+          </ThemedText>
+          <ThemedText type="bodySmall" style={styles.discountAmount}>
+            −{money(discount)}
+          </ThemedText>
         </View>
-      ))}
-      <ThemedText type="bodySmall" style={styles.helper}>
-        Thanh toán thành công sẽ tạo purchase, enrollment và toàn bộ lịch cố
-        định trong một giao dịch.
-      </ThemedText>
-    </BottomSheetWindow>
+      ) : null}
+      <View style={styles.paymentDivider} />
+      <View style={styles.paymentLine}>
+        <ThemedText type="title">Tổng thanh toán</ThemedText>
+        <ThemedText type="heading" style={styles.paymentTotalAmount}>
+          {money(plan.finalPrice)}
+        </ThemedText>
+      </View>
+    </SurfaceCard>
   );
 }
 
@@ -789,12 +883,38 @@ const styles = StyleSheet.create({
     paddingVertical: Spacing.four,
   },
   sheetHint: { color: Colors.light.textSecondary, marginBottom: Spacing.two },
-  sheetFooterAction: { height: 48 },
-  confirmSummary: { gap: Spacing.one, padding: Spacing.three },
-  price: { color: Colors.light.primary, marginTop: Spacing.one },
-  confirmRow: {
-    flexDirection: "row",
+  paymentDetails: {
     gap: Spacing.three,
-    paddingVertical: Spacing.two,
+    padding: Spacing.four,
   },
+  paymentLine: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: Spacing.three,
+  },
+  discountAmount: { color: Colors.light.success },
+  paymentDivider: {
+    height: StyleSheet.hairlineWidth,
+    backgroundColor: Colors.light.divider,
+  },
+  paymentTotalAmount: { color: Colors.light.primary },
+  paymentBarContent: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: Spacing.three,
+  },
+  paymentBarTotal: { flex: 1, minWidth: 0 },
+  paymentBarAmount: { color: Colors.light.primary },
+  paymentButton: {
+    minWidth: 148,
+    minHeight: 52,
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: radii.md,
+    paddingHorizontal: Spacing.four,
+    backgroundColor: Colors.light.primary,
+  },
+  paymentButtonDisabled: { backgroundColor: Colors.light.divider },
+  paymentButtonText: { color: Colors.light.surface },
 });

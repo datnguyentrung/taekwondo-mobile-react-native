@@ -7,13 +7,33 @@ export type AttendanceStatus =
 
 export const AttendanceStatusLabel: Record<AttendanceStatus, string> = {
   PRESENT: "Có mặt",
-  ABSENT: "Vắng",
+  ABSENT: "Vắng mặt",
   LATE: "Đi muộn",
-  EXCUSED: "Có phép",
+  EXCUSED: "Vắng có phép",
   MAKEUP: "Học bù",
 };
 
+export const AttendanceStatusValues = [
+  "PRESENT",
+  "ABSENT",
+  "EXCUSED",
+  "MAKEUP",
+  "LATE",
+] as const satisfies readonly AttendanceStatus[];
+
 export type BeltPromotionStatus = "PASSED" | "FAILED" | "PENDING";
+
+export const BeltPromotionStatusValues = [
+  "PASSED",
+  "FAILED",
+  "PENDING",
+] as const satisfies readonly BeltPromotionStatus[];
+
+export const BeltPromotionStatusLabel: Record<BeltPromotionStatus, string> = {
+  PASSED: "Đạt",
+  FAILED: "Không đạt",
+  PENDING: "Chờ xét",
+};
 
 export type EvaluationStatus =
   | "PENDING" // Chờ đánh giá  → "P"

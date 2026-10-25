@@ -31,8 +31,13 @@ export function usePurchaseTrainingPlan() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (request: WalletTrainingPlanPurchaseRequest) =>
-      walletApi.purchaseTrainingPlan(request),
+    mutationFn: ({
+      request,
+      signal,
+    }: {
+      request: WalletTrainingPlanPurchaseRequest;
+      signal?: AbortSignal;
+    }) => walletApi.purchaseTrainingPlan(request, { signal }),
     onSuccess: async () => {
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ['wallet'] }),
