@@ -9,23 +9,17 @@ import {
   AdminChip,
   AdminEmptyState,
   AdminIntro,
-  AdminListRow,
   AdminLoadingState,
   AdminSearchField,
   AdminSectionHeader,
   adminStyles,
 } from "@/shared/ui/admin/AdministrationPrimitives";
 import type { UserSimpleResponse } from "../api/user.dto";
+import { UserAccountRow, userAdminStyles } from "../components/UserAdministrationPrimitives";
 import type { UserStatus } from "../constants/user.constants";
 import { useUsers } from "../queries/userQueries";
 
-import {
-  Avatar,
-  getPrimaryPerson,
-  navigate,
-  StatusChip,
-  userAdminStyles,
-} from "./userAdministrationShared";
+import { navigate } from "./userAdministrationShared";
 
 export function UserListScreen() {
   const router = useRouter();
@@ -88,23 +82,13 @@ export function UserListScreen() {
         <AdminEmptyState message="Không tìm thấy người dùng phù hợp" />
       ) : (
         <View style={userAdminStyles.list}>
-          {visible.map((user: UserSimpleResponse) => {
-            const person = getPrimaryPerson(user);
-            return (
-              <AdminListRow
-                key={user.userId}
-                leading={<Avatar name={person?.fullName ?? user.phoneNumber} />}
-                title={user.phoneNumber}
-                subtitle={
-                  user.persons && user.persons.length > 0
-                    ? user.persons.map((p) => `• ${p.fullName}`).join("\n")
-                    : "• Chưa liên kết hồ sơ"
-                }
-                meta={<StatusChip status={user.status} />}
-                onPress={() => navigate(router, `/admin/users/${user.userId}`)}
-              />
-            );
-          })}
+          {visible.map((user: UserSimpleResponse) => (
+            <UserAccountRow
+              key={user.userId}
+              user={user}
+              onPress={() => navigate(router, `/admin/users/${user.userId}`)}
+            />
+          ))}
         </View>
       )}
     </StackScreenLayout>

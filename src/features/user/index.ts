@@ -5,5 +5,6 @@ export { UserCreateScreen } from "./screens/UserCreateScreen";
 export { UserDetailScreen } from "./screens/UserDetailScreen";
 export { UserEditScreen } from "./screens/UserEditScreen";
 export { UserListScreen } from "./screens/UserListScreen";
+export { PersonUserAccountsScreen } from "./screens/PersonUserAccountsScreen";
 export { UserProfilesScreen } from "./screens/UserProfilesScreen";
 export { UserRolesScreen } from "./screens/UserRolesScreen";

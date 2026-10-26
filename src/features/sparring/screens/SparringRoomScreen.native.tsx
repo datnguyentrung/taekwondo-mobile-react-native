@@ -6,8 +6,6 @@ import {
   PanResponder,
 } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
-import * as NavigationBar from 'expo-navigation-bar';
-import * as ScreenOrientation from 'expo-screen-orientation';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { LogOut, HelpCircle } from 'lucide-react-native';
@@ -24,6 +22,19 @@ import { ThemedText } from '@/shared/ui/ThemedText';
 import { isSparringRoomCode, judgeScoreForGesture } from '../domain/sparringRoom';
 import { useSparringRoom } from '../hooks/useSparringRoom';
 import type { SparringSide } from '../domain/sparring.types';
+
+let NavigationBar: typeof import('expo-navigation-bar') | null = null;
+let ScreenOrientation: typeof import('expo-screen-orientation') | null = null;
+try {
+  NavigationBar = require('expo-navigation-bar');
+} catch {
+  // Expo Go may not include this native module.
+}
+try {
+  ScreenOrientation = require('expo-screen-orientation');
+} catch {
+  // Expo Go may not include this native module.
+}
 
 // Ngưỡng phát hiện vuốt kéo lên theo trục Y (âm là kéo lên phía trên).
 // Đặt -15px để phản hồi cực kỳ nhạy và dứt khoát trên màn hình cảm ứng
@@ -158,15 +169,19 @@ export function SparringRoomScreen() {
   const { send } = useSparringRoom(roomCode ?? '');
 
   useEffect(() => {
-    void ScreenOrientation.lockAsync(
-      ScreenOrientation.OrientationLock.LANDSCAPE
-    );
-    void NavigationBar.setVisibilityAsync('hidden');
-    return () => {
+    if (ScreenOrientation) {
       void ScreenOrientation.lockAsync(
-        ScreenOrientation.OrientationLock.PORTRAIT_UP
+        ScreenOrientation.OrientationLock.LANDSCAPE
       );
-      void NavigationBar.setVisibilityAsync('visible');
+    }
+    if (NavigationBar) void NavigationBar.setVisibilityAsync('hidden');
+    return () => {
+      if (ScreenOrientation) {
+        void ScreenOrientation.lockAsync(
+          ScreenOrientation.OrientationLock.PORTRAIT_UP
+        );
+      }
+      if (NavigationBar) void NavigationBar.setVisibilityAsync('visible');
     };
   }, []);
 

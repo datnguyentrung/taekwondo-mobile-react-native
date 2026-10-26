@@ -141,7 +141,7 @@ function formatMoney(value: number) {
   return `${new Intl.NumberFormat("vi-VN").format(value)}đ`;
 }
 const styles = StyleSheet.create({
-  content: { paddingHorizontal: 20, paddingTop: 8, paddingBottom: 24 },
+  content: {},
   // FloatingActionBar is absolutely positioned, so its sheet footer needs a
   // measured hit area instead of relying on the visual overflow of the bar.
   footerActions: { height: 54 },

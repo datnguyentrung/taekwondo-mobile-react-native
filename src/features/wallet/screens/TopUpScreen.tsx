@@ -11,7 +11,7 @@ import { ConfirmationDialog } from "@/shared/ui/ConfirmationDialog";
 import { ThemedText } from "@/shared/ui/ThemedText";
 import { useToast } from "@/shared/ui/Toast";
 import { Colors } from "@/theme";
-import { StudentProfileSummaryCard } from "@/features/student";
+import { StudentProfileSummaryCard } from "@/features/student/components/StudentProfileSummaryCard";
 
 import {
   BalanceCard,

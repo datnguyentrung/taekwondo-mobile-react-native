@@ -1,4 +1,4 @@
-﻿import type { RelationshipType } from '@/features/authentication/domain/auth.types';
+import type { RelationshipType } from '@/features/authentication/domain/auth.types';
 import type { PersonResponse, PersonSimpleResponse } from '@/features/person/api/person.dto';
 import type { UserSimpleResponse } from '@/features/user/api/user.dto';
 
@@ -30,6 +30,7 @@ export interface UserPersonSimpleResponse {
 }
 
 export interface UserPersonListParams {
+  personId?: string;
   page?: number;
   size?: number;
   sort?: string | string[];

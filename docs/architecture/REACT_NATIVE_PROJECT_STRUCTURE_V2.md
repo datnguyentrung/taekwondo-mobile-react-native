@@ -312,6 +312,11 @@ Edit (outline, flex 1) → primary business action (primary, flex 1.3) → optio
 
 Khi một thao tác trong `BottomSheetWindow` mở flow mới, sheet mới phải được bật/render trước khi sheet cũ bị ẩn hoặc hủy. Sheet mới được render sau sheet cũ trong JSX để native `Modal` nằm trên cùng.
 
+Quy tắc chiều cao:
+
+- Không truyền `heightRatio`: sheet tự co theo chiều cao nội dung trong khoảng **30%–80%** chiều cao viewport và chỉ cuộn khi nội dung vượt quá mức tối đa.
+- Chỉ truyền `heightRatio` khi flow cần chiều cao cố định; giá trị được giới hạn trong khoảng 25%–80% viewport.
+
 - Sheet cũ vẫn visible khi mở sheet mới.
 - Sheet mới phải có nút `Hủy`/close; khi hủy chỉ đóng sheet mới và quay lại sheet cũ.
 - Chỉ đóng sheet cũ sau khi flow mới hoàn tất thành công hoặc người dùng xác nhận rời flow.

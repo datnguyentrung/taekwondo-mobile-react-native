@@ -34,6 +34,7 @@ import { ToastContext } from "./Toast/ToastProvider";
 export type BottomSheetWindowProps = {
   visible: boolean;
   title: string;
+  /** Fixed height as a viewport ratio. Omit to size to content between 30% and 80% of the viewport. */
   heightRatio?: number;
   accessibilityLabel?: string;
   backdropAccessibilityLabel?: string;
@@ -54,8 +55,11 @@ function project(velocity: number, decelerationRate = 0.998) {
   return ((velocity / 1000) * decelerationRate) / (1 - decelerationRate);
 }
 
+const AUTO_HEIGHT_MIN_RATIO = 0.3;
+const AUTO_HEIGHT_MAX_RATIO = 0.8;
+
 function clampHeightRatio(heightRatio: number) {
-  return Math.min(Math.max(heightRatio, 0.25), 0.8);
+  return Math.min(Math.max(heightRatio, 0.25), AUTO_HEIGHT_MAX_RATIO);
 }
 
 const ModalRootView = GestureHandlerRootView;
@@ -85,7 +89,8 @@ export function BottomSheetWindow({
   const sheetSizingStyle = useMemo(() => {
     if (!heightRatio) {
       return {
-        maxHeight: Math.round(height * 0.8),
+        minHeight: Math.round(height * AUTO_HEIGHT_MIN_RATIO),
+        maxHeight: Math.round(height * AUTO_HEIGHT_MAX_RATIO),
       };
     }
 

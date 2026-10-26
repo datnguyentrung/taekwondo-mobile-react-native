@@ -8,6 +8,8 @@ import type {
   PersonUpdateRequest,
 } from "../api/person.dto";
 import { personApi } from "../api/personApi";
+import type { UserPersonListParams } from "../api/user-person.dto";
+import { userPersonApi } from "../api/userPersonApi";
 
 export const PERSON_ADMIN_PAGE_SIZE = 200;
 
@@ -19,6 +21,8 @@ export const personKeys = {
   details: () => [...personKeys.all, "details"] as const,
   detail: (id: string) => [...personKeys.details(), id] as const,
   faceImageUrl: (id: string) => [...personKeys.all, "face-image-url", id] as const,
+  userPersons: (params?: UserPersonListParams) =>
+    [...personKeys.all, "user-persons", params] as const,
 };
 
 export function usePeople(params?: PersonSearchParams) {
@@ -81,6 +85,20 @@ export function usePerson(personId?: string) {
     queryKey: personKeys.detail(personId ?? ""),
     queryFn: () => personApi.get(personId!),
     enabled: Boolean(personId),
+    staleTime: 30_000,
+  });
+}
+
+export function useUserPersons(params?: UserPersonListParams) {
+  return useQuery({
+    queryKey: personKeys.userPersons(params),
+    queryFn: () =>
+      userPersonApi.list({
+        size: PERSON_ADMIN_PAGE_SIZE,
+        sort: "createdAt,desc",
+        ...params,
+      }),
+    enabled: Boolean(params?.personId),
     staleTime: 30_000,
   });
 }

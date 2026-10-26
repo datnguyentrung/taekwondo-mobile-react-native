@@ -21,15 +21,10 @@ import {
 } from "@/shared/ui/admin/AdministrationPrimitives";
 import { useToast } from "@/shared/ui/Toast";
 import { LinkedPersonDetailSheet } from "../components/LinkedPersonDetailSheet";
+import { Avatar, StatusChip, userAdminStyles } from "../components/UserAdministrationPrimitives";
 import { useLinkUserProfile, useUser } from "../queries/userQueries";
 
-import {
-  Avatar,
-  StatusChip,
-  userAdminStyles,
-  userRelationships,
-  useUserId,
-} from "./userAdministrationShared";
+import { userRelationships, useUserId } from "./userAdministrationShared";
 
 export function UserProfilesScreen() {
   const userId = useUserId();

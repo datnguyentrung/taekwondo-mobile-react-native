@@ -25,16 +25,14 @@ import { useToast } from "@/shared/ui/Toast";
 import { formatDateDMY, formatDateTime } from "@/shared/utils/dateTime";
 import { Colors } from "@/theme";
 import { LinkedPersonDetailSheet } from "../components/LinkedPersonDetailSheet";
-import { useDeleteUser, useUser } from "../queries/userQueries";
-
 import {
   Avatar,
-  getPrimaryPerson,
-  navigate,
   StatusChip,
   userAdminStyles,
-  useUserId,
-} from "./userAdministrationShared";
+} from "../components/UserAdministrationPrimitives";
+import { useDeleteUser, useUser } from "../queries/userQueries";
+
+import { navigate, useUserId } from "./userAdministrationShared";
 
 export function UserDetailScreen() {
   const router = useRouter();
@@ -51,7 +49,6 @@ export function UserDetailScreen() {
 
   const { refreshing, onRefresh } = useScreenRefresh([user]);
 
-  const primaryPerson = getPrimaryPerson(user.data);
   const linkedPeople: PersonSimpleResponse[] = user.data?.persons ?? [];
   const assignedRoles = user.data?.roles ?? [];
 

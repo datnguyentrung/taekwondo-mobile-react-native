@@ -22,7 +22,7 @@ import { useToast } from "@/shared/ui/Toast";
 import { formatDateDMY } from "@/shared/utils/dateTime";
 import { Colors, effects, radii } from "@/theme";
 import { useInvalidateUser } from "../queries/userQueries";
-import { Avatar } from "../screens/userAdministrationShared";
+import { Avatar } from "./UserAdministrationPrimitives";
 
 export interface LinkedPersonDetailSheetProps {
   person: PersonSimpleResponse | null;
