@@ -50,6 +50,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   },
 
   plugins: [
+    "./plugins/withWindowsCmakePaths",
     "expo-router",
     "expo-sqlite",
     "expo-image",
