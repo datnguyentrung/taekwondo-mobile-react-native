@@ -33,6 +33,6 @@ describe("auth routing", () => {
           displayName: "NGUYỄN VĂN A",
         },
       }),
-    ).toBe("/");
+    ).toBe("/(app)/(tabs)");
   });
 });

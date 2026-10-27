@@ -9,7 +9,6 @@ import { useCourseCreateOptions } from "@/features/course/queries/courseCatalogQ
 import { WeekdayLabel } from "@/features/class-schedule/constants/class-schedule.constants";
 import { CourseScheduleStaffAssignmentsSection } from "@/features/course/components/CourseScheduleStaffAssignmentsSection";
 import {
-  AdminButton,
   AdminChip,
   AdminEmptyState,
   AdminField,
@@ -17,6 +16,7 @@ import {
   AdminPickerField,
 } from "@/shared/ui/admin/AdministrationPrimitives";
 import { BottomSheetWindow } from "@/shared/ui/BottomSheetWindow";
+import { FloatingActionBar } from "@/shared/ui/FloatingActionBar";
 import { PickerPopover } from "@/shared/ui/PickerPopover";
 import { ThemedText } from "@/shared/ui/ThemedText";
 import { formatDateYMD } from "@/shared/utils/dateTime";
@@ -133,24 +133,38 @@ export function CourseScheduleFormSheet({
         />
       }
       footer={section === "schedule" && canSubmitSchedule ? (
-        <View style={styles.footer}>
-          <AdminButton label="Hủy" variant="secondary" disabled={submitting} onPress={onClose} style={styles.footerButton} />
-          <AdminButton
-            label={submitLabel}
-            loading={submitting}
-            onPress={() => {
-              setAttempted(true);
-              if (!valid) return;
-              onSubmit({
-                classScheduleId,
-                startDate,
-                endDate: status === "INACTIVE" ? (endDate || defaultInactiveEndDate(startDate)) : endDate || null,
-                status,
-              });
-            }}
-            style={styles.footerButton}
-          />
-        </View>
+        <FloatingActionBar
+          minBottomInset={0}
+          includeBottomSafeArea={false}
+          paddingHorizontal={0}
+          paddingTop={0}
+          backgroundColor="transparent"
+          actions={[
+            {
+              key: "cancel",
+              label: "Hủy",
+              variant: "outline",
+              disabled: submitting,
+              onPress: onClose,
+            },
+            {
+              key: "submit",
+              label: submitLabel,
+              variant: "primary",
+              loading: submitting,
+              onPress: () => {
+                setAttempted(true);
+                if (!valid) return;
+                onSubmit({
+                  classScheduleId,
+                  startDate,
+                  endDate: status === "INACTIVE" ? (endDate || defaultInactiveEndDate(startDate)) : endDate || null,
+                  status,
+                });
+              },
+            },
+          ]}
+        />
       ) : undefined}
     >
       <View style={styles.form}>
@@ -216,6 +230,4 @@ const styles = StyleSheet.create({
   fieldGroup: { gap: 6 },
   chips: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
   error: { color: Colors.light.error },
-  footer: { flexDirection: "row", gap: 10 },
-  footerButton: { flex: 1 },
 });

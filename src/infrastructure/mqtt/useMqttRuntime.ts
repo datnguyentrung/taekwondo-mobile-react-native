@@ -29,10 +29,8 @@ export function useMqttRuntime(): void {
     }
 
     mqttClient.connect(env.mqttBrokerUrl);
-    const unsubscribe = mqttClient.subscribe(env.mqttDefaultTopic, () => undefined);
 
     return () => {
-      unsubscribe();
       mqttClient.disconnect();
     };
   }, [status]);

@@ -40,14 +40,49 @@ export class MqttClientAdapter implements MqttService {
 
     this.disconnectClient(false);
     this.brokerUrl = normalizedBrokerUrl;
+    console.log(`[MQTT] connecting to ${normalizedBrokerUrl}`);
     this.client = mqtt.connect(normalizedBrokerUrl, {
       clean: true,
       reconnectPeriod: RECONNECT_PERIOD_MS,
       connectTimeout: CONNECT_TIMEOUT_MS,
+      // Expo/React Native provides a native WebSocket implementation. MQTT.js
+      // environment detection can otherwise select an incompatible transport,
+      // leaving the client waiting for a CONNACK until it times out.
+      forceNativeWebSocket: true,
+      // Keep the native WebSocket lifecycle visible in Metro. This separates a
+      // network/handshake failure from an MQTT-level CONNACK failure.
+      createWebsocket: (url, websocketSubProtocols) => {
+        const socket = new WebSocket(url, websocketSubProtocols);
+        socket.addEventListener('open', () => {
+          console.log(`[MQTT][WS] open ${url}`);
+        });
+        socket.addEventListener('error', (event) => {
+          console.warn('[MQTT][WS] error', event);
+        });
+        socket.addEventListener('close', (event) => {
+          console.warn(
+            `[MQTT][WS] close ${url} code=${event.code} reason=${event.reason || '(none)'}`,
+          );
+        });
+        return socket;
+      },
     });
 
     this.client.on('connect', () => {
+      console.log(`[MQTT] connected to ${normalizedBrokerUrl}`);
       this.subscribeAll();
+    });
+
+    this.client.on('reconnect', () => {
+      console.warn(`[MQTT] reconnecting to ${normalizedBrokerUrl}`);
+    });
+
+    this.client.on('close', () => {
+      console.warn(`[MQTT] connection closed for ${normalizedBrokerUrl}`);
+    });
+
+    this.client.on('offline', () => {
+      console.warn(`[MQTT] client is offline for ${normalizedBrokerUrl}`);
     });
 
     this.client.on('message', (topic, message) => {
@@ -111,7 +146,11 @@ export class MqttClientAdapter implements MqttService {
 
   private subscribeTopic(topic: string): void {
     this.client?.subscribe(topic, (error) => {
-      if (error) console.warn(`[MQTT] unable to subscribe to ${topic}`, error);
+      if (error) {
+        console.warn(`[MQTT] unable to subscribe to ${topic}`, error);
+        return;
+      }
+      console.log(`[MQTT] subscribed to ${topic}`);
     });
   }
 

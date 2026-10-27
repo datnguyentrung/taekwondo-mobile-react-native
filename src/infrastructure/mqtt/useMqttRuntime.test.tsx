@@ -34,7 +34,7 @@ describe('useMqttRuntime', () => {
     useAuthStore.setState({ status: 'anonymous' });
   });
 
-  it('connects and subscribes only after authentication, then disconnects on logout', async () => {
+  it('connects only after authentication, then disconnects on logout', async () => {
     const { unmount } = await renderHook(() => useMqttRuntime());
 
     expect(mqttClientMock.connect).not.toHaveBeenCalled();
@@ -44,7 +44,7 @@ describe('useMqttRuntime', () => {
     });
 
     expect(mqttClientMock.connect).toHaveBeenCalledWith('wss://broker.example.com/mqtt');
-    expect(mqttClientMock.subscribe).toHaveBeenCalledWith('shared/topic', expect.any(Function));
+    expect(mqttClientMock.subscribe).not.toHaveBeenCalled();
 
     await act(async () => {
       useAuthStore.setState({ status: 'anonymous' });

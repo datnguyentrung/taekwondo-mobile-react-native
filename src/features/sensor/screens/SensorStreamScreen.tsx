@@ -1,5 +1,6 @@
 import { useCallback, useState } from 'react';
-import { StyleSheet, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
+import { useRouter, type Href } from 'expo-router';
 import StackScreenLayout from '@/routes/navigation/layouts/StackScreenLayout';
 import { ThemedText } from '@/shared/ui/ThemedText';
 import { Colors, Spacing, radii, typography, effects } from '@/theme';
@@ -7,17 +8,42 @@ import { env } from '@/config/env';
 import { useMqttSubscription } from '@/infrastructure/mqtt';
 
 export function SensorStreamScreen() {
+  const router = useRouter();
   const [lastPayload, setLastPayload] = useState<string>('Chưa nhận dữ liệu nào');
   const [lastUpdated, setLastUpdated] = useState<string>('--:--:--');
+  const [isReceiving, setIsReceiving] = useState(false);
 
   const handleMessage = useCallback((message: { rawPayload: string }) => {
     setLastPayload(message.rawPayload);
     setLastUpdated(new Date().toLocaleTimeString());
-  }, []);
-  useMqttSubscription(env.mqttDefaultTopic, handleMessage);
+    // One accepted sensor event starts one check-in flow. Stop listening first
+    // so retained/repeated events cannot navigate repeatedly.
+    setIsReceiving(false);
+    router.push('/check-in' as Href);
+  }, [router]);
+  useMqttSubscription(env.mqttDefaultTopic, handleMessage, isReceiving);
 
   return (
-    <StackScreenLayout title="Cảm biến ESP32">
+    <StackScreenLayout
+      title="Cảm biến ESP32"
+      rightActions={
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={isReceiving ? 'Tắt nhận dữ liệu cảm biến' : 'Bật nhận dữ liệu cảm biến'}
+          accessibilityState={{ selected: isReceiving }}
+          onPress={() => setIsReceiving((current) => !current)}
+          style={({ pressed }) => [
+            styles.receiveButton,
+            isReceiving ? styles.receiveButtonActive : styles.receiveButtonInactive,
+            pressed ? styles.pressed : null,
+          ]}
+        >
+          <ThemedText style={styles.receiveButtonText}>
+            {isReceiving ? 'Đang nhận' : 'Bật nhận'}
+          </ThemedText>
+        </Pressable>
+      }
+    >
       <View style={styles.container}>
         <View style={styles.card}>
           <ThemedText style={styles.cardTitle}>
@@ -25,8 +51,12 @@ export function SensorStreamScreen() {
           </ThemedText>
           <ThemedText style={styles.statusText}>
             Trạng thái:{' '}
-            <ThemedText style={env.mqttEnabled ? styles.highlightText : styles.disabledText}>
-              {env.mqttEnabled ? 'Đang bật' : 'Đã tắt qua cấu hình (.env)'}
+            <ThemedText style={isReceiving ? styles.highlightText : styles.disabledText}>
+              {!env.mqttEnabled
+                ? 'Đã tắt qua cấu hình (.env)'
+                : isReceiving
+                  ? 'Đang chờ dữ liệu'
+                  : 'Không nhận dữ liệu'}
             </ThemedText>
           </ThemedText>
           <ThemedText style={styles.statusText}>
@@ -88,6 +118,26 @@ const styles = StyleSheet.create({
     ...typography.body,
     color: Colors.light.textSecondary,
     fontStyle: 'italic',
+  },
+  receiveButton: {
+    minHeight: 34,
+    justifyContent: 'center',
+    paddingHorizontal: Spacing.two,
+    borderRadius: radii.sm,
+  },
+  receiveButtonActive: {
+    backgroundColor: Colors.light.success,
+  },
+  receiveButtonInactive: {
+    backgroundColor: Colors.light.primary,
+  },
+  receiveButtonText: {
+    ...typography.caption,
+    color: Colors.light.surface,
+    fontWeight: '700',
+  },
+  pressed: {
+    opacity: 0.82,
   },
   payloadBox: {
     backgroundColor: Colors.light.backgroundElement,
