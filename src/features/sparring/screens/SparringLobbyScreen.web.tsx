@@ -51,6 +51,14 @@ export function SparringLobbyScreen() {
       </View>
       <View style={styles.main}>
         <View style={styles.column}>
+          <ThemedText style={styles.title}>REFEREE PRACTICE</ThemedText>
+          <Pressable
+            onPress={() => router.push('/tkd/practice' as Href)}
+            style={styles.button}>
+            <ThemedText>TẬP LÀM TRỌNG TÀI</ThemedText>
+          </Pressable>
+        </View>
+        <View style={styles.column}>
           <ThemedText style={styles.title}>START A NEW RING</ThemedText>
           <Pressable
             disabled={busy}

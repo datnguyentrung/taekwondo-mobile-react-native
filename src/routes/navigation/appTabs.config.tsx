@@ -39,7 +39,7 @@ export const APP_TABS: AppTabConfig[] = [
   {
     name: "index",
     label: "Trang chủ",
-    href: "/",
+    href: "/(app)/(tabs)",
     icon: <Home />,
     activeIcon: <Home weight="Filled" />,
     requiredPermissions: [],
