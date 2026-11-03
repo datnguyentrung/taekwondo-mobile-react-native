@@ -1,5 +1,5 @@
 import { Eye, EyeOff, LockKeyhole, Phone } from 'lucide-react-native';
-import { useCallback, useRef, useState } from 'react';
+import { type ComponentRef, useCallback, useRef, useState } from 'react';
 import {
   AccessibilityInfo,
   ActivityIndicator,
@@ -13,10 +13,10 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { router, useLocalSearchParams } from 'expo-router';
 
 import { useLogin } from '../hooks/useAuthentication';
 import { AuthBrand } from '../components/AuthBrand';
-import { SupportModal } from '../components/SupportModal';
 import { normalizeAuthError } from '../utils/normalizeAuthError';
 import {
   validateLoginInput,
@@ -24,13 +24,13 @@ import {
 } from '../schemas/loginValidation';
 
 export default function LoginScreen() {
+  const { passwordChanged } = useLocalSearchParams<{ passwordChanged?: string }>();
   const [phoneNumber, setPhoneNumber] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [errors, setErrors] = useState<LoginValidationErrors>({});
-  const [supportVisible, setSupportVisible] = useState(false);
-  const phoneRef = useRef<TextInput>(null);
-  const passwordRef = useRef<TextInput>(null);
+  const phoneRef = useRef<ComponentRef<typeof TextInput>>(null);
+  const passwordRef = useRef<ComponentRef<typeof TextInput>>(null);
   const login = useLogin();
 
   const submit = useCallback(async () => {
@@ -140,11 +140,20 @@ export default function LoginScreen() {
             </View>
 
             <Pressable
-              onPress={() => setSupportVisible(true)}
+              onPress={() => router.push('/(auth)/forgot-password' as never)}
               accessibilityRole="button"
               style={styles.supportButton}>
               <Text style={styles.supportText}>Quên mật khẩu?</Text>
             </Pressable>
+
+            {passwordChanged === '1' ? (
+              <Text
+                style={styles.successMessage}
+                accessibilityRole="alert"
+                accessibilityLiveRegion="polite">
+                Mật khẩu đã được cập nhật. Hãy đăng nhập lại.
+              </Text>
+            ) : null}
 
             {requestError ? (
               <Text
@@ -174,7 +183,6 @@ export default function LoginScreen() {
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
-      <SupportModal visible={supportVisible} onClose={() => setSupportVisible(false)} />
     </SafeAreaView>
   );
 }
@@ -214,6 +222,15 @@ const styles = StyleSheet.create({
     backgroundColor: '#FCEBEC',
     borderLeftWidth: 3,
     borderLeftColor: '#A9151A',
+    padding: 12,
+    fontSize: 14,
+    lineHeight: 20,
+  },
+  successMessage: {
+    color: '#065F46',
+    backgroundColor: '#ECFDF5',
+    borderLeftWidth: 3,
+    borderLeftColor: '#10B981',
     padding: 12,
     fontSize: 14,
     lineHeight: 20,

@@ -140,11 +140,7 @@ export function ScheduleDetailSheet({
       ) : undefined}
       footer={footerActions.length > 0 && schedule ? (
         <FloatingActionBar
-          minBottomInset={0}
-          includeBottomSafeArea={false}
-          paddingHorizontal={0}
-          paddingTop={0}
-          backgroundColor="transparent"
+          placement="sheet"
           actions={footerActions}
         />
       ) : undefined}

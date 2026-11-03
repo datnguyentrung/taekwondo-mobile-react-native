@@ -9,6 +9,7 @@ import {
 
 type StudentMockRecord = {
   attendance: StudentAttendanceResponse;
+  name: string;
   branchLabel: string;
   shiftLabel: string;
 };
@@ -23,6 +24,7 @@ const allowedActions = { update: false, delete: false };
 
 export const studentAttendanceMockRecords: StudentMockRecord[] = [
   {
+    name: "Học viên mẫu",
     attendance: {
       sessionAttendanceId: "student-attendance-2026-08-09",
       studentAttendanceId: "student-attendance-2026-08-09",
@@ -41,6 +43,7 @@ export const studentAttendanceMockRecords: StudentMockRecord[] = [
     shiftLabel: "Ca 1",
   },
   {
+    name: "Học viên mẫu",
     attendance: {
       sessionAttendanceId: "student-attendance-2026-08-06",
       studentAttendanceId: "student-attendance-2026-08-06",
@@ -59,6 +62,7 @@ export const studentAttendanceMockRecords: StudentMockRecord[] = [
     shiftLabel: "Ca 2",
   },
   {
+    name: "Học viên mẫu",
     attendance: {
       sessionAttendanceId: "student-attendance-2026-08-01",
       studentAttendanceId: "student-attendance-2026-08-01",
@@ -77,6 +81,7 @@ export const studentAttendanceMockRecords: StudentMockRecord[] = [
     shiftLabel: "Ca 1",
   },
   {
+    name: "Học viên mẫu",
     attendance: {
       sessionAttendanceId: "student-attendance-2026-07-21",
       studentAttendanceId: "student-attendance-2026-07-21",
@@ -148,9 +153,10 @@ export function getMockHistoryRecords(
   mode: "student" | "coach",
 ): HistoryRecordViewModel[] {
   if (mode === "student") {
-    return studentAttendanceMockRecords.map((item) =>
-      mapStudentAttendanceToHistoryRecord(item.attendance, item),
-    );
+    return studentAttendanceMockRecords.map((item) => ({
+      ...mapStudentAttendanceToHistoryRecord(item.attendance, item),
+      name: item.name,
+    }));
   }
 
   return coachTimesheetMockRecords.map((item) =>

@@ -20,6 +20,8 @@ export type FloatingActionVariant =
   | "danger"
   | "ghost";
 
+export type FloatingActionPlacement = "screen" | "sheet";
+
 export interface FloatingActionItem {
   key?: string;
   label: string;
@@ -38,6 +40,8 @@ export interface FloatingActionItem {
 export interface FloatingActionBarProps {
   actions?: FloatingActionItem[];
   children?: React.ReactNode;
+  /** Select the host layout preset. Sheet footers are compact and do not add screen insets. */
+  placement?: FloatingActionPlacement;
   direction?: "row" | "column";
   /** Use the compact 48px action treatment even when fewer than three actions are shown. */
   compact?: boolean;
@@ -54,19 +58,28 @@ export interface FloatingActionBarProps {
 export function FloatingActionBar({
   actions = [],
   children,
+  placement = "screen",
   direction = "row",
   compact = false,
   gap,
-  minBottomInset = 16,
-  includeBottomSafeArea = true,
-  paddingHorizontal = 20,
-  paddingTop = 12,
-  backgroundColor = hexToRgba(Colors.light.background, 0.94),
+  minBottomInset,
+  includeBottomSafeArea,
+  paddingHorizontal,
+  paddingTop,
+  backgroundColor,
   containerStyle,
   contentStyle,
 }: FloatingActionBarProps) {
   const insets = useSafeAreaInsets();
-  const isCompact = compact || actions.length >= 3;
+  const isSheet = placement === "sheet";
+  const resolvedMinBottomInset = minBottomInset ?? (isSheet ? 0 : 16);
+  const resolvedIncludeBottomSafeArea = includeBottomSafeArea ?? !isSheet;
+  const resolvedPaddingHorizontal = paddingHorizontal ?? (isSheet ? 0 : 20);
+  const resolvedPaddingTop = paddingTop ?? (isSheet ? 0 : 12);
+  const resolvedBackgroundColor =
+    backgroundColor ??
+    (isSheet ? "transparent" : hexToRgba(Colors.light.background, 0.94));
+  const isCompact = isSheet || compact || actions.length >= 3;
   const defaultGap = gap ?? (isCompact ? 8 : 12);
 
   return (
@@ -74,13 +87,14 @@ export function FloatingActionBar({
       pointerEvents="box-none"
       style={[
         styles.floatingActionWrap,
+        isSheet ? styles.sheetActionWrap : styles.screenActionWrap,
         {
-          paddingHorizontal,
-          paddingTop,
-          paddingBottom: includeBottomSafeArea
-            ? Math.max(insets.bottom, minBottomInset)
-            : minBottomInset,
-          backgroundColor,
+          paddingHorizontal: resolvedPaddingHorizontal,
+          paddingTop: resolvedPaddingTop,
+          paddingBottom: resolvedIncludeBottomSafeArea
+            ? Math.max(insets.bottom, resolvedMinBottomInset)
+            : resolvedMinBottomInset,
+          backgroundColor: resolvedBackgroundColor,
         },
         containerStyle,
       ]}
@@ -133,6 +147,7 @@ export function FloatingActionBar({
                   buttonStyle,
                   isInteractive ? activeEffect(pressed, "pressedScale") : null,
                   customStyle,
+                  isSheet ? styles.sheetButton : null,
                 ]}
               >
                 {loading ? (
@@ -231,11 +246,17 @@ function getTextVariantStyle(
 }
 
 const styles = StyleSheet.create({
-  floatingActionWrap: {
+  floatingActionWrap: {},
+  screenActionWrap: {
     position: "absolute",
     right: 0,
     bottom: 0,
     left: 0,
+  },
+  sheetActionWrap: {
+    position: "relative",
+    width: "100%",
+    height: 48,
   },
   actionsContainer: {
     width: "100%",
@@ -258,6 +279,11 @@ const styles = StyleSheet.create({
   compactButton: {
     minHeight: 48,
     paddingHorizontal: 8,
+  },
+  sheetButton: {
+    height: 48,
+    minHeight: 48,
+    maxHeight: 48,
   },
   iconContainer: {
     marginRight: 6,

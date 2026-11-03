@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { StyleSheet, View } from "react-native";
 
 import { Permission } from "@/features/authorization/domain/permissions";
@@ -16,7 +16,10 @@ import {
   AdminPickerField,
 } from "@/shared/ui/admin/AdministrationPrimitives";
 import { BottomSheetWindow } from "@/shared/ui/BottomSheetWindow";
-import { FloatingActionBar } from "@/shared/ui/FloatingActionBar";
+import {
+  FloatingActionBar,
+  type FloatingActionItem,
+} from "@/shared/ui/FloatingActionBar";
 import { PickerPopover } from "@/shared/ui/PickerPopover";
 import { ThemedText } from "@/shared/ui/ThemedText";
 import { formatDateYMD } from "@/shared/utils/dateTime";
@@ -60,6 +63,9 @@ export function CourseScheduleFormSheet({
   const [pickerVisible, setPickerVisible] = useState(false);
   const [attempted, setAttempted] = useState(false);
   const [section, setSection] = useState<"schedule" | "staff">("schedule");
+  const [staffFooterActions, setStaffFooterActions] = useState<
+    FloatingActionItem[]
+  >([]);
   const optionsQuery = useCourseCreateOptions(visible);
   const canUpdateSchedule = useCan(Permission.COURSE_UPDATE);
   const canReadAssignments = useCan(Permission.COURSE_STAFF_ASSIGNMENT_READ);
@@ -108,6 +114,42 @@ export function CourseScheduleFormSheet({
   const scheduleLabel = selected
     ? `${selected.branch.name} · ${WeekdayLabel[selected.weekday]} · ${selected.startTime.slice(0, 5)} – ${selected.endTime.slice(0, 5)}`
     : undefined;
+  const handleStaffFooterActionsChange = useCallback(
+    (actions: FloatingActionItem[]) => {
+      setStaffFooterActions(actions);
+    },
+    [],
+  );
+  const footerActions: FloatingActionItem[] =
+    section === "staff"
+      ? staffFooterActions
+      : canSubmitSchedule
+        ? [
+            {
+              key: "cancel",
+              label: "Hủy",
+              variant: "outline",
+              disabled: submitting,
+              onPress: onClose,
+            },
+            {
+              key: "submit",
+              label: submitLabel,
+              variant: "primary",
+              loading: submitting,
+              onPress: () => {
+                setAttempted(true);
+                if (!valid) return;
+                onSubmit({
+                  classScheduleId,
+                  startDate,
+                  endDate: status === "INACTIVE" ? (endDate || defaultInactiveEndDate(startDate)) : endDate || null,
+                  status,
+                });
+              },
+            },
+          ]
+        : [];
 
   return (
     <BottomSheetWindow
@@ -132,38 +174,10 @@ export function CourseScheduleFormSheet({
           }))}
         />
       }
-      footer={section === "schedule" && canSubmitSchedule ? (
+      footer={footerActions.length ? (
         <FloatingActionBar
-          minBottomInset={0}
-          includeBottomSafeArea={false}
-          paddingHorizontal={0}
-          paddingTop={0}
-          backgroundColor="transparent"
-          actions={[
-            {
-              key: "cancel",
-              label: "Hủy",
-              variant: "outline",
-              disabled: submitting,
-              onPress: onClose,
-            },
-            {
-              key: "submit",
-              label: submitLabel,
-              variant: "primary",
-              loading: submitting,
-              onPress: () => {
-                setAttempted(true);
-                if (!valid) return;
-                onSubmit({
-                  classScheduleId,
-                  startDate,
-                  endDate: status === "INACTIVE" ? (endDate || defaultInactiveEndDate(startDate)) : endDate || null,
-                  status,
-                });
-              },
-            },
-          ]}
+          placement="sheet"
+          actions={footerActions}
         />
       ) : undefined}
     >
@@ -185,6 +199,7 @@ export function CourseScheduleFormSheet({
             canCreate={canCreateAssignment}
             canUpdate={canUpdateAssignment}
             canEnd={canEndAssignment}
+            onFooterActionsChange={handleStaffFooterActionsChange}
           />
         ) : <>
         <View style={styles.fieldGroup}>
@@ -225,7 +240,7 @@ function FieldError({ message }: { message: string }) {
 }
 
 const styles = StyleSheet.create({
-  form: { paddingTop: 16, paddingBottom: 24, gap: 18 },
+  form: { flexGrow: 1, paddingTop: 16, paddingBottom: 24, gap: 18 },
   sectionTabs: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
   fieldGroup: { gap: 6 },
   chips: { flexDirection: "row", flexWrap: "wrap", gap: 8 },

@@ -132,18 +132,71 @@ describe("FloatingActionBar", () => {
     expect(screen.getByText("Custom Content Inside Bar")).toBeTruthy();
   });
 
-  it("can omit the bottom safe-area inset for a sheet footer", async () => {
+  it("keeps the default screen placement absolute and safe-area aware", async () => {
     const screen = await render(
       <FloatingActionBar
-        includeBottomSafeArea={false}
-        minBottomInset={0}
         actions={[{ label: "Lưu", variant: "primary" }]}
       />,
     );
 
     const root = screen.getByRole("button").parent?.parent;
     expect(root?.props.style).toEqual(
-      expect.arrayContaining([expect.objectContaining({ paddingBottom: 0 })]),
+      expect.arrayContaining([
+        expect.objectContaining({ position: "absolute", bottom: 0 }),
+        expect.objectContaining({ paddingBottom: 16 }),
+      ]),
     );
   });
+
+  it("uses the compact 48px sheet preset without screen insets", async () => {
+    const screen = await render(
+      <FloatingActionBar
+        placement="sheet"
+        actions={[{ label: "Lưu", variant: "primary" }]}
+      />,
+    );
+
+    const button = screen.getByRole("button");
+    const root = button.parent?.parent;
+    expect(root?.props.style).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ position: "relative", height: 48 }),
+        expect.objectContaining({
+          paddingHorizontal: 0,
+          paddingTop: 0,
+          paddingBottom: 0,
+          backgroundColor: "transparent",
+        }),
+      ]),
+    );
+    expect(button.props.style).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ height: 48, minHeight: 48, maxHeight: 48 }),
+      ]),
+    );
+  });
+
+  it.each([1, 2, 3])(
+    "limits every action to 48px in a sheet footer with %i action(s)",
+    async (count) => {
+      const screen = await render(
+        <FloatingActionBar
+          placement="sheet"
+          actions={Array.from({ length: count }, (_, index) => ({
+            label: `Hành động ${index + 1}`,
+            variant: "primary" as const,
+          }))}
+        />,
+      );
+
+      expect(screen.getAllByRole("button")).toHaveLength(count);
+      screen.getAllByRole("button").forEach((button) => {
+        expect(button.props.style).toEqual(
+          expect.arrayContaining([
+            expect.objectContaining({ height: 48, minHeight: 48, maxHeight: 48 }),
+          ]),
+        );
+      });
+    },
+  );
 });

@@ -66,7 +66,12 @@ export default function AccountScreen() {
       {
         label: "Đổi mật khẩu",
         icon: <LockOpen />,
-        onPress: () => showComingSoon(toast),
+        onPress: () => router.push('/account/change-password' as Href),
+      },
+      {
+        label: "Email khôi phục",
+        icon: <Verified />,
+        onPress: () => router.push('/account/recovery-email' as Href),
       },
       {
         label: "Liên hệ",

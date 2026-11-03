@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ActivityIndicator, Pressable, StyleSheet, View } from "react-native";
 import { Plus, Trash6 } from "reicon-react-native";
 
@@ -23,6 +23,7 @@ import {
 import { getApiErrorMessage } from "@/infrastructure/http/httpError";
 import { AppIcon } from "@/shared/ui/AppIcon";
 import { ConfirmationDialog } from "@/shared/ui/ConfirmationDialog";
+import type { FloatingActionItem } from "@/shared/ui/FloatingActionBar";
 import {
   AdminButton,
   AdminChip,
@@ -48,6 +49,7 @@ type Props = {
   canCreate: boolean;
   canUpdate: boolean;
   canEnd: boolean;
+  onFooterActionsChange?: (actions: FloatingActionItem[]) => void;
 };
 
 const assignmentTypes: AssignmentType[] = [
@@ -89,6 +91,7 @@ export function CourseScheduleStaffAssignmentsSection({
   canCreate,
   canUpdate,
   canEnd,
+  onFooterActionsChange,
 }: Props) {
   const toast = useToast();
   const assignmentsQuery = useCourseScheduleStaffAssignments(courseScheduleId, visible && canRead);
@@ -107,12 +110,13 @@ export function CourseScheduleStaffAssignmentsSection({
   const [note, setNote] = useState("");
   const [attempted, setAttempted] = useState(false);
   const [deleteConfirmationVisible, setDeleteConfirmationVisible] = useState(false);
+  const saveAssignmentRef = useRef<() => void>(() => {});
   const detailQuery = useCourseStaffAssignmentDetail(editingId, Boolean(editingId));
   const candidatesQuery = useStaffAssignmentCandidates(search, (isCreating || Boolean(editingId)) && (canRead || canCreate));
   const isEditing = Boolean(editingId);
   const busy = createAssignment.isPending || updateAssignment.isPending || deleteAssignmentMutation.isPending;
 
-  const closeEditor = () => {
+  const closeEditor = useCallback(() => {
     setEditingId(undefined);
     setIsCreating(false);
     setSearch("");
@@ -125,7 +129,7 @@ export function CourseScheduleStaffAssignmentsSection({
     setNote("");
     setAttempted(false);
     setDeleteConfirmationVisible(false);
-  };
+  }, [scheduleStartDate]);
 
   useEffect(() => {
     const detail = detailQuery.data;
@@ -165,17 +169,17 @@ export function CourseScheduleStaffAssignmentsSection({
   );
   const candidates = candidatesQuery.data?.content ?? [];
 
-  const openCreate = () => {
+  const openCreate = useCallback(() => {
     closeEditor();
     setIsCreating(true);
-  };
+  }, [closeEditor]);
 
-  const openEdit = (assignment: CourseStaffAssignmentSimpleResponse) => {
+  const openEdit = useCallback((assignment: CourseStaffAssignmentSimpleResponse) => {
     closeEditor();
     setEditingId(assignment.courseStaffAssignmentId);
-  };
+  }, [closeEditor]);
 
-  const buildRequest = (): CourseStaffAssignmentCreateRequest | undefined => {
+  const buildRequest = useCallback((): CourseStaffAssignmentCreateRequest | undefined => {
     if (!selectedPerson || !isValid) return undefined;
     return {
       staffPersonId: selectedPerson.personId,
@@ -186,9 +190,9 @@ export function CourseScheduleStaffAssignmentsSection({
       assignmentStatus,
       note: note.trim() || null,
     };
-  };
+  }, [assignmentStatus, assignmentType, courseScheduleId, endDate, isValid, note, selectedPerson, startDate]);
 
-  const save = async () => {
+  const save = useCallback(async () => {
     setAttempted(true);
     const request = buildRequest();
     if (!request) return;
@@ -204,9 +208,13 @@ export function CourseScheduleStaffAssignmentsSection({
     } catch (error) {
       toast.show({ message: assignmentError(error), variant: "error" });
     }
-  };
+  }, [buildRequest, closeEditor, createAssignment, editingId, toast, updateAssignment]);
 
-  const deleteAssignment = async () => {
+  useEffect(() => {
+    saveAssignmentRef.current = () => void save();
+  }, [save]);
+
+  const deleteAssignment = useCallback(async () => {
     if (!editingId) return;
     try {
       await deleteAssignmentMutation.mutateAsync(editingId);
@@ -215,7 +223,48 @@ export function CourseScheduleStaffAssignmentsSection({
     } catch (error) {
       toast.show({ message: assignmentError(error), variant: "error" });
     }
-  };
+  }, [closeEditor, deleteAssignmentMutation, editingId, toast]);
+
+  const footerActions = useMemo<FloatingActionItem[]>(() => {
+    if (!isCreating && !isEditing) return [];
+
+    const canSave = isCreating ? canCreate : canUpdate;
+    return [
+      {
+        key: "save-assignment",
+        label: isEditing ? "Lưu phân công" : "Thêm phân công",
+        accessibilityLabel: isEditing ? "Lưu phân công" : "Thêm phân công",
+        variant: "primary",
+        disabled: !canSave,
+        loading: busy,
+        onPress: () => saveAssignmentRef.current(),
+      },
+      ...(isEditing && canEnd
+        ? [
+            {
+              key: "delete-assignment",
+              label: "",
+              accessibilityLabel: "Xóa phân công",
+              variant: "ghost" as const,
+              disabled: busy || detailQuery.isLoading,
+              flex: 0,
+              style: styles.deleteButton,
+              icon: <AppIcon icon={<Trash6 />} size={24} color={Colors.light.error} />,
+              onPress: () => setDeleteConfirmationVisible(true),
+            },
+          ]
+        : []),
+    ];
+  }, [busy, canCreate, canEnd, canUpdate, detailQuery.isLoading, isCreating, isEditing]);
+
+  useEffect(() => {
+    onFooterActionsChange?.(footerActions);
+  }, [footerActions, onFooterActionsChange]);
+
+  useEffect(
+    () => () => onFooterActionsChange?.([]),
+    [onFooterActionsChange],
+  );
 
   if (!canRead && !canCreate && !canUpdate && !canEnd) {
     return <ThemedText type="bodySmall" style={styles.message}>Bạn không có quyền xem phân công nhân sự.</ThemedText>;
@@ -249,7 +298,6 @@ export function CourseScheduleStaffAssignmentsSection({
     );
   }
 
-  const canSave = isCreating ? canCreate : canUpdate;
   return (
     <View style={styles.container}>
       <View style={styles.headerRow}>
@@ -303,10 +351,6 @@ export function CourseScheduleStaffAssignmentsSection({
         <View style={styles.chips}>{assignmentStatuses.map((status) => <AdminChip key={status} label={CourseStaffAssignmentStatusLabel[status]} selected={assignmentStatus === status} onPress={busy ? undefined : () => setAssignmentStatus(status)} />)}</View>
       </View>
       <AdminField label="Ghi chú" value={note} placeholder="Không bắt buộc" editable={!busy} multiline onChangeText={setNote} />
-      <View style={styles.actions}>
-        {canSave ? <AdminButton label={isEditing ? "Lưu phân công" : "Thêm phân công"} loading={busy} onPress={() => void save()} style={styles.actionButton} /> : null}
-        {isEditing && canEnd ? <Pressable accessibilityRole="button" accessibilityLabel="Xóa phân công" accessibilityState={{ disabled: busy || detailQuery.isLoading }} disabled={busy || detailQuery.isLoading} hitSlop={8} onPress={() => setDeleteConfirmationVisible(true)} style={({ pressed }) => [styles.deleteButton, pressed && styles.pressed, (busy || detailQuery.isLoading) && styles.deleteButtonDisabled]}><AppIcon icon={<Trash6 />} size={24} color={Colors.light.error} /></Pressable> : null}
-      </View>
       <ConfirmationDialog visible={deleteConfirmationVisible} title="Xóa phân công" description="Bạn có chắc chắn muốn xóa vĩnh viễn phân công này không? Thao tác không thể hoàn tác." confirmLabel="Xóa" cancelLabel="Hủy" confirmVariant="danger" pending={deleteAssignmentMutation.isPending} onCancel={() => setDeleteConfirmationVisible(false)} onConfirm={() => void deleteAssignment()} />
     </View>
   );
@@ -336,8 +380,6 @@ const styles = StyleSheet.create({
   selectedPersonRow: { minHeight: 68, flexDirection: "row", alignItems: "center", gap: Spacing.two, padding: 12, borderWidth: StyleSheet.hairlineWidth, borderColor: Colors.light.primary, borderRadius: radii.md, backgroundColor: Colors.light.primarySoft, borderCurve: "continuous" },
   selectedPersonInfo: { flex: 1, minWidth: 0, gap: 2 },
   chips: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
-  actions: { flexDirection: "row", gap: Spacing.two },
-  actionButton: { flex: 1 },
   deleteButton: { width: 44, height: 44, alignItems: "center", justifyContent: "center", borderRadius: radii.md, borderWidth: StyleSheet.hairlineWidth, borderColor: Colors.light.divider, backgroundColor: Colors.light.surface, borderCurve: "continuous" },
   deleteButtonDisabled: { opacity: 0.5 },
   error: { color: Colors.light.error },

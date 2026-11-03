@@ -39,39 +39,32 @@ export function TrainingPlanConfigurationDetailSheet({
       overlay={overlay}
       footer={
         selection ? (
-          <View style={styles.footerActions}>
-            <FloatingActionBar
-              compact
-              minBottomInset={0}
-              includeBottomSafeArea={false}
-              paddingHorizontal={0}
-              paddingTop={0}
-              backgroundColor="transparent"
-              actions={[
-                {
-                  label: "Chỉnh sửa",
-                  variant: "outline",
-                  accessibilityLabel: "Chỉnh sửa",
-                  onPress: onEdit,
-                },
-                {
-                  label: "",
-                  variant: "outline",
-                  accessibilityLabel: "Xóa",
-                  onPress: onDelete,
-                  flex: 0,
-                  style: styles.delete,
-                  icon: (
-                    <AppIcon
-                      icon={<Trash6 />}
-                      size={30}
-                      color={Colors.light.error}
-                    />
-                  ),
-                },
-              ]}
-            />
-          </View>
+          <FloatingActionBar
+            placement="sheet"
+            actions={[
+              {
+                label: "Chỉnh sửa",
+                variant: "outline",
+                accessibilityLabel: "Chỉnh sửa",
+                onPress: onEdit,
+              },
+              {
+                label: "",
+                variant: "outline",
+                accessibilityLabel: "Xóa",
+                onPress: onDelete,
+                flex: 0,
+                style: styles.delete,
+                icon: (
+                  <AppIcon
+                    icon={<Trash6 />}
+                    size={30}
+                    color={Colors.light.error}
+                  />
+                ),
+              },
+            ]}
+          />
         ) : undefined
       }
     >
@@ -142,9 +135,6 @@ function formatMoney(value: number) {
 }
 const styles = StyleSheet.create({
   content: {},
-  // FloatingActionBar is absolutely positioned, so its sheet footer needs a
-  // measured hit area instead of relying on the visual overflow of the bar.
-  footerActions: { height: 54 },
   row: {
     minHeight: 48,
     flexDirection: "row",

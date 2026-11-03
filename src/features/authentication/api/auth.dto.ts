@@ -23,6 +23,12 @@ export type SwitchContextRequest = {
   userPersonId: string;
 };
 
+export type PasswordResetChannel = 'APP' | 'EMAIL';
+export type PasswordResetEmail = { userPersonId: string; maskedEmail: string };
+export type PasswordResetOptions = { requestId: string; appAvailable: boolean; emails: PasswordResetEmail[] };
+export type RecoveryEmail = { userPersonId: string; maskedEmail: string; verified: boolean };
+export type OtpDelivery = { resendAvailableAt: string; expiresAt: string };
+
 export type AuthResponse = {
   accessToken?: string;
   refreshToken?: string;

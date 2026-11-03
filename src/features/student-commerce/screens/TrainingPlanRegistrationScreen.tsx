@@ -893,7 +893,7 @@ function ScheduleSheet({
       onClose={onClose}
       footer={
         <FloatingActionBar
-          backgroundColor={Colors.light.surface}
+          placement="sheet"
           actions={[
             {
               label: full

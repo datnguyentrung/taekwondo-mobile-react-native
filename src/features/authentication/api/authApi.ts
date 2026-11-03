@@ -10,6 +10,10 @@ import type {
   MobileAuthResponse,
   RefreshRequest,
   SwitchContextRequest,
+  PasswordResetChannel,
+  PasswordResetOptions,
+  RecoveryEmail,
+  OtpDelivery,
 } from './auth.dto';
 
 export const authApi = {
@@ -62,5 +66,34 @@ export const authApi = {
   async getSessions(): Promise<AuthSession[]> {
     const response = await javaApi.get<AuthSession[]>('/auth/sessions');
     return response.data;
+  },
+  async passwordResetOptions(phoneNumber: string): Promise<PasswordResetOptions> {
+    const response = await javaApi.post<PasswordResetOptions>('/auth/password-reset/options', { phoneNumber });
+    return response.data;
+  },
+  async sendPasswordResetCode(requestId: string, channel: PasswordResetChannel, userPersonId?: string): Promise<OtpDelivery> {
+    const response = await javaApi.post<OtpDelivery>('/auth/password-reset/send', { requestId, channel, userPersonId });
+    return response.data;
+  },
+  async verifyPasswordResetCode(requestId: string, code: string): Promise<{ resetToken: string }> {
+    const response = await javaApi.post<{ resetToken: string }>('/auth/password-reset/verify', { requestId, code });
+    return response.data;
+  },
+  async completePasswordReset(resetToken: string, newPassword: string, confirmPassword: string): Promise<void> {
+    await javaApi.post('/auth/password-reset/complete', { resetToken, newPassword, confirmPassword });
+  },
+  async changePassword(oldPassword: string, newPassword: string, confirmPassword: string): Promise<void> {
+    await javaApi.post('/auth/change-password', { oldPassword, newPassword, confirmPassword });
+  },
+  async recoveryEmails(): Promise<RecoveryEmail[]> {
+    const response = await javaApi.get<RecoveryEmail[]>('/auth/recovery-emails');
+    return response.data;
+  },
+  async sendRecoveryEmailVerification(userPersonId: string): Promise<OtpDelivery> {
+    const response = await javaApi.post<OtpDelivery>(`/auth/recovery-emails/${userPersonId}/send`);
+    return response.data;
+  },
+  async verifyRecoveryEmail(userPersonId: string, code: string): Promise<void> {
+    await javaApi.post(`/auth/recovery-emails/${userPersonId}/verify`, { code });
   },
 };

@@ -1,4 +1,5 @@
 import { useEffect } from 'react';
+import { Alert } from 'react-native';
 
 import { useNotificationStore } from '@/features/notification/store/notification.store';
 import { notificationService } from '@/infrastructure/notifications/notificationService';
@@ -33,7 +34,11 @@ export function useAuthenticationRuntime(): void {
       void authSessionService.syncFcm(false).catch(() => undefined);
     });
     const unsubscribeMessages =
-      notificationService.subscribeToForegroundMessages(() => {
+      notificationService.subscribeToForegroundMessages((message) => {
+        if (message.type === 'PASSWORD_RESET_CODE' && message.code) {
+          Alert.alert('Mã đặt lại mật khẩu', `Mã OTP của bạn là ${message.code}. Mã có hiệu lực trong 5 phút.`);
+          return;
+        }
         useNotificationStore.getState().incrementUnread();
       });
 

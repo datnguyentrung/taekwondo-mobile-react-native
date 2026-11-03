@@ -134,11 +134,7 @@ export function CoursePriceDetailWindow({
       footer={
         footerActions.length > 0 && coursePrice ? (
           <FloatingActionBar
-            minBottomInset={0}
-            includeBottomSafeArea={false}
-            paddingHorizontal={0}
-            paddingTop={0}
-            backgroundColor="transparent"
+            placement="sheet"
             actions={footerActions}
           />
         ) : undefined

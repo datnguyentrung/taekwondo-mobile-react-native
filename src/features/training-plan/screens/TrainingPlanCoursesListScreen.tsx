@@ -355,17 +355,7 @@ function DetailSheet({
       onClose={onClose}
       overlay={overlay}
       footer={
-        <View style={styles.detailFooterActions}>
-          <FloatingActionBar
-            compact
-            includeBottomSafeArea={false}
-            paddingHorizontal={0}
-            paddingTop={0}
-            minBottomInset={0}
-            backgroundColor="transparent"
-            actions={actions}
-          />
-        </View>
+        <FloatingActionBar placement="sheet" actions={actions} />
       }
     >
       {rule ? (
@@ -427,27 +417,20 @@ function EditorSheet({
         />
       }
       footer={
-        <View style={styles.editorFooterActions}>
-          <FloatingActionBar
-            compact
-            includeBottomSafeArea={false}
-            paddingHorizontal={0}
-            paddingTop={0}
-            minBottomInset={0}
-            backgroundColor="transparent"
-            actions={[
-              {
-                label: editing ? "Lưu thay đổi" : "Tạo mới",
-                accessibilityLabel: editing
-                  ? "Lưu thay đổi khóa học áp dụng"
-                  : "Tạo khóa học áp dụng",
-                variant: "primary",
-                loading: submitting,
-                onPress: onSubmit,
-              },
-            ]}
-          />
-        </View>
+        <FloatingActionBar
+          placement="sheet"
+          actions={[
+            {
+              label: editing ? "Lưu thay đổi" : "Tạo mới",
+              accessibilityLabel: editing
+                ? "Lưu thay đổi khóa học áp dụng"
+                : "Tạo khóa học áp dụng",
+              variant: "primary",
+              loading: submitting,
+              onPress: onSubmit,
+            },
+          ]}
+        />
       }
     >
       <View style={styles.editor}>
@@ -557,8 +540,6 @@ const styles = StyleSheet.create({
     borderBottomColor: Colors.light.divider,
   },
   detailValue: { flex: 1, textAlign: "right", color: Colors.light.text },
-  detailFooterActions: { height: 48 },
-  editorFooterActions: { height: 48 },
   delete: {
     width: 44,
     minWidth: 44,

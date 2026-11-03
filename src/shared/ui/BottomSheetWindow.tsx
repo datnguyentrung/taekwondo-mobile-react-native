@@ -352,9 +352,10 @@ const styles = StyleSheet.create({
     transform: [{ rotate: "45deg" }],
   },
   body: {
-    flexShrink: 1,
+    flex: 1,
   },
   scrollContent: {
+    flexGrow: 1,
     paddingTop: 8,
     paddingBottom: 20,
   },
