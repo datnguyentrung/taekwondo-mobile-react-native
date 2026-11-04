@@ -1,6 +1,6 @@
 # React Native Project Structure v2
 
-> Trạng thái: nguồn chuẩn hiện hành cho Expo SDK 57, React Native 0.86 và Expo Router 57.
+> Trạng thái: nguồn chuẩn hiện hành cho Expo SDK 58, React Native 0.88 và Expo Router 58.
 >
 > Bản v1 được giữ làm tài liệu lịch sử. Khi hai bản khác nhau, áp dụng v2.
 

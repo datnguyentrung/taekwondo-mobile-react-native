@@ -10,9 +10,9 @@ the v1 historical reference.
 
 ## Expo HAS CHANGED
 
-Read the exact versioned docs at https://docs.expo.dev/versions/v57.0.0/ before writing any code.
+Read the exact versioned docs at https://docs.expo.dev/versions/v58.0.0/ before writing any code.
 
-This repository currently targets Expo SDK 57 (package.json: expo ~57.0.21), React Native 0.86.x, React 19.2.x, Expo Router ~57.0.x and Reanimated 4.x. Do not answer from older Expo conventions when the versioned docs disagree.
+This repository currently targets Expo SDK 58 (package.json: expo ^58.0.19), React Native 0.88.x, React 19.3.x, Expo Router ~58.0.x and Reanimated 4.x. Do not answer from older Expo conventions when the versioned docs disagree.
 
 ## Mandatory UI references
 

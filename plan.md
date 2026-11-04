@@ -107,7 +107,7 @@ Hành vi:
 ### Phase C — Sửa back navigation an toàn
 
 1. Không render nút back chỉ vì `activeContext !== null`.
-2. Chỉ cho phép back ở mode `switch` và khi navigator có history hợp lệ (`router.canGoBack()` hoặc contract tương đương của Expo Router SDK 57).
+2. Chỉ cho phép back ở mode `switch` và khi navigator có history hợp lệ (`router.canGoBack()` hoặc contract tương đương của Expo Router SDK 58).
 3. Nếu mode `switch` nhưng history không tồn tại do deep-link/restore, fallback phải là `router.replace('/(app)')`, không gọi `router.back()` mù.
 4. Với mode `mandatory`, tuyệt đối không cho quay về Login sau khi auth đã thành công; logout phải là action rõ ràng riêng nếu sản phẩm cần.
 
