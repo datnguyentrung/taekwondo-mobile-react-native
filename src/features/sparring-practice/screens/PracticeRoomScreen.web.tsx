@@ -1,5 +1,5 @@
-import { useEffect, useRef, useState } from 'react';
-import { Pressable, StyleSheet, TextInput, View } from 'react-native';
+import { useEffect, useState } from 'react';
+import { Pressable, StyleSheet, View } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
 import { VideoView, useVideoPlayer } from 'expo-video';
 import { ThemedText } from '@/shared/ui/ThemedText';
@@ -9,8 +9,12 @@ import { usePracticeRoom } from '../hooks/usePracticeRoom';
 
 export function PracticeRoomScreen() {
   const { roomCode: raw } = useLocalSearchParams<{ roomCode: string }>(); const roomCode=Array.isArray(raw)?raw[0]:raw??'';
-  const { snapshot, operator, error, send }=usePracticeRoom(roomCode); const player=useVideoPlayer(snapshot.videoUrl ?? null, p=>{p.loop=false;}); const [uploading,setUploading]=useState(false); const [uploadError,setUploadError]=useState<string|null>(null);
-  useEffect(()=>{ if(snapshot.status==='RUNNING'){player.currentTime=snapshot.mediaOffsetMs/1000;player.play();}else{player.pause();player.currentTime=snapshot.mediaOffsetMs/1000;} },[player,snapshot.mediaOffsetMs,snapshot.status]);
+  const { snapshot, operator, error, send }=usePracticeRoom(roomCode, 'operator'); const player=useVideoPlayer(snapshot.videoUrl ?? null, p=>{p.loop=false;}); const [uploading,setUploading]=useState(false); const [uploadError,setUploadError]=useState<string|null>(null);
+  useEffect(()=>{ if(snapshot.status==='RUNNING'){
+    // expo-video exposes playback position through an imperative controller.
+    // eslint-disable-next-line react-hooks/immutability
+    player.currentTime=snapshot.mediaOffsetMs/1000;player.play();
+  }else{player.pause();player.currentTime=snapshot.mediaOffsetMs/1000;} },[player,snapshot.mediaOffsetMs,snapshot.status]);
   const upload=async()=>{ const input=document.createElement('input'); input.type='file'; input.accept='video/mp4'; input.onchange=async()=>{ const file=input.files?.[0]; const probe=document.createElement('video'); if(!file)return; if(file.type!=='video/mp4'||!probe.canPlayType(file.type)||file.size>524_288_000){setUploadError('Chỉ nhận video MP4 có thể phát trên trình duyệt, tối đa 500 MB.');return;} setUploading(true);setUploadError(null); try { const grant=await practiceApi.uploadUrl(roomCode); const response=await fetch(grant.uploadUrl,{method:'PUT',headers:{'content-type':'video/mp4'},body:file}); if(!response.ok)throw new Error('storage-upload-failed'); await practiceApi.uploadComplete(roomCode,grant.objectPath); } catch { setUploadError('Không thể tải video. Kiểm tra bucket Supabase private "sparring-practice-videos" và cấu hình backend.'); } finally { setUploading(false); } }; input.click(); };
   const countdown = snapshot.status==='COUNTDOWN' ? 'Đang đếm 3 · 2 · 1' : snapshot.status;
   return <View style={styles.page}><View style={styles.header}><ThemedText style={styles.title}>TẬP LÀM TRỌNG TÀI · PHÒNG {roomCode}</ThemedText><ThemedText style={styles.status}>{countdown}</ThemedText></View>
