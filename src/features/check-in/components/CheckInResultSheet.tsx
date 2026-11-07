@@ -1,15 +1,17 @@
 import { AppIcon } from "@/shared/ui/AppIcon";
 import { BottomSheetWindow } from "@/shared/ui/BottomSheetWindow";
+import { FloatingActionBar } from "@/shared/ui/FloatingActionBar";
 import { ThemedText } from "@/shared/ui/ThemedText";
 import { Colors, radii } from "@/theme";
 import { memo } from "react";
-import { ActivityIndicator, Image, Pressable, StyleSheet, View } from "react-native";
+import { ActivityIndicator, Image, StyleSheet, View } from "react-native";
 import { CheckCircle, ChevronRight, Clock, X, XCircle } from "reicon-react-native";
 import type { CheckInFailure, CheckInRecord } from "../types/faceScanner.types";
 
 type CheckInResultSheetProps = {
   visible: boolean;
   isPending?: boolean;
+  progressMessage?: string;
   record: CheckInRecord | null;
   failure?: CheckInFailure | null;
   onNextScan: () => void;
@@ -20,6 +22,7 @@ type CheckInResultSheetProps = {
 function CheckInResultSheetComponent({
   visible,
   isPending = false,
+  progressMessage = 'Đang đối chiếu dữ liệu...',
   record,
   failure,
   onNextScan,
@@ -40,8 +43,24 @@ function CheckInResultSheetComponent({
       <BottomSheetWindow
         visible={visible}
         title="Đang xử lý điểm danh..."
-        heightRatio={record ? 0.58 : 0.45}
         onClose={onCancel || onClose}
+        footer={
+          <FloatingActionBar
+            placement="sheet"
+            actions={[
+              {
+                key: "cancel-check-in",
+                label: "Hủy thao tác",
+                accessibilityLabel: "Hủy thao tác điểm danh",
+                onPress: onCancel || onClose,
+                variant: "outline",
+                icon: (
+                  <AppIcon icon={<X />} size={18} color={Colors.light.primary} />
+                ),
+              },
+            ]}
+          />
+        }
       >
         <View style={styles.content}>
           {/* Status row with spinner */}
@@ -49,7 +68,7 @@ function CheckInResultSheetComponent({
             <View style={styles.pendingIconWrapper}>
               <ActivityIndicator size="small" color={Colors.light.primary} />
               <ThemedText type="heading" style={styles.pendingTitle}>
-                Đang đối chiếu dữ liệu...
+                {progressMessage}
               </ThemedText>
             </View>
             <ThemedText type="caption" style={styles.timeAgo}>
@@ -116,26 +135,11 @@ function CheckInResultSheetComponent({
           ) : (
             <View style={styles.pendingNoticeCard}>
               <ThemedText type="bodySmall" style={styles.pendingNoticeText}>
-                Hệ thống đang ghi nhận và xử lý điểm danh trong nền...
+                {progressMessage}
               </ThemedText>
             </View>
           )}
 
-          {/* Action: Cancel Button */}
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel="Hủy"
-            onPress={onCancel || onClose}
-            style={({ pressed }) => [
-              styles.cancelPendingButton,
-              pressed ? styles.pressed : null,
-            ]}
-          >
-            <AppIcon icon={<X />} size={18} color={Colors.light.textSecondary} />
-            <ThemedText type="heading" style={styles.cancelPendingButtonText}>
-              Hủy thao tác
-            </ThemedText>
-          </Pressable>
         </View>
       </BottomSheetWindow>
     );
@@ -153,8 +157,28 @@ function CheckInResultSheetComponent({
       <BottomSheetWindow
         visible={visible}
         title={failure.title}
-        heightRatio={record ? 0.60 : 0.48}
         onClose={onClose}
+        footer={
+          <FloatingActionBar
+            placement="sheet"
+            actions={[
+              {
+                key: "scan-next-person",
+                label: failure.ctaLabel,
+                accessibilityLabel: failure.ctaLabel,
+                onPress: onNextScan,
+                variant: "primary",
+                icon: (
+                  <AppIcon
+                    icon={<ChevronRight />}
+                    size={18}
+                    color={Colors.light.surface}
+                  />
+                ),
+              },
+            ]}
+          />
+        }
       >
         <View style={styles.content}>
           <View style={styles.failureHeader}>
@@ -231,24 +255,6 @@ function CheckInResultSheetComponent({
             ) : null}
           </View>
 
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel={failure.ctaLabel}
-            onPress={onNextScan}
-            style={({ pressed }) => [
-              styles.nextButton,
-              pressed ? styles.pressed : null,
-            ]}
-          >
-            <AppIcon
-              icon={<ChevronRight />}
-              size={18}
-              color={Colors.light.surface}
-            />
-            <ThemedText type="heading" style={styles.nextButtonText}>
-              {failure.ctaLabel}
-            </ThemedText>
-          </Pressable>
         </View>
       </BottomSheetWindow>
     );
@@ -275,8 +281,28 @@ function CheckInResultSheetComponent({
     <BottomSheetWindow
       visible={visible}
       title={sheetTitle}
-      heightRatio={0.56}
       onClose={onClose}
+      footer={
+        <FloatingActionBar
+          placement="sheet"
+          actions={[
+            {
+              key: "scan-next-person",
+              label: "Quét người tiếp theo",
+              accessibilityLabel: "Quét người tiếp theo",
+              onPress: onNextScan,
+              variant: "primary",
+              icon: (
+                <AppIcon
+                  icon={<ChevronRight />}
+                  size={18}
+                  color={Colors.light.surface}
+                />
+              ),
+            },
+          ]}
+        />
+      }
     >
       <View style={styles.content}>
         {/* Status banner */}
@@ -394,25 +420,6 @@ function CheckInResultSheetComponent({
           </View>
         </View>
 
-        {/* Main CTA: Quét người tiếp theo */}
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel="Quét người tiếp theo"
-          onPress={onNextScan}
-          style={({ pressed }) => [
-            styles.nextButton,
-            pressed ? styles.pressed : null,
-          ]}
-        >
-          <AppIcon
-            icon={<ChevronRight />}
-            size={18}
-            color={Colors.light.surface}
-          />
-          <ThemedText type="heading" style={styles.nextButtonText}>
-            Quét người tiếp theo
-          </ThemedText>
-        </Pressable>
       </View>
     </BottomSheetWindow>
   );
@@ -448,21 +455,6 @@ const styles = StyleSheet.create({
   pendingNoticeText: {
     color: Colors.light.textSecondary,
     textAlign: "center",
-  },
-  cancelPendingButton: {
-    backgroundColor: "#F3F4F6",
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    paddingVertical: 14,
-    borderRadius: radii.md,
-    gap: 8,
-    marginTop: 4,
-  },
-  cancelPendingButtonText: {
-    color: Colors.light.textSecondary,
-    fontSize: 15,
-    fontWeight: "600",
   },
   successIconWrapper: {
     flexDirection: "row",
@@ -573,25 +565,6 @@ const styles = StyleSheet.create({
   },
   statusTagWarningText: {
     color: "#B45309",
-  },
-  nextButton: {
-    backgroundColor: Colors.light.primary,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    paddingVertical: 14,
-    borderRadius: radii.md,
-    gap: 8,
-    marginTop: 4,
-  },
-  nextButtonText: {
-    color: Colors.light.surface,
-    fontSize: 15,
-    fontWeight: "700",
-  },
-  pressed: {
-    opacity: 0.75,
-    transform: [{ scale: 0.98 }],
   },
   confidenceText: {
     color: Colors.light.textSecondary,

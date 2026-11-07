@@ -1,15 +1,15 @@
 import { javaApi } from '@/infrastructure/http/httpClient';
-import type { MobileUploadFile } from '@/infrastructure/http/http.types';
-import { createFileMultipartFormData } from '@/infrastructure/http/multipart';
+import { env } from '@/config/env';
+import { File } from 'expo-file-system';
+import { fetch as expoFetch } from 'expo/fetch';
 import { isAxiosError } from 'axios';
 import type {
-  AttendanceCommandApiResult,
   BackendFaceCheckInResponse,
-  CheckInApiResult,
   CheckInFailure,
   CheckInPersonType,
   CheckInRecord,
   CheckInStatus,
+  FaceCheckInRegistration,
 } from '../types/faceScanner.types';
 
 type BackendProblemDetail = {
@@ -21,6 +21,10 @@ type BackendProblemDetail = {
   message?: string;
   errorCode?: string;
 };
+
+function describeError(error: unknown): string {
+  return error instanceof Error ? `${error.name}: ${error.message}` : String(error);
+}
 
 function formatCheckInTime(checkInTime?: string | null, checkOutTime?: string | null): string {
   if (checkInTime) {
@@ -233,7 +237,7 @@ function errorCopy(
   }
 }
 
-function failureFromBackend(status: number | undefined, data: unknown): CheckInFailure {
+export function failureFromBackend(status: number | undefined, data: unknown): CheckInFailure {
   const backend = normalizeBackendError(data);
   const code = backend.code || backend.errorCode;
   const copy = errorCopy(code, status, backend);
@@ -243,7 +247,7 @@ function failureFromBackend(status: number | undefined, data: unknown): CheckInF
   };
 }
 
-function failureFromFaceCheckInResponse(raw: BackendFaceCheckInResponse): CheckInFailure {
+export function failureFromFaceCheckInResponse(raw: BackendFaceCheckInResponse): CheckInFailure {
   const backend: BackendProblemDetail = {
     code: raw.error?.code ?? undefined,
     title: raw.error?.title ?? undefined,
@@ -255,7 +259,7 @@ function failureFromFaceCheckInResponse(raw: BackendFaceCheckInResponse): CheckI
   };
 }
 
-function networkFailure(): CheckInFailure {
+export function networkFailure(): CheckInFailure {
   return {
     errorType: 'NETWORK_ERROR',
     title: 'Không kết nối được máy chủ',
@@ -265,6 +269,13 @@ function networkFailure(): CheckInFailure {
 }
 
 export function mapBackendResponseToRecord(raw: BackendFaceCheckInResponse): CheckInRecord {
+  if (
+    !raw.person?.personId ||
+    !raw.person.fullName ||
+    !raw.person.personCode
+  ) {
+    throw new Error('Face check-in terminal result is missing recognized person data');
+  }
   const role = inferRole(raw.action, raw.person?.personCode);
   const { status, statusLabel } = mapStatusAndLabel(
     raw.status,
@@ -274,9 +285,9 @@ export function mapBackendResponseToRecord(raw: BackendFaceCheckInResponse): Che
 
   return {
     id: raw.recordId || `rec-${Date.now()}`,
-    personId: raw.person?.personId || `p-${Date.now()}`,
-    code: raw.person?.personCode || (role === 'STUDENT' ? 'HV00001' : 'NV00001'),
-    fullName: raw.person?.fullName || 'Người dùng',
+    personId: raw.person.personId,
+    code: raw.person.personCode,
+    fullName: raw.person.fullName,
     avatarUrl: raw.person?.faceImagePath || undefined,
     role,
     status,
@@ -295,167 +306,93 @@ export function mapBackendResponseToRecord(raw: BackendFaceCheckInResponse): Che
 }
 
 export const faceCheckInApi = {
-  /**
-   * Upload captured face photo to Backend FaceCheckInController: POST /training/face-check-in
-   */
-  async submitFaceCheckIn(photoFilePath: string): Promise<CheckInApiResult> {
-    const file: MobileUploadFile = {
-      uri: photoFilePath.startsWith('file://') ? photoFilePath : `file://${photoFilePath}`,
-      name: 'face.jpg',
-      type: 'image/jpeg',
-    };
-
-    const formData = createFileMultipartFormData(file, 'file');
-
-    console.log('[FaceCheckInApi] 📡 Đang gửi ảnh lên Backend API: POST /training/face-check-in', { uri: file.uri });
-
-    try {
-      const response = await javaApi.post<BackendFaceCheckInResponse>(
-        '/training/face-check-in',
-        formData,
-        {
-          headers: {
-            'Content-Type': 'multipart/form-data',
-          },
-        },
-      );
-
-      console.log('[FaceCheckInApi] 📥 Nhận phản hồi HTTP', response.status, response.data);
-
-      const raw = response.data;
-      const record = mapBackendResponseToRecord(raw);
-
-      // Async flow: status is PENDING with requestId
-      if (raw.status === 'PENDING') {
-        return {
-          success: true,
-          isPending: true,
-          requestId: raw.requestId || undefined,
-          record,
-        };
-      }
-
-      if (raw.status === 'REJECTED' || raw.status === 'FAILED' || raw.status === 'EXPIRED') {
-        const failure = failureFromFaceCheckInResponse(raw);
-        return {
-          success: false,
-          record,
-          failure,
-          errorType: failure.errorType,
-          errorMessage: failure.message,
-        };
-      }
-
-      return {
-        success: true,
-        isPending: false,
-        record,
-      };
-    } catch (error) {
-      if (isAxiosError(error)) {
-        const status = error.response?.status;
-        const responseData = error.response?.data;
-
-        console.warn('[FaceCheckInApi] ⚠️ Backend trả về mã lỗi HTTP', status, responseData);
-
-        const failure = error.response
-          ? failureFromBackend(status, responseData)
-          : networkFailure();
-        return {
-          success: false,
-          failure,
-          errorType: failure.errorType,
-          errorMessage: failure.message,
-        };
-      }
-
-      console.warn('[FaceCheckInApi] ⚠️ Lỗi không xác định khi gọi API điểm danh', error);
-      const failure = networkFailure();
-      return {
-        success: false,
-        failure,
-        errorType: failure.errorType,
-        errorMessage: failure.message,
-      };
-    }
+  async registerScan(
+    requestId: string,
+    deviceId: string,
+  ): Promise<FaceCheckInRegistration> {
+    const response = await javaApi.post<FaceCheckInRegistration>(
+      '/training/face-check-in-scans',
+      { requestId, deviceId },
+    );
+    return response.data;
   },
 
-  /**
-   * Poll face check-in request status: GET /training/face-check-ins/{requestId}
-   */
-  async getAttendanceCommand(requestId: string): Promise<AttendanceCommandApiResult> {
+  async uploadPhotoToFog(
+    photoFilePath: string,
+    registration: FaceCheckInRegistration,
+    signal: AbortSignal,
+  ): Promise<void> {
+    const photoUri = photoFilePath.startsWith('file://')
+      ? photoFilePath
+      : `file://${photoFilePath}`;
+    const formData = new FormData();
+    formData.append('file', new File(photoUri));
+    formData.append('requestId', registration.requestId);
+    formData.append('deviceId', registration.deviceId);
+    formData.append('uploadTicket', registration.uploadTicket);
+
+    const url = `${env.fogApiUrl}/face-check-in-scans`;
+    console.log('[FaceCheckIn] uploading photo to Fog', {
+      requestId: registration.requestId,
+      deviceId: registration.deviceId,
+      url,
+    });
+    let response: Response;
     try {
-      const response = await javaApi.get<BackendFaceCheckInResponse>(
-        `/training/face-check-ins/${requestId}`,
-      );
-
-      const raw = response.data;
-      console.log('[FaceCheckInApi] 📥 Poll face check-in', requestId, raw.status);
-
-      if (raw.status === 'SUCCESS') {
-        const record = mapBackendResponseToRecord(raw);
-        return {
-          success: true,
-          isPending: false,
-          status: 'SUCCEEDED',
-          requestId,
-          record,
-        };
-      }
-
-      if (raw.status === 'REJECTED' || raw.status === 'FAILED' || raw.status === 'EXPIRED') {
-        const record = mapBackendResponseToRecord(raw);
-        const failure = failureFromFaceCheckInResponse(raw);
-        return {
-          success: false,
-          isPending: false,
-          status: raw.status,
-          requestId,
-          record,
-          failure,
-          errorType: failure.errorType,
-          errorMessage: failure.message,
-        };
-      }
-
-      // PENDING or PROCESSING
-      return {
-        success: true,
-        isPending: true,
-        status: raw.status,
-        requestId,
-      };
+      response = await expoFetch(url, {
+        method: 'POST',
+        body: formData,
+        signal,
+        headers: { Accept: 'application/json' },
+      });
     } catch (error) {
-      if (isAxiosError(error)) {
-        if (!error.response) {
-          throw error;
-        }
-
-        const status = error.response?.status;
-        const responseData = error.response?.data;
-        const failure = failureFromBackend(status, responseData);
-
-        return {
-          success: false,
-          isPending: false,
-          status: 'FAILED',
-          requestId,
-          failure,
-          errorType: failure.errorType,
-          errorMessage: failure.message,
-        };
-      }
-
-      const failure = networkFailure();
-      return {
-        success: false,
-        isPending: false,
-        status: 'FAILED',
-        requestId,
-        failure,
-        errorType: failure.errorType,
-        errorMessage: failure.message,
-      };
+      console.error('[FaceCheckIn] Fog upload network failure', {
+        requestId: registration.requestId,
+        url,
+        error: describeError(error),
+      });
+      throw error;
     }
+    console.log('[FaceCheckIn] Fog upload response', {
+      requestId: registration.requestId,
+      status: response.status,
+      ok: response.ok,
+    });
+    if (response.ok) return;
+
+    let problem: unknown;
+    try {
+      problem = await response.json();
+    } catch {
+      problem = { detail: `Fog trả về HTTP ${response.status}` };
+    }
+    console.error('[FaceCheckIn] Fog upload rejected', {
+      requestId: registration.requestId,
+      status: response.status,
+      problem: normalizeBackendError(problem),
+    });
+    throw new FaceCheckInTransportError(
+      failureFromBackend(response.status, problem),
+    );
   },
 };
+
+export class FaceCheckInTransportError extends Error {
+  constructor(readonly failure: CheckInFailure) {
+    super(failure.message);
+    this.name = 'FaceCheckInTransportError';
+  }
+}
+
+export function toCheckInFailure(error: unknown): CheckInFailure {
+  if (error instanceof FaceCheckInTransportError) return error.failure;
+  if (isAxiosError(error)) {
+    return error.response
+      ? failureFromBackend(error.response.status, error.response.data)
+      : networkFailure();
+  }
+  return {
+    ...networkFailure(),
+    detail: describeError(error),
+  };
+}

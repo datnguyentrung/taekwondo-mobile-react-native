@@ -19,11 +19,13 @@ const STRONG_EASE_OUT = Easing.bezier(0.23, 1, 0.32, 1);
 
 export type CheckInProcessingBannerProps = {
   visible: boolean;
+  message?: string;
   onCancel: () => void;
 };
 
 function CheckInProcessingBannerComponent({
   visible,
+  message = 'Đang xử lý điểm danh...',
   onCancel,
 }: CheckInProcessingBannerProps) {
   const reducedMotion = useReducedMotion();
@@ -98,7 +100,7 @@ function CheckInProcessingBannerComponent({
       </Animated.View>
 
       <ThemedText type="bodySmall" style={styles.processingText}>
-        Đang xử lý điểm danh...
+        {message}
       </ThemedText>
 
       <Pressable

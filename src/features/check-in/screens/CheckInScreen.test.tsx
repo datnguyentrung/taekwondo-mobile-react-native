@@ -123,6 +123,7 @@ const sessionState = {
   currentResult: null,
   currentFailure: null,
   isPending: false,
+  progressMessage: "Đang khởi tạo lần quét...",
   sessionHistory: [],
   isResultSheetVisible: false,
   isHistorySheetVisible: false,

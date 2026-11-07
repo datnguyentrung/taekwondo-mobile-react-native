@@ -291,6 +291,7 @@ export default function CheckInScreen() {
 
         <CheckInProcessingBanner
           visible={isSubmittingOrProcessing}
+          message={session.progressMessage}
           onCancel={session.cancelCheckIn}
         />
 
@@ -361,6 +362,7 @@ export default function CheckInScreen() {
       <CheckInResultSheet
         visible={session.isResultSheetVisible}
         isPending={session.isPending}
+        progressMessage={session.progressMessage}
         record={session.currentResult}
         failure={session.currentFailure}
         onNextScan={session.handleNextScan}

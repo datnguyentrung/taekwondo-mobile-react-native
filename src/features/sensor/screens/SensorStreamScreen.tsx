@@ -6,6 +6,7 @@ import { ThemedText } from '@/shared/ui/ThemedText';
 import { Colors, Spacing, radii, typography, effects } from '@/theme';
 import { env } from '@/config/env';
 import { useMqttSubscription } from '@/infrastructure/mqtt';
+import { parseCheckInOpenCommand } from '../domain/checkInCommand';
 
 export function SensorStreamScreen() {
   const router = useRouter();
@@ -16,12 +17,18 @@ export function SensorStreamScreen() {
   const handleMessage = useCallback((message: { rawPayload: string }) => {
     setLastPayload(message.rawPayload);
     setLastUpdated(new Date().toLocaleTimeString());
+    const command = parseCheckInOpenCommand(
+      message.rawPayload,
+      env.kioskDeviceId,
+    );
+    if (!command) return;
+
     // One accepted sensor event starts one check-in flow. Stop listening first
     // so retained/repeated events cannot navigate repeatedly.
     setIsReceiving(false);
     router.push('/check-in' as Href);
   }, [router]);
-  useMqttSubscription(env.mqttDefaultTopic, handleMessage, isReceiving);
+  useMqttSubscription(env.mqttCommandTopic, handleMessage, isReceiving);
 
   return (
     <StackScreenLayout
@@ -62,7 +69,7 @@ export function SensorStreamScreen() {
           <ThemedText style={styles.statusText}>
             Topic:{' '}
             <ThemedText style={styles.highlightText}>
-              {env.mqttDefaultTopic ?? 'Chưa cấu hình'}
+              {env.mqttCommandTopic}
             </ThemedText>
           </ThemedText>
           <ThemedText style={styles.statusText}>
@@ -80,7 +87,7 @@ export function SensorStreamScreen() {
         </View>
 
         <ThemedText style={styles.hintText}>
-          * Dữ liệu được nhận từ topic MQTT chung đã cấu hình cho app.
+          * Chỉ lệnh mở điểm danh dành cho kiosk {env.kioskDeviceId} được chấp nhận.
         </ThemedText>
       </View>
     </StackScreenLayout>

@@ -140,11 +140,15 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   extra: {
     apiUrlJava:
       process.env.EXPO_PUBLIC_API_URL_JAVA ?? "http://localhost:8080/api/v1",
+    apiUrlFog:
+      process.env.EXPO_PUBLIC_API_URL_FOG ?? "http://localhost:8000",
+    kioskDeviceId: process.env.EXPO_PUBLIC_KIOSK_DEVICE_ID ?? "kiosk-01",
     // Mosquitto must expose MQTT over WebSocket. Leave these unset until a
     // broker endpoint and common topic are available for the environment.
     mqttEnabled: process.env.EXPO_PUBLIC_MQTT_ENABLED === "true",
     mqttBrokerUrl: process.env.EXPO_PUBLIC_MQTT_BROKER_URL ?? "",
     mqttDefaultTopic: process.env.EXPO_PUBLIC_MQTT_DEFAULT_TOPIC ?? "",
+    mqttCommandTopic: process.env.EXPO_PUBLIC_MQTT_COMMAND_TOPIC ?? "",
 
     router: {},
 

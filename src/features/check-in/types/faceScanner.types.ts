@@ -99,20 +99,32 @@ export interface BackendFaceCheckInResponse {
   } | null;
 }
 
-// --- Attendance Command Async Poll Types ---
-export type AttendanceCommandStatus =
-  | 'PENDING'
-  | 'QUEUED'
-  | 'PROCESSING'
+export type FaceCheckInStage =
+  | 'READY'
+  | 'IMAGE_RECEIVED'
+  | 'FACE_DETECTED'
+  | 'EMBEDDING_READY'
+  | 'MATCH_FOUND'
+  | 'ELIGIBILITY_CHECKED'
+  | 'ATTENDANCE_SAVED'
   | 'SUCCEEDED'
-  | 'SUCCESS'
   | 'REJECTED'
   | 'FAILED'
   | 'EXPIRED';
 
-export interface AttendanceCommandResponse {
+export interface FaceCheckInRegistration {
   requestId: string;
-  status: AttendanceCommandStatus;
+  deviceId: string;
+  uploadTicket: string;
+  expiresAt: string;
+}
+
+export interface FaceCheckInEvent {
+  eventId: number;
+  requestId: string;
+  deviceId: string;
+  stage: FaceCheckInStage;
+  occurredAt: string;
   result?: BackendFaceCheckInResponse | null;
   error?: {
     code?: string | null;
@@ -164,27 +176,6 @@ export type CheckInFailure = {
   detail?: string;
   correlationId?: string;
   ctaLabel: string;
-};
-
-export type CheckInApiResult = {
-  success: boolean;
-  isPending?: boolean;
-  requestId?: string;
-  record?: CheckInRecord;
-  failure?: CheckInFailure;
-  errorType?: CheckInErrorType;
-  errorMessage?: string;
-};
-
-export type AttendanceCommandApiResult = {
-  success: boolean;
-  isPending: boolean;
-  status: AttendanceCommandStatus;
-  requestId: string;
-  record?: CheckInRecord;
-  failure?: CheckInFailure;
-  errorType?: CheckInErrorType;
-  errorMessage?: string;
 };
 
 export type CameraFacing = 'front' | 'back';

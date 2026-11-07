@@ -19,10 +19,10 @@ export function useMqttRuntime(): void {
       return undefined;
     }
 
-    if (!env.mqttBrokerUrl || !env.mqttDefaultTopic) {
+    if (!env.mqttBrokerUrl) {
       if (__DEV__) {
         console.warn(
-          '[MQTT] Listener is disabled until mqttBrokerUrl and mqttDefaultTopic are configured.',
+          '[MQTT] Listener is disabled until mqttBrokerUrl is configured.',
         );
       }
       return undefined;
