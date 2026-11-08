@@ -196,8 +196,9 @@ function errorCopy(
         ctaLabel: 'Quét người khác',
       };
     case 'FACE_CHECK_IN_EXPIRED':
+    case 'EXPIRED':
       return {
-        errorType: 'UNKNOWN',
+        errorType: 'EXPIRED',
         title: 'Yêu cầu đã hết hạn',
         message: detail || 'Yêu cầu điểm danh đã hết thời gian xử lý. Vui lòng quét lại.',
         ctaLabel: 'Quét lại',
@@ -366,19 +367,23 @@ export const faceCheckInApi = {
     } catch {
       problem = { detail: `Fog trả về HTTP ${response.status}` };
     }
-    console.error('[FaceCheckIn] Fog upload rejected', {
+    console.warn('[FaceCheckIn] Fog upload rejected', {
       requestId: registration.requestId,
       status: response.status,
       problem: normalizeBackendError(problem),
     });
     throw new FaceCheckInTransportError(
       failureFromBackend(response.status, problem),
+      response.status,
     );
   },
 };
 
 export class FaceCheckInTransportError extends Error {
-  constructor(readonly failure: CheckInFailure) {
+  constructor(
+    readonly failure: CheckInFailure,
+    readonly status?: number,
+  ) {
     super(failure.message);
     this.name = 'FaceCheckInTransportError';
   }

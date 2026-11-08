@@ -2,6 +2,8 @@ import type { ClassSessionEvaluationResponse } from '../api/session-attendance.d
 
 export type AttendanceProgressStats = {
   totalStudents: number;
+  markedCount: number;
+  unmarkedCount: number;
   presentCount: number;
   absentCount: number;
   attendancePercent: number;
@@ -24,15 +26,24 @@ export function calculateAttendanceProgress(
       ? ['ABSENT', 'EXCUSED'].includes(attendance.attendanceStatus)
       : false,
   ).length;
-  const evaluatedCount = students.filter(
+  const markedCount = students.filter(({ attendance }) => Boolean(attendance)).length;
+  const unmarkedCount = totalStudents - markedCount;
+  const evaluableStudents = students.filter(({ attendance }) =>
+    attendance
+      ? ["PRESENT", "LATE", "MAKEUP"].includes(attendance.attendanceStatus)
+      : false,
+  );
+  const evaluatedCount = evaluableStudents.filter(
     ({ attendance }) =>
       Boolean(attendance?.evaluationStatus) &&
       attendance?.evaluationStatus !== 'PENDING',
   ).length;
-  const needEvaluationCount = presentCount || totalStudents;
+  const needEvaluationCount = evaluableStudents.length;
 
   return {
     totalStudents,
+    markedCount,
+    unmarkedCount,
     presentCount,
     absentCount,
     attendancePercent:

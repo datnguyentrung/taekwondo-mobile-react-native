@@ -1,4 +1,4 @@
-import { useContext, useEffect, useMemo } from "react";
+import { useCallback, useContext, useEffect, useMemo, useState } from "react";
 import type { StyleProp, ViewStyle } from "react-native";
 import {
   Modal,
@@ -34,6 +34,8 @@ import { ToastContext } from "./Toast/ToastProvider";
 export type BottomSheetWindowProps = {
   visible: boolean;
   title: string;
+  /** Keep the semantic title while showing only the close affordance. */
+  headerVariant?: "standard" | "close-only";
   /** Fixed height as a viewport ratio. Omit to size to content between 30% and 80% of the viewport. */
   heightRatio?: number;
   accessibilityLabel?: string;
@@ -57,6 +59,9 @@ function project(velocity: number, decelerationRate = 0.998) {
 
 const AUTO_HEIGHT_MIN_RATIO = 0.3;
 const AUTO_HEIGHT_MAX_RATIO = 0.8;
+const SHEET_BOTTOM_PADDING = 24;
+const STANDARD_HEADER_HEIGHT = 60;
+const CLOSE_ONLY_HEADER_HEIGHT = 52;
 
 function clampHeightRatio(heightRatio: number) {
   return Math.min(Math.max(heightRatio, 0.25), AUTO_HEIGHT_MAX_RATIO);
@@ -67,6 +72,7 @@ const ModalRootView = GestureHandlerRootView;
 export function BottomSheetWindow({
   visible,
   title,
+  headerVariant = "standard",
   heightRatio,
   accessibilityLabel,
   backdropAccessibilityLabel = "Đóng cửa sổ",
@@ -83,14 +89,29 @@ export function BottomSheetWindow({
   const toastContext = useContext(ToastContext);
   const reducedMotion = useReducedMotion();
   const { height } = useWindowDimensions();
+  const [contentHeight, setContentHeight] = useState(0);
   const sheetHeight = useSharedValue(Math.round(height * 0.5));
   const translateY = useSharedValue(Math.round(height * 0.5));
   const context = useSharedValue(0);
+  const isCloseOnlyHeader = headerVariant === "close-only";
+  const headerHeight = isCloseOnlyHeader
+    ? CLOSE_ONLY_HEADER_HEIGHT
+    : STANDARD_HEADER_HEIGHT;
+  const updateContentHeight = useCallback((nextHeight: number) => {
+    const roundedHeight = Math.ceil(nextHeight);
+    setContentHeight((currentHeight) =>
+      currentHeight === roundedHeight ? currentHeight : roundedHeight,
+    );
+  }, []);
   const sheetSizingStyle = useMemo(() => {
     if (!heightRatio) {
+      const minHeight = Math.round(height * AUTO_HEIGHT_MIN_RATIO);
+      const maxHeight = Math.round(height * AUTO_HEIGHT_MAX_RATIO);
+      const measuredHeight = headerHeight + contentHeight + SHEET_BOTTOM_PADDING;
       return {
-        minHeight: Math.round(height * AUTO_HEIGHT_MIN_RATIO),
-        maxHeight: Math.round(height * AUTO_HEIGHT_MAX_RATIO),
+        height: Math.min(Math.max(measuredHeight, minHeight), maxHeight),
+        minHeight,
+        maxHeight,
       };
     }
 
@@ -101,7 +122,7 @@ export function BottomSheetWindow({
       maxHeight: heightValue,
       minHeight: heightValue,
     };
-  }, [height, heightRatio]);
+  }, [contentHeight, headerHeight, height, heightRatio]);
 
   useEffect(() => {
     if (visible) {
@@ -181,11 +202,13 @@ export function BottomSheetWindow({
   }));
 
   const headerContent = (
-    <View style={styles.header}>
-      <View style={styles.handle} />
-      <ThemedText type="body" style={styles.title}>
-        {title}
-      </ThemedText>
+    <View style={[styles.header, isCloseOnlyHeader ? styles.closeOnlyHeader : null]}>
+      {isCloseOnlyHeader ? null : <View style={styles.handle} />}
+      {isCloseOnlyHeader ? null : (
+        <ThemedText type="body" style={styles.title}>
+          {title}
+        </ThemedText>
+      )}
       <Pressable
         accessibilityRole="button"
         accessibilityLabel={closeAccessibilityLabel}
@@ -218,6 +241,7 @@ export function BottomSheetWindow({
       {scrollable ? (
         <ScrollView
           style={styles.body}
+          onContentSizeChange={(_, nextHeight) => updateContentHeight(nextHeight)}
           contentContainerStyle={[
             styles.scrollContent,
             contentPaddingHorizontal ? styles.contentPaddingHorizontal : null,
@@ -239,7 +263,9 @@ export function BottomSheetWindow({
             contentContainerStyle,
           ]}
         >
-          {children}
+          <View onLayout={(event) => updateContentHeight(event.nativeEvent.layout.height)}>
+            {children}
+          </View>
         </View>
       )}
       {footer ? <View style={styles.footer}>{footer}</View> : null}
@@ -313,7 +339,7 @@ const styles = StyleSheet.create({
     borderTopLeftRadius: radii.xl,
     borderTopRightRadius: radii.xl,
     overflow: "hidden",
-    paddingBottom: 24,
+    paddingBottom: SHEET_BOTTOM_PADDING,
     ...effects.glass,
   },
   defaultSheetSizing: {
@@ -326,6 +352,10 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: Colors.light.divider,
+  },
+  closeOnlyHeader: {
+    height: 52,
+    borderBottomWidth: 0,
   },
   handle: {
     position: "absolute",

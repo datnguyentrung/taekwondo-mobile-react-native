@@ -37,6 +37,8 @@ describe("calculateAttendanceProgress", () => {
 
     expect(result).toEqual({
       totalStudents: 4,
+      markedCount: 3,
+      unmarkedCount: 1,
       presentCount: 2,
       absentCount: 1,
       attendancePercent: 50,
@@ -44,5 +46,15 @@ describe("calculateAttendanceProgress", () => {
       needEvaluationCount: 2,
       evaluationPercent: 100,
     });
+  });
+
+  it("does not count an evaluation for an attendance status that is ineligible", () => {
+    const result = calculateAttendanceProgress([
+      student("1", "ABSENT", "GOOD"),
+      student("2", "PRESENT", "GOOD"),
+    ]);
+
+    expect(result.evaluatedCount).toBe(1);
+    expect(result.needEvaluationCount).toBe(1);
   });
 });

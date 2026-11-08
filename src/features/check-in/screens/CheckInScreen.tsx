@@ -1,12 +1,13 @@
 import { ConfirmationDialog } from "@/shared/ui/ConfirmationDialog";
 import { ThemedText } from "@/shared/ui/ThemedText";
 import { Colors, radii } from "@/theme";
-import { router, useFocusEffect } from "expo-router";
+import { router, useFocusEffect, useLocalSearchParams, type Href } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import {
   type ComponentType,
   useCallback,
   useEffect,
+  useMemo,
   useState,
 } from "react";
 import { ActivityIndicator, AppState, StyleSheet, View } from "react-native";
@@ -55,6 +56,18 @@ const DEFAULT_SCANNER_PRESENTATION: ScannerPresentation = {
 };
 
 export default function CheckInScreen() {
+  const { returnToClassSessionId: rawReturnToClassSessionId } =
+    useLocalSearchParams<{ returnToClassSessionId?: string | string[] }>();
+  const returnToAttendanceHref = useMemo(() => {
+    const classSessionId = Array.isArray(rawReturnToClassSessionId)
+      ? rawReturnToClassSessionId[0]
+      : rawReturnToClassSessionId;
+    if (!classSessionId || !/^[a-zA-Z0-9-]+$/.test(classSessionId)) {
+      return null;
+    }
+
+    return `/class-sessions/${classSessionId}/attendance` as Href;
+  }, [rawReturnToClassSessionId]);
   const layout = useCheckInCameraLayout();
   const session = useFaceCheckInSession();
   const [initialVisionLoad] = useState(loadVisionCamera);
@@ -158,9 +171,13 @@ export default function CheckInScreen() {
   }, [isFocused, refreshPermission]);
 
   const leaveCheckInScreen = useCallback(() => {
+    if (returnToAttendanceHref) {
+      router.replace(returnToAttendanceHref);
+      return;
+    }
     if (router.canGoBack()) router.back();
     else router.replace("/");
-  }, []);
+  }, [returnToAttendanceHref]);
   const goHome = useCallback(() => router.replace("/"), []);
 
   const handleCameraReady = useCallback(() => {

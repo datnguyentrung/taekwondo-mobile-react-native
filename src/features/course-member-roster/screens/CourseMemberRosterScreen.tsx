@@ -13,6 +13,9 @@ import { Plus } from "reicon-react-native";
 import { Permission, useCan } from "@/features/authorization";
 import { useCourseDetail } from "@/features/course/queries/courseCatalogQueries";
 import StackScreenLayout from "@/routes/navigation/layouts/StackScreenLayout";
+import { MOBILE_LIST_END_REACHED_THRESHOLD } from "@/infrastructure/query/infiniteList.config";
+import { useShortListPrefetch } from "@/infrastructure/query/useShortListPrefetch";
+import { InfiniteListFooter } from "@/shared/ui/InfiniteListFooter";
 import {
   AdminSearchField,
   AdminSectionHeader,
@@ -126,8 +129,14 @@ export function CourseMemberRosterScreen({ courseId, memberKind }: Props) {
     setSheetVisible(true);
   };
 
-  const isInitialLoading = roster.isLoading || roster.isPending;
+  const isInitialLoading = roster.isInitialLoading;
   const isFiltered = search.length > 0;
+  const shortListPrefetch = useShortListPrefetch({
+    identity: `${courseId}:${memberKind}:${search}`,
+    hasNextPage: Boolean(roster.hasNextPage),
+    isFetchingNextPage: roster.isFetchingNextPage,
+    loadNextPage: roster.loadNextPage,
+  });
 
   return (
     <StackScreenLayout
@@ -145,12 +154,14 @@ export function CourseMemberRosterScreen({ courseId, memberKind }: Props) {
         keyboardShouldPersistTaps="handled"
         refreshControl={
           <RefreshControl
-            refreshing={roster.isRefetching && !roster.isFetchingNextPage}
-            onRefresh={() => void roster.refetch()}
+            refreshing={roster.isRefreshing}
+            onRefresh={() => void roster.refreshFirstPage()}
             tintColor={Colors.light.primary}
             colors={[Colors.light.primary]}
           />
         }
+        onLayout={shortListPrefetch.onLayout}
+        onContentSizeChange={shortListPrefetch.onContentSizeChange}
         contentContainerStyle={styles.listContent}
         ItemSeparatorComponent={ListSeparator}
         ListHeaderComponent={
@@ -202,7 +213,7 @@ export function CourseMemberRosterScreen({ courseId, memberKind }: Props) {
               <PrimaryActionButton
                 title="Thử lại"
                 variant="outline"
-                onPress={() => void roster.refetch()}
+                onPress={() => void roster.refreshFirstPage()}
               />
             </View>
           ) : (
@@ -215,21 +226,15 @@ export function CourseMemberRosterScreen({ courseId, memberKind }: Props) {
             </View>
           )
         }
-        onEndReached={() => {
-          if (roster.hasNextPage && !roster.isFetchingNextPage) {
-            void roster.fetchNextPage();
-          }
-        }}
-        onEndReachedThreshold={0.4}
+        onEndReached={() => void roster.loadNextPage()}
+        onEndReachedThreshold={MOBILE_LIST_END_REACHED_THRESHOLD}
         ListFooterComponent={
-          roster.isFetchingNextPage ? (
-            <View
-              accessibilityLabel="Đang tải thêm danh sách"
-              style={styles.footer}
-            >
-              <ActivityIndicator color={Colors.light.primary} />
-            </View>
-          ) : null
+          <InfiniteListFooter
+            hasItems={roster.members.length > 0}
+            isLoading={roster.isFetchingNextPage}
+            isError={roster.isLoadMoreError}
+            onRetry={() => void roster.retryNextPage()}
+          />
         }
       />
       {memberKind !== "students" ? (

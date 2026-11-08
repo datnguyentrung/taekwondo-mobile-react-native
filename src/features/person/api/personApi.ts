@@ -15,8 +15,8 @@ import type {
 } from './person.dto';
 
 export const personApi = {
-  async list(params?: PersonSearchParams): Promise<PageResponse<PersonSimpleResponse>> {
-    const response = await javaApi.get<PageResponse<PersonSimpleResponse>>('/persons', { params });
+  async list(params?: PersonSearchParams, options?: { signal?: AbortSignal }): Promise<PageResponse<PersonSimpleResponse>> {
+    const response = await javaApi.get<PageResponse<PersonSimpleResponse>>('/persons', { params, signal: options?.signal });
     return response.data;
   },
   async search(params?: PersonSearchParams): Promise<PageResponse<PersonSearchItem>> {

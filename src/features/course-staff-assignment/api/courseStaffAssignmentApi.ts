@@ -9,10 +9,10 @@ import type {
 } from './course-staff-assignment.dto';
 
 export const courseStaffAssignmentApi = {
-  async list(params?: CourseStaffAssignmentListParams): Promise<CourseStaffAssignmentListResponse> {
+  async list(params?: CourseStaffAssignmentListParams, options?: { signal?: AbortSignal }): Promise<CourseStaffAssignmentListResponse> {
     const response = await javaApi.get<CourseStaffAssignmentListResponse>(
       '/course-staff-assignments',
-      { params },
+      { params, signal: options?.signal },
     );
     return response.data;
   },

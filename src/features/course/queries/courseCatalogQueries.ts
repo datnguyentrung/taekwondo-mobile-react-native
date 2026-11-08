@@ -1,11 +1,12 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useCallback, useMemo } from "react";
+import { useInfinitePageQuery } from "@/infrastructure/query/useInfinitePageQuery";
 
 import { courseApi } from "../api/courseApi";
 import type { CourseCreateRequest, CourseResponse, CourseScheduleResponse, CourseScheduleUpsertRequest, CourseUpdateRequest } from "../api/course.dto";
 import { classScheduleApi } from "@/features/class-schedule/api/classScheduleApi";
 import { mapCourseApiToView } from "../domain/course.mappers";
-import type { CourseCatalogTab, CourseView } from "../domain/course.types";
+import type { CourseCatalogTab } from "../domain/course.types";
 
 export const courseCatalogKeys = {
   all: ["courses"] as const,
@@ -13,21 +14,19 @@ export const courseCatalogKeys = {
   detail: (courseId: string) => [...courseCatalogKeys.all, courseId] as const,
 };
 
-export function useCourseCatalog(
-  fallbackCourses: CourseView[],
-  tab: CourseCatalogTab,
-) {
+export function useCourseCatalog(tab: CourseCatalogTab, search: string) {
   const queryClient = useQueryClient();
-  const query = useQuery({
-    queryKey: courseCatalogKeys.list(),
-    queryFn: () => courseApi.list(),
+  const status = tab === "registration" ? "OPEN" : tab === "active" ? "ACTIVE" : undefined;
+  const normalizedSearch = search.trim();
+  const query = useInfinitePageQuery({
+    queryKey: [...courseCatalogKeys.list(), "infinite", { tab, status, search: normalizedSearch || undefined }],
+    fetchPage: ({ page, size, signal }) => courseApi.list({ page, size, status, search: normalizedSearch || undefined, sort: "name,asc" }, { signal }),
+    getItemId: (course) => course.courseId,
   });
   const courses = useMemo(() => {
-    const rawList = query.data?.content?.length
-      ? query.data.content.map((item) => mapCourseApiToView(item))
-      : fallbackCourses;
+    const rawList = query.items.map((item) => mapCourseApiToView(item));
     return rawList.filter((course) => course.catalogStatus === tab);
-  }, [fallbackCourses, query.data, tab]);
+  }, [query.items, tab]);
   const registerCreatedCourse = useCallback(
     async (createdCourse: CourseResponse) => {
       queryClient.setQueryData(

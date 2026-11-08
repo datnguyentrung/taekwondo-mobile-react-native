@@ -1,5 +1,5 @@
 import { StyleSheet, View } from "react-native";
-import { Clock, Home, Star, Users2 } from "reicon-react-native";
+import { Calendar, Clock, Home, Star, Users2 } from "reicon-react-native";
 
 import { AppIcon } from "@/shared/ui/AppIcon";
 import { ThemedText } from "@/shared/ui/ThemedText";
@@ -16,22 +16,33 @@ export function ClassSessionOverviewCard({
   stats: AttendanceProgressStats;
 }) {
   const branchName =
-    classSession.course.classSchedule?.branch?.name ?? "Cơ sở 1";
-  const roomName =
-    classSession.course.classSchedule?.location === "OUTDOOR"
+    classSession.course.classSchedule?.branch?.name ?? classSession.course.name;
+  const location = classSession.course.classSchedule?.location;
+  const locationName =
+    location === "OUTDOOR"
       ? "Sân tập ngoài trời"
-      : "Phòng tập CLC";
-  const courseLevel = `Khóa ${CourseLevelLabel[classSession.scheduleLevel]}`;
+      : location === "INDOOR"
+        ? "Phòng tập trong nhà"
+        : location || null;
+  const courseLevel = `Khóa ${
+    CourseLevelLabel[classSession.scheduleLevel] ?? classSession.scheduleLevel
+  }`;
 
-  const startTime = classSession.startTime?.slice(0, 5) ?? "15:00";
-  const endTime = classSession.endTime?.slice(0, 5) ?? "17:00";
+  const startTime = classSession.startTime?.slice(0, 5);
+  const endTime = classSession.endTime?.slice(0, 5);
+  const sessionDate = new Date(
+    `${classSession.sessionDate}T00:00:00`,
+  ).toLocaleDateString("vi-VN");
   const coachName = classSession.primaryCoach?.fullName
-    ? `HLV. ${classSession.primaryCoach.fullName}`
-    : "HLV. Nguyễn Văn A";
-  const coachBelt =
-    classSession.primaryCoach?.danRank ||
-    classSession.primaryCoach?.currentBelt ||
-    "Đai đen 4 đẳng";
+    ? `HLV ${classSession.primaryCoach.fullName}`
+    : null;
+  const statusLabel = classSession.attendanceClosed
+    ? "Đã đóng điểm danh"
+    : classSession.status === "ACTIVE"
+      ? "Đang diễn ra"
+      : classSession.status === "COMPLETED"
+        ? "Đã hoàn thành"
+        : "Chưa diễn ra";
 
   return (
     <View style={styles.card}>
@@ -45,18 +56,18 @@ export function ClassSessionOverviewCard({
             <ThemedText type="subtitle" style={styles.branchName}>
               {branchName}
             </ThemedText>
-            <View style={styles.roomRow}>
+            {locationName ? <View style={styles.roomRow}>
               <ThemedText type="bodySmall" style={styles.roomName}>
-                {roomName}
+                {locationName}
               </ThemedText>
-            </View>
+            </View> : null}
           </View>
         </View>
 
         <View style={styles.statusBadge}>
           <View style={styles.statusDot} />
           <ThemedText type="caption" style={styles.statusText}>
-            Ca hiện tại
+            {statusLabel}
           </ThemedText>
         </View>
       </View>
@@ -66,7 +77,7 @@ export function ClassSessionOverviewCard({
         <View style={styles.timeInfo}>
           <AppIcon icon={<Clock />} size={18} color={Colors.light.text} />
           <ThemedText type="heading" style={styles.timeText}>
-            {startTime} - {endTime}
+            {startTime && endTime ? `${startTime} - ${endTime}` : "Chưa có giờ học"}
           </ThemedText>
         </View>
 
@@ -75,6 +86,23 @@ export function ClassSessionOverviewCard({
             {courseLevel}
           </ThemedText>
         </View>
+      </View>
+
+      <View style={styles.metaRows}>
+        <View style={styles.metaRow}>
+          <AppIcon icon={<Calendar />} size={16} color={Colors.light.textSecondary} />
+          <ThemedText type="bodySmall" style={styles.metaText}>
+            {sessionDate}
+          </ThemedText>
+        </View>
+        {coachName ? (
+          <View style={styles.metaRow}>
+            <AppIcon icon={<Users2 />} size={16} color={Colors.light.textSecondary} />
+            <ThemedText type="bodySmall" style={styles.metaText}>
+              {coachName}
+            </ThemedText>
+          </View>
+        ) : null}
       </View>
 
       <View style={styles.divider} />
@@ -224,6 +252,9 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     marginTop: 14,
   },
+  metaRows: { gap: 6, marginTop: 10 },
+  metaRow: { flexDirection: "row", alignItems: "center", gap: 8 },
+  metaText: { color: Colors.light.textSecondary },
   timeInfo: {
     flexDirection: "row",
     alignItems: "center",

@@ -3,6 +3,6 @@ import { useLocalSearchParams } from 'expo-router';
 import { StudentDetailScreen } from '@/features/student';
 
 export default function StudentDetailRoute() {
-  const { studentCode } = useLocalSearchParams<{ studentCode?: string }>();
-  return <StudentDetailScreen studentCode={studentCode} />;
+  const { studentCode, personType } = useLocalSearchParams<{ studentCode?: string; personType?: "student" | "coach" }>();
+  return <StudentDetailScreen studentCode={studentCode} personType={personType} />;
 }

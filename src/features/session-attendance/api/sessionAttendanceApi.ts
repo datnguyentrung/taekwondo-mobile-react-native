@@ -1,6 +1,8 @@
 import { javaApi } from '@/infrastructure/http/httpClient';
 
 import type {
+  AttendanceCommandReceipt,
+  AttendanceCommandResponse,
   AttendanceFilterParams,
   ClassSessionEvaluationResponse,
   SessionAttendanceCreateRequest,
@@ -46,20 +48,28 @@ export const sessionAttendanceApi = {
   async updateStatus(
     sessionAttendanceId: string,
     request: UpdateStatusRequest,
-  ): Promise<void> {
-    await javaApi.patch(
+  ): Promise<AttendanceCommandReceipt> {
+    const response = await javaApi.patch<AttendanceCommandReceipt>(
       `/session-attendances/${sessionAttendanceId}/status`,
       request,
     );
+    return response.data;
   },
   async updateEvaluation(
     sessionAttendanceId: string,
     request: UpdateEvaluationRequest,
-  ): Promise<void> {
-    await javaApi.patch(
+  ): Promise<AttendanceCommandReceipt> {
+    const response = await javaApi.patch<AttendanceCommandReceipt>(
       `/session-attendances/${sessionAttendanceId}/evaluation`,
       request,
     );
+    return response.data;
+  },
+  async getCommand(requestId: string): Promise<AttendanceCommandResponse> {
+    const response = await javaApi.get<AttendanceCommandResponse>(
+      `/attendance-commands/${requestId}`,
+    );
+    return response.data;
   },
 };
 

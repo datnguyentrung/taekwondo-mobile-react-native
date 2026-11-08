@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import type { MobileUploadFile } from "@/infrastructure/http/http.types";
+import { useInfinitePageQuery } from "@/infrastructure/query/useInfinitePageQuery";
 
 import type {
   PersonCreateRequest,
@@ -59,6 +60,24 @@ export function useCoaches(params?: Omit<PersonSearchParams, "isStudent">) {
     queryKey: personKeys.list(queryParams),
     queryFn: () => personApi.list(queryParams),
     staleTime: 30_000,
+  });
+}
+
+export function useInfiniteStudents(params?: Omit<PersonSearchParams, "isStudent">) {
+  const queryParams: PersonSearchParams = { isStudent: true, sort: "fullName,asc", ...params };
+  return useInfinitePageQuery({
+    queryKey: [...personKeys.lists(), "infinite", queryParams],
+    fetchPage: ({ page, size, signal }) => personApi.list({ ...queryParams, page, size }, { signal }),
+    getItemId: (person) => person.personId,
+  });
+}
+
+export function useInfiniteCoaches(params?: Omit<PersonSearchParams, "isStudent">) {
+  const queryParams: PersonSearchParams = { isStudent: false, sort: "fullName,asc", ...params };
+  return useInfinitePageQuery({
+    queryKey: [...personKeys.lists(), "infinite", queryParams],
+    fetchPage: ({ page, size, signal }) => personApi.list({ ...queryParams, page, size }, { signal }),
+    getItemId: (person) => person.personId,
   });
 }
 

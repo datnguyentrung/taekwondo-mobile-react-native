@@ -3,7 +3,6 @@ import { useRouter, type Href } from "expo-router";
 import { useCallback, useMemo, useState } from "react";
 import {
   FlatList,
-  Pressable,
   RefreshControl,
   StyleSheet,
   View,
@@ -12,8 +11,12 @@ import {
 import { HomeHeaderButton } from "@/routes/navigation/components/HomeHeaderButton";
 import { HeaderActionButton } from "@/routes/navigation/components/HeaderActionButton";
 import StackScreenLayout from "@/routes/navigation/layouts/StackScreenLayout";
+import { MOBILE_LIST_END_REACHED_THRESHOLD } from "@/infrastructure/query/infiniteList.config";
+import { useShortListPrefetch } from "@/infrastructure/query/useShortListPrefetch";
+import { useDebounce } from "@/shared/hooks/useDebounce";
+import { InfiniteListFooter } from "@/shared/ui/InfiniteListFooter";
 import { ThemedText } from "@/shared/ui/ThemedText";
-import { Colors, radii } from "@/theme";
+import { Colors } from "@/theme";
 
 import type { NotificationRecipientMine } from "../api/notification.dto";
 import { NotificationCard } from "../components/NotificationCard";
@@ -42,14 +45,15 @@ export default function NotificationScreen() {
   const [selectedType, setSelectedType] = useState<
     NotificationType | undefined
   >();
+  const debouncedSearch = useDebounce(search.trim(), 400);
 
   const filters = useMemo<NotificationFilters>(
     () => ({
       read: tab === "unread" ? false : undefined,
-      search: search || undefined,
+      search: debouncedSearch || undefined,
       type: selectedType,
     }),
-    [search, selectedType, tab],
+    [debouncedSearch, selectedType, tab],
   );
 
   const notificationsQuery = useNotifications(filters);
@@ -62,8 +66,13 @@ export default function NotificationScreen() {
     [notificationsQuery.data],
   );
   const totalCount = notificationsQuery.data?.pages[0]?.totalElements ?? 0;
-  const isInitialLoading =
-    notificationsQuery.isLoading || notificationsQuery.isPending;
+  const isInitialLoading = notificationsQuery.isInitialLoading;
+  const shortListPrefetch = useShortListPrefetch({
+    identity: JSON.stringify(filters),
+    hasNextPage: Boolean(notificationsQuery.hasNextPage),
+    isFetchingNextPage: notificationsQuery.isFetchingNextPage,
+    loadNextPage: notificationsQuery.loadNextPage,
+  });
 
   const openNotification = useCallback(
     (notification: NotificationRecipientMine) => {
@@ -117,12 +126,16 @@ export default function NotificationScreen() {
         ItemSeparatorComponent={ListSeparator}
         refreshControl={
           <RefreshControl
-            refreshing={notificationsQuery.isRefetching}
-            onRefresh={() => void notificationsQuery.refetch()}
+            refreshing={notificationsQuery.isRefreshing}
+            onRefresh={() => void notificationsQuery.refreshFirstPage()}
             tintColor={Colors.light.primary}
             colors={[Colors.light.primary]}
           />
         }
+        onLayout={shortListPrefetch.onLayout}
+        onContentSizeChange={shortListPrefetch.onContentSizeChange}
+        onEndReached={() => void notificationsQuery.loadNextPage()}
+        onEndReachedThreshold={MOBILE_LIST_END_REACHED_THRESHOLD}
         contentContainerStyle={styles.listContent}
         ListHeaderComponent={
           <View style={styles.headerContent}>
@@ -149,7 +162,7 @@ export default function NotificationScreen() {
               title="Không tải được thông báo"
               description="Vui lòng thử lại sau ít phút."
               actionLabel="Thử lại"
-              onActionPress={() => void notificationsQuery.refetch()}
+              onActionPress={() => void notificationsQuery.refreshFirstPage()}
             />
           ) : (
             <NotificationStateView
@@ -160,26 +173,12 @@ export default function NotificationScreen() {
           )
         }
         ListFooterComponent={
-          notifications.length > 0 && notificationsQuery.hasNextPage ? (
-            <View style={styles.footer}>
-              <Pressable
-                accessibilityRole="button"
-                accessibilityLabel="Xem thêm thông báo"
-                disabled={notificationsQuery.isFetchingNextPage}
-                onPress={() => void notificationsQuery.fetchNextPage()}
-                style={({ pressed }) => [
-                  styles.loadMoreButton,
-                  pressed ? styles.pressed : null,
-                ]}
-              >
-                <ThemedText type="action" style={styles.loadMoreText}>
-                  {notificationsQuery.isFetchingNextPage
-                    ? "Đang tải..."
-                    : "Xem thêm"}
-                </ThemedText>
-              </Pressable>
-            </View>
-          ) : null
+          <InfiniteListFooter
+            hasItems={notifications.length > 0}
+            isLoading={notificationsQuery.isFetchingNextPage}
+            isError={notificationsQuery.isLoadMoreError}
+            onRetry={() => void notificationsQuery.retryNextPage()}
+          />
         }
       />
     </StackScreenLayout>
@@ -207,23 +206,5 @@ const styles = StyleSheet.create({
   },
   separator: {
     height: 12,
-  },
-  footer: {
-    alignItems: "center",
-    paddingTop: 16,
-  },
-  loadMoreButton: {
-    minHeight: 48,
-    alignItems: "center",
-    justifyContent: "center",
-    borderRadius: radii.pill,
-    backgroundColor: Colors.light.primary,
-    paddingHorizontal: 24,
-  },
-  loadMoreText: {
-    color: Colors.light.surface,
-  },
-  pressed: {
-    opacity: 0.78,
   },
 });

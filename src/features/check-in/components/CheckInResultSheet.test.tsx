@@ -65,7 +65,7 @@ describe("CheckInResultSheet", () => {
     expect(screen.getByText("Đang đối chiếu dữ liệu...")).toBeTruthy();
     expect(screen.getByText("Nguyen Van A")).toBeTruthy();
     expect(screen.getByText("Mã HV: VQ_001")).toBeTruthy();
-    expect(screen.getByText("Độ khớp khuôn mặt: 97%")).toBeTruthy();
+    expect(screen.getByText("97%")).toBeTruthy();
     expect(screen.getByText("Hủy thao tác")).toBeTruthy();
 
     fireEvent.press(screen.getByText("Hủy thao tác"));
@@ -109,7 +109,8 @@ describe("CheckInResultSheet", () => {
     ).toBeTruthy();
     expect(screen.getByText("Nguyen Van A")).toBeTruthy();
     expect(screen.getByText("Mã HV: VQ_001")).toBeTruthy();
-    expect(screen.getByText("Độ khớp khuôn mặt: 81%")).toBeTruthy();
+    expect(screen.getByText("81%")).toBeTruthy();
+    expect(screen.getByTestId("check-in-result-artwork-G05")).toBeTruthy();
     expect(screen.getByText("Mã hỗ trợ: corr-123")).toBeTruthy();
 
     fireEvent.press(screen.getByText("Quét lại"));
@@ -141,6 +142,7 @@ describe("CheckInResultSheet", () => {
       />,
     );
 
-    expect(screen.getByText("Độ khớp khuôn mặt: 87%")).toBeTruthy();
+    expect(screen.getByText("87%")).toBeTruthy();
+    expect(screen.getByTestId("check-in-result-artwork-G01")).toBeTruthy();
   });
 });

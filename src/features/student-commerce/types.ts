@@ -88,6 +88,7 @@ export type StudentCommerceState = {
 
 export type StudentRouteProps = {
   studentCode?: string;
+  personType?: "student" | "coach";
 };
 
 export type EnrollmentRouteProps = StudentRouteProps & {

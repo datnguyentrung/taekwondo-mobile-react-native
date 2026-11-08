@@ -12,10 +12,10 @@ import type {
 } from "./course.dto";
 
 export const courseApi = {
-  async list(params?: CourseListParams): Promise<PageResponse<CourseSimpleResponse>> {
+  async list(params?: CourseListParams, options?: { signal?: AbortSignal }): Promise<PageResponse<CourseSimpleResponse>> {
     const response = await javaApi.get<PageResponse<CourseSimpleResponse>>(
       "/courses",
-      { params },
+      { params, signal: options?.signal },
     );
     return response.data;
   },

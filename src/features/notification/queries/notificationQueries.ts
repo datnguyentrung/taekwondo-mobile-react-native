@@ -1,6 +1,5 @@
 import {
   infiniteQueryOptions,
-  useInfiniteQuery,
   useMutation,
   useQuery,
   useQueryClient,
@@ -10,6 +9,7 @@ import {
 } from "@tanstack/react-query";
 
 import type { PageResponse } from "@/infrastructure/http/pagination.types";
+import { useInfinitePageQuery } from "@/infrastructure/query/useInfinitePageQuery";
 
 import type {
   NotificationRecipientMine,
@@ -91,11 +91,11 @@ export function notificationListQueryOptions(filters: NotificationFilters = {}) 
 
   return infiniteQueryOptions({
     queryKey: notificationKeys.list(normalizedFilters),
-    queryFn: ({ pageParam }) =>
+    queryFn: ({ pageParam, signal }) =>
       notificationRecipientApi.getMine({
         ...normalizedFilters,
         page: pageParam,
-      }),
+      }, { signal }),
     initialPageParam: 0,
     getNextPageParam: (lastPage) =>
       lastPage.last ? undefined : lastPage.pageNumber + 1,
@@ -155,7 +155,18 @@ function updateInfiniteDataAfterMarkAll(
 }
 
 export function useNotifications(filters: NotificationFilters) {
-  return useInfiniteQuery(notificationListQueryOptions(filters));
+  const normalizedFilters = normalizeNotificationFilters(filters);
+  return useInfinitePageQuery({
+    queryKey: notificationKeys.list(normalizedFilters),
+    fetchPage: ({ page, signal }) =>
+      notificationRecipientApi.getMine(
+        { ...normalizedFilters, page },
+        { signal },
+      ),
+    getItemId: (item) => item.notificationRecipientId,
+    pageSize: normalizedFilters.size,
+    staleTime: 45_000,
+  });
 }
 
 export function useNotificationDetail(notificationRecipientId?: string) {

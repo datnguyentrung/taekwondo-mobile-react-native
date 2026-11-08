@@ -1,11 +1,15 @@
 import { useRouter } from "expo-router";
 import { useMemo, useState } from "react";
-import { ActivityIndicator, Pressable, StyleSheet, TextInput, View } from "react-native";
+import { ActivityIndicator, FlatList, Pressable, RefreshControl, StyleSheet, TextInput, View } from "react-native";
 import { InfoCircle, Plus, Search, Tuning } from "reicon-react-native";
 
 import { ALL_BELTS, BeltLabel } from "@/features/person/constants/person.constants";
 import type { Belt, PersonStatus } from "@/features/person/constants/person.constants";
-import { useStudents } from "@/features/person/queries/personQueries";
+import { useInfiniteStudents } from "@/features/person/queries/personQueries";
+import { MOBILE_LIST_END_REACHED_THRESHOLD } from "@/infrastructure/query/infiniteList.config";
+import { useShortListPrefetch } from "@/infrastructure/query/useShortListPrefetch";
+import { InfiniteListFooter } from "@/shared/ui/InfiniteListFooter";
+import { useDebounce } from "@/shared/hooks/useDebounce";
 import { StudentListItem } from "@/features/student/components/StudentListItem";
 import { PersonCreateSheet } from "@/features/person/components/PersonCreateSheet";
 import {
@@ -67,16 +71,16 @@ export function StudentListScreen() {
   const queryBelt =
     filters.belts.length === 1 ? filters.belts[0] : undefined;
 
-  const trimmedSearch = searchQuery.trim();
+  const trimmedSearch = useDebounce(searchQuery.trim(), 400);
 
-  const studentsQuery = useStudents({
+  const studentsQuery = useInfiniteStudents({
     search: trimmedSearch || undefined,
     status: queryStatus,
     gender: queryGender,
     currentBelt: queryBelt,
   });
 
-  const rawStudents = studentsQuery.data?.content ?? [];
+  const rawStudents = studentsQuery.items;
 
   const visibleStudents = useMemo(() => {
     let list = rawStudents;
@@ -199,16 +203,20 @@ export function StudentListScreen() {
       onClear: () => setDraftFilters((prev) => ({ ...prev, belts: [] })),
     },
   ];
+  const shortListPrefetch = useShortListPrefetch({
+    identity: JSON.stringify({ trimmedSearch, queryStatus, queryGender, queryBelt }),
+    hasNextPage: Boolean(studentsQuery.hasNextPage),
+    isFetchingNextPage: studentsQuery.isFetchingNextPage,
+    loadNextPage: studentsQuery.loadNextPage,
+  });
 
   return (
     <>
       <StackScreenLayout
         title="Học viên"
         contentContainerStyle={styles.content}
-        refreshing={studentsQuery.isRefetching}
-        onRefresh={async () => {
-          await studentsQuery.refetch();
-        }}
+        scrollEnabled={false}
+        refreshEnabled={false}
         rightActions={
           <>
             <HeaderActionButton
@@ -222,7 +230,18 @@ export function StudentListScreen() {
           </>
         }
       >
-        <SegmentedTabs value={activeTab} tabs={[...STUDENT_TABS]} onChange={setActiveTab} />
+        <FlatList
+          data={visibleStudents}
+          keyExtractor={(student) => student.personId}
+          renderItem={({ item: student }) => <StudentListItem student={student} onPress={() => router.push(`/students/${student.personId}?title=${encodeURIComponent(student.fullName)}` as any)} />}
+          ItemSeparatorComponent={() => <View style={styles.listGap} />}
+          onLayout={shortListPrefetch.onLayout}
+          onContentSizeChange={shortListPrefetch.onContentSizeChange}
+          onEndReached={() => void studentsQuery.loadNextPage()}
+          onEndReachedThreshold={MOBILE_LIST_END_REACHED_THRESHOLD}
+          refreshControl={<RefreshControl refreshing={studentsQuery.isRefreshing} onRefresh={() => void studentsQuery.refreshFirstPage()} tintColor={Colors.light.primary} />}
+          contentContainerStyle={styles.listContent}
+          ListHeaderComponent={<><SegmentedTabs value={activeTab} tabs={[...STUDENT_TABS]} onChange={setActiveTab} />
         <View style={styles.searchRow}>
           <View style={styles.searchContainer}>
           <AppIcon
@@ -244,39 +263,15 @@ export function StudentListScreen() {
           <Pressable accessibilityRole="button" accessibilityLabel="Tạo học viên" hitSlop={8} onPress={() => setCreateVisible(true)} style={({ pressed }) => [styles.createButton, pressed && styles.createButtonPressed]}>
             <AppIcon icon={<Plus />} size={22} color={Colors.light.surface} />
           </Pressable>
-        </View>
-
-        {studentsQuery.isLoading ? (
-          <View style={styles.loadingContainer}>
-            <ActivityIndicator size="large" color={Colors.light.primary} />
-          </View>
-        ) : (
-          <View style={styles.studentList}>
-            {visibleStudents.map((student) => (
-              <StudentListItem
-                key={student.personId}
-                student={student}
-                onPress={() =>
-                  router.push(
-                    `/students/${student.personId}?title=${encodeURIComponent(student.fullName)}` as any,
-                  )
-                }
-              />
-            ))}
-          </View>
-        )}
-
-        {!studentsQuery.isLoading && visibleStudents.length === 0 ? (
-          <View style={styles.emptyContainer}>
+        </View></>}
+          ListEmptyComponent={studentsQuery.isInitialLoading ? <View style={styles.loadingContainer}><ActivityIndicator size="large" color={Colors.light.primary} /></View> : <View style={styles.emptyContainer}>
             <ThemedText type="bodySmall" style={styles.helperText}>
               {appliedCount > 0
                 ? "Không tìm thấy học viên phù hợp với bộ lọc."
                 : "Chưa có học viên trong trạng thái này."}
             </ThemedText>
-          </View>
-        ) : null}
-
-        <View style={styles.footerNote}>
+          </View>}
+          ListFooterComponent={<><InfiniteListFooter hasItems={visibleStudents.length > 0} isLoading={studentsQuery.isFetchingNextPage} isError={studentsQuery.isLoadMoreError} onRetry={() => void studentsQuery.retryNextPage()} /><View style={styles.footerNote}>
           <AppIcon
             icon={<InfoCircle />}
             size={22}
@@ -285,7 +280,8 @@ export function StudentListScreen() {
           <ThemedText type="bodySmall" style={styles.helperText}>
             Chọn học viên để xem hồ sơ, ví và khóa học.
           </ThemedText>
-        </View>
+        </View></>}
+        />
       </StackScreenLayout>
 
       <BottomSheetWindow
@@ -316,6 +312,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingBottom: 32,
   },
+  listContent: { paddingTop: 16, paddingBottom: 32, gap: 20 },
+  listGap: { height: 12 },
   searchContainer: {
     flex: 1,
     minHeight: 48,

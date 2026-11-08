@@ -15,10 +15,11 @@ import type {
 export const notificationRecipientApi = {
   async getMine(
     params?: MineListParams,
+    options?: { signal?: AbortSignal },
   ): Promise<PageResponse<NotificationRecipientMine>> {
     const response = await javaApi.get<PageResponse<NotificationRecipientMine>>(
       '/notification-recipients/mine',
-      { params },
+      { params, signal: options?.signal },
     );
     return response.data;
   },

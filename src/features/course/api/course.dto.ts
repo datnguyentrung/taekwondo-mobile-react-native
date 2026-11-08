@@ -8,6 +8,7 @@ import type { CourseLevel, CourseStatus } from "../constants/course.constants";
 
 export interface CourseScheduleResponse {
   courseScheduleId: string;
+  courseId?: string;
   classSchedule: ClassScheduleResponse;
   staffAssignments: CourseScheduleStaffAssignmentResponse[];
   startDate: string;
@@ -25,6 +26,7 @@ export interface CourseScheduleStaffAssignmentResponse {
 
 export interface CourseScheduleSimpleResponse {
   courseScheduleId: string;
+  courseId?: string;
   classSchedule: ClassScheduleSimpleResponse;
   startDate: string;
   endDate: string | null;

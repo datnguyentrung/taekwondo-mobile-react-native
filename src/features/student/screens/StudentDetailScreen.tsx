@@ -1,8 +1,14 @@
-import { useRouter } from "expo-router";
 import { Image } from "expo-image";
 import * as ImagePicker from "expo-image-picker";
+import { useRouter } from "expo-router";
 import { useMemo, useRef, useState } from "react";
-import { ActivityIndicator, Modal, Pressable, StyleSheet, View } from "react-native";
+import {
+  ActivityIndicator,
+  Modal,
+  Pressable,
+  StyleSheet,
+  View,
+} from "react-native";
 import {
   Camera,
   CheckListNotes,
@@ -25,7 +31,6 @@ import {
   usePerson,
   useUpdatePersonFaceEmbedding,
 } from "@/features/person/queries/personQueries";
-import type { MobileUploadFile } from "@/infrastructure/http/http.types";
 import { SurfaceCard } from "@/features/student-commerce/components/StudentCommercePrimitives";
 import type {
   StudentRouteProps,
@@ -36,22 +41,30 @@ import {
   formatVnd,
 } from "@/features/student-commerce/utils/studentCommerceUtils";
 import { useWalletByPerson } from "@/features/wallet/queries/walletQueries";
+import type { MobileUploadFile } from "@/infrastructure/http/http.types";
 import { useScreenRefresh } from "@/infrastructure/query/useScreenRefresh";
 import StackScreenLayout from "@/routes/navigation/layouts/StackScreenLayout";
 import { useDynamicDetailTitle } from "@/routes/navigation/utils/screenTitle";
 import { AppIcon } from "@/shared/ui/AppIcon";
+import { BottomSheetWindow } from "@/shared/ui/BottomSheetWindow";
 import { CancellableLoadingOverlay } from "@/shared/ui/CancellableLoadingOverlay";
 import { ConfirmationDialog } from "@/shared/ui/ConfirmationDialog";
 import { FloatingActionBar } from "@/shared/ui/FloatingActionBar";
 import { NavigationMenu, NavigationMenuItem } from "@/shared/ui/NavigationMenu";
-import { BottomSheetWindow } from "@/shared/ui/BottomSheetWindow";
 import { ThemedText } from "@/shared/ui/ThemedText";
 import { useToast } from "@/shared/ui/Toast";
-import { activeEffect, Colors, effects, figmaColors, radii, typography } from "@/theme";
+import {
+  activeEffect,
+  Colors,
+  effects,
+  figmaColors,
+  radii,
+  typography,
+} from "@/theme";
 import type { AppIconElement } from "@/theme/icons";
 import { StudentProfileSummaryCard } from "../components/StudentProfileSummaryCard";
 
-export function StudentDetailScreen({ studentCode }: StudentRouteProps) {
+export function StudentDetailScreen({ studentCode, personType = "student" }: StudentRouteProps) {
   const router = useRouter();
   const personQuery = usePerson(studentCode);
   const deletePerson = useDeletePerson();
@@ -106,10 +119,16 @@ export function StudentDetailScreen({ studentCode }: StudentRouteProps) {
         name: asset.fileName || `avatar_${Date.now()}.jpg`,
         type: asset.mimeType || "image/jpeg",
       };
-      await updateFaceEmbedding.mutateAsync({ personId: activeStudentId, file });
+      await updateFaceEmbedding.mutateAsync({
+        personId: activeStudentId,
+        file,
+      });
       toast.show({ message: "Đã cập nhật ảnh đại diện.", variant: "success" });
     } catch {
-      toast.show({ message: "Không thể cập nhật ảnh đại diện.", variant: "error" });
+      toast.show({
+        message: "Không thể cập nhật ảnh đại diện.",
+        variant: "error",
+      });
     } finally {
       setIsAvatarProcessing(false);
     }
@@ -119,7 +138,10 @@ export function StudentDetailScreen({ studentCode }: StudentRouteProps) {
     setAvatarSheetVisible(false);
     const permission = await ImagePicker.requestCameraPermissionsAsync();
     if (!permission.granted) {
-      toast.show({ message: "Vui lòng cấp quyền máy ảnh để chụp ảnh đại diện.", variant: "warning" });
+      toast.show({
+        message: "Vui lòng cấp quyền máy ảnh để chụp ảnh đại diện.",
+        variant: "warning",
+      });
       return;
     }
     const result = await ImagePicker.launchCameraAsync({
@@ -127,14 +149,18 @@ export function StudentDetailScreen({ studentCode }: StudentRouteProps) {
       aspect: [1, 1],
       quality: 0.8,
     });
-    if (!result.canceled && result.assets[0]) await handleUploadAvatar(result.assets[0]);
+    if (!result.canceled && result.assets[0])
+      await handleUploadAvatar(result.assets[0]);
   };
 
   const handlePickAvatarImage = async () => {
     setAvatarSheetVisible(false);
     const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (!permission.granted) {
-      toast.show({ message: "Vui lòng cấp quyền thư viện để chọn ảnh đại diện.", variant: "warning" });
+      toast.show({
+        message: "Vui lòng cấp quyền thư viện để chọn ảnh đại diện.",
+        variant: "warning",
+      });
       return;
     }
     const result = await ImagePicker.launchImageLibraryAsync({
@@ -143,7 +169,8 @@ export function StudentDetailScreen({ studentCode }: StudentRouteProps) {
       aspect: [1, 1],
       quality: 0.8,
     });
-    if (!result.canceled && result.assets[0]) await handleUploadAvatar(result.assets[0]);
+    if (!result.canceled && result.assets[0])
+      await handleUploadAvatar(result.assets[0]);
   };
 
   const handleDeleteAvatar = async () => {
@@ -317,10 +344,10 @@ export function StudentDetailScreen({ studentCode }: StudentRouteProps) {
       <NavigationMenu>
         <NavigationMenuItem
           icon={<DocText />}
-          title="Khóa học đang học"
+          title="Khóa học tham gia"
           count={0}
           onPress={() =>
-            router.push(asHref(`/students/${activeStudentId}/courses`))
+            router.push(asHref(`/students/${activeStudentId}/courses?personType=${personType}`))
           }
         />
         <NavigationMenuItem
@@ -368,35 +395,64 @@ export function StudentDetailScreen({ studentCode }: StudentRouteProps) {
               setAvatarPreviewVisible(true);
             }}
           />
-          <AvatarSheetOption icon={<Camera />} label="Chụp ảnh mới" onPress={handleTakeAvatarPhoto} />
-          <AvatarSheetOption icon={<Gallery />} label="Tải ảnh lên từ thư viện" onPress={handlePickAvatarImage} />
+          <AvatarSheetOption
+            icon={<Camera />}
+            label="Chụp ảnh mới"
+            onPress={handleTakeAvatarPhoto}
+          />
+          <AvatarSheetOption
+            icon={<Gallery />}
+            label="Tải ảnh lên từ thư viện"
+            onPress={handlePickAvatarImage}
+          />
           {avatarUrl ? (
             <Pressable
               accessibilityRole="button"
               accessibilityLabel="Xóa ảnh đại diện"
               onPress={handleDeleteAvatar}
-              style={({ pressed }) => [styles.avatarDeleteOption, activeEffect(pressed, "pressedScale")]}
+              style={({ pressed }) => [
+                styles.avatarDeleteOption,
+                activeEffect(pressed, "pressedScale"),
+              ]}
             >
-              <ThemedText style={styles.avatarDeleteText}>Xóa ảnh đại diện hiện tại</ThemedText>
+              <ThemedText style={styles.avatarDeleteText}>
+                Xóa ảnh đại diện hiện tại
+              </ThemedText>
             </Pressable>
           ) : null}
         </View>
       </BottomSheetWindow>
-      <Modal visible={avatarPreviewVisible} transparent animationType="fade" onRequestClose={() => setAvatarPreviewVisible(false)}>
+      <Modal
+        visible={avatarPreviewVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setAvatarPreviewVisible(false)}
+      >
         <View style={styles.avatarPreviewBackdrop}>
           <Pressable
             accessibilityRole="button"
             accessibilityLabel="Đóng xem ảnh"
             onPress={() => setAvatarPreviewVisible(false)}
-            style={({ pressed }) => [styles.avatarPreviewClose, activeEffect(pressed)]}
+            style={({ pressed }) => [
+              styles.avatarPreviewClose,
+              activeEffect(pressed),
+            ]}
           >
             <ThemedText style={styles.avatarPreviewCloseText}>Đóng</ThemedText>
           </Pressable>
           {avatarUrl ? (
-            <Image source={{ uri: avatarUrl }} style={styles.avatarPreviewImage} contentFit="contain" />
+            <Image
+              source={{ uri: avatarUrl }}
+              style={styles.avatarPreviewImage}
+              contentFit="contain"
+            />
           ) : (
             <View style={styles.avatarPreviewPlaceholder}>
-              <AppIcon icon={<UserCircle weight="Filled" />} size={180} color={figmaColors.color1} />
+              <AppIcon
+                icon={<UserCircle weight="Filled" />}
+                size={180}
+                color={figmaColors.color1}
+              />
             </View>
           )}
         </View>
@@ -405,7 +461,15 @@ export function StudentDetailScreen({ studentCode }: StudentRouteProps) {
   );
 }
 
-function AvatarSheetOption({ icon, label, onPress }: { icon: AppIconElement; label: string; onPress: () => void }) {
+function AvatarSheetOption({
+  icon,
+  label,
+  onPress,
+}: {
+  icon: AppIconElement;
+  label: string;
+  onPress: () => void;
+}) {
   return (
     <Pressable
       accessibilityRole="button"
@@ -416,7 +480,9 @@ function AvatarSheetOption({ icon, label, onPress }: { icon: AppIconElement; lab
         activeEffect(pressed, "pressedScale"),
       ]}
     >
-      <View style={styles.avatarOptionIcon}><AppIcon icon={icon} size={22} color={Colors.light.primary} /></View>
+      <View style={styles.avatarOptionIcon}>
+        <AppIcon icon={icon} size={22} color={Colors.light.primary} />
+      </View>
       <ThemedText style={styles.avatarOptionText}>{label}</ThemedText>
     </Pressable>
   );
@@ -443,14 +509,66 @@ const styles = StyleSheet.create({
     color: Colors.light.primary,
   },
   avatarSheetOptions: { paddingVertical: 12, gap: 10 },
-  avatarSheetOption: { flexDirection: "row", alignItems: "center", paddingVertical: 14, paddingHorizontal: 16, borderRadius: radii.md, backgroundColor: Colors.light.backgroundElement },
-  avatarOptionIcon: { width: 38, height: 38, marginRight: 14, borderRadius: radii.pill, alignItems: "center", justifyContent: "center", backgroundColor: Colors.light.surface, ...effects.soft },
+  avatarSheetOption: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    borderRadius: radii.md,
+    backgroundColor: Colors.light.backgroundElement,
+  },
+  avatarOptionIcon: {
+    width: 38,
+    height: 38,
+    marginRight: 14,
+    borderRadius: radii.pill,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: Colors.light.surface,
+    ...effects.soft,
+  },
   avatarOptionText: { ...typography.body, color: Colors.light.text },
-  avatarDeleteOption: { alignItems: "center", marginTop: 4, paddingVertical: 14, borderRadius: radii.md },
+  avatarDeleteOption: {
+    alignItems: "center",
+    marginTop: 4,
+    paddingVertical: 14,
+    borderRadius: radii.md,
+  },
   avatarDeleteText: { ...typography.body, color: Colors.light.error },
-  avatarPreviewBackdrop: { flex: 1, alignItems: "center", justifyContent: "center", padding: 24, backgroundColor: "rgba(0, 0, 0, 0.92)" },
-  avatarPreviewClose: { position: "absolute", top: 54, right: 20, zIndex: 10, paddingVertical: 8, paddingHorizontal: 16, borderRadius: radii.pill, backgroundColor: "rgba(255, 255, 255, 0.2)" },
-  avatarPreviewCloseText: { ...typography.bodySmall, color: Colors.light.surface },
-  avatarPreviewImage: { width: 280, height: 280, borderRadius: 140, borderWidth: 3, borderColor: Colors.light.surface },
-  avatarPreviewPlaceholder: { width: 280, height: 280, borderRadius: 140, alignItems: "center", justifyContent: "center", backgroundColor: Colors.light.surface },
+  avatarPreviewBackdrop: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    padding: 24,
+    backgroundColor: "rgba(0, 0, 0, 0.92)",
+  },
+  avatarPreviewClose: {
+    position: "absolute",
+    top: 54,
+    right: 20,
+    zIndex: 10,
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    borderRadius: radii.pill,
+    backgroundColor: "rgba(255, 255, 255, 0.2)",
+  },
+  avatarPreviewCloseText: {
+    ...typography.bodySmall,
+    color: Colors.light.surface,
+  },
+  avatarPreviewImage: {
+    width: 280,
+    height: 280,
+    borderRadius: 140,
+    borderWidth: 3,
+    borderColor: Colors.light.surface,
+  },
+  avatarPreviewPlaceholder: {
+    width: 280,
+    height: 280,
+    borderRadius: 140,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: Colors.light.surface,
+  },
 });

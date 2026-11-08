@@ -1,5 +1,4 @@
 import {
-  useInfiniteQuery,
   useMutation,
   useQuery,
   useQueryClient,
@@ -15,6 +14,7 @@ import { personApi } from "@/features/person/api/personApi";
 import { studentEnrollmentApi } from "@/features/student-enrollment/api/studentEnrollmentApi";
 import type { StudentEnrollmentSimpleResponse } from "@/features/student-enrollment/api/student-enrollment.dto";
 import type { PageResponse } from "@/infrastructure/http/pagination.types";
+import { useInfinitePageQuery } from "@/infrastructure/query/useInfinitePageQuery";
 
 import {
   courseMemberConfig,
@@ -23,7 +23,6 @@ import {
   type CourseMemberKind,
 } from "../domain/courseMemberRoster";
 
-const PAGE_SIZE = 20;
 type RosterApiItem = CourseStaffAssignmentSimpleResponse | StudentEnrollmentSimpleResponse;
 type RosterApiPage = PageResponse<RosterApiItem>;
 
@@ -52,10 +51,9 @@ export function useCourseMemberRoster(
   search: string,
 ) {
   const effectiveOn = getLocalDate();
-  const query = useInfiniteQuery<RosterApiPage>({
+  const query = useInfinitePageQuery<RosterApiItem>({
     queryKey: courseMemberRosterKeys.list(courseId, memberKind, search),
-    initialPageParam: 0,
-    queryFn: ({ pageParam }) =>
+    fetchPage: ({ page, size, signal }) =>
       (memberKind === "students"
         ? studentEnrollmentApi.list({
             courseId,
@@ -63,24 +61,26 @@ export function useCourseMemberRoster(
             to: effectiveOn,
             status: "ACTIVE",
             search: search || undefined,
-            page: pageParam as number,
-            size: PAGE_SIZE,
+            page,
+            size,
             sort: "studentPerson.fullName,asc",
-          })
+          }, { signal })
         : courseStaffAssignmentApi.list({
             courseId,
             assignmentTypes: courseMemberConfig[memberKind].assignmentTypes,
             effectiveOn,
             search: search || undefined,
-            page: pageParam as number,
-            size: PAGE_SIZE,
+            page,
+            size,
             sort: "staffPerson.fullName,asc",
-          })) as Promise<RosterApiPage>,
-    getNextPageParam: (lastPage) =>
-      lastPage.last ? undefined : lastPage.pageNumber + 1,
+          }, { signal })) as Promise<RosterApiPage>,
+    getItemId: (item) =>
+      "studentEnrollmentId" in item
+        ? item.studentEnrollmentId
+        : item.courseStaffAssignmentId,
   });
 
-  const rawItems = query.data?.pages.flatMap((page) => page.content) ?? [];
+  const rawItems = query.items;
   const members = memberKind === "students"
     ? groupStudentEnrollments(rawItems as StudentEnrollmentSimpleResponse[])
     : groupStaffAssignments(rawItems as CourseStaffAssignmentSimpleResponse[]);

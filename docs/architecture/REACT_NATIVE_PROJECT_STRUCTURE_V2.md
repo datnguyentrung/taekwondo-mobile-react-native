@@ -329,7 +329,20 @@ Checklist review cho hai family này:
 3. Accessibility state, disabled/loading/empty/error và permission guard được giữ nguyên.
 4. Typecheck và test của feature/action destructive liên quan phải pass.
 
-## 15. Tài liệu liên quan
+## 15. Mobile List Pagination Rule
+
+Mọi màn hình hiển thị dữ liệu từ API trả `PageResponse<T>` phải dùng Infinite Scroll. Rule này áp dụng cho list screen và search result có thể lớn; không áp dụng cho catalog cấu hình nhỏ, dữ liệu local hoặc endpoint không phân trang.
+
+- Dùng `useInfinitePageQuery` trong `src/infrastructure/query`; feature giữ query key, API adapter, mapper và item renderer của mình. Screen không gọi API client trực tiếp.
+- Mặc định: `page=0`, `size=30`, `onEndReachedThreshold=0.7`, debounce search `400ms`, tự prefetch tối đa hai trang khi nội dung chưa đủ chiều cao viewport.
+- Query key phải chứa toàn bộ filter/search/sort gửi tới server. Khi giá trị thay đổi, list bắt đầu lại tại page 0; request cũ phải có thể bị hủy qua `AbortSignal`.
+- Dữ liệu các page được append, dedupe theo ID ổn định và không dùng index làm `keyExtractor`. Không reset `FlatList` khi append.
+- Chỉ tải trang sau khi `hasNextPage=true` và chưa có load-more đang chạy. Không tăng page trước khi request thành công. Lỗi tải thêm phải giữ list hiện tại và có nút retry cho đúng page lỗi.
+- Pull-to-refresh thay toàn bộ cache bằng page 0 mới. Phân biệt initial loading, refresh, load-more loading và load-more error.
+- List lớn dùng `FlatList` hoặc `SectionList`; không dùng `ScrollView` kết hợp `map`. Với `StackScreenLayout`, đặt `scrollEnabled={false}` để list sở hữu scroll/refresh.
+- Optimistic mutation trên list vô hạn phải cập nhật tất cả `InfiniteData.pages`, hoặc rollback snapshot đầy đủ khi thất bại.
+
+## 16. Tài liệu liên quan
 
 - [Báo cáo rà soát cấu trúc](./REACT_NATIVE_PROJECT_STRUCTURE_AUDIT.md)
 - [Structure v1 — lưu tham chiếu](./REACT_NATIVE_PROJECT_STRUCTURE.md)

@@ -44,7 +44,7 @@ export type StackScreenLayoutProps = {
   refreshEnabled?: boolean;
   refreshing?: boolean;
   onRefresh?: () => Promise<void> | void;
-  headerVariant?: 'default' | 'dark';
+  headerVariant?: "default" | "dark";
 };
 
 export default function StackScreenLayout({
@@ -57,11 +57,11 @@ export default function StackScreenLayout({
   refreshEnabled = true,
   refreshing: controlledRefreshing,
   onRefresh: customOnRefresh,
-  headerVariant = 'default',
+  headerVariant = "default",
 }: StackScreenLayoutProps) {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const isDarkHeader = headerVariant === 'dark';
+  const isDarkHeader = headerVariant === "dark";
   const actionColor = isDarkHeader ? Colors.light.surface : Colors.light.text;
   const defaultRefresh = useActiveQueriesRefresh();
   const refreshing = controlledRefreshing ?? defaultRefresh.refreshing;
@@ -69,7 +69,13 @@ export default function StackScreenLayout({
 
   return (
     <SafeAreaView edges={["left", "right"]} style={styles.safeArea}>
-      <View style={[styles.header, isDarkHeader ? styles.darkHeader : null, { paddingTop: Math.max(insets.top, 16) }]}>
+      <View
+        style={[
+          styles.header,
+          isDarkHeader ? styles.darkHeader : null,
+          { paddingTop: Math.max(insets.top, 16) },
+        ]}
+      >
         <View style={styles.headerContent}>
           <Pressable
             accessibilityRole="button"
@@ -148,7 +154,7 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.light.surface,
     ...effects.soft,
   },
-  darkHeader: { backgroundColor: '#202020' },
+  darkHeader: { backgroundColor: "#202020" },
   headerContent: {
     height: height * 0.08,
     alignItems: "center",
@@ -186,8 +192,8 @@ const styles = StyleSheet.create({
   },
   content: {
     paddingHorizontal: 20,
-    paddingTop: 16,
-    paddingBottom: 32,
+    // paddingTop: 16,
+    // paddingBottom: 32,
     gap: 20,
   },
   pressed: {

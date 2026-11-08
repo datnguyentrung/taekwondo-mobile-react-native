@@ -113,6 +113,33 @@ export interface UpdateEvaluationRequest {
   note?: string | null;
 }
 
+export type AttendanceCommandStatus =
+  | "QUEUED"
+  | "PROCESSING"
+  | "SUCCEEDED"
+  | "REJECTED"
+  | "FAILED"
+  | "EXPIRED";
+
+export interface AttendanceCommandReceipt {
+  requestId: string;
+  type: string;
+  status: AttendanceCommandStatus;
+  message: string;
+}
+
+export interface AttendanceCommandResponse extends AttendanceCommandReceipt {
+  result?: unknown;
+  error?: {
+    code?: string | null;
+    title?: string | null;
+    detail?: string | null;
+  } | null;
+  createdAt: string;
+  updatedAt: string;
+  completedAt?: string | null;
+}
+
 export interface EvaluationStudentEnrollment {
   studentEnrollmentId: string;
   studentPerson: {

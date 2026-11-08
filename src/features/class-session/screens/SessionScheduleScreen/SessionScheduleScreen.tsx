@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "expo-router";
-import { ActivityIndicator, ScrollView, StyleSheet, View } from "react-native";
+import { ActivityIndicator, ScrollView, StyleSheet, View, type ScrollViewInstance } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { DefaultHeaderActions } from "@/routes/navigation/components/DefaultHeaderActions";
@@ -33,7 +33,7 @@ export default function SessionScheduleScreen() {
   const [selectedSessionDetail, setSelectedSessionDetail] =
     useState<ClassSessionCalendarResponse | null>(null);
 
-  const scrollViewRef = useRef<ScrollView>(null);
+  const scrollViewRef = useRef<ScrollViewInstance>(null);
   const datePositions = useRef<Record<string, number>>({});
 
   // Determine query range based on selected date & expanded status
@@ -242,7 +242,11 @@ export default function SessionScheduleScreen() {
         visible={!!selectedSessionDetail}
         onClose={() => setSelectedSessionDetail(null)}
         onViewDetail={(session) =>
-          router.push(asHref(`/class-sessions/${session.classSessionId}`))
+          router.push(
+            asHref(
+              `/class-sessions/${session.classSessionId}/attendance`,
+            ),
+          )
         }
       />
     </>

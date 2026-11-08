@@ -11,6 +11,7 @@ const mockRefreshPermission = jest.fn();
 const mockUseCheckInCamera = jest.fn();
 const mockUseFaceCheckInSession = jest.fn();
 const mockLoadVisionCamera = jest.fn();
+const mockUseLocalSearchParams = jest.fn();
 
 function MockVisionCamera(props: {
   onReady: () => void;
@@ -40,6 +41,7 @@ jest.mock("expo-router", () => {
     useFocusEffect: (effect: () => void | (() => void)) => {
       React.useLayoutEffect(effect, [effect]);
     },
+    useLocalSearchParams: () => mockUseLocalSearchParams(),
   };
 });
 
@@ -164,6 +166,7 @@ describe("CheckInScreen camera fallback", () => {
     mockHandlePermissionAction.mockResolvedValue({ granted: true });
     mockUseCheckInCamera.mockReturnValue(cameraState());
     mockUseFaceCheckInSession.mockReturnValue(sessionState);
+    mockUseLocalSearchParams.mockReturnValue({});
     mockLoadVisionCamera.mockReturnValue({
       available: true,
       module: { VisionCheckInCamera: MockVisionCamera },
@@ -246,4 +249,5 @@ describe("CheckInScreen camera fallback", () => {
     expect(mockBack).toHaveBeenCalledTimes(1);
     expect(mockReplace).not.toHaveBeenCalled();
   });
+
 });

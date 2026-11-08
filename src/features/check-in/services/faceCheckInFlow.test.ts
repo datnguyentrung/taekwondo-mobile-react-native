@@ -65,4 +65,57 @@ describe('runFaceCheckIn', () => {
     );
     expect(terminal.stage).toBe('SUCCEEDED');
   });
+
+  it('uses Java terminal SSE after Fog rejects an image with HTTP 422', async () => {
+    jest.mocked(Crypto.randomUUID).mockReturnValue('request-1');
+    jest.mocked(faceCheckInApi.registerScan).mockResolvedValue({
+      requestId: 'request-1',
+      deviceId: 'kiosk-01',
+      uploadTicket: 'ticket-1',
+      expiresAt: '2026-11-06T10:00:30Z',
+    });
+    jest.mocked(faceCheckInApi.uploadPhotoToFog).mockRejectedValue(
+      Object.assign(new Error('Ảnh chỉ được chứa một khuôn mặt'), {
+        name: 'FaceCheckInTransportError',
+        status: 422,
+      }),
+    );
+    jest.mocked(consumeFaceCheckInEvents).mockImplementationOnce(
+      ({ onEvent }) =>
+        new Promise((resolve) => {
+          onEvent({
+            eventId: 1,
+            requestId: 'request-1',
+            deviceId: 'kiosk-01',
+            stage: 'READY',
+            occurredAt: '2026-11-06T10:00:00Z',
+          });
+          setTimeout(() => {
+            const terminal = {
+              eventId: 2,
+              requestId: 'request-1',
+              deviceId: 'kiosk-01',
+              stage: 'REJECTED' as const,
+              occurredAt: '2026-11-06T10:00:01Z',
+              error: {
+                code: 'MULTIPLE_FACES_DETECTED',
+                title: 'Face scan rejected',
+                detail: 'Ảnh chỉ được chứa một khuôn mặt',
+              },
+            };
+            onEvent(terminal);
+            resolve(terminal);
+          }, 0);
+        }),
+    );
+
+    const terminal = await runFaceCheckIn({
+      photoFilePath: '/capture/face.jpg',
+      signal: new AbortController().signal,
+      onEvent: jest.fn(),
+    });
+
+    expect(terminal.stage).toBe('REJECTED');
+    expect(terminal.error?.code).toBe('MULTIPLE_FACES_DETECTED');
+  });
 });
