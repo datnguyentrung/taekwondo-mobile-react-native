@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { Alert } from 'react-native';
+import { Alert, AppState } from 'react-native';
 
 import { useNotificationStore } from '@/features/notification/store/notification.store';
 import { notificationService } from '@/infrastructure/notifications/notificationService';
@@ -24,15 +24,12 @@ export function useAuthenticationRuntime(): void {
       return undefined;
     }
 
-    if (status === 'authenticated') {
-      void useNotificationStore
-        .getState()
-        .fetchUnreadCount({ personId: activePersonId });
-    }
-
-    const unsubscribeToken = notificationService.subscribeToTokenRefresh(() => {
-      void authSessionService.syncFcm(false).catch(() => undefined);
-    });
+    void authSessionService.syncFcm({ requestPermission: true }).catch(() => undefined);
+    const unsubscribeToken = notificationService.platform === 'ANDROID'
+      ? notificationService.subscribeToTokenRefresh((token) => {
+          void authSessionService.syncFcm({ token }).catch(() => undefined);
+        })
+      : () => undefined;
     const unsubscribeMessages =
       notificationService.subscribeToForegroundMessages((message) => {
         if (message.type === 'PASSWORD_RESET_CODE' && message.code) {
@@ -46,5 +43,25 @@ export function useAuthenticationRuntime(): void {
       unsubscribeToken();
       unsubscribeMessages();
     };
+  }, [status]);
+
+  useEffect(() => {
+    if (status !== 'authenticated') return;
+    void useNotificationStore
+      .getState()
+      .fetchUnreadCount({ personId: activePersonId });
   }, [activePersonId, status]);
+
+  useEffect(() => {
+    if (status !== 'authenticated' && status !== 'selecting-context') {
+      return undefined;
+    }
+
+    const subscription = AppState.addEventListener('change', (nextState) => {
+      if (nextState === 'active') {
+        void authSessionService.syncFcm().catch(() => undefined);
+      }
+    });
+    return () => subscription.remove();
+  }, [status]);
 }

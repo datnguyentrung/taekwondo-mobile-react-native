@@ -50,21 +50,44 @@ async function persistRotatedSession(
   return response;
 }
 
-let notificationSyncPromise: Promise<void> | null = null;
+export type SyncFcmOptions = {
+  requestPermission?: boolean;
+  token?: string;
+};
 
-async function syncFcm(requestPermission: boolean): Promise<void> {
-  if (notificationSyncPromise) return notificationSyncPromise;
-  notificationSyncPromise = (async () => {
-    if (!authStore.getAccessToken()) return;
-    const token = await notificationService.getToken({ requestPermission });
-    if (token) await authApi.updateFcm(token, notificationService.platform);
-  })().finally(() => {
-    notificationSyncPromise = null;
+let notificationSyncChain: Promise<void> = Promise.resolve();
+let lastSyncedFcmToken: string | null = null;
+
+/**
+ * Keeps FCM writes ordered so an older token cannot overwrite a refreshed
+ * token. FCM registration is deliberately an Android-only app capability.
+ */
+function syncFcm(options: SyncFcmOptions = {}): Promise<void> {
+  const operation = notificationSyncChain.catch(() => undefined).then(async () => {
+    if (
+      notificationService.platform !== 'ANDROID' ||
+      !authStore.getAccessToken()
+    ) {
+      return;
+    }
+
+    const token = options.token ?? await notificationService.getToken({
+      requestPermission: options.requestPermission ?? false,
+    });
+    if (!token || token === lastSyncedFcmToken || !authStore.getAccessToken()) {
+      return;
+    }
+
+    await authApi.updateFcm(token, 'ANDROID');
+    lastSyncedFcmToken = token;
   });
-  return notificationSyncPromise;
+
+  notificationSyncChain = operation;
+  return operation;
 }
 
 async function invalidateSession(reason: SessionInvalidReason): Promise<void> {
+  lastSyncedFcmToken = null;
   await Promise.allSettled([
     authSessionStorageService.clear(),
     useNotificationStore.getState().reset(),
@@ -127,7 +150,7 @@ export const authSessionService = {
         await applyAndPersist(account, tokens.accessToken);
       }
 
-      void syncFcm(false).catch(() => undefined);
+      void syncFcm().catch(() => undefined);
     } catch (error: unknown) {
       if (!isAxiosError(error) || !error.response) {
         useAuthStore
@@ -145,23 +168,14 @@ export const authSessionService = {
   },
 
   async login(input: Pick<LoginRequest, 'phoneNumber' | 'password'>): Promise<AuthResponse> {
-    const [idDevice, fcmToken] = await Promise.all([
-      getInstallationId(),
-      notificationService
-        .getToken({ requestPermission: false })
-        .catch(() => null),
-    ]);
+    const idDevice = await getInstallationId();
     const response = await authApi.login({
       ...input,
       idDevice,
-      fcmToken,
       platform: notificationService.platform,
     });
-    const session = await persistRotatedSession(response);
-    if (!fcmToken) {
-      void syncFcm(true).catch(() => undefined);
-    }
-    return session;
+    lastSyncedFcmToken = null;
+    return persistRotatedSession(response);
   },
 
   async switchContext(request: SwitchContextRequest): Promise<AuthResponse> {
