@@ -30,9 +30,13 @@ export interface SessionResponse {
   endTime: string;
   note: string | null;
   learningProgress?: {
+    scheduled: number;
+    active: number;
     completed: number;
+    terminated: number;
+    cancelled: number;
+    postponed: number;
     total: number;
-    percent: number;
   } | null;
 }
 

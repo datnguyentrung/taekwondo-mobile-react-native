@@ -1,9 +1,10 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useCallback, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import type {
   ClassSessionEvaluationResponse,
   EvaluationAttendance,
+  EvaluationUpdateResult,
   SessionAttendanceResponse,
 } from "../api/session-attendance.dto";
 import { sessionAttendanceApi } from "../api/sessionAttendanceApi";
@@ -48,9 +49,32 @@ export function useSessionAttendance({
   const queryClient = useQueryClient();
   const queryKey = sessionAttendanceKeys.evaluation(classSessionId);
   const pendingStudentIdsRef = useRef(new Set<string>());
+  const pendingCountByStudentRef = useRef(new Map<string, number>());
+  const latestMutationByStudentRef = useRef(new Map<string, number>());
+  const activeControllersByStudentRef = useRef(new Map<string, AbortController>());
+  const isMountedRef = useRef(true);
   const [pendingStudentIds, setPendingStudentIds] = useState<Set<string>>(
     () => new Set(),
   );
+
+  useEffect(() => {
+    const controllers = activeControllersByStudentRef.current;
+    isMountedRef.current = true;
+    return () => {
+      isMountedRef.current = false;
+      controllers.forEach((controller) => {
+        controller.abort();
+      });
+      controllers.clear();
+    };
+  }, []);
+
+  useEffect(() => {
+    activeControllersByStudentRef.current.forEach((controller) => {
+      controller.abort();
+    });
+    activeControllersByStudentRef.current.clear();
+  }, [classSessionId]);
   const query = useQuery<ClassSessionEvaluationResponse>({
     queryKey,
     queryFn: () => sessionAttendanceApi.getEvaluation(classSessionId as string),
@@ -79,8 +103,19 @@ export function useSessionAttendance({
 
   const setStudentPending = useCallback(
     (studentEnrollmentId: string, pending: boolean) => {
+      const nextCount = Math.max(
+        0,
+        (pendingCountByStudentRef.current.get(studentEnrollmentId) ?? 0) +
+          (pending ? 1 : -1),
+      );
+      if (nextCount === 0) {
+        pendingCountByStudentRef.current.delete(studentEnrollmentId);
+      } else {
+        pendingCountByStudentRef.current.set(studentEnrollmentId, nextCount);
+      }
+
       const next = new Set(pendingStudentIdsRef.current);
-      if (pending) next.add(studentEnrollmentId);
+      if (nextCount > 0) next.add(studentEnrollmentId);
       else next.delete(studentEnrollmentId);
       pendingStudentIdsRef.current = next;
       setPendingStudentIds(next);
@@ -88,9 +123,20 @@ export function useSessionAttendance({
     [],
   );
 
+  const beginStudentMutation = useCallback(
+    (studentEnrollmentId: string) => {
+      const mutationVersion =
+        (latestMutationByStudentRef.current.get(studentEnrollmentId) ?? 0) + 1;
+      latestMutationByStudentRef.current.set(studentEnrollmentId, mutationVersion);
+      setStudentPending(studentEnrollmentId, true);
+      return mutationVersion;
+    },
+    [setStudentPending],
+  );
+
   const updateAttendanceStatus = useCallback(
     async (studentEnrollmentId: string, newStatus: AttendanceStatus) => {
-      if (!classSessionId || pendingStudentIdsRef.current.has(studentEnrollmentId)) {
+      if (!classSessionId) {
         return false;
       }
 
@@ -107,7 +153,7 @@ export function useSessionAttendance({
       const checkInTime =
         previousAttendance?.checkInTime ??
         (newStatus === "ABSENT" ? null : new Date().toISOString());
-      setStudentPending(studentEnrollmentId, true);
+      const mutationVersion = beginStudentMutation(studentEnrollmentId);
       queryClient.setQueryData<ClassSessionEvaluationResponse>(queryKey, (current) =>
         current
           ? {
@@ -142,7 +188,6 @@ export function useSessionAttendance({
           await waitForAttendanceCommand(() =>
             sessionAttendanceApi.getCommand(receipt.requestId),
           );
-          await reconcileWithServer();
           return true;
         }
 
@@ -154,8 +199,12 @@ export function useSessionAttendance({
           checkInTime,
           note: null,
         });
-        queryClient.setQueryData<ClassSessionEvaluationResponse>(queryKey, (current) =>
-          current
+        if (
+          latestMutationByStudentRef.current.get(studentEnrollmentId) ===
+          mutationVersion
+        ) {
+          queryClient.setQueryData<ClassSessionEvaluationResponse>(queryKey, (current) =>
+            current
             ? {
                 ...current,
                 students: current.students.map((item) =>
@@ -168,20 +217,32 @@ export function useSessionAttendance({
                     : item,
                 ),
               }
-            : current,
-        );
-        await reconcileWithServer();
+              : current,
+          );
+        }
         return true;
       } catch (error) {
-        queryClient.setQueryData(queryKey, previousData);
-        onUpdateError(getErrorMessage(error));
+        if (
+          latestMutationByStudentRef.current.get(studentEnrollmentId) ===
+          mutationVersion
+        ) {
+          queryClient.setQueryData(queryKey, previousData);
+          onUpdateError(getErrorMessage(error));
+        }
         return false;
       } finally {
         setStudentPending(studentEnrollmentId, false);
+        if (
+          pendingCountByStudentRef.current.get(studentEnrollmentId) == null &&
+          latestMutationByStudentRef.current.get(studentEnrollmentId) === mutationVersion
+        ) {
+          await reconcileWithServer();
+        }
       }
     },
     [
       classSessionId,
+      beginStudentMutation,
       onUpdateError,
       queryClient,
       queryKey,
@@ -196,7 +257,7 @@ export function useSessionAttendance({
       newStatus: EvaluationStatus,
       note?: string | null,
     ) => {
-      if (!classSessionId || pendingStudentIdsRef.current.has(studentEnrollmentId)) {
+      if (!classSessionId) {
         return false;
       }
 
@@ -214,7 +275,14 @@ export function useSessionAttendance({
       const previousAttendance = targetStudent.attendance;
       if (!previousAttendance?.sessionAttendanceId) return false;
 
-      setStudentPending(studentEnrollmentId, true);
+      activeControllersByStudentRef.current.get(studentEnrollmentId)?.abort();
+      const abortController = new AbortController();
+      activeControllersByStudentRef.current.set(
+        studentEnrollmentId,
+        abortController,
+      );
+
+      const mutationVersion = beginStudentMutation(studentEnrollmentId);
       queryClient.setQueryData<ClassSessionEvaluationResponse>(queryKey, (current) =>
         current
           ? {
@@ -245,25 +313,89 @@ export function useSessionAttendance({
             ...(note === undefined ? {} : { note: note ?? "" }),
           },
         );
-        await waitForAttendanceCommand(() =>
-          sessionAttendanceApi.getCommand(receipt.requestId),
-        );
-        await reconcileWithServer();
+        const command =
+          await waitForAttendanceCommand<EvaluationUpdateResult>(
+            () =>
+              sessionAttendanceApi.getCommand<EvaluationUpdateResult>(
+                receipt.requestId,
+                abortController.signal,
+              ),
+            { signal: abortController.signal },
+          );
+
+        if (
+          latestMutationByStudentRef.current.get(studentEnrollmentId) ===
+          mutationVersion
+        ) {
+          const result = command.result;
+          if (!result) {
+            throw new Error("Command completed without an evaluation result.");
+          }
+
+          queryClient.setQueryData<ClassSessionEvaluationResponse>(
+              queryKey,
+              (current) =>
+                current
+                  ? {
+                      ...current,
+                      students: current.students.map((item) =>
+                        item.studentEnrollment.studentEnrollmentId ===
+                        studentEnrollmentId
+                          ? {
+                              ...item,
+                              attendance: item.attendance
+                                ? {
+                                    ...item.attendance,
+                                    sessionAttendanceId:
+                                      result.sessionAttendanceId ||
+                                      item.attendance.sessionAttendanceId,
+                                    evaluationStatus:
+                                      result.evaluationStatus ??
+                                      item.attendance.evaluationStatus,
+                                    note:
+                                      result.note !== undefined
+                                        ? result.note
+                                        : item.attendance.note,
+                                  }
+                                : null,
+                            }
+                          : item,
+                      ),
+                    }
+                  : current,
+            );
+        }
         return true;
       } catch (error) {
-        queryClient.setQueryData(queryKey, previousData);
-        onUpdateError(getErrorMessage(error));
+        if (abortController.signal.aborted || !isMountedRef.current) {
+          return false;
+        }
+        if (
+          latestMutationByStudentRef.current.get(studentEnrollmentId) ===
+          mutationVersion
+        ) {
+          queryClient.setQueryData(queryKey, previousData);
+          onUpdateError(getErrorMessage(error));
+        }
         return false;
       } finally {
-        setStudentPending(studentEnrollmentId, false);
+        if (
+          activeControllersByStudentRef.current.get(studentEnrollmentId) ===
+          abortController
+        ) {
+          activeControllersByStudentRef.current.delete(studentEnrollmentId);
+        }
+        if (isMountedRef.current) {
+          setStudentPending(studentEnrollmentId, false);
+        }
       }
     },
     [
       classSessionId,
+      beginStudentMutation,
       onUpdateError,
       queryClient,
       queryKey,
-      reconcileWithServer,
       setStudentPending,
     ],
   );

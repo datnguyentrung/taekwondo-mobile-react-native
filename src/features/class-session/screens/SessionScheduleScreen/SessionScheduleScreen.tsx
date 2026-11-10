@@ -241,13 +241,21 @@ export default function SessionScheduleScreen() {
         session={selectedSessionDetail}
         visible={!!selectedSessionDetail}
         onClose={() => setSelectedSessionDetail(null)}
-        onViewDetail={(session) =>
+        onNotify={(session) => {
+          // Thông báo cho buổi học
+        }}
+        onEvaluate={(session) =>
           router.push(
             asHref(
               `/class-sessions/${session.classSessionId}/attendance`,
             ),
           )
         }
+        onViewCourseDetail={(session) => {
+          if (session.courseId) {
+            router.push(asHref(`/courses/${session.courseId}`));
+          }
+        }}
       />
     </>
   );

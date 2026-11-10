@@ -113,6 +113,14 @@ export interface UpdateEvaluationRequest {
   note?: string | null;
 }
 
+export interface EvaluationUpdateResult {
+  sessionAttendanceId: string;
+  classSessionId: string;
+  evaluationStatus: EvaluationStatus;
+  note?: string | null;
+  updatedAt?: string;
+}
+
 export type AttendanceCommandStatus =
   | "QUEUED"
   | "PROCESSING"
@@ -128,8 +136,12 @@ export interface AttendanceCommandReceipt {
   message: string;
 }
 
-export interface AttendanceCommandResponse extends AttendanceCommandReceipt {
-  result?: unknown;
+/** The persisted command resource returned by GET, which intentionally has no receipt message. */
+export interface AttendanceCommandResponse<TResult = unknown> {
+  requestId: string;
+  type: string;
+  status: AttendanceCommandStatus;
+  result?: TResult | null;
   error?: {
     code?: string | null;
     title?: string | null;

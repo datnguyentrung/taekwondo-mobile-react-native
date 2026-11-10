@@ -8,10 +8,14 @@ export type DeviceCreateRequest = {
   fogGatewayId?: string | null;
   pairedKioskId?: string | null;
 };
+export type DeviceUpdateRequest = { displayName: string; branchId?: number | null; fogGatewayId?: string | null; pairedKioskId?: string | null; groupCode?: string | null; areaLabel?: string | null; locationLabel?: string | null; };
 
 export const deviceApi = {
   list: async (): Promise<ManagedDevice[]> => (await javaApi.get<ManagedDevice[]>('/devices')).data,
   create: async (request: DeviceCreateRequest) => (await javaApi.post<ManagedDevice>('/devices', request)).data,
+  get: async (deviceId: string): Promise<ManagedDevice> => (await javaApi.get<ManagedDevice>(`/devices/${deviceId}`)).data,
+  update: async (deviceId: string, request: DeviceUpdateRequest): Promise<ManagedDevice> => (await javaApi.put<ManagedDevice>(`/devices/${deviceId}`, request)).data,
+  remove: async (deviceId: string): Promise<void> => { await javaApi.delete(`/devices/${deviceId}`); },
   lifecycle: async (deviceId: string, targetStatus: string) => (await javaApi.patch<ManagedDevice>(`/devices/${deviceId}/lifecycle`, { targetStatus })).data,
   provisionCode: async (deviceId: string) => (await javaApi.post<{ code: string }>(`/devices/${deviceId}/provisioning-codes`)).data,
   revoke: async (deviceId: string) => (await javaApi.post<ManagedDevice>(`/devices/${deviceId}/credentials/revoke`)).data,

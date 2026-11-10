@@ -1,9 +1,10 @@
-import { StyleSheet, TouchableOpacity, View } from "react-native";
+import { StyleSheet, View } from "react-native";
 import { Bullhorn } from "reicon-react-native";
 
 import { BottomSheetWindow } from "@/shared/ui/BottomSheetWindow";
+import { FloatingActionBar } from "@/shared/ui/FloatingActionBar";
 import { ThemedText } from "@/shared/ui/ThemedText";
-import { Colors, radii } from "@/theme";
+import { Colors } from "@/theme";
 import type { ClassSessionCalendarResponse } from "../../api/class-session.dto";
 import { SessionStatusLabel } from "../../constants/class-session.constants";
 
@@ -11,6 +12,8 @@ export interface SessionDetailSheetProps {
   session: ClassSessionCalendarResponse | null;
   visible: boolean;
   onClose: () => void;
+  onEvaluate?: (session: ClassSessionCalendarResponse) => void;
+  onViewCourseDetail?: (session: ClassSessionCalendarResponse) => void;
   onViewDetail?: (session: ClassSessionCalendarResponse) => void;
   onNotify?: (session: ClassSessionCalendarResponse) => void;
 }
@@ -37,6 +40,8 @@ export function SessionDetailSheet({
   session,
   visible,
   onClose,
+  onEvaluate,
+  onViewCourseDetail,
   onViewDetail,
   onNotify,
 }: SessionDetailSheetProps) {
@@ -51,6 +56,45 @@ export function SessionDetailSheet({
 
   const classCode = session.courseId || session.classSessionId;
 
+  const actions = [
+    {
+      key: "view-course",
+      label: "Xem chi tiết",
+      variant: "outline" as const,
+      flex: 1,
+      onPress: () => {
+        onClose();
+        onViewCourseDetail?.(session);
+      },
+    },
+    {
+      key: "evaluate",
+      label: "Đánh giá",
+      variant: "primary" as const,
+      flex: 1,
+      onPress: () => {
+        onClose();
+        (onEvaluate ?? onViewDetail)?.(session);
+      },
+    },
+    {
+      key: "notify",
+      label: "",
+      icon: <Bullhorn color={Colors.light.primary} size={22} />,
+      variant: "ghost" as const,
+      accessibilityLabel: "Gửi thông báo",
+      flex: 0,
+      style: {
+        width: 44,
+        minWidth: 44,
+        paddingHorizontal: 0,
+        backgroundColor: "transparent",
+        borderWidth: 0,
+      },
+      onPress: () => onNotify?.(session),
+    },
+  ];
+
   return (
     <BottomSheetWindow
       visible={visible}
@@ -59,30 +103,7 @@ export function SessionDetailSheet({
       accessibilityLabel="Cửa sổ chi tiết lịch"
       contentPaddingHorizontal={false}
       onClose={onClose}
-      footer={
-        <View style={styles.footerContainer}>
-          <TouchableOpacity
-            style={styles.primaryButton}
-            activeOpacity={0.8}
-            onPress={() => {
-              onClose();
-              onViewDetail?.(session);
-            }}
-          >
-            <ThemedText style={styles.primaryButtonText}>
-              Xem chi tiết
-            </ThemedText>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={styles.notifyButton}
-            activeOpacity={0.8}
-            onPress={() => onNotify?.(session)}
-          >
-            <Bullhorn color="#FFFFFF" size={20} />
-          </TouchableOpacity>
-        </View>
-      }
+      footer={<FloatingActionBar placement="sheet" actions={actions} />}
     >
       <View style={styles.content}>
         {/* Row: Loại sự kiện */}
@@ -207,31 +228,5 @@ const styles = StyleSheet.create({
     lineHeight: 20,
     color: "#0891B2",
     fontWeight: "600",
-  },
-  footerContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 12,
-  },
-  primaryButton: {
-    flex: 1,
-    height: 48,
-    backgroundColor: Colors.light.primary,
-    borderRadius: radii.md,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  primaryButtonText: {
-    color: "#FFFFFF",
-    fontSize: 16,
-    fontWeight: "700",
-  },
-  notifyButton: {
-    width: 48,
-    height: 48,
-    backgroundColor: Colors.light.primary,
-    borderRadius: radii.md,
-    alignItems: "center",
-    justifyContent: "center",
   },
 });

@@ -25,9 +25,13 @@ import { asHref } from "@/features/student-commerce/utils/studentCommerceUtils";
 import { useClassSessionDetail } from "../queries/classSessionQueries";
 
 type LearningProgress = {
+  scheduled: number;
+  active: number;
   completed: number;
+  terminated: number;
+  cancelled: number;
+  postponed: number;
   total: number;
-  percent: number;
 };
 
 function formatTime(time?: string) {
@@ -89,6 +93,12 @@ function getAttendanceHistoryParams(
 }
 
 function LearningProgressCard({ progress }: { progress: LearningProgress }) {
+  const percent = progress.total === 0
+    ? 0
+    : Math.min(
+        Math.round(((progress.total - progress.scheduled) / progress.total) * 100),
+        100,
+      );
   return (
     <SurfaceCard>
       <View style={styles.progressHeader}>
@@ -96,7 +106,7 @@ function LearningProgressCard({ progress }: { progress: LearningProgress }) {
           Tiến trình học
         </ThemedText>
         <ThemedText type="bodySmall" style={styles.progressPercent}>
-          {progress.percent}%
+          {percent}%
         </ThemedText>
       </View>
       <ThemedText type="bodySmall" style={styles.secondaryText}>
@@ -107,13 +117,13 @@ function LearningProgressCard({ progress }: { progress: LearningProgress }) {
         accessibilityValue={{
           min: 0,
           max: 100,
-          now: progress.percent,
+          now: percent,
           text: `Đã hoàn thành ${progress.completed}/${progress.total} buổi`,
         }}
         style={styles.progressTrack}
       >
         <View
-          style={[styles.progressFill, { width: `${progress.percent}%` }]}
+          style={[styles.progressFill, { width: `${percent}%` }]}
         />
       </View>
     </SurfaceCard>
@@ -172,8 +182,12 @@ export function ClassSessionDetailScreen({
     : undefined;
   const progress = sessionQuery.data?.learningProgress ?? {
     completed: 0,
+    scheduled: 0,
+    active: 0,
+    terminated: 0,
+    cancelled: 0,
+    postponed: 0,
     total: 0,
-    percent: 0,
   };
 
   return (

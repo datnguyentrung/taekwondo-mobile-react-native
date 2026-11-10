@@ -49,9 +49,8 @@ export function StudentAttendanceCard({
   const currentAttendance = item.attendance?.attendanceStatus ?? null;
   const currentEvaluation = item.attendance?.evaluationStatus ?? "PENDING";
   const evaluationAllowed = canEvaluateStudent(item);
-  const canEditAttendance =
-    !isPending && (item.attendance ? canUpdate : canCreate);
-  const canEditEvaluation = !isPending && canUpdate && evaluationAllowed;
+  const canEditAttendance = item.attendance ? canUpdate : canCreate;
+  const canEditEvaluation = canUpdate && evaluationAllowed;
   const attendanceConfig = currentAttendance
     ? ATTENDANCE_CONFIG[currentAttendance]
     : null;

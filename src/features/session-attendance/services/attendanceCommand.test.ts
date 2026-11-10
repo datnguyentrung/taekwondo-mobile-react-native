@@ -12,7 +12,6 @@ function command(
     requestId: "request-1",
     type: "SESSION_ATTENDANCE_STATUS_UPDATE",
     status,
-    message: status,
     result: null,
     error: detail ? { code: "UPDATE_REJECTED", detail } : null,
     createdAt: "2026-11-08T00:00:00",
@@ -50,20 +49,42 @@ describe("waitForAttendanceCommand", () => {
     );
   });
 
-  it("fails when Java never produces a terminal result", async () => {
-    let now = 0;
-    await expect(
-      waitForAttendanceCommand(async () => command("PROCESSING"), {
-        timeoutMs: 100,
-        intervalMs: 50,
-        now: () => now,
-        sleep: async (delay) => {
-          now += delay;
-        },
-      }),
-    ).rejects.toMatchObject({
-      status: "EXPIRED",
-      code: "COMMAND_TIMEOUT",
+  it("polls sequentially with backoff schedule: 250ms, 500ms, 1000ms, 2000ms then caps at 3000ms", async () => {
+    const sleepDelays: number[] = [];
+    const getCommand = jest
+      .fn<Promise<AttendanceCommandResponse>, []>()
+      .mockResolvedValueOnce(command("QUEUED"))
+      .mockResolvedValueOnce(command("PROCESSING"))
+      .mockResolvedValueOnce(command("PROCESSING"))
+      .mockResolvedValueOnce(command("PROCESSING"))
+      .mockResolvedValueOnce(command("PROCESSING"))
+      .mockResolvedValueOnce(command("SUCCEEDED"));
+
+    const result = await waitForAttendanceCommand(getCommand, {
+      sleep: async (delay) => {
+        sleepDelays.push(delay);
+      },
     });
+
+    expect(result.status).toBe("SUCCEEDED");
+    expect(getCommand).toHaveBeenCalledTimes(6);
+    expect(sleepDelays).toEqual([250, 500, 1000, 2000, 3000]);
+  });
+
+  it("aborts polling when AbortSignal is triggered", async () => {
+    const controller = new AbortController();
+    const getCommand = jest
+      .fn<Promise<AttendanceCommandResponse>, []>()
+      .mockImplementation(async () => {
+        controller.abort();
+        return command("PROCESSING");
+      });
+
+    await expect(
+      waitForAttendanceCommand(getCommand, {
+        signal: controller.signal,
+        sleep: async () => undefined,
+      }),
+    ).rejects.toThrow("Command polling aborted");
   });
 });

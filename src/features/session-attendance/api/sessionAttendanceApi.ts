@@ -65,9 +65,13 @@ export const sessionAttendanceApi = {
     );
     return response.data;
   },
-  async getCommand(requestId: string): Promise<AttendanceCommandResponse> {
-    const response = await javaApi.get<AttendanceCommandResponse>(
+  async getCommand<TResult = unknown>(
+    requestId: string,
+    signal?: AbortSignal,
+  ): Promise<AttendanceCommandResponse<TResult>> {
+    const response = await javaApi.get<AttendanceCommandResponse<TResult>>(
       `/attendance-commands/${requestId}`,
+      { signal },
     );
     return response.data;
   },

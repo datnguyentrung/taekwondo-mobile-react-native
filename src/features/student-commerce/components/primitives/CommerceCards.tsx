@@ -1,3 +1,4 @@
+import { Pressable, StyleSheet, View } from "react-native";
 import {
   Calendar,
   ChevronRight,
@@ -5,7 +6,6 @@ import {
   Location,
   NoteText,
 } from "reicon-react-native";
-import { Pressable, StyleSheet, View } from "react-native";
 
 import { AppIcon } from "@/shared/ui/AppIcon";
 import { ThemedText } from "@/shared/ui/ThemedText";
@@ -13,22 +13,21 @@ import { formatVnd } from "@/shared/utils/currency";
 import { Colors, effects, hexToRgba, radii } from "@/theme";
 import type { AppIconElement } from "@/theme/icons";
 
-import type {
-  CourseView,
-  WalletTransactionView,
-} from "../../types";
 import {
   InfoRow,
   StatusBadge,
   SurfaceCard,
 } from "@/shared/ui/commerce/CommercePrimitives";
+import type { CourseView, WalletTransactionView } from "../../types";
 
 function formatCourseStartingPrice(course: CourseView) {
   if (course.packages.length === 0) return "Chưa có học phí";
   const monthlyAmount = Math.min(
     ...course.packages.map((item) => {
       const durationMatch = item.durationLabel.match(/\d+/);
-      const durationMonths = durationMatch ? Math.max(Number(durationMatch[0]), 1) : 1;
+      const durationMonths = durationMatch
+        ? Math.max(Number(durationMatch[0]), 1)
+        : 1;
       return Math.round(item.amount / durationMonths);
     }),
   );
@@ -73,7 +72,10 @@ export function CourseCatalogCard({
             >
               {course.courseName}
             </ThemedText>
-            <CourseMetaRow icon={<Location />} label={`Cơ sở ${course.branchName}`} />
+            <CourseMetaRow
+              icon={<Location />}
+              label={`Cơ sở ${course.branchName}`}
+            />
             <CourseMetaRow icon={<Calendar />} label={course.scheduleLabel} />
           </View>
           <View style={styles.courseChevron}>
@@ -135,14 +137,12 @@ export function EnrollmentCard({
   };
   onPress?: () => void;
 }) {
-  const remaining = Math.max(
-    enrollment.totalSessions - enrollment.usedSessions,
-    0,
-  );
-  const progress = Math.min(
-    enrollment.usedSessions / enrollment.totalSessions,
-    1,
-  );
+  const totalSessions = Math.max(enrollment.totalSessions, 0);
+  const remaining = Math.max(totalSessions - enrollment.usedSessions, 0);
+  const progress =
+    totalSessions === 0
+      ? 0
+      : Math.min(enrollment.usedSessions / totalSessions, 1);
 
   return (
     <Pressable
@@ -164,7 +164,7 @@ export function EnrollmentCard({
           <StatusBadge label={enrollment.statusLabel} />
         </View>
         <ThemedText type="bodySmall" style={styles.blackText}>
-          Còn {remaining}/{enrollment.totalSessions} buổi
+          Còn {remaining}/{totalSessions} buổi
         </ThemedText>
         <View style={styles.progressTrack}>
           <View
@@ -210,7 +210,13 @@ export function TransactionCard({
   );
 }
 
-export function BalanceCard({ label, amount }: { label: string; amount: number }) {
+export function BalanceCard({
+  label,
+  amount,
+}: {
+  label: string;
+  amount: number;
+}) {
   return (
     <SurfaceCard soft>
       <ThemedText type="bodySmall" style={styles.blackText}>

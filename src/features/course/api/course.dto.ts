@@ -26,11 +26,12 @@ export interface CourseScheduleStaffAssignmentResponse {
 
 export interface CourseScheduleSimpleResponse {
   courseScheduleId: string;
-  courseId?: string;
+  course?: CourseBriefResponse;
   classSchedule: ClassScheduleSimpleResponse;
   startDate: string;
   endDate: string | null;
   status: "ACTIVE" | "INACTIVE";
+  learningProgress?: LearningProgress | null;
 }
 
 export interface CourseScheduleUpsertRequest {
@@ -76,6 +77,21 @@ export interface CourseSimpleResponse {
   capacity: number;
   currentStudentCount: number;
   status: CourseStatus;
+}
+
+export interface CourseBriefResponse {
+  courseId: string;
+  name: string;
+}
+
+export interface LearningProgress {
+  scheduled: number;
+  active: number;
+  completed: number;
+  terminated: number;
+  cancelled: number;
+  postponed: number;
+  total: number;
 }
 
 export interface CourseListParams {

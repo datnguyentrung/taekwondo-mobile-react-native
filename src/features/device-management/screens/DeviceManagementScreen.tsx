@@ -2,7 +2,7 @@ import StackScreenLayout from "@/routes/navigation/layouts/StackScreenLayout";
 import { AppIcon } from "@/shared/ui/AppIcon";
 import { ThemedText } from "@/shared/ui/ThemedText";
 import { Colors, Spacing, radii } from "@/theme";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 import { Pressable, StyleSheet, View } from "react-native";
 import { Plus, Wifi, WifiOff } from "reicon-react-native";
@@ -10,6 +10,7 @@ import { usePermissions } from '@/features/authorization';
 import { Permission } from '@/features/authorization/domain/permissions';
 import { DeviceProvisioningSheet } from '../components/DeviceProvisioningSheet';
 import { FogRuntimeConfigSheet } from '../components/FogRuntimeConfigSheet';
+import { DeviceDetailSheet } from '../components/DeviceDetailSheet';
 import { deviceApi } from "../api/deviceApi";
 import type { ManagedDevice } from "../domain/device.types";
 
@@ -18,19 +19,12 @@ export function DeviceManagementScreen() {
   const [tab, setTab] = useState<"devices" | "alerts">("devices");
   const [createVisible, setCreateVisible] = useState(false);
   const [configuredFog, setConfiguredFog] = useState<ManagedDevice | null>(null);
+  const [selectedDeviceId, setSelectedDeviceId] = useState<string | null>(null);
   const permissions = usePermissions();
   const canCreate = permissions?.includes(Permission.DEVICE_CREATE) ?? false;
   const client = useQueryClient();
   const devices = useQuery({ queryKey, queryFn: deviceApi.list });
   const events = useQuery({ queryKey: ["device-events"], queryFn: deviceApi.events, enabled: tab === "alerts" });
-  const activate = useMutation({
-    mutationFn: (device: ManagedDevice) =>
-      deviceApi.lifecycle(
-        device.deviceId,
-        device.lifecycleStatus === "ACTIVE" ? "MAINTENANCE" : "ACTIVE",
-      ),
-    onSuccess: () => client.invalidateQueries({ queryKey }),
-  });
   const summary = useMemo(() => {
     const all = devices.data ?? [];
     return {
@@ -94,7 +88,8 @@ export function DeviceManagementScreen() {
               <View key={device.deviceId} style={styles.card}>
               <Pressable
                 accessibilityRole="button"
-                onPress={() => activate.mutate(device)}
+                onPress={() => setSelectedDeviceId(device.deviceId)}
+                style={({ pressed }) => (pressed ? styles.cardPressed : undefined)}
               >
                 <View style={styles.row}>
                   <AppIcon
@@ -146,6 +141,7 @@ export function DeviceManagementScreen() {
       )}
       <DeviceProvisioningSheet visible={createVisible} devices={devices.data ?? []} onClose={() => setCreateVisible(false)} onCreated={() => { void client.invalidateQueries({ queryKey }); }} />
       <FogRuntimeConfigSheet device={configuredFog} onClose={() => setConfiguredFog(null)} onSaved={() => { void client.invalidateQueries({ queryKey }); }} />
+      <DeviceDetailSheet deviceId={selectedDeviceId} onClose={() => setSelectedDeviceId(null)} />
     </StackScreenLayout>
   );
 }
@@ -177,6 +173,7 @@ const styles = StyleSheet.create({
     padding: Spacing.three,
     gap: Spacing.two,
   },
+  cardPressed: { opacity: 0.78, transform: [{ scale: 0.99 }] },
   row: { flexDirection: "row", alignItems: "center", gap: Spacing.two },
   grow: { flex: 1 },
   muted: { color: Colors.light.textSecondary },

@@ -7,6 +7,7 @@ import type {
   EvaluationStudent,
 } from "../api/session-attendance.dto";
 import { sessionAttendanceApi } from "../api/sessionAttendanceApi";
+import { waitForAttendanceCommand } from "../services/attendanceCommand";
 import { useSessionAttendance } from "./useSessionAttendance";
 
 jest.mock("../api/sessionAttendanceApi", () => ({
@@ -135,5 +136,91 @@ describe("useSessionAttendance optimistic updates", () => {
 
     expect(result.current.students[0].attendance?.evaluationStatus).toBe("AVERAGE");
     expect(onUpdateError).toHaveBeenCalledWith("Điểm danh đã đóng");
+  });
+
+  it("updates evaluation using command result and does not fetch full evaluation on success", async () => {
+    const onUpdateError = jest.fn();
+    api.getEvaluation.mockResolvedValue(response(student("PRESENT", "AVERAGE")));
+    api.updateEvaluation.mockResolvedValue({
+      requestId: "command-eval-1",
+      type: "SESSION_ATTENDANCE_EVALUATION_UPDATE",
+      status: "QUEUED",
+      message: "Queued",
+    });
+    (waitForAttendanceCommand as jest.Mock).mockResolvedValueOnce({
+      requestId: "command-eval-1",
+      type: "SESSION_ATTENDANCE_EVALUATION_UPDATE",
+      status: "SUCCEEDED",
+      result: {
+        sessionAttendanceId: "att-1",
+        classSessionId: "session-1",
+        evaluationStatus: "GOOD",
+        note: "Tập luyện rất tích cực",
+      },
+    });
+
+    const rendered = renderHook(
+      () =>
+        useSessionAttendance({
+          classSessionId: "session-1",
+          onUpdateError,
+        }),
+      { wrapper: createWrapper() },
+    );
+    const { result } = await rendered;
+
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+    expect(api.getEvaluation).toHaveBeenCalledTimes(1);
+
+    await act(async () => {
+      const success = await result.current.updateEvaluationStatus(
+        "enrollment-1",
+        "GOOD",
+        "Tập luyện rất tích cực",
+      );
+      expect(success).toBe(true);
+    });
+
+    // Directly updated in cache from command result
+    expect(result.current.students[0].attendance?.evaluationStatus).toBe("GOOD");
+    expect(result.current.students[0].attendance?.note).toBe("Tập luyện rất tích cực");
+    // Verify GET evaluation was NOT called again
+    expect(api.getEvaluation).toHaveBeenCalledTimes(1);
+    expect(onUpdateError).not.toHaveBeenCalled();
+  });
+
+  it("rolls back and reports a contract error when SUCCEEDED has no result", async () => {
+    const onUpdateError = jest.fn();
+    api.getEvaluation.mockResolvedValue(response(student("PRESENT", "AVERAGE")));
+    api.updateEvaluation.mockResolvedValue({
+      requestId: "command-eval-empty",
+      type: "SESSION_ATTENDANCE_EVALUATION_UPDATE",
+      status: "QUEUED",
+      message: "Queued",
+    });
+    (waitForAttendanceCommand as jest.Mock).mockResolvedValueOnce({
+      requestId: "command-eval-empty",
+      type: "SESSION_ATTENDANCE_EVALUATION_UPDATE",
+      status: "SUCCEEDED",
+      result: null,
+    });
+
+    const rendered = renderHook(
+      () => useSessionAttendance({ classSessionId: "session-1", onUpdateError }),
+      { wrapper: createWrapper() },
+    );
+    const { result } = await rendered;
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+
+    await act(async () => {
+      expect(
+        await result.current.updateEvaluationStatus("enrollment-1", "GOOD", "Ghi chú"),
+      ).toBe(false);
+    });
+
+    expect(result.current.students[0].attendance?.evaluationStatus).toBe("AVERAGE");
+    expect(onUpdateError).toHaveBeenCalledWith(
+      "Command completed without an evaluation result.",
+    );
   });
 });
