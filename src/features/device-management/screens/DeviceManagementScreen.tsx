@@ -140,7 +140,7 @@ export function DeviceManagementScreen() {
         </View>
       )}
       <DeviceProvisioningSheet visible={createVisible} devices={devices.data ?? []} onClose={() => setCreateVisible(false)} onCreated={() => { void client.invalidateQueries({ queryKey }); }} />
-      <FogRuntimeConfigSheet device={configuredFog} onClose={() => setConfiguredFog(null)} onSaved={() => { void client.invalidateQueries({ queryKey }); }} />
+      <FogRuntimeConfigSheet key={configuredFog?.deviceId ?? "closed"} device={configuredFog} onClose={() => setConfiguredFog(null)} onSaved={() => { void client.invalidateQueries({ queryKey }); }} />
       <DeviceDetailSheet deviceId={selectedDeviceId} onClose={() => setSelectedDeviceId(null)} />
     </StackScreenLayout>
   );
