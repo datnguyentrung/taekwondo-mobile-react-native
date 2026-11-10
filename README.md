@@ -16,14 +16,14 @@ This is an [Expo](https://expo.dev) project created with [`create-expo-app`](htt
    npx expo start
    ```
 
-### Kiosk face check-in configuration
+### Face check-in configuration
 
-Configure each kiosk with a stable device ID and the Fog/MQTT endpoints:
+All mobile clients can scan faces using the shared Fog endpoint. Kiosks can
+optionally be provisioned to receive device-specific Fog and MQTT settings:
 
 ```dotenv
 EXPO_PUBLIC_API_URL_JAVA=http://localhost:8080/api/v1
 EXPO_PUBLIC_API_URL_FOG=http://localhost:8000
-EXPO_PUBLIC_KIOSK_DEVICE_ID=kiosk-01
 EXPO_PUBLIC_MQTT_ENABLED=true
 EXPO_PUBLIC_MQTT_BROKER_URL=ws://localhost:9001
 # Optional; defaults to taekwondo/kiosks/<deviceId>/commands
@@ -31,7 +31,7 @@ EXPO_PUBLIC_MQTT_COMMAND_TOPIC=taekwondo/kiosks/kiosk-01/commands
 ```
 
 The sensor screen accepts only `CHECK_IN_OPEN` commands whose `deviceId`
-matches this kiosk.
+matches a provisioned kiosk.
 
 In the output, you'll find options to open the app in a
 

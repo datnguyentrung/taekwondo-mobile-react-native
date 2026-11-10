@@ -1,6 +1,8 @@
 import * as Crypto from 'expo-crypto';
 
+import { env } from '@/config/env';
 import { getActiveKioskRuntime } from '@/features/device-management/services/deviceRuntime';
+import { deviceProvisioningStorage } from '@/features/device-management/services/deviceProvisioningStorage';
 
 import { isTerminalFaceCheckInStage } from '../domain/faceCheckInProgress';
 import { consumeFaceCheckInEvents } from './faceCheckInEventStream';
@@ -13,6 +15,28 @@ type RunFaceCheckInOptions = {
   onEvent: (event: FaceCheckInEvent) => void;
 };
 
+type FaceCheckInRuntime = {
+  deviceId: string;
+  fogApiUrl: string;
+};
+
+/**
+ * A provisioned kiosk keeps its server-managed runtime. Regular mobile clients
+ * use the shared Fog endpoint, so face check-in is not gated on kiosk enrollment.
+ */
+async function getFaceCheckInRuntime(): Promise<FaceCheckInRuntime> {
+  const profile = await deviceProvisioningStorage.read();
+  if (!profile) {
+    return { deviceId: 'mobile-app', fogApiUrl: env.fogApiUrl };
+  }
+
+  const { bootstrap } = await getActiveKioskRuntime();
+  if (!bootstrap.runtime.fogHttpUrl) {
+    throw new Error('Kiosk chưa có địa chỉ fog runtime');
+  }
+  return { deviceId: profile.deviceCode, fogApiUrl: bootstrap.runtime.fogHttpUrl };
+}
+
 function isFogFaceRejection(error: unknown): boolean {
   if (!error || typeof error !== 'object') return false;
   const candidate = error as { name?: unknown; status?: unknown };
@@ -24,22 +48,20 @@ export async function runFaceCheckIn({
   signal,
   onEvent,
 }: RunFaceCheckInOptions): Promise<FaceCheckInEvent> {
-  const { profile, bootstrap } = await getActiveKioskRuntime();
-  const fogApiUrl = bootstrap.runtime.fogHttpUrl;
-  if (!fogApiUrl) throw new Error('Kiosk chưa có địa chỉ fog runtime');
+  const { deviceId, fogApiUrl } = await getFaceCheckInRuntime();
   const requestId = Crypto.randomUUID();
   console.log('[FaceCheckIn] registering scan with Java', {
     requestId,
-    deviceId: profile.deviceCode,
+    deviceId,
   });
   const registration = await faceCheckInApi.registerScan(
     requestId,
-    profile.deviceCode,
+    deviceId,
   );
 
   if (
     registration.requestId !== requestId ||
-    registration.deviceId !== profile.deviceCode
+    registration.deviceId !== deviceId
   ) {
     throw new Error('Face check-in registration identity mismatch');
   }
@@ -61,7 +83,7 @@ export async function runFaceCheckIn({
     requestId,
     signal,
     onEvent: (event) => {
-      if (event.deviceId !== profile.deviceCode) return;
+      if (event.deviceId !== deviceId) return;
       onEvent(event);
       if (event.stage === 'READY') {
         console.log('[FaceCheckIn] READY received; sending photo to Fog', { requestId });

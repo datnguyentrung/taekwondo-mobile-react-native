@@ -1,5 +1,7 @@
 import * as Crypto from 'expo-crypto';
 
+import { deviceProvisioningStorage } from '@/features/device-management/services/deviceProvisioningStorage';
+
 import { consumeFaceCheckInEvents } from './faceCheckInEventStream';
 import { faceCheckInApi } from './faceCheckInApi';
 import { runFaceCheckIn } from './faceCheckInFlow';
@@ -14,15 +16,21 @@ jest.mock('./faceCheckInApi', () => ({
 jest.mock('./faceCheckInEventStream', () => ({
   consumeFaceCheckInEvents: jest.fn(),
 }));
+jest.mock('@/features/device-management/services/deviceProvisioningStorage', () => ({
+  deviceProvisioningStorage: { read: jest.fn() },
+}));
 
 describe('runFaceCheckIn', () => {
-  beforeEach(() => jest.clearAllMocks());
+  beforeEach(() => {
+    jest.clearAllMocks();
+    jest.mocked(deviceProvisioningStorage.read).mockResolvedValue(null);
+  });
 
-  it('opens SSE, waits for READY and then uploads the photo to Fog', async () => {
+  it('allows an unprovisioned mobile app to open SSE and upload to Fog', async () => {
     jest.mocked(Crypto.randomUUID).mockReturnValue('request-1');
     jest.mocked(faceCheckInApi.registerScan).mockResolvedValue({
       requestId: 'request-1',
-      deviceId: 'kiosk-01',
+      deviceId: 'mobile-app',
       uploadTicket: 'ticket-1',
       expiresAt: '2026-11-06T10:00:30Z',
     });
@@ -32,14 +40,14 @@ describe('runFaceCheckIn', () => {
         onEvent({
           eventId: 1,
           requestId: 'request-1',
-          deviceId: 'kiosk-01',
+          deviceId: 'mobile-app',
           stage: 'READY',
           occurredAt: '2026-11-06T10:00:00Z',
         });
         return {
           eventId: 8,
           requestId: 'request-1',
-          deviceId: 'kiosk-01',
+          deviceId: 'mobile-app',
           stage: 'SUCCEEDED',
           occurredAt: '2026-11-06T10:00:02Z',
         };
@@ -62,6 +70,7 @@ describe('runFaceCheckIn', () => {
       '/capture/face.jpg',
       expect.objectContaining({ uploadTicket: 'ticket-1' }),
       controller.signal,
+      'http://localhost:8000',
     );
     expect(terminal.stage).toBe('SUCCEEDED');
   });
@@ -70,7 +79,7 @@ describe('runFaceCheckIn', () => {
     jest.mocked(Crypto.randomUUID).mockReturnValue('request-1');
     jest.mocked(faceCheckInApi.registerScan).mockResolvedValue({
       requestId: 'request-1',
-      deviceId: 'kiosk-01',
+      deviceId: 'mobile-app',
       uploadTicket: 'ticket-1',
       expiresAt: '2026-11-06T10:00:30Z',
     });
@@ -86,7 +95,7 @@ describe('runFaceCheckIn', () => {
           onEvent({
             eventId: 1,
             requestId: 'request-1',
-            deviceId: 'kiosk-01',
+            deviceId: 'mobile-app',
             stage: 'READY',
             occurredAt: '2026-11-06T10:00:00Z',
           });

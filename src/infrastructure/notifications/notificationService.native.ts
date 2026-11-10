@@ -4,16 +4,21 @@ import { PermissionsAndroid, Platform } from 'react-native';
 import type { NotificationService } from './notification.types';
 
 type FirebaseMessaging = typeof import('@react-native-firebase/messaging');
+type FirebaseMessagingRuntime = {
+  api: FirebaseMessaging;
+  instance: ReturnType<FirebaseMessaging['getMessaging']>;
+};
 
 /** Expo Go does not embed React Native Firebase native modules. */
-function getFirebaseMessaging(): FirebaseMessaging | null {
+function getFirebaseMessaging(): FirebaseMessagingRuntime | null {
   if (Constants.appOwnership === AppOwnership.Expo) return null;
   try {
     // eslint-disable-next-line @typescript-eslint/no-require-imports -- defer a native-only module until a compatible runtime is confirmed.
-    return require('@react-native-firebase/messaging') as FirebaseMessaging;
+    const api = require('@react-native-firebase/messaging') as FirebaseMessaging;
+    return { api, instance: api.getMessaging() };
   } catch {
-    // A native development or release build should provide this module. Expo Go
-    // does not, so notification features remain unavailable instead of crashing.
+    // The JavaScript package can be bundled even when native Firebase is not
+    // configured. Treat both cases as an unavailable notification capability.
     return null;
   }
 }
@@ -26,8 +31,11 @@ async function hasNotificationPermission(): Promise<boolean> {
     if (Platform.Version < 33) return true;
     return PermissionsAndroid.check(PermissionsAndroid.PERMISSIONS.POST_NOTIFICATIONS);
   }
-  const status = await messaging.hasPermission(messaging.getMessaging());
-  return status === messaging.AuthorizationStatus.AUTHORIZED || status === messaging.AuthorizationStatus.PROVISIONAL;
+  const status = await messaging.api.hasPermission(messaging.instance);
+  return (
+    status === messaging.api.AuthorizationStatus.AUTHORIZED ||
+    status === messaging.api.AuthorizationStatus.PROVISIONAL
+  );
 }
 
 async function requestNotificationPermission(): Promise<boolean> {
@@ -39,8 +47,11 @@ async function requestNotificationPermission(): Promise<boolean> {
     const result = await PermissionsAndroid.request(PermissionsAndroid.PERMISSIONS.POST_NOTIFICATIONS);
     return result === PermissionsAndroid.RESULTS.GRANTED;
   }
-  const status = await messaging.requestPermission(messaging.getMessaging());
-  return status === messaging.AuthorizationStatus.AUTHORIZED || status === messaging.AuthorizationStatus.PROVISIONAL;
+  const status = await messaging.api.requestPermission(messaging.instance);
+  return (
+    status === messaging.api.AuthorizationStatus.AUTHORIZED ||
+    status === messaging.api.AuthorizationStatus.PROVISIONAL
+  );
 }
 
 export const notificationService: NotificationService = {
@@ -53,26 +64,36 @@ export const notificationService: NotificationService = {
     const allowed = options.requestPermission
       ? await requestNotificationPermission()
       : await hasNotificationPermission();
-    return allowed ? messaging.getToken(messaging.getMessaging()) : null;
+    return allowed ? messaging.api.getToken(messaging.instance) : null;
   },
 
   subscribeToTokenRefresh(listener: (token: string) => void): () => void {
     const messaging = getFirebaseMessaging();
-    return messaging ? messaging.onTokenRefresh(messaging.getMessaging(), listener) : () => undefined;
+    return messaging
+      ? messaging.api.onTokenRefresh(messaging.instance, listener)
+      : () => undefined;
   },
 
   subscribeToForegroundMessages(listener): () => void {
     const messaging = getFirebaseMessaging();
     if (!messaging) return () => undefined;
 
-    return messaging.onMessage(messaging.getMessaging(), (message) => listener({
-      type: typeof message.data?.type === 'string' ? message.data.type : undefined,
-      code: typeof message.data?.code === 'string' ? message.data.code : undefined,
-    }));
+    return messaging.api.onMessage(messaging.instance, (message) =>
+      listener({
+        type:
+          typeof message.data?.type === 'string'
+            ? message.data.type
+            : undefined,
+        code:
+          typeof message.data?.code === 'string'
+            ? message.data.code
+            : undefined,
+      }),
+    );
   },
 
   async cleanup(): Promise<void> {
     const messaging = getFirebaseMessaging();
-    if (messaging) await messaging.deleteToken(messaging.getMessaging());
+    if (messaging) await messaging.api.deleteToken(messaging.instance);
   },
 };
