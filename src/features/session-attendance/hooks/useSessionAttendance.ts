@@ -5,6 +5,7 @@ import type {
   ClassSessionEvaluationResponse,
   EvaluationAttendance,
   EvaluationUpdateResult,
+  SessionAttendanceBriefResponse,
   SessionAttendanceResponse,
 } from "../api/session-attendance.dto";
 import { sessionAttendanceApi } from "../api/sessionAttendanceApi";
@@ -27,7 +28,14 @@ type UseSessionAttendanceOptions = {
 };
 
 function toEvaluationAttendance(
-  response: SessionAttendanceResponse,
+  response: Pick<
+    SessionAttendanceResponse | SessionAttendanceBriefResponse,
+    | "sessionAttendanceId"
+    | "checkInTime"
+    | "attendanceStatus"
+    | "evaluationStatus"
+    | "note"
+  >,
 ): EvaluationAttendance {
   return {
     sessionAttendanceId: response.sessionAttendanceId,

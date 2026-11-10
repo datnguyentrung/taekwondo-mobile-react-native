@@ -6,6 +6,7 @@ import type {
   AttendanceFilterParams,
   ClassSessionEvaluationResponse,
   SessionAttendanceCreateRequest,
+  SessionAttendanceBriefResponse,
   SessionAttendanceListResponse,
   SessionAttendanceResponse,
   SessionAttendanceUpdateRequest,
@@ -22,8 +23,8 @@ export const sessionAttendanceApi = {
     const response = await javaApi.get<SessionAttendanceResponse>(`/session-attendances/${sessionAttendanceId}`);
     return response.data;
   },
-  async create(request: SessionAttendanceCreateRequest): Promise<SessionAttendanceResponse> {
-    const response = await javaApi.post<SessionAttendanceResponse>('/session-attendances', request);
+  async create(request: SessionAttendanceCreateRequest): Promise<SessionAttendanceBriefResponse> {
+    const response = await javaApi.post<SessionAttendanceBriefResponse>('/session-attendances', request);
     return response.data;
   },
   async update(

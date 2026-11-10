@@ -45,6 +45,16 @@ export interface SessionAttendanceResponse {
   updatedAt: string;
 }
 
+/** Compact response returned by POST /session-attendances. */
+export interface SessionAttendanceBriefResponse {
+  sessionAttendanceId: string;
+  checkInTime: string | null;
+  attendanceStatus: AttendanceStatus;
+  evaluationStatus: EvaluationStatus | null;
+  note: string | null;
+  createdAt: string;
+}
+
 export interface SessionAttendanceSimpleResponse {
   sessionAttendanceId: string;
   classSession: SessionSimpleResponse;
