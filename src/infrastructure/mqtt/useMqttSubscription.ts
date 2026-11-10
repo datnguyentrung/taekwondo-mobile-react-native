@@ -1,14 +1,12 @@
 import { useEffect, useRef } from 'react';
 
-import { env } from '@/config/env';
-
 import { mqttClient } from './mqttClient';
 import type { MessageHandler } from './mqtt.types';
 
 export function useMqttSubscription(
   topic: string | null | undefined,
   handler: MessageHandler,
-  enabled = env.mqttEnabled,
+  enabled = false,
 ): void {
   const handlerRef = useRef(handler);
 

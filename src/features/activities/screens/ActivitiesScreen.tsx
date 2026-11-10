@@ -156,8 +156,8 @@ export default function ActivitiesScreen() {
         return;
       }
 
-      if (action.id === 'mqtt-sensor') {
-        router.push('/mqtt-sensor' as Href);
+      if (action.id === 'device-management') {
+        router.push('/admin/devices' as Href);
         return;
       }
 

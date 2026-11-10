@@ -75,9 +75,10 @@ export const ACTIVITIES_GROUPS: ActivitiesActionGroup[] = [
         icon: <Building />,
       },
       {
-        id: "mqtt-sensor",
-        label: "Cảm biến (MQTT)",
+        id: "device-management",
+        label: "Thiết bị & cảnh báo",
         icon: <SignalStream />,
+        requiredPermissions: [Permission.DEVICE_READ],
       },
     ],
   },

@@ -1,6 +1,6 @@
 import * as Crypto from 'expo-crypto';
 
-import { env } from '@/config/env';
+import { getActiveKioskRuntime } from '@/features/device-management/services/deviceRuntime';
 
 import { isTerminalFaceCheckInStage } from '../domain/faceCheckInProgress';
 import { consumeFaceCheckInEvents } from './faceCheckInEventStream';
@@ -24,19 +24,22 @@ export async function runFaceCheckIn({
   signal,
   onEvent,
 }: RunFaceCheckInOptions): Promise<FaceCheckInEvent> {
+  const { profile, bootstrap } = await getActiveKioskRuntime();
+  const fogApiUrl = bootstrap.runtime.fogHttpUrl;
+  if (!fogApiUrl) throw new Error('Kiosk chưa có địa chỉ fog runtime');
   const requestId = Crypto.randomUUID();
   console.log('[FaceCheckIn] registering scan with Java', {
     requestId,
-    deviceId: env.kioskDeviceId,
+    deviceId: profile.deviceCode,
   });
   const registration = await faceCheckInApi.registerScan(
     requestId,
-    env.kioskDeviceId,
+    profile.deviceCode,
   );
 
   if (
     registration.requestId !== requestId ||
-    registration.deviceId !== env.kioskDeviceId
+    registration.deviceId !== profile.deviceCode
   ) {
     throw new Error('Face check-in registration identity mismatch');
   }
@@ -58,7 +61,7 @@ export async function runFaceCheckIn({
     requestId,
     signal,
     onEvent: (event) => {
-      if (event.deviceId !== env.kioskDeviceId) return;
+      if (event.deviceId !== profile.deviceCode) return;
       onEvent(event);
       if (event.stage === 'READY') {
         console.log('[FaceCheckIn] READY received; sending photo to Fog', { requestId });
@@ -78,7 +81,7 @@ export async function runFaceCheckIn({
   if (terminalEvent) return terminalEvent;
 
   try {
-    await faceCheckInApi.uploadPhotoToFog(photoFilePath, registration, signal);
+    await faceCheckInApi.uploadPhotoToFog(photoFilePath, registration, signal, fogApiUrl);
   } catch (error) {
     // Fog returns HTTP 422 for image/face validation, while it reports the same
     // business result to Java as a terminal SSE event. Prefer Java's event so

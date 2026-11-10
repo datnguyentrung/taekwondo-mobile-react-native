@@ -5,7 +5,7 @@ import { getWindowDimensions } from "@/shared/utils/windowDimensions";
 import { Colors, effects, typography } from "@/theme";
 import type { AppIconElement } from "@/theme/icons";
 import { useRouter } from "expo-router";
-import type { ReactNode } from "react";
+import { isValidElement, type ReactNode } from "react";
 import type { StyleProp, ViewStyle } from "react-native";
 import {
   Pressable,
@@ -37,7 +37,7 @@ export type StackHeaderAction = {
 export type StackScreenLayoutProps = {
   title: string;
   children: ReactNode;
-  rightActions?: ReactNode | StackHeaderAction[];
+  rightActions?: ReactNode | StackHeaderAction[] | ReactNode[];
   contentContainerStyle?: StyleProp<ViewStyle>;
   floatingContent?: ReactNode;
   scrollEnabled?: boolean;
@@ -103,13 +103,22 @@ export default function StackScreenLayout({
           </View>
           <View style={styles.actions}>
             {Array.isArray(rightActions)
-              ? rightActions.map((action) => (
-                  <HeaderActionButton
-                    key={`${action.label}-${action.icon}`}
-                    {...action}
-                    color={action.color ?? actionColor}
-                  />
-                ))
+              ? rightActions.map((action, i) =>
+                  isValidElement(action)
+                    ? action
+                    : (
+                      <HeaderActionButton
+                        key={`${(action as StackHeaderAction).label}-${i}`}
+                        icon={(action as StackHeaderAction).icon}
+                        label={(action as StackHeaderAction).label}
+                        badge={(action as StackHeaderAction).badge}
+                        badgeVariant={(action as StackHeaderAction).badgeVariant}
+                        color={(action as StackHeaderAction).color ?? actionColor}
+                        onPress={(action as StackHeaderAction).onPress}
+                        testID={(action as StackHeaderAction).testID}
+                      />
+                    ),
+                )
               : (rightActions ?? <DefaultHeaderActions color={actionColor} />)}
           </View>
         </View>

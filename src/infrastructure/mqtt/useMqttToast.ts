@@ -1,11 +1,9 @@
 import { useEffect } from 'react';
-import { env } from '@/config/env';
 import { mqttClient } from './mqttClient';
 import { useToast } from '@/shared/ui/Toast';
 
 interface UseMqttToastOptions {
   topic?: string;
-  brokerUrl?: string;
   enabled?: boolean;
 }
 
@@ -14,17 +12,14 @@ interface UseMqttToastOptions {
  */
 export function useMqttToast(options: UseMqttToastOptions = {}) {
   const {
-    topic = env.mqttDefaultTopic,
-    brokerUrl = env.mqttBrokerUrl,
-    enabled = env.mqttEnabled,
+    topic,
+    enabled = false,
   } = options;
 
   const toast = useToast();
 
   useEffect(() => {
-    if (!enabled || !topic || !brokerUrl) return;
-
-    mqttClient.connect(brokerUrl);
+    if (!enabled || !topic) return;
 
     const unsubscribe = mqttClient.subscribe(topic, (message) => {
       toast.show({
@@ -37,5 +32,5 @@ export function useMqttToast(options: UseMqttToastOptions = {}) {
     return () => {
       unsubscribe();
     };
-  }, [topic, brokerUrl, enabled, toast]);
+  }, [topic, enabled, toast]);
 }

@@ -6,9 +6,17 @@ export type MqttMessage = {
 };
 
 export type MessageHandler = (message: MqttMessage) => void;
+export type MqttConnection = {
+  brokerUrl: string;
+  username: string;
+  password: string;
+  clientId: string;
+  onConnected?: () => void;
+  onAuthRejected?: () => void;
+};
 
 export interface MqttService {
-  connect: (brokerUrl: string) => void;
+  connect: (connection: MqttConnection | string) => void;
   subscribe: (topic: string, handler: MessageHandler) => () => void;
   publish: (topic: string, message: string) => void;
   disconnect: () => void;

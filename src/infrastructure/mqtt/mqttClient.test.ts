@@ -38,7 +38,7 @@ describe('MqttClientAdapter', () => {
 
     const unsubscribeFirst = adapter.subscribe('shared/topic', firstHandler);
     const unsubscribeSecond = adapter.subscribe('shared/topic', secondHandler);
-    adapter.connect('wss://broker.example.com/mqtt');
+    adapter.connect({ brokerUrl: 'wss://broker.example.com/mqtt', username: 'kiosk-01', password: 'device-secret', clientId: 'kiosk-01' });
     client.connected = true;
     client.emit('connect');
     client.emit('message', 'shared/topic', Buffer.from('{"id":1}'));
@@ -72,7 +72,7 @@ describe('MqttClientAdapter', () => {
     expect(connectMock).not.toHaveBeenCalled();
 
     adapter.subscribe('shared/topic', handler);
-    adapter.connect('ws://broker.example.com/mqtt');
+    adapter.connect({ brokerUrl: 'ws://broker.example.com/mqtt', username: 'kiosk-01', password: 'device-secret', clientId: 'kiosk-01' });
     client.emit('message', 'shared/topic', Buffer.from('plain text'));
 
     expect(handler).toHaveBeenCalledWith(

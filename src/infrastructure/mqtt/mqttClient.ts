@@ -1,6 +1,6 @@
 import mqtt, { type MqttClient } from 'mqtt';
 
-import type { MessageHandler, MqttMessage, MqttService } from './mqtt.types';
+import type { MessageHandler, MqttConnection, MqttMessage, MqttService } from './mqtt.types';
 
 const RECONNECT_PERIOD_MS = 3_000;
 const CONNECT_TIMEOUT_MS = 10_000;
@@ -22,8 +22,9 @@ export class MqttClientAdapter implements MqttService {
   private brokerUrl: string | null = null;
   private readonly handlers = new Map<string, Set<MessageHandler>>();
 
-  connect(brokerUrl: string): void {
-    const normalizedBrokerUrl = brokerUrl.trim();
+  connect(connection: MqttConnection | string): void {
+    const config = typeof connection === 'string' ? { brokerUrl: connection, username: '', password: '', clientId: '' } : connection;
+    const normalizedBrokerUrl = config.brokerUrl.trim();
     if (!normalizedBrokerUrl) {
       this.warn('MQTT is disabled because mqttBrokerUrl is not configured.');
       return;
@@ -34,6 +35,10 @@ export class MqttClientAdapter implements MqttService {
       return;
     }
 
+    if (!config.username || !config.password || !config.clientId) {
+      this.warn('MQTT connection requires a provisioned device credential.');
+      return;
+    }
     if (this.client && this.brokerUrl === normalizedBrokerUrl) {
       return;
     }
@@ -43,6 +48,9 @@ export class MqttClientAdapter implements MqttService {
     console.log(`[MQTT] connecting to ${normalizedBrokerUrl}`);
     this.client = mqtt.connect(normalizedBrokerUrl, {
       clean: true,
+      username: config.username,
+      password: config.password,
+      clientId: config.clientId,
       reconnectPeriod: RECONNECT_PERIOD_MS,
       connectTimeout: CONNECT_TIMEOUT_MS,
       // Expo/React Native provides a native WebSocket implementation. MQTT.js
@@ -71,6 +79,7 @@ export class MqttClientAdapter implements MqttService {
     this.client.on('connect', () => {
       console.log(`[MQTT] connected to ${normalizedBrokerUrl}`);
       this.subscribeAll();
+      config.onConnected?.();
     });
 
     this.client.on('reconnect', () => {
@@ -103,6 +112,11 @@ export class MqttClientAdapter implements MqttService {
 
     this.client.on('error', (error) => {
       console.warn('[MQTT] connection error', error);
+      const code = (error as { code?: number }).code;
+      if (code === 4 || code === 5) {
+        this.disconnectClient(false);
+        config.onAuthRejected?.();
+      }
     });
   }
 

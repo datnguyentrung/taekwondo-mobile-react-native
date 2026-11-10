@@ -1,4 +1,4 @@
-import { Bell, Calendar, Check, Clock, DocText, NoteText, Wallet } from "reicon-react-native";
+import { Bell, Calendar, Check, Clock, DocText, NoteText, Wallet, WifiOff } from "reicon-react-native";
 
 import { AppIcon } from "@/shared/ui/AppIcon";
 import { Colors } from "@/theme";
@@ -14,6 +14,7 @@ const notificationTypeIcon: Record<NotificationType, AppIconElement> = {
   COACH_TIMESHEET: <Clock />,
   ANNOUNCEMENT: <NoteText />,
   CLASS_SESSION_REPORT: <DocText />,
+  DEVICE_ALERT: <WifiOff />,
 };
 
 export type NotificationTypeIconProps = {

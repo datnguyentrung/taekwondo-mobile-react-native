@@ -1,7 +1,9 @@
+import { AppState } from 'react-native';
 import { useEffect } from 'react';
 
-import { env } from '@/config/env';
 import { useAuthStore } from '@/features/authentication/store/auth.store';
+import { deviceApi } from '@/features/device-management/api/deviceApi';
+import { deviceProvisioningStorage } from '@/features/device-management/services/deviceProvisioningStorage';
 
 import { mqttClient } from './mqttClient';
 
@@ -14,24 +16,53 @@ export function useMqttRuntime(): void {
       return undefined;
     }
 
-    if (!env.mqttEnabled) {
+    let disposed = false;
+    let heartbeat: ReturnType<typeof setInterval> | undefined;
+    const stop = () => {
+      if (heartbeat) clearInterval(heartbeat);
+      heartbeat = undefined;
       mqttClient.disconnect();
-      return undefined;
-    }
-
-    if (!env.mqttBrokerUrl) {
-      if (__DEV__) {
-        console.warn(
-          '[MQTT] Listener is disabled until mqttBrokerUrl is configured.',
+    };
+    const start = async () => {
+      const profile = await deviceProvisioningStorage.read();
+      if (disposed || !profile) return;
+      try {
+        const bootstrap = await deviceApi.bootstrap(profile);
+        if (disposed || bootstrap.lifecycleStatus !== 'ACTIVE' || !bootstrap.runtime.mqttWsUrl) {
+          stop();
+          return;
+        }
+        const publishHeartbeat = () => mqttClient.publish(
+          bootstrap.runtime.heartbeatTopic,
+          JSON.stringify({ deviceCode: profile.deviceCode, installationId: profile.installationId, sentAt: new Date().toISOString() }),
         );
+        mqttClient.connect({
+          brokerUrl: bootstrap.runtime.mqttWsUrl,
+          username: profile.deviceCode,
+          password: profile.secret,
+          clientId: profile.deviceCode,
+          onConnected: () => {
+            if (disposed) return;
+            if (heartbeat) clearInterval(heartbeat);
+            publishHeartbeat();
+            heartbeat = setInterval(publishHeartbeat, Math.max(10, bootstrap.runtime.heartbeatSeconds) * 1_000);
+          },
+          onAuthRejected: () => void deviceProvisioningStorage.clear(),
+        });
+      } catch {
+        stop();
       }
-      return undefined;
-    }
-
-    mqttClient.connect(env.mqttBrokerUrl);
+    };
+    void start();
+    const appStateSubscription = AppState.addEventListener('change', (nextState) => {
+      if (nextState === 'active') void start();
+      else stop();
+    });
 
     return () => {
-      mqttClient.disconnect();
+      disposed = true;
+      appStateSubscription.remove();
+      stop();
     };
   }, [status]);
 }

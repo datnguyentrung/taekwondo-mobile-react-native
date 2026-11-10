@@ -1,0 +1,7 @@
+export type DeviceLifecycle = 'REGISTERED' | 'PROVISIONED' | 'ACTIVE' | 'MAINTENANCE' | 'SUSPENDED' | 'DECOMMISSIONED';
+export type DeviceConnectivity = 'UNKNOWN' | 'ONLINE' | 'OFFLINE';
+export type ManagedDevice = { deviceId: string; deviceCode: string; displayName: string; deviceType: string; lifecycleStatus: DeviceLifecycle; connectivity: DeviceConnectivity; lastHealth: string; branchId: number | null; fogGatewayId: string | null; pairedKioskId: string | null; locationLabel: string | null; firmwareVersion: string | null; hardwareVersion: string | null; lastSeenAt: string | null; desiredConfig: string; desiredConfigVersion: number; };
+export type DeviceEvent = { deviceEventId: string; deviceId: string; eventKind: string; eventCode: string; severity: string | null; alertStatus: 'OPEN' | 'ACKNOWLEDGED' | 'RESOLVED' | null; message: string; occurredAt: string; resolutionNote: string | null; };
+export type DeviceRuntimeProfile = { mqttWsUrl: string | null; fogHttpUrl: string | null; commandTopic: string; heartbeatTopic: string; heartbeatSeconds: number; desiredConfig: string; desiredConfigVersion: number; };
+export type DeviceBootstrap = { deviceCode: string; deviceType: string; lifecycleStatus: DeviceLifecycle; runtime: DeviceRuntimeProfile; };
+export type DeviceProvisioningProfile = { deviceCode: string; secret: string; installationId: string; };

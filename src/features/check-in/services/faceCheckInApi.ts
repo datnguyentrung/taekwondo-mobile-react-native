@@ -322,6 +322,7 @@ export const faceCheckInApi = {
     photoFilePath: string,
     registration: FaceCheckInRegistration,
     signal: AbortSignal,
+    fogApiUrl = '',
   ): Promise<void> {
     const photoUri = photoFilePath.startsWith('file://')
       ? photoFilePath
@@ -332,7 +333,7 @@ export const faceCheckInApi = {
     formData.append('deviceId', registration.deviceId);
     formData.append('uploadTicket', registration.uploadTicket);
 
-    const url = `${env.fogApiUrl}/face-check-in-scans`;
+    const url = `${fogApiUrl}/face-check-in-scans`;
     console.log('[FaceCheckIn] uploading photo to Fog', {
       requestId: registration.requestId,
       deviceId: registration.deviceId,

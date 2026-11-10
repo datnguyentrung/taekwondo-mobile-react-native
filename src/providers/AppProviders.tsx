@@ -4,6 +4,7 @@ import { useEffect, type PropsWithChildren } from 'react';
 import { useAuthenticationRuntime } from '@/features/authentication';
 import { initializeDatabase } from '@/infrastructure/database/database';
 import { useMqttRuntime } from '@/infrastructure/mqtt';
+import { useKioskCheckInCommand } from '@/features/sensor';
 import { queryClient } from '@/infrastructure/query/queryClient';
 import { ToastProvider } from '@/shared/ui/Toast';
 import { OrientationRuntime } from './OrientationRuntime';
@@ -21,6 +22,7 @@ function DatabaseRuntime({ children }: PropsWithChildren) {
 function AuthRuntime({ children }: PropsWithChildren) {
   useAuthenticationRuntime();
   useMqttRuntime();
+  useKioskCheckInCommand();
   return children;
 }
 
