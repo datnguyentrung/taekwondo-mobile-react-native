@@ -5,7 +5,7 @@ export type PracticeSnapshot = {
   roomCode: string; maximumJudges: number; consensusJudges: number; scoringWindowSeconds: number;
   redScore: number; blueScore: number; status: PracticeStatus; countdownEndsAtEpochMs: number;
   mediaOffsetMs: number; videoUrl: string | null; videoUploaded: boolean; canStart: boolean;
-  judges: Array<{ position: number; connected: boolean; ready: boolean }>;
+  judges: { position: number; connected: boolean; ready: boolean }[];
 };
 export type PracticeEnvelope = { roomCode: string; snapshot: PracticeSnapshot };
 export type PracticeCommand =

@@ -58,6 +58,7 @@ export const notificationService: NotificationService = {
   platform: Platform.OS === 'ios' ? 'IOS' : 'ANDROID',
 
   async getToken(options: { requestPermission: boolean }): Promise<string | null> {
+    if (Platform.OS !== 'android') return null;
     const messaging = getFirebaseMessaging();
     if (!messaging) return null;
 
@@ -68,6 +69,7 @@ export const notificationService: NotificationService = {
   },
 
   subscribeToTokenRefresh(listener: (token: string) => void): () => void {
+    if (Platform.OS !== 'android') return () => undefined;
     const messaging = getFirebaseMessaging();
     return messaging
       ? messaging.api.onTokenRefresh(messaging.instance, listener)
@@ -93,6 +95,7 @@ export const notificationService: NotificationService = {
   },
 
   async cleanup(): Promise<void> {
+    if (Platform.OS !== 'android') return;
     const messaging = getFirebaseMessaging();
     if (messaging) await messaging.api.deleteToken(messaging.instance);
   },

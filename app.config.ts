@@ -1,6 +1,7 @@
 import type { ConfigContext, ExpoConfig } from "expo/config";
 
 const APP_ID = "com.dat.taekwondomobile";
+const ANDROID_GOOGLE_SERVICES_FILE = process.env.GOOGLE_SERVICES_JSON;
 
 export default ({ config }: ConfigContext): ExpoConfig => ({
   ...config,
@@ -30,8 +31,9 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   android: {
     package: APP_ID,
 
-    // Firebase native hiện chưa được bật. Khi bật lại FCM/Crashlytics,
-    // cấu hình googleServicesFile bằng file nguồn nằm ngoài thư mục android/.
+    // This file is injected by the build environment and intentionally stays
+    // outside Git. Android builds fail early when it is absent or invalid.
+    googleServicesFile: ANDROID_GOOGLE_SERVICES_FILE,
     permissions: ["android.permission.POST_NOTIFICATIONS"],
 
     adaptiveIcon: {
@@ -118,9 +120,9 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
       },
     ],
 
-    // "@react-native-firebase/app",
-    // "@react-native-firebase/messaging",
-    // "@react-native-firebase/crashlytics",
+    "@react-native-firebase/app",
+    "@react-native-firebase/messaging",
+    "@react-native-firebase/crashlytics",
 
     [
       "expo-build-properties",

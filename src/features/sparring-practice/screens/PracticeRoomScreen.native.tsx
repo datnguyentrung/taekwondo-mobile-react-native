@@ -12,6 +12,10 @@ import type { PracticeSide } from '../domain/practice.types';
 
 type ScorePoint = 1 | 2 | 3;
 
+function seekPlayer(player: { currentTime: number }, timeInSeconds: number) {
+  player.currentTime = timeInSeconds;
+}
+
 function ScoreButton({ side, point, compact = false, enabled, onScore }: {
   side: PracticeSide;
   point: ScorePoint;
@@ -56,15 +60,13 @@ export function PracticeRoomScreen() {
 
   useEffect(() => {
     if (snapshot.status === 'RUNNING') {
-      // expo-video's player is an imperative native controller.
-      // eslint-disable-next-line react-hooks/immutability
-      player.currentTime = snapshot.mediaOffsetMs / 1000;
+      seekPlayer(player, snapshot.mediaOffsetMs / 1000);
       player.play();
       return;
     }
     player.pause();
     if (snapshot.status === 'PAUSED' || snapshot.status === 'WAITING') {
-      player.currentTime = snapshot.mediaOffsetMs / 1000;
+      seekPlayer(player, snapshot.mediaOffsetMs / 1000);
     }
   }, [player, snapshot.mediaOffsetMs, snapshot.status]);
 
