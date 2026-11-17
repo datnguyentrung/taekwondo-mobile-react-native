@@ -8,14 +8,18 @@ import { Colors, radii } from '@/theme';
 import { usePracticeRoom } from '../hooks/usePracticeRoom';
 import type { PracticeSide } from '../domain/practice.types';
 
-const points: Array<1 | 2 | 3> = [1, 2, 3];
+const points: (1 | 2 | 3)[] = [1, 2, 3];
+
+function seekPlayer(player: { currentTime: number }, timeInSeconds: number) {
+  player.currentTime = timeInSeconds;
+}
 
 export function PracticeRoomScreen() {
   const router = useRouter(); const { roomCode: raw } = useLocalSearchParams<{ roomCode: string }>(); const roomCode = Array.isArray(raw) ? raw[0] : raw ?? '';
   const { snapshot, error, connecting, send } = usePracticeRoom(roomCode);
   const player = useVideoPlayer(snapshot.videoUrl ?? null, player => { player.loop = false; });
   useEffect(() => { void ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.LANDSCAPE); return () => { void ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.PORTRAIT_UP); }; }, []);
-  useEffect(() => { if (snapshot.status === 'RUNNING') { player.currentTime = snapshot.mediaOffsetMs / 1000; player.play(); } else { player.pause(); if (snapshot.status === 'PAUSED' || snapshot.status === 'WAITING') player.currentTime = snapshot.mediaOffsetMs / 1000; } }, [player, snapshot.mediaOffsetMs, snapshot.status]);
+  useEffect(() => { if (snapshot.status === 'RUNNING') { seekPlayer(player, snapshot.mediaOffsetMs / 1000); player.play(); } else { player.pause(); if (snapshot.status === 'PAUSED' || snapshot.status === 'WAITING') seekPlayer(player, snapshot.mediaOffsetMs / 1000); } }, [player, snapshot.mediaOffsetMs, snapshot.status]);
   const enabled = snapshot.status === 'RUNNING';
   const score = (side: PracticeSide, point: 1 | 2 | 3) => { if (enabled) send({ type: 'judgeScore', side, points: point }); };
   return <View style={styles.page}><StatusBar hidden />
