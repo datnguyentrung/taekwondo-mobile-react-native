@@ -21,6 +21,7 @@ describe('useFaceCheckInSession', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     jest.useFakeTimers();
+    jest.setSystemTime(new Date('2026-11-06T10:00:00Z'));
   });
 
   afterEach(() => jest.useRealTimers());
@@ -137,9 +138,17 @@ describe('useFaceCheckInSession', () => {
     expect(result.current.isResultSheetVisible).toBe(false);
   });
 
-  it('expires local waiting after 30 seconds', async () => {
+  it('waits for the server expiry plus grace before expiring local waiting', async () => {
     jest.mocked(runFaceCheckIn).mockImplementationOnce(
-      () => new Promise(() => {}),
+      ({ onRegistered }) => {
+        onRegistered?.({
+          requestId: 'request-1',
+          deviceId: 'kiosk-01',
+          uploadTicket: 'ticket-1',
+          expiresAt: '2026-11-06T10:00:30Z',
+        });
+        return new Promise(() => {});
+      },
     );
     const { result } = await renderHook(() => useFaceCheckInSession());
 
@@ -148,6 +157,10 @@ describe('useFaceCheckInSession', () => {
       await Promise.resolve();
     });
     await act(async () => jest.advanceTimersByTime(30_000));
+
+    expect(result.current.isPending).toBe(true);
+
+    await act(async () => jest.advanceTimersByTime(5_000));
 
     expect(result.current.isPending).toBe(false);
     expect(result.current.currentFailure?.title).toBe('Xử lý quá thời gian');

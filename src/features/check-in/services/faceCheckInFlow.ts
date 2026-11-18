@@ -7,12 +7,16 @@ import { deviceProvisioningStorage } from '@/features/device-management/services
 import { isTerminalFaceCheckInStage } from '../domain/faceCheckInProgress';
 import { consumeFaceCheckInEvents } from './faceCheckInEventStream';
 import { faceCheckInApi } from './faceCheckInApi';
-import type { FaceCheckInEvent } from '../types/faceScanner.types';
+import type {
+  FaceCheckInEvent,
+  FaceCheckInRegistration,
+} from '../types/faceScanner.types';
 
 type RunFaceCheckInOptions = {
   photoFilePath: string;
   signal: AbortSignal;
   onEvent: (event: FaceCheckInEvent) => void;
+  onRegistered?: (registration: FaceCheckInRegistration) => void;
 };
 
 type FaceCheckInRuntime = {
@@ -47,6 +51,7 @@ export async function runFaceCheckIn({
   photoFilePath,
   signal,
   onEvent,
+  onRegistered,
 }: RunFaceCheckInOptions): Promise<FaceCheckInEvent> {
   const { deviceId, fogApiUrl } = await getFaceCheckInRuntime();
   const requestId = Crypto.randomUUID();
@@ -65,6 +70,7 @@ export async function runFaceCheckIn({
   ) {
     throw new Error('Face check-in registration identity mismatch');
   }
+  onRegistered?.(registration);
   console.log('[FaceCheckIn] scan registered; opening SSE', {
     requestId,
     deviceId: registration.deviceId,

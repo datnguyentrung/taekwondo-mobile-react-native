@@ -54,11 +54,13 @@ describe('runFaceCheckIn', () => {
       },
     );
     const controller = new AbortController();
+    const onRegistered = jest.fn();
 
     const terminal = await runFaceCheckIn({
       photoFilePath: '/capture/face.jpg',
       signal: controller.signal,
       onEvent: jest.fn(),
+      onRegistered,
     });
 
     expect(
@@ -71,6 +73,9 @@ describe('runFaceCheckIn', () => {
       expect.objectContaining({ uploadTicket: 'ticket-1' }),
       controller.signal,
       'http://localhost:8000',
+    );
+    expect(onRegistered).toHaveBeenCalledWith(
+      expect.objectContaining({ expiresAt: '2026-11-06T10:00:30Z' }),
     );
     expect(terminal.stage).toBe('SUCCEEDED');
   });

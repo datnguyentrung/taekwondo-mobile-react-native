@@ -16,7 +16,7 @@ import type {
 } from '../types/faceScanner.types';
 import type { FaceCheckInSessionStatus } from '../types/camera.types';
 
-const SCAN_TIMEOUT_MS = 30_000;
+const SERVER_DEADLINE_GRACE_MS = 5_000;
 const INITIAL_PROGRESS = 'Đang khởi tạo lần quét...';
 
 export function useFaceCheckInSession() {
@@ -88,25 +88,42 @@ export function useFaceCheckInSession() {
       setIsPending(true);
       setIsResultSheetVisible(true);
 
-      timeoutRef.current = setTimeout(() => {
-        if (activeControllerRef.current !== controller || !isMountedRef.current) {
-          return;
-        }
-        clearActiveScan(true);
-        applyFailure({
-          errorType: 'UNKNOWN',
-          title: 'Xử lý quá thời gian',
-          message:
-            'Hệ thống chưa hoàn tất trong 30 giây. Vui lòng quét lại hoặc kiểm tra lịch sử điểm danh.',
-          ctaLabel: 'Quét lại',
-        });
-      }, SCAN_TIMEOUT_MS);
-
       try {
         const terminal = await runFaceCheckIn({
           photoFilePath,
           signal: controller.signal,
           onEvent: (event) => applyProgress(controller, event),
+          onRegistered: (registration) => {
+            if (
+              activeControllerRef.current !== controller ||
+              !isMountedRef.current
+            ) {
+              return;
+            }
+            const expiresAt = Date.parse(registration.expiresAt);
+            if (!Number.isFinite(expiresAt)) return;
+
+            const delayMs = Math.max(
+              1_000,
+              expiresAt - Date.now() + SERVER_DEADLINE_GRACE_MS,
+            );
+            timeoutRef.current = setTimeout(() => {
+              if (
+                activeControllerRef.current !== controller ||
+                !isMountedRef.current
+              ) {
+                return;
+              }
+              clearActiveScan(true);
+              applyFailure({
+                errorType: 'UNKNOWN',
+                title: 'Xử lý quá thời gian',
+                message:
+                  'Hệ thống chưa hoàn tất trước thời hạn quét. Vui lòng quét lại hoặc kiểm tra lịch sử điểm danh.',
+                ctaLabel: 'Quét lại',
+              });
+            }, delayMs);
+          },
         });
         if (!isMountedRef.current || activeControllerRef.current !== controller) {
           return;
