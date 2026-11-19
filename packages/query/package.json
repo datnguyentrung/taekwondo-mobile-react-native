@@ -1,0 +1,9 @@
+{
+  "name": "@tkd/query",
+  "version": "0.0.0",
+  "private": true,
+  "exports": "./src/index.ts",
+  "peerDependencies": {
+    "@tanstack/react-query": "^5.108.0"
+  }
+}
