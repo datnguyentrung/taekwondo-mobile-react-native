@@ -56,7 +56,7 @@ example
 .env
 
 # local tooling
-skills-lock.json
+package-lock.json
 
 # generated logs and temporary files
 *.log
