@@ -48,6 +48,7 @@ export type UserContext = {
   relationshipType: RelationshipType | null;
   personCode: string | null;
   displayName: string;
+  gender: boolean | null;
 };
 
 export type AuthStatus =

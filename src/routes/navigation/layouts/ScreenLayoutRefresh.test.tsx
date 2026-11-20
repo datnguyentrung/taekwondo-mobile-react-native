@@ -2,6 +2,14 @@ import { render } from '@testing-library/react-native';
 import type { ReactElement, ReactNode } from 'react';
 import { RefreshControl, Text } from 'react-native';
 
+jest.mock('@react-native-async-storage/async-storage', () =>
+  require('@react-native-async-storage/async-storage/jest/async-storage-mock'),
+);
+
+jest.mock('@/features/person/queries/personQueries', () => ({
+  usePerson: () => ({ data: null, isLoading: false }),
+}));
+
 import BottomTabScreenLayout from './BottomTabScreenLayout';
 import StackScreenLayout from './StackScreenLayout';
 

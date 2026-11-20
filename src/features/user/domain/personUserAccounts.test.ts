@@ -25,7 +25,7 @@ function link({
       personCode: "HV001",
       gender: true,
       birthDate: "2010-01-01",
-      currentBelt: "WHITE",
+      currentBelt: "C10",
       status: "ACTIVE",
       faceImagePath: null,
       position: null,

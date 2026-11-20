@@ -10,7 +10,9 @@ import {
 
 import { HomeHeaderButton } from "@/routes/navigation/components/HomeHeaderButton";
 import { HeaderActionButton } from "@/routes/navigation/components/HeaderActionButton";
-import StackScreenLayout from "@/routes/navigation/layouts/StackScreenLayout";
+import BottomTabScreenLayout, {
+  BOTTOM_TAB_SPACE,
+} from "@/routes/navigation/layouts/BottomTabScreenLayout";
 import { MOBILE_LIST_END_REACHED_THRESHOLD } from "@/infrastructure/query/infiniteList.config";
 import { useShortListPrefetch } from "@/infrastructure/query/useShortListPrefetch";
 import { useDebounce } from "@/shared/hooks/useDebounce";
@@ -99,22 +101,20 @@ export default function NotificationScreen() {
   );
 
   return (
-    <StackScreenLayout
+    <BottomTabScreenLayout
       title="Thông báo"
+      activeTab="notifications"
       scrollEnabled={false}
       rightActions={
-        <>
-          {unreadCount > 0 ? (
-            <HeaderActionButton
-              icon={<Check />}
-              label="Đánh dấu tất cả đã đọc"
-              color={Colors.light.text}
-              testID="notification-read-all-button"
-              onPress={handleMarkAllRead}
-            />
-          ) : null}
-          <HomeHeaderButton color={Colors.light.text} />
-        </>
+        unreadCount > 0 ? (
+          <HeaderActionButton
+            icon={<Check />}
+            label="Đánh dấu tất cả đã đọc"
+            color={Colors.light.surface}
+            testID="notification-read-all-button"
+            onPress={handleMarkAllRead}
+          />
+        ) : null
       }
       contentContainerStyle={styles.screenContent}
     >
@@ -181,7 +181,7 @@ export default function NotificationScreen() {
           />
         }
       />
-    </StackScreenLayout>
+    </BottomTabScreenLayout>
   );
 }
 
@@ -198,7 +198,7 @@ const styles = StyleSheet.create({
   listContent: {
     flexGrow: 1,
     paddingTop: 20,
-    paddingBottom: 28,
+    paddingBottom: BOTTOM_TAB_SPACE + 20,
   },
   headerContent: {
     gap: 14,

@@ -1,5 +1,6 @@
 import type { Href } from "expo-router";
 import {
+  Bell,
   Calendar,
   Database,
   Home,
@@ -13,9 +14,10 @@ import type { AppIconElement } from "@/theme/icons";
 
 export type AppTabName =
   | "index"
-  | "activities"
-  | "check-in"
   | "schedule"
+  | "check-in"
+  | "notifications"
+  | "activities"
   | "account"
   | "explore";
 
@@ -46,11 +48,11 @@ export const APP_TABS: AppTabConfig[] = [
     display: true,
   },
   {
-    name: "activities",
-    label: "Tính năng",
-    href: "/activities",
-    icon: <Database />,
-    activeIcon: <Database weight="Filled" />,
+    name: "schedule",
+    label: "Lịch học",
+    href: "/schedule",
+    icon: <Calendar />,
+    activeIcon: <Calendar weight="Filled" />,
     requiredPermissions: [],
     display: true,
   },
@@ -64,11 +66,20 @@ export const APP_TABS: AppTabConfig[] = [
     centerAction: true,
   },
   {
-    name: "schedule",
-    label: "Lịch học",
-    href: "/schedule",
-    icon: <Calendar />,
-    activeIcon: <Calendar />,
+    name: "notifications",
+    label: "Thông báo",
+    href: "/notifications",
+    icon: <Bell />,
+    activeIcon: <Bell weight="Filled" />,
+    requiredPermissions: [],
+    display: true,
+  },
+  {
+    name: "activities",
+    label: "Tính năng",
+    href: "/activities",
+    icon: <Database />,
+    activeIcon: <Database weight="Filled" />,
     requiredPermissions: [],
     display: true,
   },
@@ -79,7 +90,7 @@ export const APP_TABS: AppTabConfig[] = [
     icon: <User />,
     activeIcon: <User weight="Filled" />,
     requiredPermissions: [],
-    display: true,
+    display: false,
   },
   {
     name: "explore",

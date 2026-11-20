@@ -31,6 +31,7 @@ describe("auth routing", () => {
           relationshipType: "OWNER",
           personCode: "HV001",
           displayName: "NGUYỄN VĂN A",
+          gender: true,
         },
       }),
     ).toBe("/(app)/(tabs)");

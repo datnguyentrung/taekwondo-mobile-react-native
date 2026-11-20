@@ -17,7 +17,8 @@ import {
 import { ThemedText } from "@/shared/ui/ThemedText";
 import { useToast } from "@/shared/ui/Toast";
 
-import { useUserId, userAdminStyles } from "./userAdministrationShared";
+import { useUserId } from "./userAdministrationShared";
+import { userAdminStyles } from "../components/UserAdministrationPrimitives";
 
 export function UserRolesScreen() {
   const router = useRouter();

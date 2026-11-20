@@ -28,6 +28,21 @@ const legacyAuthKeys = [
 type TokenEnvelope = AuthTokens & { version: 1 };
 type SnapshotEnvelope = { version: 1; snapshot: AuthSnapshot };
 
+function normalizeContext(context: AuthSnapshot['activeContext']): AuthSnapshot['activeContext'] {
+  return context ? { ...context, gender: context.gender ?? null } : null;
+}
+
+function normalizeSnapshot(snapshot: AuthSnapshot): AuthSnapshot {
+  return {
+    ...snapshot,
+    activeContext: normalizeContext(snapshot.activeContext),
+    availableContexts: snapshot.availableContexts.map((context) => ({
+      ...context,
+      gender: context.gender ?? null,
+    })),
+  };
+}
+
 function isTokenEnvelope(value: unknown): value is TokenEnvelope {
   if (!value || typeof value !== 'object') return false;
   const envelope = value as Partial<TokenEnvelope>;
@@ -92,7 +107,7 @@ export const authSessionStorageService = {
       try {
         const envelope = JSON.parse(raw) as Partial<SnapshotEnvelope>;
         return envelope.version === 1 && isSnapshot(envelope.snapshot)
-          ? envelope.snapshot
+          ? normalizeSnapshot(envelope.snapshot)
           : null;
       } catch {
         return null;

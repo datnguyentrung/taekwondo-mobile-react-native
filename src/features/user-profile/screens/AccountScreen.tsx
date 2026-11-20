@@ -4,7 +4,7 @@ import { useMemo, useState } from "react";
 import { ActivityIndicator, Pressable, StyleSheet } from "react-native";
 
 import { useAuthSession, useLogout } from "@/features/authentication";
-import BottomTabScreenLayout from "@/routes/navigation/layouts/BottomTabScreenLayout";
+import StackScreenLayout from "@/routes/navigation/layouts/StackScreenLayout";
 import { AppIcon } from "@/shared/ui/AppIcon";
 import { ConfirmationDialog } from "@/shared/ui/ConfirmationDialog";
 import { useToast } from "@/shared/ui/Toast";
@@ -100,7 +100,7 @@ export default function AccountScreen() {
   };
 
   return (
-    <BottomTabScreenLayout title="Tài khoản" activeTab="account">
+    <StackScreenLayout title="Tài khoản">
       <AccountProfileCard
         displayName={displayName}
         profileLabel={profileLabel}
@@ -154,7 +154,7 @@ export default function AccountScreen() {
         onCancel={() => setConfirmingLogout(false)}
         onConfirm={confirmLogout}
       />
-    </BottomTabScreenLayout>
+    </StackScreenLayout>
   );
 }
 

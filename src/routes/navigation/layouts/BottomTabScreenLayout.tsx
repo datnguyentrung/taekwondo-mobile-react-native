@@ -1,16 +1,25 @@
-import { useActiveQueriesRefresh } from "@/infrastructure/query/useActiveQueriesRefresh";
-import { ThemedText } from "@/shared/ui/ThemedText";
-import { getWindowDimensions } from "@/shared/utils/windowDimensions";
-import { Colors, radii, typography } from "@/theme";
-import type { AppIconElement } from "@/theme/icons";
-import { Image } from "expo-image";
+import { useRouter, type Href } from "expo-router";
 import type { ReactNode } from "react";
 import type { StyleProp, ViewStyle } from "react-native";
-import { RefreshControl, ScrollView, StyleSheet, View } from "react-native";
+import {
+  Pressable,
+  RefreshControl,
+  ScrollView,
+  StyleSheet,
+  View,
+} from "react-native";
 import {
   SafeAreaView,
   useSafeAreaInsets,
 } from "react-native-safe-area-context";
+
+import { useAuthSession } from "@/features/authentication";
+import { useActiveQueriesRefresh } from "@/infrastructure/query/useActiveQueriesRefresh";
+import { ThemedText } from "@/shared/ui/ThemedText";
+import { UserAvatar } from "@/shared/ui/UserAvatar";
+import { getWindowDimensions } from "@/shared/utils/windowDimensions";
+import { Colors, radii, typography } from "@/theme";
+import type { AppIconElement } from "@/theme/icons";
 import type { AppTabName } from "../appTabs.config";
 import { DefaultHeaderActions } from "../components/DefaultHeaderActions";
 import { HeaderActionButton } from "../components/HeaderActionButton";
@@ -52,22 +61,37 @@ export default function BottomTabScreenLayout({
   refreshing: controlledRefreshing,
   onRefresh: customOnRefresh,
 }: BottomTabScreenLayoutProps) {
+  const router = useRouter();
   const insets = useSafeAreaInsets();
+  const { activeContext, user } = useAuthSession();
   const actionColor = Colors.light.surface;
   const defaultRefresh = useActiveQueriesRefresh();
   const refreshing = controlledRefreshing ?? defaultRefresh.refreshing;
   const onRefresh = customOnRefresh ?? defaultRefresh.onRefresh;
 
+  const displayName = activeContext?.displayName ?? user?.phoneNumber ?? null;
+
   return (
     <SafeAreaView edges={["left", "right"]} style={styles.safeArea}>
       <View style={[styles.header, { paddingTop: Math.max(insets.top, 16) }]}>
         <View style={styles.headerContent}>
-          <Image
-            source={require("@/assets/taekwondo-removebg-preview.png")}
-            style={styles.logo}
-            contentFit="contain"
-            accessibilityLabel="Taekwondo Văn Quán"
-          />
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Tài khoản cá nhân"
+            hitSlop={8}
+            onPress={() => router.push("/account" as Href)}
+            style={({ pressed }) => [
+              styles.avatarButton,
+              pressed ? styles.avatarButtonPressed : null,
+            ]}
+          >
+            <UserAvatar
+              name={displayName}
+              gender={activeContext?.gender}
+              mode="image"
+              size={40}
+            />
+          </Pressable>
           <ThemedText type="heading" style={styles.title}>
             {title}
           </ThemedText>
@@ -109,13 +133,7 @@ export default function BottomTabScreenLayout({
           {children}
         </ScrollView>
       ) : (
-        <View
-          style={[
-            styles.scroll,
-            styles.content,
-            contentContainerStyle,
-          ]}
-        >
+        <View style={[styles.scroll, styles.content, contentContainerStyle]}>
           {children}
         </View>
       )}
@@ -137,11 +155,24 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
   },
-  logo: {
+  avatarButton: {
     position: "absolute",
-    left: 15,
-    width: 68,
-    height: 59,
+    left: 20,
+
+    width: 44,
+    height: 44,
+
+    borderRadius: 22,
+    borderWidth: 2,
+    borderColor: "#FFFFFF",
+
+    alignItems: "center",
+    justifyContent: "center",
+
+    overflow: "hidden",
+  },
+  avatarButtonPressed: {
+    opacity: 0.75,
   },
   title: {
     color: Colors.light.surface,

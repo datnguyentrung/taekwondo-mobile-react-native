@@ -8,7 +8,7 @@ import { Colors } from '@/theme/theme';
 
 export function useTheme() {
   const scheme = useColorScheme();
-  const theme = scheme === 'unspecified' ? 'light' : scheme;
+  const theme = scheme === 'dark' ? 'dark' : 'light';
 
   return Colors[theme];
 }

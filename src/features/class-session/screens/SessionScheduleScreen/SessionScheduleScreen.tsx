@@ -1,7 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "expo-router";
-import { ActivityIndicator, ScrollView, StyleSheet, View, type ScrollViewInstance } from "react-native";
+import { ActivityIndicator, RefreshControl, ScrollView, StyleSheet, View, type ScrollViewInstance } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+
+import { useScreenRefresh } from "@/infrastructure/query/useScreenRefresh";
 
 import { DefaultHeaderActions } from "@/routes/navigation/components/DefaultHeaderActions";
 import BottomTabScreenLayout, {
@@ -58,11 +60,14 @@ export default function SessionScheduleScreen() {
     }
   }, [selectedDate, isExpanded]);
 
+  const calendarQuery = useClassSessionCalendarQuery(queryRange);
   const {
     data: calendarSessions,
     isLoading,
     error,
-  } = useClassSessionCalendarQuery(queryRange);
+  } = calendarQuery;
+
+  const { refreshing, onRefresh } = useScreenRefresh(calendarQuery);
 
   // Create session count map for calendar dots
   const sessionCountMap = useMemo(() => {
@@ -176,6 +181,14 @@ export default function SessionScheduleScreen() {
             { paddingBottom: BOTTOM_TAB_SPACE + Math.max(insets.bottom, 10) },
           ]}
           showsVerticalScrollIndicator={false}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={onRefresh}
+              colors={[Colors.light.primary]}
+              tintColor={Colors.light.primary}
+            />
+          }
           onContentSizeChange={() => {
             if (!initialScrolledRef.current && Object.keys(datePositions.current).length > 0) {
               scrollToDate(selectedDate, true);

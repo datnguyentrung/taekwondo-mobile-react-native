@@ -14,7 +14,7 @@ export function ScheduleCard({ schedule, onPress }: { schedule: ScheduleScreenIt
       style={({ pressed }) => [styles.card, pressed ? styles.pressed : null]}
     >
       <Image
-        source={schedule.image}
+        source={schedule.image as any}
         style={styles.cardImage}
         contentFit="cover"
         accessibilityLabel={`${schedule.branchName}, ${schedule.shiftLabel}`}

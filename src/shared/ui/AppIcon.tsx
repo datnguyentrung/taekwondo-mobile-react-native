@@ -46,13 +46,14 @@ function AppIconComponent({
     overrideProps.color = resolvedColor;
   }
 
-  if (style || icon.props.style) {
-    overrideProps.style = style
-      ? [icon.props.style, style]
-      : icon.props.style;
-  }
+  const finalStyle = style || icon.props.style
+    ? style ? [icon.props.style, style] : icon.props.style
+    : undefined;
 
-  return cloneElement(icon, overrideProps);
+  return cloneElement(icon, {
+    ...overrideProps,
+    ...(finalStyle ? { style: finalStyle } : {}),
+  });
 }
 
 export const AppIcon = memo(AppIconComponent);

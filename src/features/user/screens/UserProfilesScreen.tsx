@@ -5,6 +5,7 @@ import type { RelationshipType } from "@/features/authentication/domain/auth.typ
 import type { PersonSimpleResponse } from "@/features/person";
 import { relationshipLabel } from "@/features/person/domain/personViewModel";
 import { usePeople } from "@/features/person/queries/personQueries";
+import { useDebounce } from "@/shared/hooks/useDebounce";
 import { useScreenRefresh } from "@/infrastructure/query/useScreenRefresh";
 import StackScreenLayout from "@/routes/navigation/layouts/StackScreenLayout";
 import {
@@ -29,7 +30,11 @@ import { userRelationships, useUserId } from "./userAdministrationShared";
 export function UserProfilesScreen() {
   const userId = useUserId();
   const user = useUser(userId);
-  const people = usePeople();
+  const [personSearch, setPersonSearch] = useState("");
+  const debouncedPersonSearch = useDebounce(personSearch, 300);
+  const people = usePeople({
+    search: debouncedPersonSearch.trim() || undefined,
+  });
   const toast = useToast();
 
   const linked: PersonSimpleResponse[] = user.data?.persons ?? [];
@@ -49,9 +54,9 @@ export function UserProfilesScreen() {
     (person: PersonSimpleResponse) =>
       !linked.some((item) => item.personId === person.personId),
   );
-  const newlySelectedPerson = available.find(
-    (person) => person.personId === personId,
-  );
+  const newlySelectedPerson =
+    available.find((person) => person.personId === personId) ??
+    (people.data?.content ?? []).find((person) => person.personId === personId);
 
   const create = useLinkUserProfile({
     onSuccess: async () => {
@@ -128,6 +133,11 @@ export function UserProfilesScreen() {
       <AdminPickerSheet
         visible={personSheet}
         title="Chọn hồ sơ"
+        searchable
+        searchPlaceholder="Tìm kiếm hồ sơ theo tên hoặc mã..."
+        searchValue={personSearch}
+        onSearchChange={setPersonSearch}
+        loading={people.isPending}
         options={available.map((person) => ({
           value: person.personId,
           label: person.fullName,
@@ -140,6 +150,8 @@ export function UserProfilesScreen() {
       <AdminPickerSheet
         visible={relationshipSheet}
         title="Chọn mối quan hệ"
+        searchable
+        searchPlaceholder="Tìm kiếm mối quan hệ..."
         options={userRelationships.map((value) => ({
           value,
           label: relationshipLabel(value),

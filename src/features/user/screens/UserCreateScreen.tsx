@@ -3,10 +3,10 @@ import { useState } from "react";
 import { View } from "react-native";
 
 import type { RelationshipType } from "@/features/authentication/domain/auth.types";
-import { useRoles } from "@/features/roles/queries/roleQueries";
-import { useCreateUser } from "../queries/userQueries";
 import { relationshipLabel } from "@/features/person/domain/personViewModel";
 import { usePeople } from "@/features/person/queries/personQueries";
+import { useRoles } from "@/features/roles/queries/roleQueries";
+import { useDebounce } from "@/shared/hooks/useDebounce";
 import StackScreenLayout from "@/routes/navigation/layouts/StackScreenLayout";
 import {
   AdminButton,
@@ -20,12 +20,17 @@ import {
   adminStyles,
 } from "@/shared/ui/admin/AdministrationPrimitives";
 import { useToast } from "@/shared/ui/Toast";
+import { useCreateUser } from "../queries/userQueries";
 
 import { userRelationships } from "./userAdministrationShared";
 
 export function UserCreateScreen() {
   const router = useRouter();
-  const people = usePeople();
+  const [personSearch, setPersonSearch] = useState("");
+  const debouncedPersonSearch = useDebounce(personSearch, 300);
+  const people = usePeople({
+    search: debouncedPersonSearch.trim() || undefined,
+  });
   const roles = useRoles();
   const toast = useToast();
   const [phone, setPhone] = useState("");
@@ -36,9 +41,8 @@ export function UserCreateScreen() {
   const [personSheet, setPersonSheet] = useState(false);
   const [relationshipSheet, setRelationshipSheet] = useState(false);
   const [confirming, setConfirming] = useState(false);
-  const selectedPerson = people.data?.content.find(
-    (person) => person.personId === personId,
-  );
+  const selectedPerson =
+    (people.data?.content ?? []).find((person) => person.personId === personId);
 
   const create = useCreateUser({
     onSuccess: async (created) => {
@@ -63,7 +67,10 @@ export function UserCreateScreen() {
     phone.trim().length >= 9 && password.length >= 6 && Boolean(personId);
 
   return (
-    <StackScreenLayout title="Tạo người dùng" contentContainerStyle={adminStyles.screen}>
+    <StackScreenLayout
+      title="Tạo người dùng"
+      contentContainerStyle={adminStyles.screen}
+    >
       <AdminField
         label="Số điện thoại"
         value={phone}
@@ -102,13 +109,27 @@ export function UserCreateScreen() {
         ))}
       </View>
       <AdminInfoBanner>
-        Tài khoản bắt buộc liên kết chính xác một hồ sơ khi tạo, theo hợp đồng backend hiện tại.
+        Tài khoản bắt buộc liên kết chính xác một hồ sơ khi tạo, theo hợp đồng
+        backend hiện tại.
       </AdminInfoBanner>
-      <AdminButton label="Tạo người dùng" disabled={!valid} onPress={() => setConfirming(true)} />
-      <AdminButton label="Hủy" variant="secondary" onPress={() => router.back()} />
+      <AdminButton
+        label="Tạo người dùng"
+        disabled={!valid}
+        onPress={() => setConfirming(true)}
+      />
+      <AdminButton
+        label="Hủy"
+        variant="secondary"
+        onPress={() => router.back()}
+      />
       <AdminPickerSheet
         visible={personSheet}
         title="Chọn hồ sơ"
+        searchable
+        searchPlaceholder="Tìm kiếm hồ sơ theo tên hoặc mã..."
+        searchValue={personSearch}
+        onSearchChange={setPersonSearch}
+        loading={people.isPending}
         options={(people.data?.content ?? []).map((person) => ({
           value: person.personId,
           label: person.fullName,
@@ -121,6 +142,8 @@ export function UserCreateScreen() {
       <AdminPickerSheet
         visible={relationshipSheet}
         title="Chọn mối quan hệ"
+        searchable
+        searchPlaceholder="Tìm kiếm mối quan hệ..."
         options={userRelationships.map((value) => ({
           value,
           label: relationshipLabel(value),

@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import { useMemo, useState, type ReactNode } from "react";
 import {
   ActivityIndicator,
   Modal,
@@ -464,6 +464,11 @@ export function AdminPickerSheet({
   selectedValue,
   onSelect,
   onClose,
+  searchable,
+  searchPlaceholder,
+  searchValue,
+  onSearchChange,
+  loading,
 }: {
   visible: boolean;
   title: string;
@@ -471,27 +476,73 @@ export function AdminPickerSheet({
   selectedValue?: string;
   onSelect: (value: string) => void;
   onClose: () => void;
+  searchable?: boolean;
+  searchPlaceholder?: string;
+  searchValue?: string;
+  onSearchChange?: (text: string) => void;
+  loading?: boolean;
 }) {
+  const [internalSearch, setInternalSearch] = useState("");
+
+  const isControlledSearch = searchValue !== undefined && onSearchChange !== undefined;
+  const currentSearch = isControlledSearch ? searchValue : internalSearch;
+  const handleSearchChange = isControlledSearch ? onSearchChange : setInternalSearch;
+
+  const displayOptions = useMemo(() => {
+    if (isControlledSearch || !searchable || !currentSearch.trim()) {
+      return options;
+    }
+    const query = currentSearch.trim().toLowerCase();
+    return options.filter(
+      (opt) =>
+        opt.label.toLowerCase().includes(query) ||
+        (opt.description && opt.description.toLowerCase().includes(query)),
+    );
+  }, [currentSearch, isControlledSearch, options, searchable]);
+
+  const handleClose = () => {
+    if (!isControlledSearch) {
+      setInternalSearch("");
+    }
+    onClose();
+  };
+
   return (
     <BottomSheetWindow
       visible={visible}
       title={title}
-      heightRatio={0.58}
-      onClose={onClose}
+      heightRatio={searchable ? 0.75 : 0.58}
+      onClose={handleClose}
     >
       <View style={styles.sheetList}>
-        {options.map((option) => (
-          <AdminListRow
-            key={option.value}
-            title={option.label}
-            subtitle={option.description}
-            selected={option.value === selectedValue}
-            onPress={() => {
-              onSelect(option.value);
-              onClose();
-            }}
-          />
-        ))}
+        {searchable ? (
+          <View style={styles.sheetSearchContainer}>
+            <AdminSearchField
+              value={currentSearch}
+              onChangeText={handleSearchChange}
+              placeholder={searchPlaceholder ?? "Tìm kiếm..."}
+            />
+          </View>
+        ) : null}
+
+        {loading ? (
+          <AdminLoadingState />
+        ) : displayOptions.length === 0 ? (
+          <AdminEmptyState message="Không tìm thấy kết quả" />
+        ) : (
+          displayOptions.map((option) => (
+            <AdminListRow
+              key={option.value}
+              title={option.label}
+              subtitle={option.description}
+              selected={option.value === selectedValue}
+              onPress={() => {
+                onSelect(option.value);
+                handleClose();
+              }}
+            />
+          ))
+        )}
       </View>
     </BottomSheetWindow>
   );
@@ -761,6 +812,9 @@ const styles = StyleSheet.create({
     borderColor: Colors.light.divider,
   },
   sheetList: { overflow: "hidden", borderRadius: radii.md },
+  sheetSearchContainer: {
+    paddingBottom: 12,
+  },
   modalRoot: {
     flex: 1,
     alignItems: "center",

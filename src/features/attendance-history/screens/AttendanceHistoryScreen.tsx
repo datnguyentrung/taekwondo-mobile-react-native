@@ -403,7 +403,7 @@ export default function AttendanceHistoryScreen({
                     Thử đổi cơ sở, ca hoặc kỳ lọc để xem thêm kết quả.
                   </ThemedText>
                 </View>
-              ) : null
+              ) : undefined
             }
           />
         ) : (

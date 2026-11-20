@@ -20,7 +20,7 @@ describe("NavigationMenu", () => {
     );
 
     const firstRow = screen.getByLabelText("Khóa học đang học");
-    const firstRowStyle = flattenRenderedStyle(firstRow.props.style);
+    const firstRowStyle = flattenRenderedStyle(firstRow.props.style) || {};
 
     expect(screen.getByText("Khóa học đang học (2)")).toBeTruthy();
     expect(screen.getByText("Lịch sử tập luyện")).toBeTruthy();
@@ -41,7 +41,7 @@ describe("NavigationMenu", () => {
     );
 
     const row = screen.getByLabelText("Giao dịch gần đây");
-    const rowStyle = flattenRenderedStyle(row.props.style);
+    const rowStyle = flattenRenderedStyle(row.props.style) || {};
 
     expect(screen.getByText("Xem lịch sử thu chi của ví")).toBeTruthy();
     expect(rowStyle.minHeight).toBe(76);

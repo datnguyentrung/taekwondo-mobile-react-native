@@ -61,6 +61,46 @@ describe('auth session storage boundaries', () => {
     expect(stored).not.toContain('refreshToken');
   });
 
+  it('normalizes legacy snapshots without context gender', async () => {
+    await AsyncStorage.setItem(
+      SNAPSHOT_KEY,
+      JSON.stringify({
+        version: 1,
+        snapshot: {
+          user: {
+            userId: 'user-1',
+            phoneNumber: '0369222068',
+            status: 'ACTIVE',
+            roles: ['ROLE_STUDENT'],
+            permissions: [],
+          },
+          activeContext: {
+            userPersonId: 'user-person-1',
+            personId: 'person-1',
+            relationshipType: 'OWNER',
+            personCode: 'HV001',
+            displayName: 'Nguyễn Văn A',
+          },
+          availableContexts: [
+            {
+              userPersonId: 'user-person-1',
+              personId: 'person-1',
+              relationshipType: 'OWNER',
+              personCode: 'HV001',
+              displayName: 'Nguyễn Văn A',
+            },
+          ],
+          requiresContextSelection: false,
+        },
+      }),
+    );
+
+    const snapshot = await authSessionStorageService.snapshot.read();
+
+    expect(snapshot?.activeContext?.gender).toBeNull();
+    expect(snapshot?.availableContexts[0]?.gender).toBeNull();
+  });
+
   it('rejects incomplete token pairs before touching SecureStore', async () => {
     await expect(
       authSessionStorageService.tokens.write({ accessToken: 'access', refreshToken: '' }),

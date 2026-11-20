@@ -70,9 +70,10 @@ function TabButton({ tab, isFocused, ...props }: TabButtonProps) {
   const iconColor = active ? Colors.light.primary : Colors.light.textSecondary;
 
   if (tab.centerAction) {
+    const { ref: _ref, ...pressableProps } = props as any;
     return (
       <Pressable
-        {...props}
+        {...pressableProps}
         accessibilityRole="tab"
         accessibilityLabel={tab.label}
         accessibilityState={{ selected: active }}
@@ -88,9 +89,10 @@ function TabButton({ tab, isFocused, ...props }: TabButtonProps) {
     );
   }
 
+  const { ref: _ref, ...pressableProps } = props as any;
   return (
     <Pressable
-      {...props}
+      {...pressableProps}
       accessibilityRole="tab"
       accessibilityLabel={tab.label}
       accessibilityState={{ selected: active }}
