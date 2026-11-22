@@ -1,11 +1,13 @@
 import { useEffect, useRef, useState } from 'react';
-import { StyleSheet, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
 import { useLocalSearchParams, useRouter, type Href } from 'expo-router';
-import { Trash6 } from 'reicon-react-native';
+import { Plus, Trash6 } from 'reicon-react-native';
 
 import { Permission, useCan } from '@/features/authorization';
+import { usePeople } from '@/features/person/queries/personQueries';
 import StackScreenLayout from '@/routes/navigation/layouts/StackScreenLayout';
 import { AppIcon } from '@/shared/ui/AppIcon';
+import { BottomSheetWindow } from '@/shared/ui/BottomSheetWindow';
 import { CancellableLoadingOverlay } from '@/shared/ui/CancellableLoadingOverlay';
 import { ConfirmationDialog } from '@/shared/ui/ConfirmationDialog';
 import { FloatingActionBar } from '@/shared/ui/FloatingActionBar';
@@ -31,6 +33,7 @@ import {
 import {
   useCreatePosition,
   useDeletePosition,
+  useAssignPeopleToPosition,
   usePosition,
   usePositionPeople,
   usePositions,
@@ -145,16 +148,68 @@ export function PositionStaffScreen() {
   const positionId = usePositionId();
   const position = usePosition(positionId);
   const people = usePositionPeople(positionId);
+  const allPeople = usePeople();
+  const assignPeople = useAssignPeopleToPosition();
+  const toast = useToast();
+  const canAssign = useCan(Permission.PERSON_UPDATE);
   const [search, setSearch] = useState('');
+  const [pickerVisible, setPickerVisible] = useState(false);
+  const [pickerSearch, setPickerSearch] = useState('');
+  const [selectedPersonIds, setSelectedPersonIds] = useState<Set<string>>(new Set());
   const visible = people.people.filter((person) => containsSearch(search, person.fullName, person.personCode));
+  const assignedPersonIds = new Set(people.people.map((person) => person.personId));
+  const candidates = (allPeople.data?.content ?? []).filter((person) =>
+    !assignedPersonIds.has(person.personId) && containsSearch(pickerSearch, person.fullName, person.personCode),
+  );
   const staffCount = position.data?.personCount ?? people.people.length;
 
+  const closePicker = () => {
+    setPickerVisible(false);
+    setPickerSearch('');
+    setSelectedPersonIds(new Set());
+  };
+  const togglePerson = (personId: string) => {
+    setSelectedPersonIds((current) => {
+      const next = new Set(current);
+      if (next.has(personId)) next.delete(personId);
+      else next.add(personId);
+      return next;
+    });
+  };
+  const savePeople = async () => {
+    if (!positionId || selectedPersonIds.size === 0) return;
+    try {
+      await assignPeople.mutateAsync({ positionId, request: { personIds: [...selectedPersonIds] } });
+      toast.show({ message: 'Đã gán nhân sự vào chức vụ', variant: 'success' });
+      closePicker();
+    } catch {
+      toast.show({ message: 'Không thể gán nhân sự vào chức vụ', variant: 'error' });
+    }
+  };
+
   return (
-    <StackScreenLayout title="Nhân sự theo chức vụ" contentContainerStyle={adminStyles.screen}>
-      <AdminCard><ThemedText type="title">{position.data?.name ?? 'Chức vụ'}</ThemedText><ThemedText type="bodySmall" style={adminStyles.muted}>{staffCount} nhân sự</ThemedText></AdminCard>
-      <AdminSearchField value={search} onChangeText={setSearch} placeholder="Tìm tên hoặc mã nhân sự" />
-      {people.isPending ? <AdminLoadingState /> : visible.length === 0 ? <AdminEmptyState message="Chưa có nhân sự ở chức vụ này" /> : <View style={styles.list}>{visible.map((person) => <AdminListRow key={person.personId} leading={<Avatar name={person.fullName} />} title={person.fullName} subtitle={person.personCode} meta={<AdminChip label={person.status === 'ACTIVE' ? 'Hoạt động' : 'Ngừng hoạt động'} tone={person.status === 'ACTIVE' ? 'success' : 'neutral'} />} />)}</View>}
-    </StackScreenLayout>
+    <>
+      <StackScreenLayout title="Nhân sự theo chức vụ" contentContainerStyle={adminStyles.screen}>
+        <AdminCard><ThemedText type="title">{position.data?.name ?? 'Chức vụ'}</ThemedText><ThemedText type="bodySmall" style={adminStyles.muted}>{staffCount} nhân sự</ThemedText></AdminCard>
+        <View style={styles.searchRow}>
+          <View style={adminStyles.grow}><AdminSearchField value={search} onChangeText={setSearch} placeholder="Tìm tên hoặc mã nhân sự" /></View>
+          {canAssign ? <Pressable accessibilityRole="button" accessibilityLabel="Thêm nhân sự" onPress={() => setPickerVisible(true)} style={({ pressed }) => [styles.addButton, pressed && styles.pressed]}><AppIcon icon={<Plus />} size={22} color={Colors.light.surface} /></Pressable> : null}
+        </View>
+        {people.isPending ? <AdminLoadingState /> : visible.length === 0 ? <AdminEmptyState message="Chưa có nhân sự ở chức vụ này" /> : <View style={styles.list}>{visible.map((person) => <AdminListRow key={person.personId} leading={<Avatar name={person.fullName} />} title={person.fullName} subtitle={person.personCode} meta={<AdminChip label={person.status === 'ACTIVE' ? 'Hoạt động' : 'Ngừng hoạt động'} tone={person.status === 'ACTIVE' ? 'success' : 'neutral'} />} />)}</View>}
+      </StackScreenLayout>
+      <BottomSheetWindow
+        visible={pickerVisible}
+        title="Chọn nhân sự"
+        heightRatio={0.78}
+        onClose={closePicker}
+        footer={<FloatingActionBar placement="sheet" actions={[{ label: `Lưu${selectedPersonIds.size ? ` (${selectedPersonIds.size})` : ''}`, disabled: selectedPersonIds.size === 0, loading: assignPeople.isPending, onPress: () => void savePeople() }]} />}
+      >
+        <View style={styles.pickerContent}>
+          <AdminSearchField value={pickerSearch} onChangeText={setPickerSearch} placeholder="Tìm tên hoặc mã nhân sự" />
+          {allPeople.isPending ? <AdminLoadingState /> : candidates.length === 0 ? <AdminEmptyState message="Không còn nhân sự phù hợp để gán" /> : <View style={styles.list}>{candidates.map((person) => <AdminListRow key={person.personId} leading={<Avatar name={person.fullName} />} title={person.fullName} subtitle={`${person.personCode} · ${person.position?.name ?? 'Chưa gán chức vụ'}`} selected={selectedPersonIds.has(person.personId)} onPress={() => togglePerson(person.personId)} />)}</View>}
+        </View>
+      </BottomSheetWindow>
+    </>
   );
 }
 
@@ -209,6 +264,10 @@ export function PositionEditScreen() { return <PositionFormScreen mode="edit" />
 
 const styles = StyleSheet.create({
   list: { overflow: 'hidden', borderRadius: radii.md },
+  searchRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  addButton: { width: 48, height: 48, borderRadius: radii.md, alignItems: 'center', justifyContent: 'center', backgroundColor: Colors.light.primary },
+  pressed: { opacity: 0.86 },
+  pickerContent: { gap: 14, paddingBottom: 8 },
   titleRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 12 },
   code: { color: Colors.light.primary, marginTop: 4 },
   avatar: { width: 42, height: 42, borderRadius: 21, alignItems: 'center', justifyContent: 'center', backgroundColor: Colors.light.primarySoft },

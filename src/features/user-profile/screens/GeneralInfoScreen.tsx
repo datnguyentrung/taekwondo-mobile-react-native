@@ -25,7 +25,7 @@ import {
   usePerson,
   useUpdatePersonFaceEmbedding,
 } from "@/features/person";
-import type { MobileUploadFile } from "@/infrastructure/http/http.types";
+import { prepareAvatarImage } from "@/features/person/utils/prepareAvatarImage";
 import StackScreenLayout from "@/routes/navigation/layouts/StackScreenLayout";
 import { AppIcon } from "@/shared/ui/AppIcon";
 import { BottomSheetWindow } from "@/shared/ui/BottomSheetWindow";
@@ -55,7 +55,7 @@ export default function GeneralInfoScreen() {
   const { activeContext, user } = useAuthSession();
   const personId = activeContext?.personId;
 
-  const { data: person, isLoading: isPersonLoading } = usePerson(personId);
+  const { data: person } = usePerson(personId);
   const avatarUrl = person?.faceImagePath;
 
   const updateFaceEmbedding = useUpdatePersonFaceEmbedding();
@@ -64,6 +64,8 @@ export default function GeneralInfoScreen() {
   const [sheetVisible, setSheetVisible] = useState(false);
   const [previewVisible, setPreviewVisible] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [processingStep, setProcessingStep] = useState<string | null>(null);
+  const [optimisticAvatarUri, setOptimisticAvatarUri] = useState<string | null>(null);
 
   const labelName = (person?.fullName || activeContext?.displayName || "Chưa cập nhật").toLocaleUpperCase("vi-VN");
 
@@ -110,6 +112,8 @@ export default function GeneralInfoScreen() {
     },
   ];
 
+  const displayedAvatarUrl = optimisticAvatarUri ?? avatarUrl;
+
   const handleUpload = async (asset: ImagePicker.ImagePickerAsset) => {
     if (!personId) {
       toast.show({
@@ -121,23 +125,26 @@ export default function GeneralInfoScreen() {
 
     setIsProcessing(true);
     try {
-      const file: MobileUploadFile = {
-        uri: asset.uri,
-        name: asset.fileName || `avatar_${Date.now()}.jpg`,
-        type: asset.mimeType || "image/jpeg",
-      };
+      setOptimisticAvatarUri(asset.uri);
+      setProcessingStep("Đang chuẩn bị ảnh");
+      const file = await prepareAvatarImage(asset);
+      setProcessingStep("Đang xác thực khuôn mặt");
       await updateFaceEmbedding.mutateAsync({ personId, file });
+      setProcessingStep("Đang lưu ảnh");
+      setOptimisticAvatarUri(null);
       toast.show({
         message: "Cập nhật ảnh đại diện thành công.",
         variant: "success",
       });
     } catch {
+      setOptimisticAvatarUri(null);
       toast.show({
         message: "Cập nhật ảnh đại diện thất bại. Vui lòng thử lại.",
         variant: "error",
       });
     } finally {
       setIsProcessing(false);
+      setProcessingStep(null);
     }
   };
 
@@ -225,9 +232,9 @@ export default function GeneralInfoScreen() {
           accessibilityLabel="Đổi ảnh đại diện"
         >
           <View style={styles.avatarContainer}>
-            {avatarUrl ? (
+            {displayedAvatarUrl ? (
               <Image
-                source={{ uri: avatarUrl }}
+                source={{ uri: displayedAvatarUrl }}
                 style={styles.avatarImage}
                 contentFit="cover"
               />
@@ -241,6 +248,7 @@ export default function GeneralInfoScreen() {
             {isProcessing ? (
               <View style={styles.avatarLoadingOverlay}>
                 <ActivityIndicator size="small" color={Colors.light.surface} />
+                <ThemedText style={styles.avatarLoadingText}>{processingStep}</ThemedText>
               </View>
             ) : null}
           </View>
@@ -471,6 +479,12 @@ const styles = StyleSheet.create({
     borderRadius: 55,
     alignItems: "center",
     justifyContent: "center",
+  },
+  avatarLoadingText: {
+    marginTop: 6,
+    color: Colors.light.surface,
+    fontSize: 11,
+    textAlign: "center",
   },
   editBadge: {
     position: "absolute",

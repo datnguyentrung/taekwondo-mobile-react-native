@@ -1,6 +1,6 @@
 import { XCircle } from "reicon-react-native";
 import { useCallback, useEffect, useRef } from "react";
-import { Platform, Pressable, StyleSheet, View } from "react-native";
+import { Modal, Platform, Pressable, StyleSheet, View } from "react-native";
 import Animated, {
   runOnJS,
   useAnimatedStyle,
@@ -182,49 +182,57 @@ export function Toast({ message, variant, duration, onDismiss }: ToastProps) {
   // --- render ----------------------------------------------------------------
 
   return (
-    <Animated.View
-      style={[
-        styles.container,
-        {
-          top: topOffset,
-          backgroundColor: config.bg,
-          borderColor: config.border,
-        },
-        animatedStyle,
-      ]}
-      accessibilityRole="alert"
-      accessibilityLiveRegion="polite"
+    <Modal
+      transparent
+      visible
+      animationType="none"
+      statusBarTranslucent
+      onRequestClose={handleDismiss}
     >
-      <Pressable
-        style={styles.body}
-        onPressIn={handlePressIn}
-        onPressOut={handlePressOut}
-        accessibilityHint="Nhấn giữ để tạm dừng tự ẩn"
+      <Animated.View
+        style={[
+          styles.container,
+          {
+            top: topOffset,
+            backgroundColor: config.bg,
+            borderColor: config.border,
+          },
+          animatedStyle,
+        ]}
+        accessibilityRole="alert"
+        accessibilityLiveRegion="polite"
       >
-        <View style={styles.content}>
-          <ThemedText
-            type="bodySmall"
-            style={[styles.message, { color: config.text }]}
-            numberOfLines={3}
-          >
-            {message}
-          </ThemedText>
-        </View>
-
         <Pressable
-          onPress={handleDismiss}
-          hitSlop={8}
-          accessibilityRole="button"
-          accessibilityLabel="Đóng thông báo"
-          style={({ pressed }) => [
-            styles.dismiss,
-            pressed && styles.dismissPressed,
-          ]}
+          style={styles.body}
+          onPressIn={handlePressIn}
+          onPressOut={handlePressOut}
+          accessibilityHint="Nhấn giữ để tạm dừng tự ẩn"
         >
-          <AppIcon icon={<XCircle weight="Filled" />} size={22} color={config.iconColor} />
+          <View style={styles.content}>
+            <ThemedText
+              type="bodySmall"
+              style={[styles.message, { color: config.text }]}
+              numberOfLines={3}
+            >
+              {message}
+            </ThemedText>
+          </View>
+
+          <Pressable
+            onPress={handleDismiss}
+            hitSlop={8}
+            accessibilityRole="button"
+            accessibilityLabel="Đóng thông báo"
+            style={({ pressed }) => [
+              styles.dismiss,
+              pressed && styles.dismissPressed,
+            ]}
+          >
+            <AppIcon icon={<XCircle weight="Filled" />} size={22} color={config.iconColor} />
+          </Pressable>
         </Pressable>
-      </Pressable>
-    </Animated.View>
+      </Animated.View>
+    </Modal>
   );
 }
 

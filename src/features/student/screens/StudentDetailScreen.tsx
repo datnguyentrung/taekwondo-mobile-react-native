@@ -41,7 +41,7 @@ import {
   formatVnd,
 } from "@/features/student-commerce/utils/studentCommerceUtils";
 import { useWalletByPerson } from "@/features/wallet/queries/walletQueries";
-import type { MobileUploadFile } from "@/infrastructure/http/http.types";
+import { prepareAvatarImage } from "@/features/person/utils/prepareAvatarImage";
 import { useScreenRefresh } from "@/infrastructure/query/useScreenRefresh";
 import StackScreenLayout from "@/routes/navigation/layouts/StackScreenLayout";
 import { useDynamicDetailTitle } from "@/routes/navigation/utils/screenTitle";
@@ -79,6 +79,8 @@ export function StudentDetailScreen({ studentCode, personType = "student" }: Stu
   const [avatarSheetVisible, setAvatarSheetVisible] = useState(false);
   const [avatarPreviewVisible, setAvatarPreviewVisible] = useState(false);
   const [isAvatarProcessing, setIsAvatarProcessing] = useState(false);
+  const [avatarProcessingStep, setAvatarProcessingStep] = useState<string | null>(null);
+  const [optimisticAvatarUri, setOptimisticAvatarUri] = useState<string | null>(null);
   const deleteController = useRef<AbortController | null>(null);
 
   const person = personQuery.data;
@@ -107,30 +109,33 @@ export function StudentDetailScreen({ studentCode, personType = "student" }: Stu
 
   const title = useDynamicDetailTitle(student, { fallback: "Học viên" });
   const activeStudentId = student?.personId || studentCode || "";
-  const avatarUrl = person?.faceImagePath;
+  const avatarUrl = optimisticAvatarUri ?? person?.faceImagePath;
 
   const handleUploadAvatar = async (asset: ImagePicker.ImagePickerAsset) => {
     if (!activeStudentId) return;
 
     setIsAvatarProcessing(true);
     try {
-      const file: MobileUploadFile = {
-        uri: asset.uri,
-        name: asset.fileName || `avatar_${Date.now()}.jpg`,
-        type: asset.mimeType || "image/jpeg",
-      };
+      setOptimisticAvatarUri(asset.uri);
+      setAvatarProcessingStep("Đang chuẩn bị ảnh");
+      const file = await prepareAvatarImage(asset);
+      setAvatarProcessingStep("Đang xác thực khuôn mặt");
       await updateFaceEmbedding.mutateAsync({
         personId: activeStudentId,
         file,
       });
+      setAvatarProcessingStep("Đang lưu ảnh");
+      setOptimisticAvatarUri(null);
       toast.show({ message: "Đã cập nhật ảnh đại diện.", variant: "success" });
     } catch {
+      setOptimisticAvatarUri(null);
       toast.show({
         message: "Không thể cập nhật ảnh đại diện.",
         variant: "error",
       });
     } finally {
       setIsAvatarProcessing(false);
+      setAvatarProcessingStep(null);
     }
   };
 
@@ -310,6 +315,7 @@ export function StudentDetailScreen({ studentCode, personType = "student" }: Stu
           avatarUrl={avatarUrl}
           onAvatarPress={() => setAvatarSheetVisible(true)}
           isAvatarUpdating={isAvatarProcessing}
+          avatarUpdateStatus={avatarProcessingStep}
         />
       ) : null}
 

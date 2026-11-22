@@ -201,6 +201,7 @@ export function useSessionAttendance({
 
         const created = await sessionAttendanceApi.create({
           classSessionId,
+          personId: targetStudent.studentEnrollment.studentPerson.personId,
           studentEnrollmentId,
           attendanceStatus: newStatus,
           evaluationStatus: "PENDING",

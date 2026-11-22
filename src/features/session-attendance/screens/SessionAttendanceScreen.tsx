@@ -1,6 +1,6 @@
 import { useCallback, useMemo, useState } from "react";
 import { useRouter } from "expo-router";
-import { FaceScanSquare } from "reicon-react-native";
+import { FaceScanSquare, Plus } from "reicon-react-native";
 import {
   ActivityIndicator,
   FlatList,
@@ -14,9 +14,10 @@ import { Permission, useCan } from "@/features/authorization";
 import { DefaultHeaderActions } from "@/routes/navigation/components/DefaultHeaderActions";
 import { HeaderActionButton } from "@/routes/navigation/components/HeaderActionButton";
 import StackScreenLayout from "@/routes/navigation/layouts/StackScreenLayout";
+import { AppIcon } from "@/shared/ui/AppIcon";
 import { ThemedText } from "@/shared/ui/ThemedText";
 import { useToast } from "@/shared/ui/Toast/ToastProvider";
-import { Colors, activeEffect, radii } from "@/theme";
+import { Colors, activeEffect, effects, radii } from "@/theme";
 
 import type { EvaluationStudent } from "../api/session-attendance.dto";
 import { AttendanceToolbar } from "../components/AttendanceToolbar";
@@ -124,6 +125,30 @@ export function SessionAttendanceScreen({
       title="Đánh giá"
       scrollEnabled={false}
       contentContainerStyle={styles.container}
+      floatingContent={
+        classSessionId && canCreate ? (
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Bổ sung điểm danh học viên tập thử"
+            testID="session-attendance-supplement-button"
+            onPress={() =>
+              router.push({
+                pathname: "/class-sessions/[classSessionId]/supplement-attendance",
+                params: { classSessionId },
+              })
+            }
+            style={({ pressed }) => [
+              styles.supplementButton,
+              activeEffect(pressed, "pressedScale"),
+            ]}
+          >
+            <AppIcon icon={<Plus />} size={20} color={Colors.light.surface} />
+            <ThemedText type="bodySmall" style={styles.supplementButtonText}>
+              Bổ sung
+            </ThemedText>
+          </Pressable>
+        ) : null
+      }
       rightActions={
         <>
           <HeaderActionButton
@@ -291,7 +316,7 @@ const styles = StyleSheet.create({
     flexGrow: 1,
     paddingHorizontal: 20,
     paddingTop: 16,
-    paddingBottom: 40,
+    paddingBottom: 108,
   },
   headerWrap: { gap: 20, marginBottom: 12 },
   sectionHeader: {
@@ -330,5 +355,23 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     paddingVertical: 36,
     gap: 8,
+  },
+  supplementButton: {
+    position: "absolute",
+    right: 20,
+    bottom: 24,
+    minHeight: 48,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    paddingHorizontal: 18,
+    borderRadius: radii.pill,
+    backgroundColor: Colors.light.primary,
+    ...effects.floating,
+  },
+  supplementButtonText: {
+    color: Colors.light.surface,
+    fontWeight: "700",
   },
 });

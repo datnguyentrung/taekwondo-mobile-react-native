@@ -73,6 +73,7 @@ export type StudentAttendanceSimpleResponse = SessionAttendanceSimpleResponse;
 
 export interface SessionAttendanceCreateRequest {
   classSessionId: string;
+  personId: string;
   studentEnrollmentId?: string | null;
   courseStaffAssignmentId?: string | null;
   checkInTime?: string | null;

@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
+import { authSessionService } from "@/features/authentication/services/authSessionService";
 import type { MobileUploadFile } from "@/infrastructure/http/http.types";
 import { useInfinitePageQuery } from "@/infrastructure/query/useInfinitePageQuery";
 
@@ -193,7 +194,18 @@ export function useUpdatePersonFaceEmbedding() {
       personId: string;
       file: MobileUploadFile;
     }) => personApi.updateFaceEmbedding(personId, file),
-    onSuccess: (_data, variables) => {
+    onSuccess: async (data, variables) => {
+      await authSessionService.persistPersonFaceImage(
+        variables.personId,
+        data.avatarUrl,
+      );
+      queryClient.setQueryData(
+        personKeys.detail(variables.personId),
+        (current: import("../domain/person.types").PersonResponse | undefined) =>
+          current
+            ? { ...current, faceImagePath: data.avatarUrl, updatedAt: data.updatedAt }
+            : current,
+      );
       queryClient.invalidateQueries({
         queryKey: personKeys.detail(variables.personId),
       });
@@ -208,7 +220,13 @@ export function useDeletePersonFaceEmbedding() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (personId: string) => personApi.deleteFaceEmbedding(personId),
-    onSuccess: (_data, personId) => {
+    onSuccess: async (_data, personId) => {
+      await authSessionService.persistPersonFaceImage(personId, null);
+      queryClient.setQueryData(
+        personKeys.detail(personId),
+        (current: import("../domain/person.types").PersonResponse | undefined) =>
+          current ? { ...current, faceImagePath: null } : current,
+      );
       queryClient.invalidateQueries({
         queryKey: personKeys.detail(personId),
       });

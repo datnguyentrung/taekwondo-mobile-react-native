@@ -25,6 +25,9 @@ export const positionApi = {
     const response = await javaApi.put<PositionResponse>(`/positions/${positionId}`, request);
     return response.data;
   },
+  async assignPeople(positionId: string, request: import('./position.dto').AssignPeopleToPositionRequest): Promise<void> {
+    await javaApi.post(`/positions/${positionId}/persons`, request);
+  },
   async remove(positionId: string, signal?: AbortSignal): Promise<void> {
     await javaApi.delete(`/positions/${positionId}`, { signal });
   },

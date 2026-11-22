@@ -1,5 +1,4 @@
-import { useRouter, type Href } from "expo-router";
-import type { ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import type { StyleProp, ViewStyle } from "react-native";
 import {
   Pressable,
@@ -14,6 +13,7 @@ import {
 } from "react-native-safe-area-context";
 
 import { useAuthSession } from "@/features/authentication";
+import { AccountDrawer } from "@/features/user-profile/screens/AccountScreen";
 import { useActiveQueriesRefresh } from "@/infrastructure/query/useActiveQueriesRefresh";
 import { ThemedText } from "@/shared/ui/ThemedText";
 import { UserAvatar } from "@/shared/ui/UserAvatar";
@@ -61,9 +61,9 @@ export default function BottomTabScreenLayout({
   refreshing: controlledRefreshing,
   onRefresh: customOnRefresh,
 }: BottomTabScreenLayoutProps) {
-  const router = useRouter();
   const insets = useSafeAreaInsets();
   const { activeContext, user } = useAuthSession();
+  const [accountDrawerVisible, setAccountDrawerVisible] = useState(false);
   const actionColor = Colors.light.surface;
   const defaultRefresh = useActiveQueriesRefresh();
   const refreshing = controlledRefreshing ?? defaultRefresh.refreshing;
@@ -79,7 +79,7 @@ export default function BottomTabScreenLayout({
             accessibilityRole="button"
             accessibilityLabel="Tài khoản cá nhân"
             hitSlop={8}
-            onPress={() => router.push("/account" as Href)}
+            onPress={() => setAccountDrawerVisible(true)}
             style={({ pressed }) => [
               styles.avatarButton,
               pressed ? styles.avatarButtonPressed : null,
@@ -87,8 +87,8 @@ export default function BottomTabScreenLayout({
           >
             <UserAvatar
               name={displayName}
+              imageUrl={activeContext?.faceImagePath}
               gender={activeContext?.gender}
-              mode="image"
               size={40}
             />
           </Pressable>
@@ -137,6 +137,12 @@ export default function BottomTabScreenLayout({
           {children}
         </View>
       )}
+      {accountDrawerVisible ? (
+        <AccountDrawer
+          visible={accountDrawerVisible}
+          onClose={() => setAccountDrawerVisible(false)}
+        />
+      ) : null}
     </SafeAreaView>
   );
 }

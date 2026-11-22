@@ -5,7 +5,7 @@ export function AuthBrand() {
   return (
     <View style={styles.container} accessible accessibilityRole="header">
       <Image
-        source={require('@/assets/taekwondo-removebg-preview.png')}
+        source={require('@/assets/logo/android/launchericon-512x512.png')}
         style={styles.logo}
         contentFit="contain"
         accessibilityLabel="Taekwondo Văn Quán"

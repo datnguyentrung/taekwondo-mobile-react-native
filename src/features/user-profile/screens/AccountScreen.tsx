@@ -1,14 +1,25 @@
-import { Bell, ChevronRight, Headphones, LockOpen, Logout, User, Verified, Wallet } from "reicon-react-native";
-import { type Href, useRouter } from "expo-router";
-import { useMemo, useState } from "react";
-import { ActivityIndicator, Pressable, StyleSheet } from "react-native";
+import { useRouter, type Href } from "expo-router";
+import { useEffect, useMemo, useState } from "react";
+import { ActivityIndicator, Pressable, StyleSheet, View } from "react-native";
+import {
+  Bell,
+  Headphones,
+  LockOpen,
+  Logout,
+  Trash6,
+  User,
+  Verified,
+  Wallet,
+} from "reicon-react-native";
 
 import { useAuthSession, useLogout } from "@/features/authentication";
-import StackScreenLayout from "@/routes/navigation/layouts/StackScreenLayout";
+import { deviceProvisioningStorage } from "@/features/device-management";
+import { mqttClient } from "@/infrastructure/mqtt/mqttClient";
+import SideDrawerWindow from "@/routes/navigation/layouts/SideDrawerWindow";
 import { AppIcon } from "@/shared/ui/AppIcon";
 import { ConfirmationDialog } from "@/shared/ui/ConfirmationDialog";
-import { useToast } from "@/shared/ui/Toast";
 import { ThemedText } from "@/shared/ui/ThemedText";
+import { useToast } from "@/shared/ui/Toast";
 import { showComingSoon } from "@/shared/utils/comingSoon";
 import { Colors, activeEffect, effects, radii } from "@/theme";
 
@@ -25,20 +36,46 @@ function contextRoleLabel(personCode?: string | null) {
   return "Học viên";
 }
 
-export default function AccountScreen() {
+export type AccountDrawerProps = {
+  visible: boolean;
+  onClose: () => void;
+  onRouteChangeClose?: () => void;
+};
+
+export function AccountDrawer({
+  visible,
+  onClose,
+  onRouteChangeClose,
+}: AccountDrawerProps) {
   const router = useRouter();
   const toast = useToast();
-  const { activeContext, user, availableContextCount, isAuthenticated } =
-    useAuthSession();
+  const { activeContext, user, isAuthenticated } = useAuthSession();
   const canOpenNotifications = isAuthenticated;
   const logout = useLogout();
   const [confirmingLogout, setConfirmingLogout] = useState(false);
+  const [confirmingKioskUnregister, setConfirmingKioskUnregister] =
+    useState(false);
+  const [hasRegisteredKiosk, setHasRegisteredKiosk] = useState(false);
+  const [isUnregisteringKiosk, setIsUnregisteringKiosk] = useState(false);
   const displayName = (
     activeContext?.displayName ??
     user?.phoneNumber ??
     "NGUYỄN HOÀNG MINH QUÂN"
   ).toLocaleUpperCase("vi-VN");
   const profileLabel = contextRoleLabel(activeContext?.personCode);
+
+  useEffect(() => {
+    if (!visible) return undefined;
+
+    let disposed = false;
+    void deviceProvisioningStorage.read().then((profile) => {
+      if (!disposed) setHasRegisteredKiosk(Boolean(profile));
+    });
+
+    return () => {
+      disposed = true;
+    };
+  }, [visible]);
 
   const profileItems = useMemo<AccountMenuItem[]>(
     () => [
@@ -66,12 +103,12 @@ export default function AccountScreen() {
       {
         label: "Đổi mật khẩu",
         icon: <LockOpen />,
-        onPress: () => router.push('/account/change-password' as Href),
+        onPress: () => router.push("/account/change-password" as Href),
       },
       {
         label: "Email khôi phục",
         icon: <Verified />,
-        onPress: () => router.push('/account/recovery-email' as Href),
+        onPress: () => router.push("/account/recovery-email" as Href),
       },
       {
         label: "Liên hệ",
@@ -87,7 +124,7 @@ export default function AccountScreen() {
       });
     }
     return items;
-  }, [canOpenNotifications, toast]);
+  }, [canOpenNotifications, router, toast]);
 
   const switchAccount = () => {
     router.push({ pathname: "/(context)/select", params: { mode: "switch" } });
@@ -99,68 +136,145 @@ export default function AccountScreen() {
     });
   };
 
+  const unregisterKiosk = async () => {
+    setIsUnregisteringKiosk(true);
+    try {
+      await deviceProvisioningStorage.clear();
+      mqttClient.disconnect();
+      setHasRegisteredKiosk(false);
+      setConfirmingKioskUnregister(false);
+      toast.show({
+        message: "Đã hủy đăng ký Kiosk trên thiết bị này",
+        variant: "success",
+      });
+    } catch {
+      toast.show({
+        message: "Không thể hủy đăng ký Kiosk trên thiết bị này",
+        variant: "error",
+      });
+    } finally {
+      setIsUnregisteringKiosk(false);
+    }
+  };
+
   return (
-    <StackScreenLayout title="Tài khoản">
-      <AccountProfileCard
-        displayName={displayName}
-        profileLabel={profileLabel}
-        canSwitchAccount={true}
-        onSwitchAccount={switchAccount}
-      />
+    <SideDrawerWindow
+      visible={visible}
+      title="Tài khoản"
+      onClose={onClose}
+      onRouteChangeClose={onRouteChangeClose}
+    >
+      <View style={styles.drawerContent}>
+        <AccountProfileCard
+          displayName={displayName}
+          profileLabel={profileLabel}
+          imageUrl={activeContext?.faceImagePath}
+          gender={activeContext?.gender}
+          canSwitchAccount={true}
+          onSwitchAccount={switchAccount}
+        />
 
-      <AccountMenuSection title="Hồ sơ cá nhân" items={profileItems} />
-      <AccountMenuSection title="Cài đặt" items={settingItems} />
-      <AccountRatingCard />
+        <AccountMenuSection title="Hồ sơ cá nhân" items={profileItems} />
+        <AccountMenuSection title="Cài đặt" items={settingItems} />
+        <AccountRatingCard />
 
-      <Pressable
-        accessibilityRole="button"
-        accessibilityLabel="Đăng xuất"
-        accessibilityState={{ busy: logout.isPending }}
-        disabled={logout.isPending}
-        onPress={() => setConfirmingLogout(true)}
-        style={({ pressed }) => [
-          styles.logoutButton,
-          activeEffect(pressed, "pressedScale"),
-          logout.isPending ? styles.disabled : null,
-        ]}
-      >
-        {logout.isPending ? (
-          <ActivityIndicator color={Colors.light.surface} />
-        ) : (
-          <>
-            <AppIcon icon={<Logout />}
-              size={29}
-              color={Colors.light.surface}
-            />
+        {hasRegisteredKiosk ? (
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Hủy đăng ký Kiosk trên thiết bị này"
+            accessibilityState={{ busy: isUnregisteringKiosk }}
+            disabled={isUnregisteringKiosk}
+            onPress={() => setConfirmingKioskUnregister(true)}
+            style={({ pressed }) => [
+              styles.logoutButton,
+              styles.unregisterKioskButton,
+              activeEffect(pressed, "pressedScale"),
+              isUnregisteringKiosk ? styles.disabled : null,
+            ]}
+          >
+            <AppIcon icon={<Trash6 />} size={29} color={Colors.light.surface} />
             <ThemedText type="body" style={styles.logoutText}>
-              Đăng xuất
+              {isUnregisteringKiosk
+                ? "Đang hủy đăng ký Kiosk…"
+                : "Hủy đăng ký Kiosk"}
             </ThemedText>
-            <AppIcon icon={<ChevronRight />}
-              width={9}
-              height={15}
-              color={Colors.light.surface}
-            />
-          </>
-        )}
-      </Pressable>
+          </Pressable>
+        ) : null}
 
-      <ConfirmationDialog
-        visible={confirmingLogout}
-        title="Bạn có chắc muốn đăng xuất?"
-        description="Phiên hiện tại trên thiết bị này sẽ kết thúc."
-        confirmLabel="Đăng xuất"
-        pending={logout.isPending}
-        confirmVariant="danger"
-        onCancel={() => setConfirmingLogout(false)}
-        onConfirm={confirmLogout}
-      />
-    </StackScreenLayout>
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="Đăng xuất"
+          accessibilityState={{ busy: logout.isPending }}
+          disabled={logout.isPending}
+          onPress={() => setConfirmingLogout(true)}
+          style={({ pressed }) => [
+            styles.logoutButton,
+            activeEffect(pressed, "pressedScale"),
+            logout.isPending ? styles.disabled : null,
+          ]}
+        >
+          {logout.isPending ? (
+            <ActivityIndicator color={Colors.light.surface} />
+          ) : (
+            <>
+              <AppIcon
+                icon={<Logout />}
+                size={29}
+                color={Colors.light.surface}
+              />
+              <ThemedText type="body" style={styles.logoutText}>
+                Đăng xuất
+              </ThemedText>
+            </>
+          )}
+        </Pressable>
+
+        <ConfirmationDialog
+          visible={confirmingLogout}
+          title="Bạn có chắc muốn đăng xuất?"
+          description="Phiên hiện tại trên thiết bị này sẽ kết thúc."
+          confirmLabel="Đăng xuất"
+          pending={logout.isPending}
+          confirmVariant="danger"
+          onCancel={() => setConfirmingLogout(false)}
+          onConfirm={confirmLogout}
+        />
+
+        <ConfirmationDialog
+          visible={confirmingKioskUnregister}
+          title="Hủy đăng ký Kiosk?"
+          description="Thiết bị này sẽ không còn tự kết nối và nhận lệnh Kiosk cho đến khi được đăng ký lại."
+          confirmLabel="Hủy đăng ký"
+          pending={isUnregisteringKiosk}
+          confirmVariant="danger"
+          onCancel={() => setConfirmingKioskUnregister(false)}
+          onConfirm={() => void unregisterKiosk()}
+        />
+      </View>
+    </SideDrawerWindow>
+  );
+}
+
+export default function AccountScreen() {
+  const router = useRouter();
+
+  return (
+    <AccountDrawer
+      visible
+      onClose={() =>
+        router.canGoBack() ? router.back() : router.replace("/" as Href)
+      }
+      onRouteChangeClose={() => undefined}
+    />
   );
 }
 
 const styles = StyleSheet.create({
+  drawerContent: {
+    marginBottom: 10,
+  },
   logoutButton: {
-    marginTop: 20,
+    marginTop: 10,
     height: 60,
     borderRadius: radii.xl,
     backgroundColor: Colors.light.primary,
@@ -170,6 +284,9 @@ const styles = StyleSheet.create({
     paddingRight: 25,
     gap: 10,
     ...effects.card,
+  },
+  unregisterKioskButton: {
+    backgroundColor: Colors.light.error,
   },
   logoutText: {
     flex: 1,

@@ -1,4 +1,4 @@
-import { Check, Star } from "reicon-react-native";
+import { Check, Menu, Star } from "reicon-react-native";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { StyleSheet, View } from "react-native";
 
@@ -23,6 +23,8 @@ import { usePermissions } from "@/features/authorization";
 import { HeaderActionButton } from "@/routes/navigation/components/HeaderActionButton";
 import { NotificationHeaderButton } from "@/routes/navigation/components/NotificationHeaderButton";
 import BottomTabScreenLayout from "@/routes/navigation/layouts/BottomTabScreenLayout";
+import SideDrawerWindow from "@/routes/navigation/layouts/SideDrawerWindow";
+import { ThemedText } from "@/shared/ui/ThemedText";
 import { Colors, Spacing } from "@/theme";
 import type { Href } from "expo-router";
 import { useRouter } from "expo-router";
@@ -41,6 +43,7 @@ export default function ActivitiesScreen() {
     useState<string[]>(DEFAULT_QUICK_IDS);
   const [historyModePickerVisible, setHistoryModePickerVisible] =
     useState(false);
+  const [sideDrawerVisible, setSideDrawerVisible] = useState(false);
   const historyPickerCloseTimerRef = useRef<ReturnType<typeof setTimeout> | null>(
     null,
   );
@@ -189,6 +192,12 @@ export default function ActivitiesScreen() {
           <>
             <NotificationHeaderButton color={Colors.light.surface} />
             <HeaderActionButton
+              icon={<Menu />}
+              label="Mở menu bên"
+              color={Colors.light.surface}
+              onPress={() => setSideDrawerVisible(true)}
+            />
+            <HeaderActionButton
               icon={changeListQuickFeatures ? <Check /> : <Star />}
               label="Lựa chọn nhanh"
               color={Colors.light.surface}
@@ -225,11 +234,23 @@ export default function ActivitiesScreen() {
         onClose={() => setHistoryModePickerVisible(false)}
         onSelectMode={navigateToHistoryMode}
       />
+      <SideDrawerWindow
+        visible={sideDrawerVisible}
+        title="Menu thử nghiệm"
+        onClose={() => setSideDrawerVisible(false)}
+      >
+        <ThemedText type="body" style={styles.drawerMessage}>
+          SideDrawerWindow đang phủ lên màn Activities.
+        </ThemedText>
+      </SideDrawerWindow>
     </>
   );
 }
 
 const styles = StyleSheet.create({
+  drawerMessage: {
+    color: Colors.light.text,
+  },
   catalogSection: {
     marginTop: Spacing.four,
   },

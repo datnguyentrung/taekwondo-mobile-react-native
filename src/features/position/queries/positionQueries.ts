@@ -1,8 +1,8 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
-import { usePeopleByPosition } from "@/features/person/queries/personQueries";
+import { personKeys, usePeopleByPosition } from "@/features/person/queries/personQueries";
 import { positionApi } from "../api/positionApi";
-import type { PositionCreateRequest, PositionResponse, PositionUpdateRequest } from "../api/position.dto";
+import type { AssignPeopleToPositionRequest, PositionCreateRequest, PositionResponse, PositionUpdateRequest } from "../api/position.dto";
 
 export const POSITION_ADMIN_PAGE_SIZE = 200;
 
@@ -74,6 +74,20 @@ export function useUpdatePosition(
       await callbacks.onSuccess?.(data, variables);
     },
     onError: callbacks.onError,
+  });
+}
+
+export function useAssignPeopleToPosition() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ positionId, request }: { positionId: string; request: AssignPeopleToPositionRequest }) =>
+      positionApi.assignPeople(positionId, request),
+    onSuccess: async () => {
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: positionKeys.all }),
+        queryClient.invalidateQueries({ queryKey: personKeys.lists() }),
+      ]);
+    },
   });
 }
 

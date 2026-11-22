@@ -14,6 +14,10 @@ export interface PositionUpdateRequest {
   active?: boolean;
 }
 
+export interface AssignPeopleToPositionRequest {
+  personIds: string[];
+}
+
 export interface PositionResponse {
   positionId: string;
   code: string;

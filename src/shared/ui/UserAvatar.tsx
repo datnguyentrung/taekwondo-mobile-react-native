@@ -10,7 +10,12 @@ export interface UserAvatarProps {
   name?: string | null;
   imageUrl?: string | null;
   gender?: boolean | null;
-  mode?: "initials" | "image";
+  /**
+   * - auto: saved profile image, then gender illustration, then initials.
+   * - gender: gender illustration, then initials.
+   * - initials: initials only.
+   */
+  mode?: "auto" | "gender" | "initials";
   size?: number;
   style?: StyleProp<ViewStyle>;
 }
@@ -19,11 +24,11 @@ export function UserAvatar({
   name,
   imageUrl,
   gender,
-  mode = "initials",
+  mode = "auto",
   size = 40,
   style,
 }: UserAvatarProps) {
-  const [hasError, setHasError] = useState(false);
+  const [failedImageUrl, setFailedImageUrl] = useState<string | null>(null);
   const avatarDimension = {
     width: size,
     height: size,
@@ -35,9 +40,17 @@ export function UserAvatar({
       : gender === false
         ? require("../../../assets/images/nu-avatar.png")
         : null;
-  const imageSource = imageUrl ? { uri: imageUrl } : genderImage;
+  const canShowProfileImage =
+    mode === "auto" &&
+    Boolean(imageUrl) &&
+    failedImageUrl !== imageUrl;
+  const imageSource = canShowProfileImage
+    ? { uri: imageUrl! }
+    : mode !== "initials"
+      ? genderImage
+      : null;
 
-  if (mode === "image" && imageSource && !hasError) {
+  if (imageSource) {
     return (
       <View style={[avatarDimension, style]}>
         <Image
@@ -45,7 +58,11 @@ export function UserAvatar({
           style={[styles.avatar, avatarDimension]}
           contentFit="cover"
           transition={200}
-          onError={() => setHasError(true)}
+          onError={() => {
+            if (canShowProfileImage) {
+              setFailedImageUrl(imageUrl ?? null);
+            }
+          }}
           accessibilityLabel={
             name ? `Ảnh đại diện của ${name}` : "Ảnh đại diện"
           }

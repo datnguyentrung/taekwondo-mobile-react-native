@@ -63,6 +63,10 @@ jest.mock('../components/HeaderActionButton', () => ({
   },
 }));
 
+jest.mock('@/features/user-profile/screens/AccountScreen', () => ({
+  AccountDrawer: () => null,
+}));
+
 jest.mock('@/infrastructure/query/useActiveQueriesRefresh', () => ({
   useActiveQueriesRefresh: () => mockRefreshState,
 }));

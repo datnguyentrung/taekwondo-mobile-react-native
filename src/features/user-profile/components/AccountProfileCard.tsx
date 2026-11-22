@@ -1,8 +1,9 @@
-import { ChevronRight, User } from "reicon-react-native";
+import { ChevronRight } from "reicon-react-native";
 import { ImageBackground, Pressable, StyleSheet, View } from "react-native";
 
 import { AppIcon } from "@/shared/ui/AppIcon";
 import { ThemedText } from "@/shared/ui/ThemedText";
+import { UserAvatar } from "@/shared/ui/UserAvatar";
 import {
   Colors,
   activeEffect,
@@ -15,11 +16,15 @@ import {
 export function AccountProfileCard({
   displayName,
   profileLabel,
+  imageUrl,
+  gender,
   canSwitchAccount = true,
   onSwitchAccount,
 }: {
   displayName: string;
   profileLabel: string;
+  imageUrl?: string | null;
+  gender?: boolean | null;
   canSwitchAccount?: boolean;
   onSwitchAccount: () => void;
 }) {
@@ -29,9 +34,13 @@ export function AccountProfileCard({
       style={styles.profileCard}
       imageStyle={styles.profileCardImage}
     >
-      <View style={styles.avatar}>
-        <AppIcon icon={<User weight="Filled" />} size={48} color={Colors.light.surface} />
-      </View>
+      <UserAvatar
+        name={displayName}
+        imageUrl={imageUrl}
+        gender={gender}
+        size={85}
+        style={styles.avatar}
+      />
       <View style={styles.profileContent}>
         <ThemedText type="title" numberOfLines={2} style={styles.profileName}>
           {displayName}

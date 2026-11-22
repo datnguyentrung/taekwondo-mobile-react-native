@@ -1,6 +1,6 @@
-import { Star } from "reicon-react-native";
 import { Image } from "expo-image";
 import { StyleSheet, View } from "react-native";
+import { Star } from "reicon-react-native";
 
 import { AppIcon } from "@/shared/ui/AppIcon";
 import { ThemedText } from "@/shared/ui/ThemedText";
@@ -37,6 +37,7 @@ export function AccountRatingCard() {
 const styles = StyleSheet.create({
   ratingCard: {
     marginTop: 20,
+    marginBottom: 10,
     height: 161,
     borderRadius: radii.md,
     backgroundColor: Colors.light.surface,

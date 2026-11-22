@@ -19,6 +19,7 @@ type AuthState = {
   recoveryMessage: string | null;
   applyResponse: (response: AuthResponse, accessToken?: string) => void;
   hydrate: (accessToken: string, snapshot: AuthSnapshot) => void;
+  updatePersonFaceImage: (personId: string, faceImagePath: string | null) => void;
   setAnonymous: () => void;
   setRecoverableError: (message: string) => void;
   setBootstrapping: () => void;
@@ -71,6 +72,17 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
       ),
       recoveryMessage: null,
     });
+  },
+
+  updatePersonFaceImage: (personId, faceImagePath) => {
+    const updateContext = (context: UserContext | null) =>
+      context?.personId === personId ? { ...context, faceImagePath } : context;
+    set((state) => ({
+      activeContext: updateContext(state.activeContext),
+      availableContexts: state.availableContexts.map((context) =>
+        updateContext(context)!,
+      ),
+    }));
   },
 
   setAnonymous: () => set({ ...EMPTY_AUTH, status: 'anonymous' }),

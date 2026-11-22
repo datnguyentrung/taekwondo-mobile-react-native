@@ -11,12 +11,12 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   version: "1.0.0",
 
   orientation: "default",
-  icon: "./assets/images/icon.png",
+  icon: "./assets/logo/android/launchericon-512x512.png",
   scheme: "taekwondomobile",
   userInterfaceStyle: "automatic",
 
   ios: {
-    icon: "./assets/expo.icon",
+    icon: "./assets/logo/ios/1024.png",
     bundleIdentifier: APP_ID,
 
     googleServicesFile:
@@ -64,7 +64,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
       "expo-splash-screen",
       {
         backgroundColor: "#A9151A",
-        image: "./assets/taekwondo-removebg-preview.png",
+        image: "./assets/logo/android/launchericon-512x512.png",
         imageWidth: 104,
       },
     ],
@@ -123,6 +123,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     "@react-native-firebase/app",
     "@react-native-firebase/messaging",
     "@react-native-firebase/crashlytics",
+    "./plugins/withFirebaseNotificationIcon",
 
     [
       "expo-build-properties",

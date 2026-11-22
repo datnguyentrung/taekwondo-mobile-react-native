@@ -276,14 +276,34 @@ Thứ tự children của `StackScreenLayout` luôn là:
 3. Loading / empty / filtered-empty / list content
 ```
 
-`StackScreenLayout` là chủ sở hữu spacing mặc định của nhóm này: `paddingHorizontal: 20`, `paddingTop: 16`, `paddingBottom: 32`, `gap: 20`. List screen không lặp lại bốn giá trị này trong `contentContainerStyle`; chỉ override khi có yêu cầu layout thật sự khác.
+`StackScreenLayout` chỉ sở hữu header, vùng scroll và chrome dùng chung; không sở hữu padding content của feature. Content root trực tiếp của screen phải tự sở hữu padding bằng `paddingVertical` và `paddingHorizontal`. Không đặt các padding này vào `StackScreenLayout`. `gap` giữa các children trực tiếp vẫn là spacing chung của layout; khoảng cách nội bộ content thuộc về screen.
+
+Với screen dùng `ScrollView` mặc định, bọc toàn bộ content trong một `View` root:
+
+```tsx
+<StackScreenLayout title="Tên màn hình">
+  <View style={styles.content}>
+    {/* screen content */}
+  </View>
+</StackScreenLayout>
+
+const styles = StyleSheet.create({
+  content: {
+    paddingVertical: 16,
+    paddingHorizontal: 16,
+    gap: 20,
+  },
+});
+```
+
+Với screen dùng `FlatList`/`SectionList` làm scroll owner, đặt spacing trong `contentContainerStyle` của list thay cho wrapper `View` để không tạo scroll lồng nhau.
 
 Yêu cầu composition:
 
 - Dùng `SegmentedTabs` / `SegmentedControl` shared cho mode selector. Không tạo chip row hay tab style riêng để mô phỏng segmented control.
 - Thanh search và nút `+` là một row, căn đáy, `gap: 12`. Input `flex: 1`; nút tạo `48x48`, dùng `radii.md`, `Colors.light.primary`, icon `Plus` 22px, `hitSlop: 8`, pressed opacity `0.82` và scale `0.97`.
 - Search phải là `TextInput` có `value` và `onChangeText`; placeholder không được đưa vào `value`, không dùng `editable={false}` cho search thực. Dùng `returnKeyType="search"`, màu placeholder semantic và accessibility label rõ nghĩa.
-- Mode selector và search row phải cách nhau 20px từ `StackScreenLayout`; search row và loading/empty/list cũng cách 20px. Không thêm margin ngẫu nhiên giữa từng child để bù spacing.
+- Mode selector và search row phải cách nhau 20px từ content root của screen; search row và loading/empty/list cũng cách 20px. Không thêm margin ngẫu nhiên giữa từng child để bù spacing.
 - Nút `+` chỉ render khi caller có quyền tạo và phải mở luồng tạo thực (thường là `BottomSheetWindow`); không render nút không có hành động. Khi không có quyền, search field vẫn chiếm toàn bộ chiều rộng.
 - Feature giữ query key, debounce/filter, permission và route. Shared UI không biết endpoint hay business status của feature.
 
@@ -325,7 +345,7 @@ Quy tắc chiều cao:
 Checklist review cho hai family này:
 
 1. Không có local copy của segmented/search-plus/floating footer styling.
-2. `StackScreenLayout` được dùng cho header, scroll và spacing; feature chỉ cung cấp content và business callbacks.
+2. `StackScreenLayout` được dùng cho header, scroll và gap giữa các children trực tiếp; content root của feature sở hữu padding nội bộ, còn feature cung cấp content và business callbacks.
 3. Accessibility state, disabled/loading/empty/error và permission guard được giữ nguyên.
 4. Typecheck và test của feature/action destructive liên quan phải pass.
 

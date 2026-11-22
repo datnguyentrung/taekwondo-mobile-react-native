@@ -39,6 +39,23 @@ async function applyAndPersist(
   useAuthStore.getState().applyResponse(response, accessToken);
 }
 
+async function persistPersonFaceImage(
+  personId: string,
+  faceImagePath: string | null,
+): Promise<void> {
+  const state = useAuthStore.getState();
+  if (!state.user) return;
+
+  state.updatePersonFaceImage(personId, faceImagePath);
+  const updated = useAuthStore.getState();
+  await authSessionStorageService.snapshot.write({
+    user: updated.user!,
+    activeContext: updated.activeContext,
+    availableContexts: updated.availableContexts,
+    requiresContextSelection: updated.requiresContextSelection,
+  });
+}
+
 async function persistRotatedSession(
   response: AuthResponse & AuthTokens,
 ): Promise<AuthResponse & AuthTokens> {
@@ -116,6 +133,7 @@ async function refreshAccessToken(): Promise<string> {
 }
 
 export const authSessionService = {
+  persistPersonFaceImage,
   configureHttp(): () => void {
     return configureAuthHttp({
       getAccessToken: authStore.getAccessToken,

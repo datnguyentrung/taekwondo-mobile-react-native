@@ -6,8 +6,7 @@ import type { StudentSummaryView } from "@/features/student-commerce/types";
 import { AppIcon } from "@/shared/ui/AppIcon";
 import { ThemedText } from "@/shared/ui/ThemedText";
 import { StatusBadge, SurfaceCard } from "@/shared/ui/commerce/CommercePrimitives";
-import { Colors, radii } from "@/theme";
-import { activeEffect, effects, figmaColors } from "@/theme";
+import { activeEffect, Colors, effects, figmaColors, radii } from "@/theme";
 
 function formatBirthDate(value?: string | null) {
   if (!value) return "Chưa cập nhật ngày sinh";
@@ -20,11 +19,13 @@ export function StudentProfileSummaryCard({
   avatarUrl,
   onAvatarPress,
   isAvatarUpdating = false,
+  avatarUpdateStatus,
 }: {
   student: StudentSummaryView;
   avatarUrl?: string | null;
   onAvatarPress?: () => void;
   isAvatarUpdating?: boolean;
+  avatarUpdateStatus?: string | null;
 }) {
   return (
     <SurfaceCard style={styles.card}>
@@ -47,6 +48,9 @@ export function StudentProfileSummaryCard({
           {isAvatarUpdating ? (
             <View style={styles.avatarLoadingOverlay}>
               <ActivityIndicator size="small" color={Colors.light.surface} />
+              {avatarUpdateStatus ? (
+                <ThemedText style={styles.avatarLoadingText}>{avatarUpdateStatus}</ThemedText>
+              ) : null}
             </View>
           ) : null}
         </View>
@@ -98,6 +102,12 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     backgroundColor: "rgba(0, 0, 0, 0.42)",
+  },
+  avatarLoadingText: {
+    marginTop: 3,
+    color: Colors.light.surface,
+    fontSize: 7,
+    textAlign: "center",
   },
   editBadge: {
     position: "absolute",

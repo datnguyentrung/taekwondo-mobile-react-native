@@ -49,6 +49,7 @@ export type UserContext = {
   personCode: string | null;
   displayName: string;
   gender: boolean | null;
+  faceImagePath?: string | null;
 };
 
 export type AuthStatus =

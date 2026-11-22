@@ -29,17 +29,22 @@ type TokenEnvelope = AuthTokens & { version: 1 };
 type SnapshotEnvelope = { version: 1; snapshot: AuthSnapshot };
 
 function normalizeContext(context: AuthSnapshot['activeContext']): AuthSnapshot['activeContext'] {
-  return context ? { ...context, gender: context.gender ?? null } : null;
+  return context
+    ? {
+        ...context,
+        gender: context.gender ?? null,
+        faceImagePath: context.faceImagePath ?? null,
+      }
+    : null;
 }
 
 function normalizeSnapshot(snapshot: AuthSnapshot): AuthSnapshot {
   return {
     ...snapshot,
     activeContext: normalizeContext(snapshot.activeContext),
-    availableContexts: snapshot.availableContexts.map((context) => ({
-      ...context,
-      gender: context.gender ?? null,
-    })),
+    availableContexts: snapshot.availableContexts.map((context) =>
+      normalizeContext(context)!,
+    ),
   };
 }
 

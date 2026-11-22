@@ -89,6 +89,7 @@ const styles = StyleSheet.create({
     borderRadius: radii.pill,
     backgroundColor: Colors.light.backgroundElement,
     ...effects.soft,
+    marginVertical: 10,
   },
   primaryRoot: {
     gap: 8,
