@@ -15,6 +15,7 @@ function student(
       studentEnrollmentId: id,
       studentPerson: { personId: id, fullName: `Student ${id}` },
     },
+    studentPerson: { personId: id, fullName: `Student ${id}` },
     attendance: attendanceStatus
       ? {
           sessionAttendanceId: `attendance-${id}`,

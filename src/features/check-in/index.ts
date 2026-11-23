@@ -4,5 +4,6 @@ export * from './hooks/useCheckInCamera';
 export * from './hooks/useCheckInCameraLayout';
 export * from './hooks/useFaceCheckInSession';
 export * from './services/faceCheckInApi';
+export { kioskCameraStore, useKioskCameraStore } from './store/kioskCamera.store';
 export type { FaceCheckInSessionStatus } from './types/camera.types';
 export * from './types/faceScanner.types';

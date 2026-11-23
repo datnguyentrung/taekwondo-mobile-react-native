@@ -8,6 +8,13 @@ const mockMessaging = {
   onTokenRefresh: jest.fn(() => jest.fn()),
 };
 
+jest.mock('expo-notifications', () => ({
+  AndroidImportance: { HIGH: 4 },
+  setNotificationHandler: jest.fn(),
+  setNotificationChannelAsync: jest.fn(),
+  scheduleNotificationAsync: jest.fn(),
+}));
+
 jest.mock('expo-constants', () => ({
   __esModule: true,
   default: { appOwnership: null },
@@ -30,6 +37,11 @@ import Constants from 'expo-constants';
 import { PermissionsAndroid, Platform } from 'react-native';
 
 import { notificationService } from './notificationService.native';
+
+const mockNotifications = jest.requireMock('expo-notifications') as {
+  setNotificationChannelAsync: jest.Mock;
+  scheduleNotificationAsync: jest.Mock;
+};
 
 const mockPermissions = PermissionsAndroid as unknown as {
   check: jest.Mock;
@@ -96,6 +108,28 @@ describe('native notification adapter', () => {
 
     await notificationService.cleanup();
     expect(mockMessaging.deleteToken).toHaveBeenCalledWith({ id: 'messaging' });
+  });
+
+  it('presents a system notification for a foreground FCM message', async () => {
+    await notificationService.presentForegroundNotification({
+      title: 'Điểm danh',
+      body: 'Học viên đã được điểm danh.',
+      type: 'ATTENDANCE',
+    });
+
+    expect(mockNotifications.setNotificationChannelAsync).toHaveBeenCalledWith(
+      'general',
+      expect.objectContaining({ importance: 4, sound: 'default' }),
+    );
+    expect(mockNotifications.scheduleNotificationAsync).toHaveBeenCalledWith({
+      content: expect.objectContaining({
+        title: 'Điểm danh',
+        body: 'Học viên đã được điểm danh.',
+        channelId: 'general',
+        data: { type: 'ATTENDANCE' },
+      }),
+      trigger: null,
+    });
   });
 
   it('does not delete a token outside Android', async () => {

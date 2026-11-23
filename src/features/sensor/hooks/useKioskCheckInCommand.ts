@@ -2,15 +2,16 @@ import { router, type Href } from 'expo-router';
 import { useEffect, useRef } from 'react';
 
 import { useAuthStore } from '@/features/authentication/store/auth.store';
+import { kioskCameraStore } from '@/features/check-in';
 import {
   deviceApi,
   deviceProvisioningStorage,
 } from '@/features/device-management';
 import { mqttClient } from '@/infrastructure/mqtt/mqttClient';
 
-import { parseCheckInOpenCommand } from '../domain/checkInCommand';
+import { parseCheckInCameraCommand } from '../domain/checkInCommand';
 
-/** Opens the check-in tab only for an MQTT command addressed to this kiosk. */
+/** Keeps the kiosk on check-in and maps each PIR command directly to camera on/off. */
 export function useKioskCheckInCommand(): void {
   const status = useAuthStore((state) => state.status);
   const lastEventId = useRef<string | null>(null);
@@ -34,14 +35,22 @@ export function useKioskCheckInCommand(): void {
           !bootstrap.runtime.commandTopic
         ) return;
 
+        router.replace('/(app)/(tabs)/check-in' as Href);
+
         unsubscribe = mqttClient.subscribe(bootstrap.runtime.commandTopic, (message) => {
-          const command = parseCheckInOpenCommand(message.rawPayload, profile.deviceCode);
+          const command = parseCheckInCameraCommand(message.rawPayload, profile.deviceCode);
           if (!command) return;
 
           const eventId = command.eventId ?? message.rawPayload;
           if (lastEventId.current === eventId) return;
           lastEventId.current = eventId;
-          router.navigate('/(app)/(tabs)/check-in' as Href);
+
+          if (command.type === 'CHECK_IN_OPEN') {
+            kioskCameraStore.setCameraEnabled(true);
+            router.navigate('/(app)/(tabs)/check-in' as Href);
+          } else {
+            kioskCameraStore.setCameraEnabled(false);
+          }
         });
       } catch {
         // MQTT runtime will retry bootstrap on the next foreground transition.

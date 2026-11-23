@@ -32,6 +32,8 @@ import type {
 } from "../domain/sessionAttendancePresentation";
 import {
   filterAndSortStudents,
+  getEvaluationStudentKey,
+  getEvaluationStudentPerson,
   getAvailableBelts,
 } from "../domain/sessionAttendancePresentation";
 import { useSessionAttendance } from "../hooks/useSessionAttendance";
@@ -83,7 +85,7 @@ export function SessionAttendanceScreen({
   const hasUnknownBelt = useMemo(
     () =>
       students.some(
-        (student) => !student.studentEnrollment.studentPerson.currentBelt,
+        (student) => !getEvaluationStudentPerson(student)?.currentBelt,
       ),
     [students],
   );
@@ -96,7 +98,7 @@ export function SessionAttendanceScreen({
     () =>
       students.find(
         (student) =>
-          student.studentEnrollment.studentEnrollmentId === evaluationTargetId,
+          getEvaluationStudentKey(student) === evaluationTargetId,
       ) ?? null,
     [evaluationTargetId, students],
   );
@@ -105,7 +107,7 @@ export function SessionAttendanceScreen({
     async (status: EvaluationStatus, note: string | null) => {
       if (!evaluationTarget) return false;
       const saved = await updateEvaluationStatus(
-        evaluationTarget.studentEnrollment.studentEnrollmentId,
+        getEvaluationStudentKey(evaluationTarget),
         status,
         note,
       );
@@ -208,7 +210,7 @@ export function SessionAttendanceScreen({
           <FlatList
             data={visibleStudents}
             extraData={pendingStudentIds}
-            keyExtractor={(item) => item.studentEnrollment.studentEnrollmentId}
+            keyExtractor={getEvaluationStudentKey}
             showsVerticalScrollIndicator={false}
             refreshControl={
               <RefreshControl
@@ -254,22 +256,21 @@ export function SessionAttendanceScreen({
               </View>
             }
             renderItem={({ item }: { item: EvaluationStudent }) => {
-              const studentEnrollmentId =
-                item.studentEnrollment.studentEnrollmentId;
+              const studentKey = getEvaluationStudentKey(item);
               return (
                 <StudentAttendanceCard
                   item={item}
                   canCreate={canCreate}
                   canUpdate={canUpdate}
-                  isPending={pendingStudentIds.has(studentEnrollmentId)}
+                  isPending={pendingStudentIds.has(studentKey)}
                   onUpdateAttendanceStatus={(newStatus) =>
-                    updateAttendanceStatus(studentEnrollmentId, newStatus)
+                    updateAttendanceStatus(studentKey, newStatus)
                   }
                   onUpdateEvaluationStatus={(newStatus) =>
-                    updateEvaluationStatus(studentEnrollmentId, newStatus)
+                    updateEvaluationStatus(studentKey, newStatus)
                   }
                   onOpenEvaluationNote={() =>
-                    setEvaluationTargetId(studentEnrollmentId)
+                    setEvaluationTargetId(studentKey)
                   }
                 />
               );
@@ -297,7 +298,7 @@ export function SessionAttendanceScreen({
             saving={
               evaluationTarget
                 ? pendingStudentIds.has(
-                    evaluationTarget.studentEnrollment.studentEnrollmentId,
+                    getEvaluationStudentKey(evaluationTarget),
                   )
                 : false
             }

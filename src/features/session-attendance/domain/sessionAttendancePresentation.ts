@@ -29,12 +29,25 @@ const BELT_ORDER = [
   "D10",
 ] as const;
 
+export function getEvaluationStudentPerson(student?: EvaluationStudent | null) {
+  return student?.studentPerson ?? student?.studentEnrollment?.studentPerson ?? null;
+}
+
 export function canEvaluateStudent(student: EvaluationStudent) {
   const status = student.attendance?.attendanceStatus;
   return Boolean(
     student.attendance?.sessionAttendanceId &&
       status &&
       ["PRESENT", "LATE", "MAKEUP"].includes(status),
+  );
+}
+
+export function getEvaluationStudentKey(student: EvaluationStudent) {
+  return (
+    student.studentEnrollment?.studentEnrollmentId ??
+    student.attendance?.sessionAttendanceId ??
+    getEvaluationStudentPerson(student)?.personId ??
+    ""
   );
 }
 
@@ -63,7 +76,7 @@ export function getAvailableBelts(students: EvaluationStudent[]) {
   return Array.from(
     new Set(
       students
-        .map((item) => item.studentEnrollment.studentPerson.currentBelt)
+        .map((item) => getEvaluationStudentPerson(item)?.currentBelt)
         .filter((belt): belt is string => Boolean(belt)),
     ),
   ).sort((left, right) => getBeltRank(left) - getBeltRank(right));
@@ -81,23 +94,23 @@ export function filterAndSortStudents(
       if (attendanceFilter === "UNMARKED") return !student.attendance;
       return student.attendance?.attendanceStatus === attendanceFilter;
     })
-    .filter(
-      (student) =>
-        beltFilter === "ALL" ||
-        (beltFilter === UNKNOWN_BELT_FILTER
-          ? !student.studentEnrollment.studentPerson.currentBelt
-          : student.studentEnrollment.studentPerson.currentBelt === beltFilter),
-    )
+    .filter((student) => {
+      const belt = getEvaluationStudentPerson(student)?.currentBelt;
+      if (beltFilter === "ALL") return true;
+      if (beltFilter === UNKNOWN_BELT_FILTER) return !belt;
+      return belt === beltFilter;
+    })
     .sort((left, right) => {
+      const leftPerson = getEvaluationStudentPerson(left);
+      const rightPerson = getEvaluationStudentPerson(right);
       const rankDifference =
-        getBeltRank(left.studentEnrollment.studentPerson.currentBelt) -
-        getBeltRank(right.studentEnrollment.studentPerson.currentBelt);
+        getBeltRank(leftPerson?.currentBelt) -
+        getBeltRank(rightPerson?.currentBelt);
       if (rankDifference !== 0) {
         return beltSort === "ASC" ? rankDifference : -rankDifference;
       }
-      return left.studentEnrollment.studentPerson.fullName.localeCompare(
-        right.studentEnrollment.studentPerson.fullName,
-        "vi",
-      );
+      const leftName = leftPerson?.fullName ?? "";
+      const rightName = rightPerson?.fullName ?? "";
+      return leftName.localeCompare(rightName, "vi");
     });
 }

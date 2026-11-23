@@ -3,6 +3,7 @@ import { fireEvent, render, waitFor } from "@testing-library/react-native";
 import { AppState, Pressable, View } from "react-native";
 
 import CheckInScreen from "./CheckInScreen";
+import { useKioskCameraStore } from "../store/kioskCamera.store";
 
 const mockReplace = jest.fn();
 const mockBack = jest.fn();
@@ -166,6 +167,7 @@ describe("CheckInScreen camera fallback", () => {
     mockHandlePermissionAction.mockResolvedValue({ granted: true });
     mockUseCheckInCamera.mockReturnValue(cameraState());
     mockUseFaceCheckInSession.mockReturnValue(sessionState);
+    useKioskCameraStore.setState({ isCameraEnabled: false });
     mockUseLocalSearchParams.mockReturnValue({});
     mockLoadVisionCamera.mockReturnValue({
       available: true,
@@ -178,13 +180,11 @@ describe("CheckInScreen camera fallback", () => {
 
   afterEach(() => jest.restoreAllMocks());
 
-  it("uses Vision Camera when the native adapter is available", async () => {
+  it("starts with the welcome state while the camera is off", async () => {
     const screen = await render(<CheckInScreen />);
 
-    expect(await screen.findByLabelText("Vision camera preview")).toBeTruthy();
-    fireEvent.press(screen.getByLabelText("Mark Vision ready"));
-    expect(await screen.findByLabelText("Check-in viewfinder")).toBeTruthy();
-    expect(screen.queryByText("Đang dùng chế độ chụp thủ công")).toBeNull();
+    expect(screen.getByText("WELCOME")).toBeTruthy();
+    expect(screen.getByLabelText("Bật camera điểm danh")).toBeTruthy();
   });
 
   it("starts directly in manual mode in Expo Go without a Vision retry", async () => {
@@ -194,6 +194,8 @@ describe("CheckInScreen camera fallback", () => {
     });
     const screen = await render(<CheckInScreen />);
 
+    fireEvent.press(await screen.findByLabelText("Bật camera điểm danh"));
+
     expect(await screen.findByLabelText("Manual camera preview")).toBeTruthy();
     expect(screen.getByText("Đang dùng chế độ chụp thủ công")).toBeTruthy();
     expect(screen.queryByText("Thử camera tự động")).toBeNull();
@@ -201,6 +203,7 @@ describe("CheckInScreen camera fallback", () => {
 
   it("falls back on a Vision runtime error and allows retry", async () => {
     const screen = await render(<CheckInScreen />);
+    fireEvent.press(await screen.findByLabelText("Bật camera điểm danh"));
     await screen.findByLabelText("Vision camera preview");
 
     fireEvent.press(screen.getByLabelText("Trigger Vision error"));
@@ -224,6 +227,8 @@ describe("CheckInScreen camera fallback", () => {
     mockRefreshPermission.mockResolvedValue({ granted: false });
     const screen = await render(<CheckInScreen />);
 
+    fireEvent.press(await screen.findByLabelText("Bật camera điểm danh"));
+
     expect(await screen.findByText("Cho phép sử dụng Camera")).toBeTruthy();
     fireEvent.press(screen.getByText("Cho phép"));
     await waitFor(() => expect(mockHandlePermissionAction).toHaveBeenCalled());
@@ -238,6 +243,7 @@ describe("CheckInScreen camera fallback", () => {
       cancelCheckIn,
     });
     const screen = await render(<CheckInScreen />);
+    fireEvent.press(await screen.findByLabelText("Bật camera điểm danh"));
 
     fireEvent.press(await screen.findByLabelText("Hủy điểm danh"));
     expect(cancelCheckIn).toHaveBeenCalledTimes(1);
@@ -245,6 +251,7 @@ describe("CheckInScreen camera fallback", () => {
 
   it("routes back through the existing screen policy", async () => {
     const screen = await render(<CheckInScreen />);
+    fireEvent.press(await screen.findByLabelText("Bật camera điểm danh"));
     fireEvent.press(await screen.findByLabelText("Check-in back"));
     expect(mockBack).toHaveBeenCalledTimes(1);
     expect(mockReplace).not.toHaveBeenCalled();

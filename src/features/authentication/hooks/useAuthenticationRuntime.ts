@@ -36,6 +36,7 @@ export function useAuthenticationRuntime(): void {
           Alert.alert('Mã đặt lại mật khẩu', `Mã OTP của bạn là ${message.code}. Mã có hiệu lực trong 5 phút.`);
           return;
         }
+        void notificationService.presentForegroundNotification(message);
         useNotificationStore.getState().incrementUnread();
       });
 

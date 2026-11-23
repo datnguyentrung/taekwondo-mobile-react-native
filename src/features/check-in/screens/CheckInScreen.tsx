@@ -10,7 +10,7 @@ import {
   useMemo,
   useState,
 } from "react";
-import { ActivityIndicator, AppState, StyleSheet, View } from "react-native";
+import { ActivityIndicator, AppState, Pressable, StyleSheet, View } from "react-native";
 
 import type {
   CheckInCameraMode,
@@ -31,6 +31,7 @@ import { VisionCameraErrorBoundary } from "../components/VisionCameraErrorBounda
 import { useCheckInCamera } from "../hooks/useCheckInCamera";
 import { useCheckInCameraLayout } from "../hooks/useCheckInCameraLayout";
 import { useFaceCheckInSession } from "../hooks/useFaceCheckInSession";
+import { useKioskCameraStore } from "../store/kioskCamera.store";
 import type {
   FaceQualityReason,
   ScannerState,
@@ -70,6 +71,8 @@ export default function CheckInScreen() {
   }, [rawReturnToClassSessionId]);
   const layout = useCheckInCameraLayout();
   const session = useFaceCheckInSession();
+  const isCameraEnabled = useKioskCameraStore((state) => state.isCameraEnabled);
+  const setCameraEnabled = useKioskCameraStore((state) => state.setCameraEnabled);
   const [initialVisionLoad] = useState(loadVisionCamera);
   const [isFocused, setIsFocused] = useState(false);
   const [isCameraReady, setIsCameraReady] = useState(false);
@@ -213,7 +216,7 @@ export default function CheckInScreen() {
   );
 
   const isCameraActive =
-    isFocused && isPermissionGranted && !manualCameraError;
+    isFocused && isCameraEnabled && isPermissionGranted && !manualCameraError;
   const isSubmittingOrProcessing =
     session.status === "submitting" ||
     session.status === "processing" ||
@@ -225,7 +228,7 @@ export default function CheckInScreen() {
   const scannerEnabled =
     isCameraActive && isCameraReady && !isCameraSuspended;
   const shouldShowPermissionDialog =
-    isFocused && !isPermissionLoading && !isPermissionGranted;
+    isFocused && isCameraEnabled && !isPermissionLoading && !isPermissionGranted;
   const permissionDialogDescription =
     permissionError ||
     (!canAskAgain
@@ -298,13 +301,15 @@ export default function CheckInScreen() {
       <View style={[StyleSheet.absoluteFill, styles.darkOverlay]} pointerEvents="none" />
 
       <View style={styles.overlayContainer} pointerEvents="box-none">
-        <CheckInHeader
-          torch={torch}
-          onToggleTorch={toggleTorch}
-          isTorchAvailable={effectiveTorchAvailable}
-          topInset={layout.topInset}
-          onBack={leaveCheckInScreen}
-        />
+        {isCameraEnabled ? (
+          <CheckInHeader
+            torch={torch}
+            onToggleTorch={toggleTorch}
+            isTorchAvailable={effectiveTorchAvailable}
+            topInset={layout.topInset}
+            onBack={leaveCheckInScreen}
+          />
+        ) : null}
 
         <CheckInProcessingBanner
           visible={isSubmittingOrProcessing}
@@ -327,6 +332,30 @@ export default function CheckInScreen() {
           ]}
           pointerEvents="box-none"
         >
+          {!isCameraEnabled ? (
+            <View style={styles.welcomeCard}>
+              <ThemedText type="heading" style={styles.welcomeTitle}>
+                WELCOME
+              </ThemedText>
+              <ThemedText type="bodySmall" style={styles.welcomeDescription}>
+                Đứng trước camera để bắt đầu điểm danh khuôn mặt.
+              </ThemedText>
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel="Bật camera điểm danh"
+                onPress={() => setCameraEnabled(true)}
+                style={({ pressed }) => [
+                  styles.enableCameraButton,
+                  pressed ? styles.enableCameraButtonPressed : null,
+                ]}
+              >
+                <ThemedText type="action" style={styles.enableCameraButtonText}>
+                  Bật camera
+                </ThemedText>
+              </Pressable>
+            </View>
+          ) : null}
+
           {isCameraActive && !isCameraReady ? (
             <View
               style={[
@@ -461,5 +490,39 @@ const styles = StyleSheet.create({
   },
   cameraLoadingBadgeBelowBanner: {
     top: 76,
+  },
+  welcomeCard: {
+    width: "82%",
+    maxWidth: 360,
+    alignItems: "center",
+    gap: 16,
+    borderRadius: radii.lg,
+    backgroundColor: Colors.light.surface,
+    paddingHorizontal: 24,
+    paddingVertical: 28,
+  },
+  welcomeTitle: {
+    color: Colors.light.primary,
+    textAlign: "center",
+  },
+  welcomeDescription: {
+    color: Colors.light.textSecondary,
+    textAlign: "center",
+  },
+  enableCameraButton: {
+    minHeight: 48,
+    minWidth: 180,
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: radii.md,
+    backgroundColor: Colors.light.primary,
+    paddingHorizontal: 20,
+  },
+  enableCameraButtonPressed: {
+    opacity: 0.82,
+    transform: [{ scale: 0.97 }],
+  },
+  enableCameraButtonText: {
+    color: Colors.light.surface,
   },
 });

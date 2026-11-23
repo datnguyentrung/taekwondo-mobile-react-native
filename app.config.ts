@@ -58,6 +58,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     "expo-image",
     "expo-screen-orientation",
     "expo-navigation-bar",
+    "expo-notifications",
     "expo-web-browser",
 
     [

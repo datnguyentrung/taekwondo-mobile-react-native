@@ -14,7 +14,11 @@ import type {
   EvaluationStatus,
 } from "../constants/session-attendance.constants";
 import { calculateAttendanceProgress } from "../domain/attendanceProgress";
-import { canEvaluateStudent } from "../domain/sessionAttendancePresentation";
+import {
+  canEvaluateStudent,
+  getEvaluationStudentKey,
+  getEvaluationStudentPerson,
+} from "../domain/sessionAttendancePresentation";
 import { waitForAttendanceCommand } from "../services/attendanceCommand";
 
 export const sessionAttendanceKeys = {
@@ -143,7 +147,7 @@ export function useSessionAttendance({
   );
 
   const updateAttendanceStatus = useCallback(
-    async (studentEnrollmentId: string, newStatus: AttendanceStatus) => {
+    async (studentKey: string, newStatus: AttendanceStatus) => {
       if (!classSessionId) {
         return false;
       }
@@ -152,8 +156,7 @@ export function useSessionAttendance({
       const previousData =
         queryClient.getQueryData<ClassSessionEvaluationResponse>(queryKey);
       const targetStudent = previousData?.students.find(
-        ({ studentEnrollment }) =>
-          studentEnrollment.studentEnrollmentId === studentEnrollmentId,
+        (student) => getEvaluationStudentKey(student) === studentKey,
       );
       if (!previousData || !targetStudent) return false;
 
@@ -161,13 +164,13 @@ export function useSessionAttendance({
       const checkInTime =
         previousAttendance?.checkInTime ??
         (newStatus === "ABSENT" ? null : new Date().toISOString());
-      const mutationVersion = beginStudentMutation(studentEnrollmentId);
+      const mutationVersion = beginStudentMutation(studentKey);
       queryClient.setQueryData<ClassSessionEvaluationResponse>(queryKey, (current) =>
         current
           ? {
               ...current,
               students: current.students.map((item) =>
-                item.studentEnrollment.studentEnrollmentId === studentEnrollmentId
+                getEvaluationStudentKey(item) === studentKey
                   ? {
                       ...item,
                       attendance: {
@@ -199,17 +202,19 @@ export function useSessionAttendance({
           return true;
         }
 
+        const personId =
+          getEvaluationStudentPerson(targetStudent)?.personId ?? "";
         const created = await sessionAttendanceApi.create({
           classSessionId,
-          personId: targetStudent.studentEnrollment.studentPerson.personId,
-          studentEnrollmentId,
+          personId,
+          studentEnrollmentId: targetStudent.studentEnrollment?.studentEnrollmentId,
           attendanceStatus: newStatus,
           evaluationStatus: "PENDING",
           checkInTime,
           note: null,
         });
         if (
-          latestMutationByStudentRef.current.get(studentEnrollmentId) ===
+          latestMutationByStudentRef.current.get(studentKey) ===
           mutationVersion
         ) {
           queryClient.setQueryData<ClassSessionEvaluationResponse>(queryKey, (current) =>
@@ -217,7 +222,7 @@ export function useSessionAttendance({
             ? {
                 ...current,
                 students: current.students.map((item) =>
-                  item.studentEnrollment.studentEnrollmentId === studentEnrollmentId
+                  getEvaluationStudentKey(item) === studentKey
                     ? {
                         ...item,
                         attendance: toEvaluationAttendance(created),
@@ -232,7 +237,7 @@ export function useSessionAttendance({
         return true;
       } catch (error) {
         if (
-          latestMutationByStudentRef.current.get(studentEnrollmentId) ===
+          latestMutationByStudentRef.current.get(studentKey) ===
           mutationVersion
         ) {
           queryClient.setQueryData(queryKey, previousData);
@@ -240,10 +245,10 @@ export function useSessionAttendance({
         }
         return false;
       } finally {
-        setStudentPending(studentEnrollmentId, false);
+        setStudentPending(studentKey, false);
         if (
-          pendingCountByStudentRef.current.get(studentEnrollmentId) == null &&
-          latestMutationByStudentRef.current.get(studentEnrollmentId) === mutationVersion
+          pendingCountByStudentRef.current.get(studentKey) == null &&
+          latestMutationByStudentRef.current.get(studentKey) === mutationVersion
         ) {
           await reconcileWithServer();
         }
@@ -262,7 +267,7 @@ export function useSessionAttendance({
 
   const updateEvaluationStatus = useCallback(
     async (
-      studentEnrollmentId: string,
+      studentKey: string,
       newStatus: EvaluationStatus,
       note?: string | null,
     ) => {
@@ -274,8 +279,7 @@ export function useSessionAttendance({
       const previousData =
         queryClient.getQueryData<ClassSessionEvaluationResponse>(queryKey);
       const targetStudent = previousData?.students.find(
-        ({ studentEnrollment }) =>
-          studentEnrollment.studentEnrollmentId === studentEnrollmentId,
+        (student) => getEvaluationStudentKey(student) === studentKey,
       );
       if (!previousData || !targetStudent || !canEvaluateStudent(targetStudent)) {
         return false;
@@ -284,20 +288,20 @@ export function useSessionAttendance({
       const previousAttendance = targetStudent.attendance;
       if (!previousAttendance?.sessionAttendanceId) return false;
 
-      activeControllersByStudentRef.current.get(studentEnrollmentId)?.abort();
+      activeControllersByStudentRef.current.get(studentKey)?.abort();
       const abortController = new AbortController();
       activeControllersByStudentRef.current.set(
-        studentEnrollmentId,
+        studentKey,
         abortController,
       );
 
-      const mutationVersion = beginStudentMutation(studentEnrollmentId);
+      const mutationVersion = beginStudentMutation(studentKey);
       queryClient.setQueryData<ClassSessionEvaluationResponse>(queryKey, (current) =>
         current
           ? {
               ...current,
               students: current.students.map((item) =>
-                item.studentEnrollment.studentEnrollmentId === studentEnrollmentId
+                getEvaluationStudentKey(item) === studentKey
                   ? {
                       ...item,
                       attendance: item.attendance
@@ -333,7 +337,7 @@ export function useSessionAttendance({
           );
 
         if (
-          latestMutationByStudentRef.current.get(studentEnrollmentId) ===
+          latestMutationByStudentRef.current.get(studentKey) ===
           mutationVersion
         ) {
           const result = command.result;
@@ -348,8 +352,7 @@ export function useSessionAttendance({
                   ? {
                       ...current,
                       students: current.students.map((item) =>
-                        item.studentEnrollment.studentEnrollmentId ===
-                        studentEnrollmentId
+                        getEvaluationStudentKey(item) === studentKey
                           ? {
                               ...item,
                               attendance: item.attendance
@@ -380,7 +383,7 @@ export function useSessionAttendance({
           return false;
         }
         if (
-          latestMutationByStudentRef.current.get(studentEnrollmentId) ===
+          latestMutationByStudentRef.current.get(studentKey) ===
           mutationVersion
         ) {
           queryClient.setQueryData(queryKey, previousData);
@@ -389,13 +392,13 @@ export function useSessionAttendance({
         return false;
       } finally {
         if (
-          activeControllersByStudentRef.current.get(studentEnrollmentId) ===
+          activeControllersByStudentRef.current.get(studentKey) ===
           abortController
         ) {
-          activeControllersByStudentRef.current.delete(studentEnrollmentId);
+          activeControllersByStudentRef.current.delete(studentKey);
         }
         if (isMountedRef.current) {
-          setStudentPending(studentEnrollmentId, false);
+          setStudentPending(studentKey, false);
         }
       }
     },

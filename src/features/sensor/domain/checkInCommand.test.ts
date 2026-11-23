@@ -1,9 +1,9 @@
-import { parseCheckInOpenCommand } from './checkInCommand';
+import { parseCheckInCameraCommand } from './checkInCommand';
 
-describe('parseCheckInOpenCommand', () => {
+describe('parseCheckInCameraCommand', () => {
   it('accepts a CHECK_IN_OPEN command addressed to this kiosk', () => {
     expect(
-      parseCheckInOpenCommand(
+      parseCheckInCameraCommand(
         JSON.stringify({
           type: 'CHECK_IN_OPEN',
           deviceId: 'kiosk-01',
@@ -19,12 +19,26 @@ describe('parseCheckInOpenCommand', () => {
     });
   });
 
+  it('accepts a CHECK_IN_CLOSE command addressed to this kiosk', () => {
+    expect(
+      parseCheckInCameraCommand(
+        JSON.stringify({ type: 'CHECK_IN_CLOSE', deviceId: 'kiosk-01' }),
+        'kiosk-01',
+      ),
+    ).toEqual({
+      type: 'CHECK_IN_CLOSE',
+      deviceId: 'kiosk-01',
+      eventId: undefined,
+      occurredAt: undefined,
+    });
+  });
+
   it.each([
     ['another kiosk', { type: 'CHECK_IN_OPEN', deviceId: 'kiosk-02' }],
     ['another event', { type: 'SENSOR_UPDATE', deviceId: 'kiosk-01' }],
   ])('rejects %s', (_name, payload) => {
     expect(
-      parseCheckInOpenCommand(JSON.stringify(payload), 'kiosk-01'),
+      parseCheckInCameraCommand(JSON.stringify(payload), 'kiosk-01'),
     ).toBeNull();
   });
 });

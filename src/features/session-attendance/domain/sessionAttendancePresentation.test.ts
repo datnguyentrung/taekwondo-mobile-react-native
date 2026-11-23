@@ -19,6 +19,11 @@ function student(
         currentBelt: belt,
       },
     },
+    studentPerson: {
+      personId: id,
+      fullName: `Học viên ${id}`,
+      currentBelt: belt,
+    },
     attendance: attendanceStatus
       ? {
           sessionAttendanceId: `attendance-${id}`,
@@ -41,7 +46,7 @@ describe("session attendance presentation", () => {
     expect(canEvaluateStudent(students[1])).toBe(false);
     expect(
       filterAndSortStudents(students, "UNMARKED", "ALL", "ASC").map(
-        (item) => item.studentEnrollment.studentEnrollmentId,
+        (item) => item.studentEnrollment?.studentEnrollmentId,
       ),
     ).toEqual(["c10"]);
   });
@@ -55,7 +60,7 @@ describe("session attendance presentation", () => {
     expect(getAvailableBelts(students)).toEqual(["C10", "C9", "C8"]);
     expect(
       filterAndSortStudents(students, "ALL", "ALL", "DESC").map(
-        (item) => item.studentEnrollment.studentPerson.currentBelt,
+        (item) => item.studentPerson?.currentBelt,
       ),
     ).toEqual(["C8", "C9", "C10"]);
     expect(filterAndSortStudents(students, "ALL", "C9", "ASC")).toHaveLength(1);

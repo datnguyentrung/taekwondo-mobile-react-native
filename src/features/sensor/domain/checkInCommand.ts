@@ -1,28 +1,28 @@
-export type CheckInOpenCommand = {
-  type: 'CHECK_IN_OPEN';
+export type CheckInCameraCommand = {
+  type: 'CHECK_IN_OPEN' | 'CHECK_IN_CLOSE';
   deviceId: string;
   eventId?: string;
   occurredAt?: string;
 };
 
-export function parseCheckInOpenCommand(
+export function parseCheckInCameraCommand(
   rawPayload: string,
   expectedDeviceId: string,
-): CheckInOpenCommand | null {
+): CheckInCameraCommand | null {
   try {
     const parsed: unknown = JSON.parse(rawPayload);
     if (!parsed || typeof parsed !== 'object') return null;
 
     const command = parsed as Record<string, unknown>;
     if (
-      command.type !== 'CHECK_IN_OPEN' ||
+      (command.type !== 'CHECK_IN_OPEN' && command.type !== 'CHECK_IN_CLOSE') ||
       command.deviceId !== expectedDeviceId
     ) {
       return null;
     }
 
     return {
-      type: 'CHECK_IN_OPEN',
+      type: command.type,
       deviceId: expectedDeviceId,
       eventId:
         typeof command.eventId === 'string' ? command.eventId : undefined,

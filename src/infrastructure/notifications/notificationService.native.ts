@@ -9,6 +9,39 @@ type FirebaseMessagingRuntime = {
   instance: ReturnType<FirebaseMessaging['getMessaging']>;
 };
 
+const ANDROID_NOTIFICATION_CHANNEL = 'general';
+
+type ExpoNotifications = typeof import('expo-notifications');
+
+function getNotifications(): ExpoNotifications | null {
+  try {
+    // Older installed builds do not contain this optional native module.
+    return require('expo-notifications') as ExpoNotifications;
+  } catch {
+    return null;
+  }
+}
+
+const notifications = getNotifications();
+
+notifications?.setNotificationHandler({
+  handleNotification: async () => ({
+    shouldPlaySound: true,
+    shouldSetBadge: false,
+    shouldShowBanner: true,
+    shouldShowList: true,
+  }),
+});
+
+async function ensureAndroidNotificationChannel(): Promise<void> {
+  if (Platform.OS !== 'android' || !notifications) return;
+  await notifications.setNotificationChannelAsync(ANDROID_NOTIFICATION_CHANNEL, {
+    name: 'Thông báo chung',
+    importance: notifications.AndroidImportance.HIGH,
+    sound: 'default',
+  });
+}
+
 /** Expo Go does not embed React Native Firebase native modules. */
 function getFirebaseMessaging(): FirebaseMessagingRuntime | null {
   if (Constants.appOwnership === AppOwnership.Expo) return null;
@@ -82,6 +115,18 @@ export const notificationService: NotificationService = {
 
     return messaging.api.onMessage(messaging.instance, (message) =>
       listener({
+        title:
+          typeof message.notification?.title === 'string'
+            ? message.notification.title
+            : typeof message.data?.title === 'string'
+              ? message.data.title
+              : undefined,
+        body:
+          typeof message.notification?.body === 'string'
+            ? message.notification.body
+            : typeof message.data?.body === 'string'
+              ? message.data.body
+              : undefined,
         type:
           typeof message.data?.type === 'string'
             ? message.data.type
@@ -92,6 +137,25 @@ export const notificationService: NotificationService = {
             : undefined,
       }),
     );
+  },
+
+  async presentForegroundNotification(message): Promise<void> {
+    if ((!message.title && !message.body) || !notifications) return;
+    await ensureAndroidNotificationChannel();
+    await notifications.scheduleNotificationAsync({
+      content: {
+        title: message.title ?? 'Taekwondo Văn Quán',
+        body: message.body ?? '',
+        sound: 'default',
+        ...(Platform.OS === 'android'
+          ? { channelId: ANDROID_NOTIFICATION_CHANNEL }
+          : {}),
+        data: {
+          type: message.type,
+        },
+      },
+      trigger: null,
+    });
   },
 
   async cleanup(): Promise<void> {

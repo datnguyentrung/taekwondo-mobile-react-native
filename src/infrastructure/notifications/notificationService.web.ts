@@ -11,6 +11,9 @@ export const notificationService: NotificationService = {
   subscribeToForegroundMessages(): () => void {
     return () => undefined;
   },
+  async presentForegroundNotification(): Promise<void> {
+    return undefined;
+  },
   async cleanup(): Promise<void> {
     return undefined;
   },

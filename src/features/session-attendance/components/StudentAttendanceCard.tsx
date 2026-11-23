@@ -19,6 +19,7 @@ import type {
 import {
   canEvaluateStudent,
   formatBeltName,
+  getEvaluationStudentPerson,
 } from "../domain/sessionAttendancePresentation";
 import {
   ATTENDANCE_CONFIG,
@@ -45,7 +46,7 @@ export function StudentAttendanceCard({
 }) {
   const [pickerType, setPickerType] = useState<"attendance" | null>(null);
 
-  const student = item.studentEnrollment.studentPerson;
+  const student = getEvaluationStudentPerson(item);
   const currentAttendance = item.attendance?.attendanceStatus ?? null;
   const currentEvaluation = item.attendance?.evaluationStatus ?? "PENDING";
   const evaluationAllowed = canEvaluateStudent(item);
@@ -54,7 +55,7 @@ export function StudentAttendanceCard({
   const attendanceConfig = currentAttendance
     ? ATTENDANCE_CONFIG[currentAttendance]
     : null;
-  const initials = student.fullName
+  const initials = student?.fullName
     ? student.fullName
         .split(" ")
         .map((name) => name[0])
@@ -74,11 +75,11 @@ export function StudentAttendanceCard({
           </View>
           <View style={styles.nameWrap}>
             <ThemedText type="title" numberOfLines={2} style={styles.studentName}>
-              {student.fullName}
+              {student?.fullName ?? "Học viên"}
             </ThemedText>
             <ThemedText type="bodySmall" style={styles.studentMeta}>
-              {student.personCode || "Chưa có mã"} ·{" "}
-              {formatBeltName(student.currentBelt)}
+              {student?.personCode || "Chưa có mã"} ·{" "}
+              {formatBeltName(student?.currentBelt)}
             </ThemedText>
           </View>
           {isPending ? (
@@ -232,7 +233,7 @@ export function StudentAttendanceCard({
       <StatusPickerPopover
         type="attendance"
         visible={pickerType === "attendance"}
-        studentName={student.fullName}
+        studentName={student?.fullName ?? "Học viên"}
         currentValue={currentAttendance}
         onSelect={(value) => {
           setPickerType(null);

@@ -190,7 +190,8 @@ export interface EvaluationAttendance {
 }
 
 export interface EvaluationStudent {
-  studentEnrollment: EvaluationStudentEnrollment;
+  studentEnrollment: EvaluationStudentEnrollment | null;
+  studentPerson?: EvaluationStudentEnrollment["studentPerson"] | null;
   attendance: EvaluationAttendance | null;
   recorded: boolean;
 }

@@ -15,6 +15,10 @@ import { Colors, activeEffect, radii } from "@/theme";
 
 import type { EvaluationStudent } from "../api/session-attendance.dto";
 import type { EvaluationStatus } from "../constants/session-attendance.constants";
+import {
+  getEvaluationStudentKey,
+  getEvaluationStudentPerson,
+} from "../domain/sessionAttendancePresentation";
 import { EVALUATION_CONFIG } from "./StatusPickerPopover";
 
 const EVALUATION_OPTIONS: EvaluationStatus[] = [
@@ -48,7 +52,7 @@ export function EvaluationNoteSheet({
 
   return (
     <EvaluationNoteSheetContent
-      key={student.studentEnrollment.studentEnrollmentId}
+      key={getEvaluationStudentKey(student)}
       student={student}
       visible={visible}
       saving={saving}
@@ -75,7 +79,7 @@ function EvaluationNoteSheetContent({
     student.attendance?.evaluationStatus ?? "PENDING",
   );
   const [note, setNote] = useState(student.attendance?.note ?? "");
-  const studentName = student.studentEnrollment.studentPerson.fullName;
+  const studentName = getEvaluationStudentPerson(student)?.fullName ?? "Học viên";
 
   return (
     <BottomSheetWindow

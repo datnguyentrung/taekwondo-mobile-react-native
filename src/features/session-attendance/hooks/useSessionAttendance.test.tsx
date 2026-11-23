@@ -39,6 +39,11 @@ function student(
         currentBelt: "C10",
       },
     },
+    studentPerson: {
+      personId: "person-1",
+      fullName: "Nguyễn Văn A",
+      currentBelt: "C10",
+    },
     attendance: {
       sessionAttendanceId: "attendance-1",
       attendanceStatus,
