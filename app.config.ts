@@ -152,6 +152,10 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     apiUrlJava:
       process.env.EXPO_PUBLIC_API_URL_JAVA ?? "http://localhost:8080/api/v1",
     apiUrlFog: process.env.EXPO_PUBLIC_API_URL_FOG ?? "http://localhost:8000",
+    apiUrlAgent:
+      process.env.EXPO_PUBLIC_API_URL_AGENT ??
+      process.env.EXPO_PUBLIC_API_URL_FOG ??
+      "http://localhost:8000",
     router: {},
 
     eas: {

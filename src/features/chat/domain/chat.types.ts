@@ -78,6 +78,20 @@ export type ChatReceiptDisplay = {
   isError: boolean;
 };
 
+export type TBotProcessingStatus =
+  | "RECEIVED"
+  | "PROCESSING"
+  | "SEARCHING"
+  | "GENERATING"
+  | "COMPLETED"
+  | "FAILED";
+
+export type TBotStatusUpdate = {
+  requestId: string;
+  status: TBotProcessingStatus;
+  message: string;
+};
+
 export type ChatRenderItem = {
   message: ChatMessage;
   isClusterStart: boolean;

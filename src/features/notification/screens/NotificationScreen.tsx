@@ -29,7 +29,6 @@ import { SegmentedControl } from "@/shared/ui/SegmentedControl";
 import { useToast } from "@/shared/ui/Toast";
 import { Colors } from "@/theme";
 
-import { ChatbotHeaderButton } from "@/routes/navigation/components/ChatbotHeaderButton";
 import type { NotificationRecipientMine } from "../api/notification.dto";
 import { NotificationCard } from "../components/NotificationCard";
 import {
@@ -181,7 +180,6 @@ export default function NotificationScreen() {
               onPress={handleMarkAllRead}
             />
           ) : null}
-          <ChatbotHeaderButton />
         </>
       }
       contentContainerStyle={styles.screenContent}

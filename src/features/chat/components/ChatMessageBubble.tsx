@@ -2,6 +2,7 @@ import { Image, Pressable, StyleSheet, View } from "react-native";
 import { AlertCircle } from "reicon-react-native";
 
 import { AppIcon } from "@/shared/ui/AppIcon";
+import { MarkdownText } from "@/shared/ui/MarkdownText";
 import { ThemedText } from "@/shared/ui/ThemedText";
 import { Colors, activeEffect, effects, hexToRgba, radii } from "@/theme";
 
@@ -133,15 +134,21 @@ export function ChatMessageBubble({
               ) : null}
 
               {message.text ? (
-                <ThemedText
-                  type="bodySmall"
-                  style={[
-                    isUser ? styles.userText : styles.peerText,
-                    message.isRecalled ? styles.recalledText : null,
-                  ]}
-                >
-                  {message.text}
-                </ThemedText>
+                isUser || message.isRecalled ? (
+                  <ThemedText
+                    type="bodySmall"
+                    style={[
+                      isUser ? styles.userText : styles.peerText,
+                      message.isRecalled ? styles.recalledText : null,
+                    ]}
+                  >
+                    {message.text}
+                  </ThemedText>
+                ) : (
+                  <MarkdownText baseColor={Colors.light.text}>
+                    {message.text}
+                  </MarkdownText>
+                )
               ) : null}
             </View>
 

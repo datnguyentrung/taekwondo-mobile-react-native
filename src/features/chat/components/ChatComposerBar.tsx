@@ -134,7 +134,7 @@ export function ChatComposerBar({
             maxLength={500}
             returnKeyType="send"
             onSubmitEditing={onSend}
-            style={styles.input}
+            style={[styles.input, value.length === 0 ? styles.inputEmpty : null]}
           />
         </View>
 
@@ -250,6 +250,9 @@ const styles = StyleSheet.create({
     color: Colors.light.text,
     paddingVertical: 0,
     ...typography.bodySmall,
+  },
+  inputEmpty: {
+    height: 22,
   },
   sendButton: {
     width: 42,

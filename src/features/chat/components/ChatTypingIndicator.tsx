@@ -41,7 +41,13 @@ function TypingDot({ delayMs }: { delayMs: number }) {
   return <Animated.View style={[styles.dot, animatedStyle]} />;
 }
 
-export function ChatTypingIndicator({ peerName }: { peerName: string }) {
+export function ChatTypingIndicator({
+  peerName,
+  statusMessage,
+}: {
+  peerName: string;
+  statusMessage?: string | null;
+}) {
   return (
     <View style={styles.row}>
       <Image source={TBOT_AVATAR} style={styles.avatar} resizeMode="cover" />
@@ -50,9 +56,16 @@ export function ChatTypingIndicator({ peerName }: { peerName: string }) {
           {peerName}
         </ThemedText>
         <View style={styles.bubble}>
-          <TypingDot delayMs={0} />
-          <TypingDot delayMs={140} />
-          <TypingDot delayMs={280} />
+          <View style={styles.dotsRow}>
+            <TypingDot delayMs={0} />
+            <TypingDot delayMs={140} />
+            <TypingDot delayMs={280} />
+          </View>
+          {statusMessage ? (
+            <ThemedText type="bodySmall" style={styles.statusText}>
+              {statusMessage}
+            </ThemedText>
+          ) : null}
         </View>
       </View>
     </View>
@@ -64,7 +77,8 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "flex-end",
     gap: 8,
-    marginTop: 10,
+    marginTop: 0,
+    marginBottom: 12,
   },
   avatar: {
     width: 34,
@@ -83,12 +97,20 @@ const styles = StyleSheet.create({
   bubble: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 5,
+    gap: 8,
     backgroundColor: "#EFEFF2",
     borderRadius: radii.xl,
     borderTopLeftRadius: radii.sm,
     paddingHorizontal: 14,
     paddingVertical: 12,
+  },
+  dotsRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 5,
+  },
+  statusText: {
+    color: Colors.light.textSecondary,
   },
   dot: {
     width: 7,

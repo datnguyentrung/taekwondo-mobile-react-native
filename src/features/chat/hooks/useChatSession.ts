@@ -4,12 +4,11 @@ import * as ImagePicker from "expo-image-picker";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AppState } from "react-native";
 
+import { useAuthStore } from "@/features/authentication/store/auth.store";
 import { useToast } from "@/shared/ui/Toast";
 
-import {
-  INITIAL_TBOT_MESSAGES,
-  TBOT_PEER,
-} from "../constants/chat.constants";
+import { TBOT_PEER } from "../constants/chat.constants";
+import { createAdkAgentTransport } from "../domain/adkAgentTransport";
 import type {
   ChatMessage,
   ChatPeer,
@@ -26,8 +25,6 @@ import {
   type ChatTransportCallbacks,
 } from "../domain/chatTransport";
 import { formatChatTime } from "../domain/tbotResponder";
-
-const CURRENT_USER_ID = "current-user";
 
 function resolvePeer(peerId?: string, peerName?: string): ChatPeer {
   if (!peerId || peerId === "tbot") {
@@ -62,15 +59,22 @@ function createClientMessageId(): string {
 
 export function useChatSession(peerId?: string, peerName?: string) {
   const toast = useToast();
+  const currentUserId =
+    useAuthStore((state) => state.user?.userId) ?? "default_user";
+  const accessToken = useAuthStore((state) => state.accessToken);
+  const accessTokenRef = useRef(accessToken);
+
+  useEffect(() => {
+    accessTokenRef.current = accessToken;
+  }, [accessToken]);
+
   const peer = useMemo(
     () => resolvePeer(peerId, peerName),
     [peerId, peerName],
   );
   const conversationId = useMemo(() => `conv-${peer.id}`, [peer.id]);
 
-  const [messages, setMessages] = useState<ChatMessage[]>(() =>
-    peer.isBot ? [...INITIAL_TBOT_MESSAGES] : [],
-  );
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [peerState, setPeerState] = useState<ConversationMemberState>(() =>
     createInitialPeerState(conversationId, peer),
   );
@@ -78,6 +82,9 @@ export function useChatSession(peerId?: string, peerName?: string) {
   const [pendingImageUri, setPendingImageUri] = useState<string | null>(null);
   const [replyingTo, setReplyingTo] = useState<ChatReplyPreview | null>(null);
   const [isPeerTyping, setIsPeerTyping] = useState(false);
+  const [peerStatusMessage, setPeerStatusMessage] = useState<string | null>(
+    null,
+  );
   const [showQuickActions, setShowQuickActions] = useState(true);
   const [selectedMessage, setSelectedMessage] = useState<ChatMessage | null>(
     null,
@@ -99,25 +106,28 @@ export function useChatSession(peerId?: string, peerName?: string) {
     return () => subscription.remove();
   }, []);
 
+  const createTransport = useCallback((): ChatTransport => {
+    if (peer.isBot) {
+      return createAdkAgentTransport({
+        initialSequenceNo: 10,
+        getAuthHeaders: (): Record<string, string> => {
+          const token = accessTokenRef.current;
+          return token ? { Authorization: `Bearer ${token}` } : {};
+        },
+      });
+    }
+    return createLocalChatTransport(100);
+  }, [peer.isBot]);
+
   useEffect(() => {
     transportRef.current?.dispose();
-    transportRef.current = createLocalChatTransport(peer.isBot ? 10 : 100);
-
-    setMessages(peer.isBot ? [...INITIAL_TBOT_MESSAGES] : []);
-    setPeerState(createInitialPeerState(conversationId, peer));
-    setDraftText("");
-    setPendingImageUri(null);
-    setReplyingTo(null);
-    setIsPeerTyping(false);
-    setSelectedMessage(null);
-    setInfoMessage(null);
-    setExpandedTimestampIds({});
+    transportRef.current = createTransport();
 
     return () => {
       transportRef.current?.dispose();
       transportRef.current = null;
     };
-  }, [conversationId, peer]);
+  }, [createTransport]);
 
   const buildTransportCallbacks = useCallback(
     (): ChatTransportCallbacks => ({
@@ -201,8 +211,20 @@ export function useChatSession(peerId?: string, peerName?: string) {
       },
       onPeerTyping: (typing) => {
         setIsPeerTyping(typing);
+        if (!typing) {
+          setPeerStatusMessage(null);
+        }
+      },
+      onPeerStatus: (update) => {
+        if (update.status === "COMPLETED" || update.status === "FAILED") {
+          setPeerStatusMessage(null);
+          return;
+        }
+        setPeerStatusMessage(update.message);
       },
       onPeerMessage: (incoming) => {
+        setPeerStatusMessage(null);
+        setIsPeerTyping(false);
         setMessages((prev) => {
           // Deduplicate by clientMessageId or id
           if (
@@ -221,8 +243,40 @@ export function useChatSession(peerId?: string, peerName?: string) {
           return [...prev, enriched];
         });
       },
+      onPeerStreamUpdate: (update) => {
+        setMessages((prev) => {
+          const existingIdx = prev.findIndex((m) => m.id === update.messageId);
+          if (existingIdx !== -1) {
+            return prev.map((m) =>
+              m.id === update.messageId ? { ...m, text: update.text } : m,
+            );
+          }
+          const now = Date.now();
+          const streamedMsg: ChatMessage = {
+            id: update.messageId,
+            clientMessageId: update.messageId,
+            conversationId: update.conversationId,
+            senderId: update.peerId,
+            sender: "peer",
+            type: "text",
+            text: update.text,
+            timestamp: formatChatTime(new Date(update.createdAt)),
+            createdAt: update.createdAt,
+            serverAcceptedAt: update.createdAt,
+            deliveredAt: now,
+            readAt: isAppActive ? now : undefined,
+          };
+          return [...prev, streamedMsg];
+        });
+      },
+      onError: (message) => {
+        toast.show({
+          message,
+          variant: "error",
+        });
+      },
     }),
-    [isAppActive],
+    [isAppActive, toast],
   );
 
   const dispatchMessage = useCallback(
@@ -257,7 +311,7 @@ export function useChatSession(peerId?: string, peerName?: string) {
         id: clientMessageId,
         clientMessageId,
         conversationId,
-        senderId: CURRENT_USER_ID,
+        senderId: currentUserId,
         sender: "user",
         type: imageUri && !text ? "image" : "text",
         text,
@@ -282,6 +336,7 @@ export function useChatSession(peerId?: string, peerName?: string) {
     },
     [
       conversationId,
+      currentUserId,
       dispatchMessage,
       draftText,
       pendingImageUri,
@@ -443,13 +498,14 @@ export function useChatSession(peerId?: string, peerName?: string) {
 
   const resetConversation = useCallback(() => {
     transportRef.current?.dispose();
-    transportRef.current = createLocalChatTransport(peer.isBot ? 10 : 100);
-    setMessages(peer.isBot ? [...INITIAL_TBOT_MESSAGES] : []);
+    transportRef.current = createTransport();
+    setMessages([]);
     setPeerState(createInitialPeerState(conversationId, peer));
     setDraftText("");
     setPendingImageUri(null);
     setReplyingTo(null);
     setIsPeerTyping(false);
+    setPeerStatusMessage(null);
     setSelectedMessage(null);
     setInfoMessage(null);
     setExpandedTimestampIds({});
@@ -457,7 +513,7 @@ export function useChatSession(peerId?: string, peerName?: string) {
       message: "Đã làm mới cuộc trò chuyện.",
       variant: "info",
     });
-  }, [conversationId, peer, toast]);
+  }, [conversationId, createTransport, peer, toast]);
 
   const renderItems = useMemo(
     () => buildChatRenderItems(messages, peerState),
@@ -477,6 +533,7 @@ export function useChatSession(peerId?: string, peerName?: string) {
     replyingTo,
     cancelReply: () => setReplyingTo(null),
     isPeerTyping,
+    peerStatusMessage,
     showQuickActions,
     toggleQuickActions: () => setShowQuickActions((prev) => !prev),
     selectedMessage,

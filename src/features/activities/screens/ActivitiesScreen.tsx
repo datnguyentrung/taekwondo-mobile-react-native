@@ -20,7 +20,6 @@ import {
   type AttendanceHistoryMode,
 } from "@/features/attendance-history";
 import { usePermissions } from "@/features/authorization";
-import { ChatbotHeaderButton } from "@/routes/navigation/components/ChatbotHeaderButton";
 import { HeaderActionButton } from "@/routes/navigation/components/HeaderActionButton";
 import BottomTabScreenLayout from "@/routes/navigation/layouts/BottomTabScreenLayout";
 import { Colors, Spacing } from "@/theme";
@@ -199,15 +198,12 @@ export default function ActivitiesScreen() {
         title="Tính năng"
         activeTab="activities"
         rightActions={
-          <>
-            <HeaderActionButton
-              icon={changeListQuickFeatures ? <Check /> : <Star />}
-              label="Lựa chọn nhanh"
-              color={Colors.light.surface}
-              onPress={() => setChangeListQuickFeatures((current) => !current)}
-            />
-            <ChatbotHeaderButton />
-          </>
+          <HeaderActionButton
+            icon={changeListQuickFeatures ? <Check /> : <Star />}
+            label="Lựa chọn nhanh"
+            color={Colors.light.surface}
+            onPress={() => setChangeListQuickFeatures((current) => !current)}
+          />
         }
       >
         <ActivitiesGridSection

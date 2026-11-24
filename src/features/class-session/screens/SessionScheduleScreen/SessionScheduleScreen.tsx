@@ -13,7 +13,6 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useScreenRefresh } from "@/infrastructure/query/useScreenRefresh";
 
 import { asHref } from "@/features/student-commerce/utils/studentCommerceUtils";
-import { ChatbotHeaderButton } from "@/routes/navigation/components/ChatbotHeaderButton";
 import BottomTabScreenLayout, {
   BOTTOM_TAB_SPACE,
 } from "@/routes/navigation/layouts/BottomTabScreenLayout";
@@ -162,11 +161,6 @@ export default function SessionScheduleScreen() {
       <BottomTabScreenLayout
         title="Thời khóa biểu"
         activeTab="schedule"
-        rightActions={
-          <>
-            <ChatbotHeaderButton />
-          </>
-        }
         contentContainerStyle={styles.layoutContent}
         scrollEnabled={false}
       >

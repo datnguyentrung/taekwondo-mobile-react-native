@@ -1,4 +1,9 @@
-import type { ChatMessage, ChatPeer, ChatReplyPreview } from "./chat.types";
+import type {
+  ChatMessage,
+  ChatPeer,
+  ChatReplyPreview,
+  TBotStatusUpdate,
+} from "./chat.types";
 import { buildPeerReply, formatChatTime } from "./tbotResponder";
 
 export type SendMessageAck = {
@@ -18,6 +23,15 @@ export type SendMessagePayload = {
   createdAt: number;
 };
 
+export type PeerStreamUpdate = {
+  messageId: string;
+  conversationId: string;
+  peerId: string;
+  text: string;
+  isFinal: boolean;
+  createdAt: number;
+};
+
 export type ChatTransportCallbacks = {
   onAcknowledged: (ack: SendMessageAck) => void;
   onFailed: (clientMessageId: string) => void;
@@ -32,7 +46,10 @@ export type ChatTransportCallbacks = {
     readAt: number,
   ) => void;
   onPeerTyping: (isTyping: boolean) => void;
+  onPeerStatus?: (update: TBotStatusUpdate) => void;
   onPeerMessage: (message: ChatMessage) => void;
+  onPeerStreamUpdate?: (update: PeerStreamUpdate) => void;
+  onError?: (message: string) => void;
 };
 
 export interface ChatTransport {

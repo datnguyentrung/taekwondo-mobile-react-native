@@ -45,6 +45,7 @@ export function ChatScreen({
     replyingTo,
     cancelReply,
     isPeerTyping,
+    peerStatusMessage,
     showQuickActions,
     toggleQuickActions,
     selectedMessage,
@@ -118,7 +119,10 @@ export function ChatScreen({
           }
           ListFooterComponent={
             isPeerTyping ? (
-              <ChatTypingIndicator peerName={peer.name} />
+              <ChatTypingIndicator
+                peerName={peer.name}
+                statusMessage={peerStatusMessage}
+              />
             ) : undefined
           }
           showsVerticalScrollIndicator={false}

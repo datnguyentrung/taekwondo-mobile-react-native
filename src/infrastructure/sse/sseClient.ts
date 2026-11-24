@@ -182,7 +182,8 @@ export async function* streamSse<T>(options: SseStreamOptions<T>): AsyncGenerato
     try {
       const suppliedHeaders = await options.headers();
       const response = await expoFetch(options.url, {
-        method: 'GET',
+        method: options.method ?? 'GET',
+        ...(options.body !== undefined ? { body: options.body } : {}),
         signal: options.signal,
         headers: createHeaders(suppliedHeaders, state.lastEventId),
       }) as unknown as SseResponse;

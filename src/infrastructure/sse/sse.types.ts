@@ -18,6 +18,8 @@ export type SseReconnectOptions = {
 
 export type SseStreamOptions<T> = {
   url: string;
+  method?: 'GET' | 'POST';
+  body?: BodyInit;
   signal: AbortSignal;
   headers: SseHeadersProvider;
   decode: (envelope: SseEnvelope) => T | null;
