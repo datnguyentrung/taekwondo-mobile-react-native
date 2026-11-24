@@ -7,9 +7,10 @@ import {
   type TabTriggerSlotProps,
 } from "expo-router/ui";
 import { usePathname } from "expo-router";
-import { Pressable, StyleSheet, View } from "react-native";
+import { Platform, Pressable, StyleSheet, View } from "react-native";
 
 import { canAll, usePermissions } from "@/features/authorization";
+import { useNotificationStore } from "@/features/notification/store/notification.store";
 import { AppIcon } from "@/shared/ui/AppIcon";
 import { ThemedText } from "@/shared/ui/ThemedText";
 import { Colors, effects, radii, typography } from "@/theme";
@@ -66,6 +67,15 @@ function CustomTabList({
 
 function TabButton({ tab, isFocused, ...props }: TabButtonProps) {
   const active = Boolean(isFocused);
+  const unreadCount = useNotificationStore((state) =>
+    tab.name === "notifications" ? state.unreadCount : 0,
+  );
+  const badge =
+    tab.name === "notifications" && unreadCount > 0
+      ? unreadCount > 99
+        ? "99+"
+        : unreadCount
+      : undefined;
   const iconName = active && tab.activeIcon ? tab.activeIcon : tab.icon;
   const iconColor = active ? Colors.light.primary : Colors.light.textSecondary;
 
@@ -90,18 +100,30 @@ function TabButton({ tab, isFocused, ...props }: TabButtonProps) {
   }
 
   const { ref: _ref, ...pressableProps } = props as any;
+  const accessibilityLabel = badge
+    ? `${tab.label}, ${unreadCount} chưa đọc`
+    : tab.label;
   return (
     <Pressable
       {...pressableProps}
       accessibilityRole="tab"
-      accessibilityLabel={tab.label}
+      accessibilityLabel={accessibilityLabel}
       accessibilityState={{ selected: active }}
       style={({ pressed }) => [
         styles.tabButton,
         pressed ? styles.pressed : null,
       ]}
     >
-      <AppIcon icon={iconName} size={35} color={iconColor} />
+      <View style={styles.iconContainer}>
+        <AppIcon icon={iconName} size={35} color={iconColor} />
+        {badge !== undefined ? (
+          <View style={styles.badge}>
+            <ThemedText type="caption" style={styles.badgeText}>
+              {badge}
+            </ThemedText>
+          </View>
+        ) : null}
+      </View>
       <ThemedText
         type="featureLabel"
         style={[styles.tabLabel, active ? styles.tabLabelActive : null]}
@@ -149,6 +171,34 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     gap: 1,
+  },
+  iconContainer: {
+    position: "relative",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  badge: {
+    position: "absolute",
+    top: -2,
+    right: -8,
+    minWidth: 20,
+    height: 16,
+    borderRadius: radii.pill,
+    backgroundColor: Colors.light.surface,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: 4,
+    ...effects.card,
+  },
+  badgeText: {
+    color: Colors.light.primary,
+    textAlign: "center",
+    textAlignVertical: "center",
+    includeFontPadding: false,
+    fontSize: 10,
+    lineHeight: Platform.OS === "ios" ? 12 : 13,
+    fontWeight: "800",
+    fontVariant: ["tabular-nums"],
   },
   centerTabButton: {
     flex: 1,

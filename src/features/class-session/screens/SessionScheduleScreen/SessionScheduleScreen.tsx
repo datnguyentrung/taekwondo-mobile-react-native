@@ -1,17 +1,24 @@
-import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "expo-router";
-import { ActivityIndicator, RefreshControl, ScrollView, StyleSheet, View, type ScrollViewInstance } from "react-native";
+import { useEffect, useMemo, useRef, useState } from "react";
+import {
+  ActivityIndicator,
+  RefreshControl,
+  ScrollView,
+  StyleSheet,
+  View,
+  type ScrollViewInstance,
+} from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { useScreenRefresh } from "@/infrastructure/query/useScreenRefresh";
 
-import { DefaultHeaderActions } from "@/routes/navigation/components/DefaultHeaderActions";
+import { asHref } from "@/features/student-commerce/utils/studentCommerceUtils";
+import { ChatbotHeaderButton } from "@/routes/navigation/components/ChatbotHeaderButton";
 import BottomTabScreenLayout, {
   BOTTOM_TAB_SPACE,
 } from "@/routes/navigation/layouts/BottomTabScreenLayout";
 import { ThemedText } from "@/shared/ui/ThemedText";
 import { Colors } from "@/theme";
-import { asHref } from "@/features/student-commerce/utils/studentCommerceUtils";
 import type { ClassSessionCalendarResponse } from "../../api/class-session.dto";
 import { ExpandableCalendarStrip } from "../../components/ExpandableCalendarStrip";
 import { SessionCalendarCard } from "../../components/SessionCalendarCard";
@@ -61,11 +68,7 @@ export default function SessionScheduleScreen() {
   }, [selectedDate, isExpanded]);
 
   const calendarQuery = useClassSessionCalendarQuery(queryRange);
-  const {
-    data: calendarSessions,
-    isLoading,
-    error,
-  } = calendarQuery;
+  const { data: calendarSessions, isLoading, error } = calendarQuery;
 
   const { refreshing, onRefresh } = useScreenRefresh(calendarQuery);
 
@@ -157,9 +160,13 @@ export default function SessionScheduleScreen() {
   return (
     <>
       <BottomTabScreenLayout
-        title="Thời khoá biểu"
+        title="Thời khóa biểu"
         activeTab="schedule"
-        rightActions={<DefaultHeaderActions color={Colors.light.surface} />}
+        rightActions={
+          <>
+            <ChatbotHeaderButton />
+          </>
+        }
         contentContainerStyle={styles.layoutContent}
         scrollEnabled={false}
       >
@@ -190,7 +197,10 @@ export default function SessionScheduleScreen() {
             />
           }
           onContentSizeChange={() => {
-            if (!initialScrolledRef.current && Object.keys(datePositions.current).length > 0) {
+            if (
+              !initialScrolledRef.current &&
+              Object.keys(datePositions.current).length > 0
+            ) {
               scrollToDate(selectedDate, true);
               initialScrolledRef.current = true;
             }
@@ -259,9 +269,7 @@ export default function SessionScheduleScreen() {
         }}
         onEvaluate={(session) =>
           router.push(
-            asHref(
-              `/class-sessions/${session.classSessionId}/attendance`,
-            ),
+            asHref(`/class-sessions/${session.classSessionId}/attendance`),
           )
         }
         onViewCourseDetail={(session) => {

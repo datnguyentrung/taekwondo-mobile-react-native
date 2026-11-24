@@ -1,6 +1,6 @@
-import { Check, Menu, Star } from "reicon-react-native";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { StyleSheet, View } from "react-native";
+import { Check, Star } from "reicon-react-native";
 
 import { ACTIVITIES_GROUPS } from "@/features/activities/components/activities.constants";
 import { ActivitiesGridSection } from "@/features/activities/components/ActivitiesGridSection";
@@ -20,11 +20,9 @@ import {
   type AttendanceHistoryMode,
 } from "@/features/attendance-history";
 import { usePermissions } from "@/features/authorization";
+import { ChatbotHeaderButton } from "@/routes/navigation/components/ChatbotHeaderButton";
 import { HeaderActionButton } from "@/routes/navigation/components/HeaderActionButton";
-import { NotificationHeaderButton } from "@/routes/navigation/components/NotificationHeaderButton";
 import BottomTabScreenLayout from "@/routes/navigation/layouts/BottomTabScreenLayout";
-import SideDrawerWindow from "@/routes/navigation/layouts/SideDrawerWindow";
-import { ThemedText } from "@/shared/ui/ThemedText";
 import { Colors, Spacing } from "@/theme";
 import type { Href } from "expo-router";
 import { useRouter } from "expo-router";
@@ -43,16 +41,28 @@ export default function ActivitiesScreen() {
     useState<string[]>(DEFAULT_QUICK_IDS);
   const [historyModePickerVisible, setHistoryModePickerVisible] =
     useState(false);
-  const [sideDrawerVisible, setSideDrawerVisible] = useState(false);
-  const historyPickerCloseTimerRef = useRef<ReturnType<typeof setTimeout> | null>(
-    null,
-  );
+  const historyPickerCloseTimerRef = useRef<ReturnType<
+    typeof setTimeout
+  > | null>(null);
 
-  const allowedGroups = useMemo(() => ACTIVITIES_GROUPS.map((group) => ({
-    ...group,
-    actions: group.actions.filter((action) => !action.requiredPermissions?.length || action.requiredPermissions.some((permission) => permissions?.includes(permission))),
-  })), [permissions]);
-  const allowedActivities = useMemo(() => allowedGroups.flatMap((group) => group.actions), [allowedGroups]);
+  const allowedGroups = useMemo(
+    () =>
+      ACTIVITIES_GROUPS.map((group) => ({
+        ...group,
+        actions: group.actions.filter(
+          (action) =>
+            !action.requiredPermissions?.length ||
+            action.requiredPermissions.some((permission) =>
+              permissions?.includes(permission),
+            ),
+        ),
+      })),
+    [permissions],
+  );
+  const allowedActivities = useMemo(
+    () => allowedGroups.flatMap((group) => group.actions),
+    [allowedGroups],
+  );
 
   const quickActions = useMemo(
     () => getQuickActions(quickActionIds, allowedActivities),
@@ -144,28 +154,28 @@ export default function ActivitiesScreen() {
         return;
       }
 
-      if (action.id === 'role-permission-admin') {
-        router.push('/admin/roles' as Href);
+      if (action.id === "role-permission-admin") {
+        router.push("/admin/roles" as Href);
         return;
       }
 
-      if (action.id === 'position-admin') {
-        router.push('/admin/positions' as Href);
+      if (action.id === "position-admin") {
+        router.push("/admin/positions" as Href);
         return;
       }
 
-      if (action.id === 'user-admin') {
-        router.push('/admin/users' as Href);
+      if (action.id === "user-admin") {
+        router.push("/admin/users" as Href);
         return;
       }
 
-      if (action.id === 'device-management') {
-        router.push('/admin/devices' as Href);
+      if (action.id === "device-management") {
+        router.push("/admin/devices" as Href);
         return;
       }
 
-      if (action.id === 'sparring') {
-        router.push('/tkd' as Href);
+      if (action.id === "sparring") {
+        router.push("/tkd" as Href);
         return;
       }
 
@@ -190,19 +200,13 @@ export default function ActivitiesScreen() {
         activeTab="activities"
         rightActions={
           <>
-            <NotificationHeaderButton color={Colors.light.surface} />
-            <HeaderActionButton
-              icon={<Menu />}
-              label="Mở menu bên"
-              color={Colors.light.surface}
-              onPress={() => setSideDrawerVisible(true)}
-            />
             <HeaderActionButton
               icon={changeListQuickFeatures ? <Check /> : <Star />}
               label="Lựa chọn nhanh"
               color={Colors.light.surface}
               onPress={() => setChangeListQuickFeatures((current) => !current)}
             />
+            <ChatbotHeaderButton />
           </>
         }
       >
@@ -223,7 +227,9 @@ export default function ActivitiesScreen() {
               isEditingQuick={changeListQuickFeatures}
               onAddQuickAction={addQuickAction}
               onActionPress={handleActionPress}
-              style={index === 0 ? styles.catalogSection : styles.utilitySection}
+              style={
+                index === 0 ? styles.catalogSection : styles.utilitySection
+              }
             />
           </View>
         ))}
@@ -234,23 +240,11 @@ export default function ActivitiesScreen() {
         onClose={() => setHistoryModePickerVisible(false)}
         onSelectMode={navigateToHistoryMode}
       />
-      <SideDrawerWindow
-        visible={sideDrawerVisible}
-        title="Menu thử nghiệm"
-        onClose={() => setSideDrawerVisible(false)}
-      >
-        <ThemedText type="body" style={styles.drawerMessage}>
-          SideDrawerWindow đang phủ lên màn Activities.
-        </ThemedText>
-      </SideDrawerWindow>
     </>
   );
 }
 
 const styles = StyleSheet.create({
-  drawerMessage: {
-    color: Colors.light.text,
-  },
   catalogSection: {
     marginTop: Spacing.four,
   },
