@@ -35,10 +35,11 @@ notifications?.setNotificationHandler({
 
 async function ensureAndroidNotificationChannel(): Promise<void> {
   if (Platform.OS !== 'android' || !notifications) return;
+  // Omit `sound` to use Android's default system notification sound.
+  // Passing a string (even 'default') tells expo-notifications to look up a custom raw resource.
   await notifications.setNotificationChannelAsync(ANDROID_NOTIFICATION_CHANNEL, {
     name: 'Thông báo chung',
     importance: notifications.AndroidImportance.HIGH,
-    sound: 'default',
   });
 }
 

@@ -6,7 +6,7 @@ const ANDROID_GOOGLE_SERVICES_FILE = process.env.GOOGLE_SERVICES_JSON;
 export default ({ config }: ConfigContext): ExpoConfig => ({
   ...config,
 
-  name: "Taekwondo Van Quan",
+  name: "Taek Link",
   slug: "taekwondo-mobile",
   version: "1.0.0",
 
@@ -53,12 +53,20 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
 
   plugins: [
     "./plugins/withWindowsCmakePaths",
+    "./plugins/withFirebaseNotificationIcon",
     "expo-router",
     "expo-sqlite",
     "expo-image",
     "expo-screen-orientation",
     "expo-navigation-bar",
-    "expo-notifications",
+    [
+      "expo-notifications",
+      {
+        icon: "./assets/logo/android/notification-icon.png",
+        color: "#D71113",
+        defaultChannel: "general",
+      },
+    ],
     "expo-web-browser",
 
     [
@@ -124,7 +132,6 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     "@react-native-firebase/app",
     "@react-native-firebase/messaging",
     "@react-native-firebase/crashlytics",
-    "./plugins/withFirebaseNotificationIcon",
 
     [
       "expo-build-properties",

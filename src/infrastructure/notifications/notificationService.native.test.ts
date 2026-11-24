@@ -119,7 +119,10 @@ describe('native notification adapter', () => {
 
     expect(mockNotifications.setNotificationChannelAsync).toHaveBeenCalledWith(
       'general',
-      expect.objectContaining({ importance: 4, sound: 'default' }),
+      {
+        name: 'Thông báo chung',
+        importance: 4,
+      },
     );
     expect(mockNotifications.scheduleNotificationAsync).toHaveBeenCalledWith({
       content: expect.objectContaining({

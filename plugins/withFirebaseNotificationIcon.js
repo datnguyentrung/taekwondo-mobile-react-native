@@ -1,56 +1,39 @@
-const { withAndroidManifest, withDangerousMod } = require('@expo/config-plugins');
-const fs = require('fs');
-const path = require('path');
+const { withAndroidManifest } = require('@expo/config-plugins');
 
-const RESOURCE_NAME = 'ic_notification';
+const TOOLS_NAMESPACE = 'http://schemas.android.com/tools';
+const FCM_COLOR_META = 'com.google.firebase.messaging.default_notification_color';
+const FCM_CHANNEL_META =
+  'com.google.firebase.messaging.default_notification_channel_id';
 
+/**
+ * Ensures Firebase Messaging notification meta-data written by `expo-notifications`
+ * includes `tools:replace` so Android Manifest Merger can override the default
+ * `<meta-data>` entries declared in `@react-native-firebase/messaging`'s AndroidManifest.xml.
+ *
+ * Must be listed BEFORE `expo-notifications` in `app.config.ts` so its
+ * `withAndroidManifest` callback executes AFTER `expo-notifications`.
+ */
 function withFirebaseNotificationIcon(config) {
-  config = withDangerousMod(config, [
-    'android',
-    async (config) => {
-      const projectRoot = config.modRequest.projectRoot;
-      const source = path.join(
-        projectRoot,
-        'assets',
-        'images',
-        'android-icon-monochrome.png',
-      );
-      const destination = path.join(
-        config.modRequest.platformProjectRoot,
-        'app',
-        'src',
-        'main',
-        'res',
-        'drawable',
-        `${RESOURCE_NAME}.png`,
-      );
+  return withAndroidManifest(config, (modConfig) => {
+    const manifest = modConfig.modResults.manifest;
+    const application = manifest.application?.[0];
+    if (!application) return modConfig;
 
-      if (!fs.existsSync(source)) {
-        throw new Error(`Android notification icon source not found: ${source}`);
+    manifest.$ = {
+      ...manifest.$,
+      'xmlns:tools': manifest.$?.['xmlns:tools'] ?? TOOLS_NAMESPACE,
+    };
+
+    for (const item of application['meta-data'] ?? []) {
+      const name = item.$?.['android:name'];
+      if (name === FCM_COLOR_META) {
+        item.$['tools:replace'] = 'android:resource';
+      } else if (name === FCM_CHANNEL_META) {
+        item.$['tools:replace'] = 'android:value';
       }
+    }
 
-      fs.mkdirSync(path.dirname(destination), { recursive: true });
-      fs.copyFileSync(source, destination);
-      return config;
-    },
-  ]);
-
-  return withAndroidManifest(config, (config) => {
-    const application = config.modResults.manifest.application?.[0];
-    if (!application) return config;
-
-    application['meta-data'] = application['meta-data'] ?? [];
-    application['meta-data'] = application['meta-data'].filter(
-      (item) => item.$?.['android:name'] !== 'com.google.firebase.messaging.default_notification_icon',
-    );
-    application['meta-data'].push({
-      $: {
-        'android:name': 'com.google.firebase.messaging.default_notification_icon',
-        'android:resource': `@drawable/${RESOURCE_NAME}`,
-      },
-    });
-
-    return config;
+    return modConfig;
   });
 }
 
