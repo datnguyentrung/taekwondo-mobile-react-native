@@ -1,3 +1,4 @@
+import { usePathname, useRouter } from "expo-router";
 import {
   TabList,
   TabSlot,
@@ -6,7 +7,6 @@ import {
   type TabListProps,
   type TabTriggerSlotProps,
 } from "expo-router/ui";
-import { usePathname } from "expo-router";
 import { Platform, Pressable, StyleSheet, View } from "react-native";
 
 import { canAll, usePermissions } from "@/features/authorization";
@@ -15,6 +15,7 @@ import { AppIcon } from "@/shared/ui/AppIcon";
 import { ThemedText } from "@/shared/ui/ThemedText";
 import { Colors, effects, radii, typography } from "@/theme";
 
+import { ChatbotFab } from "./components/ChatbotFab";
 import { VISIBLE_APP_TABS, type AppTabConfig } from "./appTabs.config";
 
 type TabButtonProps = TabTriggerSlotProps & {
@@ -22,6 +23,7 @@ type TabButtonProps = TabTriggerSlotProps & {
 };
 
 export default function AppTabsLayout() {
+  const router = useRouter();
   const permissions = usePermissions();
   const pathname = usePathname();
   const isCheckInScreen =
@@ -44,6 +46,9 @@ export default function AppTabsLayout() {
           ))}
         </CustomTabList>
       </TabList>
+      {!isCheckInScreen ? (
+        <ChatbotFab onPress={() => router.push("/support")} />
+      ) : null}
     </Tabs>
   );
 }

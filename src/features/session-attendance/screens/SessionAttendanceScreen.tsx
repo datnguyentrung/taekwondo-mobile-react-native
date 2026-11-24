@@ -15,6 +15,7 @@ import { DefaultHeaderActions } from "@/routes/navigation/components/DefaultHead
 import { HeaderActionButton } from "@/routes/navigation/components/HeaderActionButton";
 import StackScreenLayout from "@/routes/navigation/layouts/StackScreenLayout";
 import { AppIcon } from "@/shared/ui/AppIcon";
+import { FloatingActionButton } from "@/shared/ui/FloatingActionButton";
 import { ThemedText } from "@/shared/ui/ThemedText";
 import { useToast } from "@/shared/ui/Toast/ToastProvider";
 import { Colors, activeEffect, effects, radii } from "@/theme";
@@ -128,8 +129,9 @@ export function SessionAttendanceScreen({
       scrollEnabled={false}
       floatingContent={
         classSessionId && canCreate ? (
-          <Pressable
-            accessibilityRole="button"
+          <FloatingActionButton
+            icon={<Plus />}
+            label="Bổ sung"
             accessibilityLabel="Bổ sung điểm danh học viên tập thử"
             testID="session-attendance-supplement-button"
             onPress={() =>
@@ -138,16 +140,7 @@ export function SessionAttendanceScreen({
                 params: { classSessionId },
               })
             }
-            style={({ pressed }) => [
-              styles.supplementButton,
-              activeEffect(pressed, "pressedScale"),
-            ]}
-          >
-            <AppIcon icon={<Plus />} size={20} color={Colors.light.surface} />
-            <ThemedText type="bodySmall" style={styles.supplementButtonText}>
-              Bổ sung
-            </ThemedText>
-          </Pressable>
+          />
         ) : null
       }
       rightActions={
@@ -355,23 +348,5 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     paddingVertical: 36,
     gap: 8,
-  },
-  supplementButton: {
-    position: "absolute",
-    right: 20,
-    bottom: 24,
-    minHeight: 48,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 8,
-    paddingHorizontal: 18,
-    borderRadius: radii.pill,
-    backgroundColor: Colors.light.primary,
-    ...effects.floating,
-  },
-  supplementButtonText: {
-    color: Colors.light.surface,
-    fontWeight: "700",
   },
 });

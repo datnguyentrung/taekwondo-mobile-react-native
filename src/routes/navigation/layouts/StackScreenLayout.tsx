@@ -80,7 +80,7 @@ export default function StackScreenLayout({
           <Pressable
             accessibilityRole="button"
             accessibilityLabel="Quay lại"
-            hitSlop={8}
+            hitSlop={10}
             onPress={() =>
               router.canGoBack() ? router.back() : router.push("/")
             }
@@ -104,20 +104,20 @@ export default function StackScreenLayout({
           <View style={styles.actions}>
             {Array.isArray(rightActions)
               ? rightActions.map((action, i) =>
-                  isValidElement(action)
-                    ? action
-                    : (
-                      <HeaderActionButton
-                        key={`${(action as StackHeaderAction).label}-${i}`}
-                        icon={(action as StackHeaderAction).icon}
-                        label={(action as StackHeaderAction).label}
-                        badge={(action as StackHeaderAction).badge}
-                        badgeVariant={(action as StackHeaderAction).badgeVariant}
-                        color={(action as StackHeaderAction).color ?? actionColor}
-                        onPress={(action as StackHeaderAction).onPress}
-                        testID={(action as StackHeaderAction).testID}
-                      />
-                    ),
+                  isValidElement(action) ? (
+                    action
+                  ) : (
+                    <HeaderActionButton
+                      key={`${(action as StackHeaderAction).label}-${i}`}
+                      icon={(action as StackHeaderAction).icon}
+                      label={(action as StackHeaderAction).label}
+                      badge={(action as StackHeaderAction).badge}
+                      badgeVariant={(action as StackHeaderAction).badgeVariant}
+                      color={(action as StackHeaderAction).color ?? actionColor}
+                      onPress={(action as StackHeaderAction).onPress}
+                      testID={(action as StackHeaderAction).testID}
+                    />
+                  ),
                 )
               : (rightActions ?? <DefaultHeaderActions color={actionColor} />)}
           </View>
@@ -166,32 +166,29 @@ const styles = StyleSheet.create({
   darkHeader: { backgroundColor: "#202020" },
   headerContent: {
     height: height * 0.08,
+    flexDirection: "row",
     alignItems: "center",
-    justifyContent: "center",
+    paddingHorizontal: 20,
+    gap: 18,
   },
   backButton: {
-    position: "absolute",
-    left: 20,
-    minWidth: 44,
+    width: 28,
     minHeight: 44,
     alignItems: "flex-start",
     justifyContent: "center",
   },
   titleContainer: {
-    maxWidth: "64%",
-    alignItems: "center",
+    flex: 1,
+    minWidth: 0,
     justifyContent: "center",
-    paddingHorizontal: 8,
   },
   title: {
     color: Colors.light.text,
-    textAlign: "center",
+    textAlign: "left",
     ...typography.heading,
   },
   darkTitle: { color: Colors.light.surface },
   actions: {
-    position: "absolute",
-    right: 19,
     flexDirection: "row",
     alignItems: "center",
     gap: 2,
