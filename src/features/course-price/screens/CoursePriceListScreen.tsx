@@ -165,61 +165,62 @@ export function CoursePriceListScreen({ courseId }: { courseId: string }) {
     <>
       <StackScreenLayout
         title="Danh sách gói học"
-        contentContainerStyle={styles.content}
         refreshing={refreshing}
         onRefresh={onRefresh}
       >
-        <View style={styles.header}>
-          <View style={styles.searchRow}>
-            <View style={styles.searchField}>
-              <AdminSearchField
-                value={searchInput}
-                onChangeText={setSearchInput}
-                placeholder="Tìm số tháng, số buổi, giá..."
-              />
+        <View style={styles.content}>
+          <View style={styles.header}>
+            <View style={styles.searchRow}>
+              <View style={styles.searchField}>
+                <AdminSearchField
+                  value={searchInput}
+                  onChangeText={setSearchInput}
+                  placeholder="Tìm số tháng, số buổi, giá..."
+                />
+              </View>
+              {canCreate ? (
+                <Pressable
+                  testID="add-price-button"
+                  accessibilityRole="button"
+                  accessibilityLabel="Thêm gói học"
+                  onPress={() => setIsCreateOpen(true)}
+                  style={({ pressed }) => [styles.addButton, pressed && styles.pressed]}
+                >
+                  <AppIcon icon={<Plus />} size={24} color={Colors.light.surface} />
+                </Pressable>
+              ) : null}
             </View>
-            {canCreate ? (
-              <Pressable
-                testID="add-price-button"
-                accessibilityRole="button"
-                accessibilityLabel="Thêm gói học"
-                onPress={() => setIsCreateOpen(true)}
-                style={({ pressed }) => [styles.addButton, pressed && styles.pressed]}
-              >
-                <AppIcon icon={<Plus />} size={24} color={Colors.light.surface} />
-              </Pressable>
-            ) : null}
           </View>
-        </View>
 
-        {filteredPrices.length > 0 ? (
-          <View style={styles.list}>
-            {filteredPrices.map((item) => (
-              <CoursePriceCard
-                key={item.id}
-                item={item}
-                onPress={() => setSelected(item)}
-              />
-            ))}
-          </View>
-        ) : (
-          <View style={styles.state}>
-            {pricesQuery.isLoading ? (
-              <ActivityIndicator
-                accessibilityLabel="Đang tải danh sách gói học"
-                color={Colors.light.primary}
-              />
-            ) : pricesQuery.isError ? (
-              <ThemedText type="bodySmall" style={styles.emptyText}>
-                Không thể tải danh sách gói học.
-              </ThemedText>
-            ) : (
-              <ThemedText type="bodySmall" style={styles.emptyText}>
-                {search ? "Không tìm thấy gói học phù hợp." : "Chưa có gói học nào cho khóa học này."}
-              </ThemedText>
-            )}
-          </View>
-        )}
+          {filteredPrices.length > 0 ? (
+            <View style={styles.list}>
+              {filteredPrices.map((item) => (
+                <CoursePriceCard
+                  key={item.id}
+                  item={item}
+                  onPress={() => setSelected(item)}
+                />
+              ))}
+            </View>
+          ) : (
+            <View style={styles.state}>
+              {pricesQuery.isLoading ? (
+                <ActivityIndicator
+                  accessibilityLabel="Đang tải danh sách gói học"
+                  color={Colors.light.primary}
+                />
+              ) : pricesQuery.isError ? (
+                <ThemedText type="bodySmall" style={styles.emptyText}>
+                  Không thể tải danh sách gói học.
+                </ThemedText>
+              ) : (
+                <ThemedText type="bodySmall" style={styles.emptyText}>
+                  {search ? "Không tìm thấy gói học phù hợp." : "Chưa có gói học nào cho khóa học này."}
+                </ThemedText>
+              )}
+            </View>
+          )}
+        </View>
       </StackScreenLayout>
 
       <CoursePriceDetailWindow
@@ -276,8 +277,10 @@ function matchesSearch(item: CoursePriceItemView, search: string) {
 
 const styles = StyleSheet.create({
   content: {
+    paddingHorizontal: 16,
     paddingTop: Spacing.two,
     paddingBottom: Spacing.four,
+    gap: 20,
   },
   header: {
     paddingBottom: Spacing.two,

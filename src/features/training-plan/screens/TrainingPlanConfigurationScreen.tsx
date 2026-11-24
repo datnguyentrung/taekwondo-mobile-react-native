@@ -218,7 +218,7 @@ export function TrainingPlanConfigurationScreen() {
   if (query.isPending) {
     return (
       <StackScreenLayout title="Yêu cầu & Add-on">
-        <View style={styles.loading}>
+        <View style={[styles.content, styles.loading]}>
           <ActivityIndicator color={Colors.light.primary} />
         </View>
       </StackScreenLayout>
@@ -227,82 +227,83 @@ export function TrainingPlanConfigurationScreen() {
   if (!plan) {
     return (
       <StackScreenLayout title="Yêu cầu & Add-on">
-        <AdminEmptyState message="Không tìm thấy gói học" />
+        <View style={styles.content}>
+          <AdminEmptyState message="Không tìm thấy gói học" />
+        </View>
       </StackScreenLayout>
     );
   }
 
   return (
     <>
-      <StackScreenLayout
-        title="Yêu cầu & Add-on"
-        contentContainerStyle={styles.content}
-      >
-        <SegmentedTabs
-          value={mode}
-          tabs={[...configurationTabs]}
-          onChange={setMode}
-        />
-        <View style={styles.searchRow}>
-          <View style={styles.grow}>
-            <FormField
-              value={search}
-              onChangeText={setSearch}
-              placeholder={
-                mode === "requirements" ? "Tìm loại yêu cầu" : "Tìm tên add-on"
-              }
-              returnKeyType="search"
-              accessibilityLabel={
-                mode === "requirements" ? "Tìm kiếm yêu cầu" : "Tìm kiếm add-on"
-              }
-            />
+      <StackScreenLayout title="Yêu cầu & Add-on">
+        <View style={styles.content}>
+          <SegmentedTabs
+            value={mode}
+            tabs={[...configurationTabs]}
+            onChange={setMode}
+          />
+          <View style={styles.searchRow}>
+            <View style={styles.grow}>
+              <FormField
+                value={search}
+                onChangeText={setSearch}
+                placeholder={
+                  mode === "requirements" ? "Tìm loại yêu cầu" : "Tìm tên add-on"
+                }
+                returnKeyType="search"
+                accessibilityLabel={
+                  mode === "requirements" ? "Tìm kiếm yêu cầu" : "Tìm kiếm add-on"
+                }
+              />
+            </View>
+            {canCreate ? (
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel={createLabel}
+                hitSlop={8}
+                onPress={() => setSheet(mode)}
+                style={({ pressed }) => [
+                  styles.addButton,
+                  pressed && styles.addPressed,
+                ]}
+              >
+                <AppIcon icon={<Plus />} size={22} color={Colors.light.surface} />
+              </Pressable>
+            ) : null}
           </View>
-          {canCreate ? (
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel={createLabel}
-              hitSlop={8}
-              onPress={() => setSheet(mode)}
-              style={({ pressed }) => [
-                styles.addButton,
-                pressed && styles.addPressed,
-              ]}
-            >
-              <AppIcon icon={<Plus />} size={22} color={Colors.light.surface} />
-            </Pressable>
-          ) : null}
-        </View>
-        {mode === "requirements" ? (
-          requirements.length === 0 ? (
-            <AdminEmptyState message="Không tìm thấy yêu cầu phù hợp" />
+          {mode === "requirements" ? (
+            requirements.length === 0 ? (
+              <AdminEmptyState message="Không tìm thấy yêu cầu phù hợp" />
+            ) : (
+              requirements.map((item) => (
+                <AdminListRow
+                  key={item.trainingPlanRequirementId}
+                  title={label(item.sessionType)}
+                  subtitle={`${item.sessionsPerWeek} buổi/tuần`}
+                  onPress={() => setSelection({ kind: "requirement", item })}
+                />
+              ))
+            )
+          ) : addons.length === 0 ? (
+            <AdminEmptyState message="Không tìm thấy add-on phù hợp" />
           ) : (
-            requirements.map((item) => (
+            addons.map((item) => (
               <AdminListRow
-                key={item.trainingPlanRequirementId}
-                title={label(item.sessionType)}
-                subtitle={`${item.sessionsPerWeek} buổi/tuần`}
-                onPress={() => setSelection({ kind: "requirement", item })}
+                key={item.trainingPlanAddonId}
+                title={item.name}
+                subtitle={`+${item.extraSessionsPerWeek} buổi/tuần · ${formatMoney(item.price)}`}
+                meta={
+                  <AdminChip
+                    label={item.status === "ACTIVE" ? "Đang bán" : "Tạm dừng"}
+                    tone={item.status === "ACTIVE" ? "success" : "danger"}
+                  />
+                }
+                onPress={() => setSelection({ kind: "addon", item })}
               />
             ))
-          )
-        ) : addons.length === 0 ? (
-          <AdminEmptyState message="Không tìm thấy add-on phù hợp" />
-        ) : (
-          addons.map((item) => (
-            <AdminListRow
-              key={item.trainingPlanAddonId}
-              title={item.name}
-              subtitle={`+${item.extraSessionsPerWeek} buổi/tuần · ${formatMoney(item.price)}`}
-              meta={
-                <AdminChip
-                  label={item.status === "ACTIVE" ? "Đang bán" : "Tạm dừng"}
-                  tone={item.status === "ACTIVE" ? "success" : "danger"}
-                />
-              }
-              onPress={() => setSelection({ kind: "addon", item })}
-            />
-          ))
-        )}
+          )}
+        </View>
       </StackScreenLayout>
       <TrainingPlanConfigurationDetailSheet
         selection={selection}
@@ -469,7 +470,12 @@ function formatMoney(value: number) {
 }
 
 const styles = StyleSheet.create({
-  content: { paddingBottom: 128 },
+  content: {
+    paddingHorizontal: 16,
+    paddingTop: 16,
+    paddingBottom: 128,
+    gap: 20,
+  },
   loading: { alignItems: "center", paddingVertical: 48 },
   searchRow: { flexDirection: "row", alignItems: "flex-end", gap: 12 },
   grow: { flex: 1 },

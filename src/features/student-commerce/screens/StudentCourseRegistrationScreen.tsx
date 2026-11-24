@@ -122,76 +122,75 @@ function LegacyCourseRegistrationScreen({
 
   return (
     <>
-      <StackScreenLayout
-        title="Đăng ký khóa học"
-        contentContainerStyle={styles.content}
-      >
-        <Section title="Học viên">
-          <StudentSelectCard
-            student={selectedStudent}
-            onPress={() => setStudentSheetVisible(true)}
+      <StackScreenLayout title="Đăng ký khóa học">
+        <View style={styles.content}>
+          <Section title="Học viên">
+            <StudentSelectCard
+              student={selectedStudent}
+              onPress={() => setStudentSheetVisible(true)}
+            />
+          </Section>
+
+          {selectedStudent ? <WalletBalanceCard amount={balance} /> : null}
+
+          <RegistrationNotice activeCourseCount={2} />
+
+          <Section title="Khóa học">
+            <CourseSelectCard
+              course={selectedCourse}
+              onPress={() => setCourseSheetVisible(true)}
+            />
+          </Section>
+
+          <Section title="Chọn gói học">
+            <PackageGrid
+              packages={packageOptions}
+              selectedPackageId={selectedPackage?.id}
+              loading={pricesQuery.isLoading && packageOptions.length === 0}
+              disabled={!selectedCourse}
+              onSelect={setSelectedPackage}
+            />
+          </Section>
+
+          <Section title="Chọn lịch học">
+            <ScheduleSelection
+              schedules={selectedCourse?.schedules ?? []}
+              selectedIds={selectedScheduleIds}
+              disabled={!selectedCourse}
+              onChange={setSelectedScheduleIds}
+            />
+          </Section>
+
+          <PurchaseSummary
+            balance={balance}
+            price={selectedPrice}
+            balanceAfter={balance - selectedPrice}
           />
-        </Section>
 
-        {selectedStudent ? <WalletBalanceCard amount={balance} /> : null}
+          {purchaseMutation.isError ? (
+            <ThemedText type="bodySmall" style={styles.errorText}>
+              Không thể xác nhận đăng ký. Vui lòng thử lại.
+            </ThemedText>
+          ) : null}
 
-        <RegistrationNotice activeCourseCount={2} />
-
-        <Section title="Khóa học">
-          <CourseSelectCard
-            course={selectedCourse}
-            onPress={() => setCourseSheetVisible(true)}
+          <PrimaryActionButton
+            title="Xác nhận đăng ký"
+            disabled={!canConfirm}
+            loading={purchaseMutation.isPending}
+            onPress={() => {
+              if (!selectedStudent || !selectedPackage) return;
+              purchaseMutation.mutate({
+                studentPersonId: selectedStudent.personId,
+                coursePriceId: selectedPackage.id,
+                courseScheduleIds: selectedScheduleIds,
+                externalReference: `MOBILE-${Date.now()}`,
+                note: selectedCourse
+                  ? `Đăng ký ${selectedCourse.courseName}`
+                  : undefined,
+              });
+            }}
           />
-        </Section>
-
-        <Section title="Chọn gói học">
-          <PackageGrid
-            packages={packageOptions}
-            selectedPackageId={selectedPackage?.id}
-            loading={pricesQuery.isLoading && packageOptions.length === 0}
-            disabled={!selectedCourse}
-            onSelect={setSelectedPackage}
-          />
-        </Section>
-
-        <Section title="Chọn lịch học">
-          <ScheduleSelection
-            schedules={selectedCourse?.schedules ?? []}
-            selectedIds={selectedScheduleIds}
-            disabled={!selectedCourse}
-            onChange={setSelectedScheduleIds}
-          />
-        </Section>
-
-        <PurchaseSummary
-          balance={balance}
-          price={selectedPrice}
-          balanceAfter={balance - selectedPrice}
-        />
-
-        {purchaseMutation.isError ? (
-          <ThemedText type="bodySmall" style={styles.errorText}>
-            Không thể xác nhận đăng ký. Vui lòng thử lại.
-          </ThemedText>
-        ) : null}
-
-        <PrimaryActionButton
-          title="Xác nhận đăng ký"
-          disabled={!canConfirm}
-          loading={purchaseMutation.isPending}
-          onPress={() => {
-            if (!selectedStudent || !selectedPackage) return;
-            purchaseMutation.mutate({
-              studentPersonId: selectedStudent.personId,
-              coursePriceId: selectedPackage.id,
-              courseScheduleIds: selectedScheduleIds,
-              externalReference: `MOBILE-${Date.now()}`,
-              note: selectedCourse
-                ? `Đăng ký ${selectedCourse.courseName}`
-                : undefined,
-            });
-          }}
-        />
+        </View>
       </StackScreenLayout>
 
       <RegistrationSearchSheet

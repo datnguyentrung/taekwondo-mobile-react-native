@@ -414,7 +414,7 @@ export function StudentCoursesScreen({
 }
 
 const styles = StyleSheet.create({
-  list: { paddingTop: 16, paddingBottom: 32, gap: 20 },
+  list: { paddingHorizontal: 16, paddingTop: 16, paddingBottom: 32, gap: 20 },
   gap: { height: 12 },
   blackText: { color: Colors.light.text },
   secondaryText: { color: Colors.light.textSecondary },

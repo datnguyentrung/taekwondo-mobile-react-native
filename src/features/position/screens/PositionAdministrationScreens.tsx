@@ -60,31 +60,33 @@ export function PositionListScreen() {
   const [status, setStatus] = useState<'all' | 'active' | 'inactive'>('all');
   const visible = (positions.data?.content ?? []).filter((item) => containsSearch(search, item.name, item.code) && (status === 'all' || item.active === (status === 'active')));
   return (
-    <StackScreenLayout title="Chức vụ" contentContainerStyle={adminStyles.listScreen}>
-      <AdminIntro>Quản lý chức vụ và tra cứu nhân sự theo vị trí công việc.</AdminIntro>
-      <AdminSearchField value={search} onChangeText={setSearch} placeholder="Tìm tên hoặc mã chức vụ" />
-      <View style={adminStyles.chips}>
-        <AdminChip label="Tất cả" selected={status === 'all'} onPress={() => setStatus('all')} />
-        <AdminChip label="Hoạt động" selected={status === 'active'} onPress={() => setStatus('active')} />
-        <AdminChip label="Ngừng dùng" selected={status === 'inactive'} onPress={() => setStatus('inactive')} />
-      </View>
-      <AdminSectionHeader title={`${visible.length} chức vụ`} actionLabel="Tạo chức vụ" onAction={() => navigate(router, '/admin/positions/create')} />
-      {positions.isPending ? <AdminLoadingState /> : visible.length === 0 ? <AdminEmptyState message="Không tìm thấy chức vụ phù hợp" /> : (
-        <View style={styles.list}>
-          {visible.map((item) => {
-            const countLabel = item.personCount !== undefined ? ` · ${item.personCount} nhân sự` : '';
-            return (
-              <AdminListRow
-                key={item.positionId}
-                title={item.name}
-                subtitle={`${item.code}${countLabel}`}
-                meta={<AdminChip label={item.active ? 'Hoạt động' : 'Ngừng dùng'} tone={item.active ? 'success' : 'neutral'} />}
-                onPress={() => navigate(router, `/admin/positions/${item.positionId}`)}
-              />
-            );
-          })}
+    <StackScreenLayout title="Chức vụ">
+      <View style={adminStyles.listScreen}>
+        <AdminIntro>Quản lý chức vụ và tra cứu nhân sự theo vị trí công việc.</AdminIntro>
+        <AdminSearchField value={search} onChangeText={setSearch} placeholder="Tìm tên hoặc mã chức vụ" />
+        <View style={adminStyles.chips}>
+          <AdminChip label="Tất cả" selected={status === 'all'} onPress={() => setStatus('all')} />
+          <AdminChip label="Hoạt động" selected={status === 'active'} onPress={() => setStatus('active')} />
+          <AdminChip label="Ngừng dùng" selected={status === 'inactive'} onPress={() => setStatus('inactive')} />
         </View>
-      )}
+        <AdminSectionHeader title={`${visible.length} chức vụ`} actionLabel="Tạo chức vụ" onAction={() => navigate(router, '/admin/positions/create')} />
+        {positions.isPending ? <AdminLoadingState /> : visible.length === 0 ? <AdminEmptyState message="Không tìm thấy chức vụ phù hợp" /> : (
+          <View style={styles.list}>
+            {visible.map((item) => {
+              const countLabel = item.personCount !== undefined ? ` · ${item.personCount} nhân sự` : '';
+              return (
+                <AdminListRow
+                  key={item.positionId}
+                  title={item.name}
+                  subtitle={`${item.code}${countLabel}`}
+                  meta={<AdminChip label={item.active ? 'Hoạt động' : 'Ngừng dùng'} tone={item.active ? 'success' : 'neutral'} />}
+                  onPress={() => navigate(router, `/admin/positions/${item.positionId}`)}
+                />
+              );
+            })}
+          </View>
+        )}
+      </View>
     </StackScreenLayout>
   );
 }
@@ -122,21 +124,22 @@ export function PositionDetailScreen() {
     <>
       <StackScreenLayout
         title="Chi tiết chức vụ"
-        contentContainerStyle={[adminStyles.screen, { paddingBottom: 128 }]}
         floatingContent={position.data ? <FloatingActionBar actions={[
           { label: 'Chỉnh sửa', accessibilityLabel: 'Chỉnh sửa chức vụ', variant: 'outline', onPress: () => navigate(router, `/admin/positions/${positionId}/edit`) },
           { label: 'Xem nhân sự', accessibilityLabel: 'Xem nhân sự theo chức vụ', variant: 'primary', flex: 1.3, onPress: () => navigate(router, `/admin/positions/${positionId}/staff`) },
           ...(canDelete ? [{ key: 'delete', label: '', accessibilityLabel: 'Xóa chức vụ', variant: 'ghost' as const, disabled: deleting, flex: 0, onPress: () => setConfirming(true), style: { width: 44, minWidth: 44, paddingHorizontal: 0, backgroundColor: 'transparent', borderWidth: 0 }, icon: <AppIcon icon={<Trash6 />} size={30} color={deleting ? Colors.light.textSecondary : Colors.light.error} /> }] : []),
         ]} /> : undefined}
       >
-        {position.isPending ? <AdminLoadingState /> : !position.data ? <AdminEmptyState message="Không tìm thấy chức vụ" /> : <>
-        <AdminCard style={adminStyles.gap}>
-          <View style={styles.titleRow}><View style={adminStyles.grow}><ThemedText type="heading">{position.data.name}</ThemedText><ThemedText type="code" style={styles.code}>{position.data.code}</ThemedText></View><AdminChip label={position.data.active ? 'Hoạt động' : 'Ngừng dùng'} tone={position.data.active ? 'success' : 'neutral'} /></View>
-          <ThemedText type="bodySmall" style={adminStyles.muted}>{position.data.description || 'Chưa có mô tả'}</ThemedText>
-        </AdminCard>
-        <AdminCard><AdminListRow title={`${position.data.personCount ?? 0} nhân sự`} subtitle="Đang giữ chức vụ này" onPress={() => navigate(router, `/admin/positions/${positionId}/staff`)} /></AdminCard>
-        <AdminCard style={adminStyles.gap}><View style={adminStyles.labelValue}><ThemedText type="featureLabel">Ngày tạo</ThemedText><ThemedText type="bodySmall" style={adminStyles.muted}>{formatDateTime(position.data.createdAt)}</ThemedText></View><View style={adminStyles.labelValue}><ThemedText type="featureLabel">Cập nhật gần nhất</ThemedText><ThemedText type="bodySmall" style={adminStyles.muted}>{formatDateTime(position.data.updatedAt)}</ThemedText></View></AdminCard>
-      </>}
+        <View style={[adminStyles.screen, styles.detailContent]}>
+          {position.isPending ? <AdminLoadingState /> : !position.data ? <AdminEmptyState message="Không tìm thấy chức vụ" /> : <>
+          <AdminCard style={adminStyles.gap}>
+            <View style={styles.titleRow}><View style={adminStyles.grow}><ThemedText type="heading">{position.data.name}</ThemedText><ThemedText type="code" style={styles.code}>{position.data.code}</ThemedText></View><AdminChip label={position.data.active ? 'Hoạt động' : 'Ngừng dùng'} tone={position.data.active ? 'success' : 'neutral'} /></View>
+            <ThemedText type="bodySmall" style={adminStyles.muted}>{position.data.description || 'Chưa có mô tả'}</ThemedText>
+          </AdminCard>
+          <AdminCard><AdminListRow title={`${position.data.personCount ?? 0} nhân sự`} subtitle="Đang giữ chức vụ này" onPress={() => navigate(router, `/admin/positions/${positionId}/staff`)} /></AdminCard>
+          <AdminCard style={adminStyles.gap}><View style={adminStyles.labelValue}><ThemedText type="featureLabel">Ngày tạo</ThemedText><ThemedText type="bodySmall" style={adminStyles.muted}>{formatDateTime(position.data.createdAt)}</ThemedText></View><View style={adminStyles.labelValue}><ThemedText type="featureLabel">Cập nhật gần nhất</ThemedText><ThemedText type="bodySmall" style={adminStyles.muted}>{formatDateTime(position.data.updatedAt)}</ThemedText></View></AdminCard>
+        </>}
+        </View>
       </StackScreenLayout>
       <ConfirmationDialog visible={confirming} title="Xóa chức vụ" description={`Chức vụ “${position.data?.name ?? ''}” sẽ bị xóa vĩnh viễn. Hãy bảo đảm không còn nhân sự được gán.`} confirmLabel="Xóa" confirmVariant="danger" onCancel={() => setConfirming(false)} onConfirm={handleDelete} />
       <CancellableLoadingOverlay visible={deleting} message="Đang xóa chức vụ..." cancelLabel="Hủy" onCancel={() => deleteController.current?.abort()} />
@@ -189,13 +192,15 @@ export function PositionStaffScreen() {
 
   return (
     <>
-      <StackScreenLayout title="Nhân sự theo chức vụ" contentContainerStyle={adminStyles.screen}>
-        <AdminCard><ThemedText type="title">{position.data?.name ?? 'Chức vụ'}</ThemedText><ThemedText type="bodySmall" style={adminStyles.muted}>{staffCount} nhân sự</ThemedText></AdminCard>
-        <View style={styles.searchRow}>
-          <View style={adminStyles.grow}><AdminSearchField value={search} onChangeText={setSearch} placeholder="Tìm tên hoặc mã nhân sự" /></View>
-          {canAssign ? <Pressable accessibilityRole="button" accessibilityLabel="Thêm nhân sự" onPress={() => setPickerVisible(true)} style={({ pressed }) => [styles.addButton, pressed && styles.pressed]}><AppIcon icon={<Plus />} size={22} color={Colors.light.surface} /></Pressable> : null}
+      <StackScreenLayout title="Nhân sự theo chức vụ">
+        <View style={[adminStyles.screen, styles.screenContent]}>
+          <AdminCard><ThemedText type="title">{position.data?.name ?? 'Chức vụ'}</ThemedText><ThemedText type="bodySmall" style={adminStyles.muted}>{staffCount} nhân sự</ThemedText></AdminCard>
+          <View style={styles.searchRow}>
+            <View style={adminStyles.grow}><AdminSearchField value={search} onChangeText={setSearch} placeholder="Tìm tên hoặc mã nhân sự" /></View>
+            {canAssign ? <Pressable accessibilityRole="button" accessibilityLabel="Thêm nhân sự" onPress={() => setPickerVisible(true)} style={({ pressed }) => [styles.addButton, pressed && styles.pressed]}><AppIcon icon={<Plus />} size={22} color={Colors.light.surface} /></Pressable> : null}
+          </View>
+          {people.isPending ? <AdminLoadingState /> : visible.length === 0 ? <AdminEmptyState message="Chưa có nhân sự ở chức vụ này" /> : <View style={styles.list}>{visible.map((person) => <AdminListRow key={person.personId} leading={<Avatar name={person.fullName} />} title={person.fullName} subtitle={person.personCode} meta={<AdminChip label={person.status === 'ACTIVE' ? 'Hoạt động' : 'Ngừng hoạt động'} tone={person.status === 'ACTIVE' ? 'success' : 'neutral'} />} />)}</View>}
         </View>
-        {people.isPending ? <AdminLoadingState /> : visible.length === 0 ? <AdminEmptyState message="Chưa có nhân sự ở chức vụ này" /> : <View style={styles.list}>{visible.map((person) => <AdminListRow key={person.personId} leading={<Avatar name={person.fullName} />} title={person.fullName} subtitle={person.personCode} meta={<AdminChip label={person.status === 'ACTIVE' ? 'Hoạt động' : 'Ngừng hoạt động'} tone={person.status === 'ACTIVE' ? 'success' : 'neutral'} />} />)}</View>}
       </StackScreenLayout>
       <BottomSheetWindow
         visible={pickerVisible}
@@ -245,16 +250,18 @@ function PositionFormScreen({ mode }: { mode: 'create' | 'edit' }) {
   };
   const valid = code.trim().length > 1 && name.trim().length > 1;
   return (
-    <StackScreenLayout title={mode === 'create' ? 'Tạo chức vụ' : 'Sửa chức vụ'} contentContainerStyle={adminStyles.screen}>
-      <AdminField label="Mã chức vụ" value={code} onChangeText={setCode} placeholder="Ví dụ: HEAD_COACH" />
-      <AdminField label="Tên chức vụ" value={name} onChangeText={setName} placeholder="Nhập tên hiển thị" />
-      <AdminField label="Mô tả" value={description} onChangeText={setDescription} multiline placeholder="Mô tả trách nhiệm chính" />
-      <AdminSwitchField label="Đang hoạt động" description="Cho phép gán chức vụ này cho nhân sự." value={active} onValueChange={setActive} />
-      {mode === 'edit' ? <AdminInfoBanner>Việc ngừng dùng chức vụ không tự động gỡ chức vụ khỏi nhân sự hiện tại.</AdminInfoBanner> : null}
-      <AdminButton label={mode === 'create' ? 'Tạo chức vụ' : 'Lưu thay đổi'} disabled={!valid} onPress={() => setConfirming(true)} />
-      {mode === 'edit' ? <AdminButton label="Xóa chức vụ" variant="text" onPress={() => setConfirmDelete(true)} /> : <AdminButton label="Hủy" variant="secondary" onPress={() => router.back()} />}
-      <AdminConfirmDialog confirming={confirming} title={mode === 'create' ? 'Tạo chức vụ mới?' : 'Lưu thay đổi?'} message={`Thông tin “${name || 'chức vụ'}” sẽ được ${mode === 'create' ? 'tạo mới' : 'cập nhật'}.`} confirmLabel={mode === 'create' ? 'Tạo mới' : 'Lưu'} loading={savePending} onCancel={() => setConfirming(false)} onConfirm={save} />
-      <AdminConfirmDialog confirming={confirmDelete} title="Xóa chức vụ?" message="Chức vụ sẽ bị xóa vĩnh viễn và không thể hoàn tác." confirmLabel="Xóa" destructive loading={remove.isPending} onCancel={() => setConfirmDelete(false)} onConfirm={() => remove.mutate(positionId as string)} />
+    <StackScreenLayout title={mode === 'create' ? 'Tạo chức vụ' : 'Sửa chức vụ'}>
+      <View style={[adminStyles.screen, styles.screenContent]}>
+        <AdminField label="Mã chức vụ" value={code} onChangeText={setCode} placeholder="Ví dụ: HEAD_COACH" />
+        <AdminField label="Tên chức vụ" value={name} onChangeText={setName} placeholder="Nhập tên hiển thị" />
+        <AdminField label="Mô tả" value={description} onChangeText={setDescription} multiline placeholder="Mô tả trách nhiệm chính" />
+        <AdminSwitchField label="Đang hoạt động" description="Cho phép gán chức vụ này cho nhân sự." value={active} onValueChange={setActive} />
+        {mode === 'edit' ? <AdminInfoBanner>Việc ngừng dùng chức vụ không tự động gỡ chức vụ khỏi nhân sự hiện tại.</AdminInfoBanner> : null}
+        <AdminButton label={mode === 'create' ? 'Tạo chức vụ' : 'Lưu thay đổi'} disabled={!valid} onPress={() => setConfirming(true)} />
+        {mode === 'edit' ? <AdminButton label="Xóa chức vụ" variant="text" onPress={() => setConfirmDelete(true)} /> : <AdminButton label="Hủy" variant="secondary" onPress={() => router.back()} />}
+        <AdminConfirmDialog confirming={confirming} title={mode === 'create' ? 'Tạo chức vụ mới?' : 'Lưu thay đổi?'} message={`Thông tin “${name || 'chức vụ'}” sẽ được ${mode === 'create' ? 'tạo mới' : 'cập nhật'}.`} confirmLabel={mode === 'create' ? 'Tạo mới' : 'Lưu'} loading={savePending} onCancel={() => setConfirming(false)} onConfirm={save} />
+        <AdminConfirmDialog confirming={confirmDelete} title="Xóa chức vụ?" message="Chức vụ sẽ bị xóa vĩnh viễn và không thể hoàn tác." confirmLabel="Xóa" destructive loading={remove.isPending} onCancel={() => setConfirmDelete(false)} onConfirm={() => remove.mutate(positionId as string)} />
+      </View>
     </StackScreenLayout>
   );
 }
@@ -263,6 +270,8 @@ export function PositionCreateScreen() { return <PositionFormScreen mode="create
 export function PositionEditScreen() { return <PositionFormScreen mode="edit" />; }
 
 const styles = StyleSheet.create({
+  screenContent: { paddingHorizontal: 16 },
+  detailContent: { paddingHorizontal: 16, paddingBottom: 128 },
   list: { overflow: 'hidden', borderRadius: radii.md },
   searchRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   addButton: { width: 48, height: 48, borderRadius: radii.md, alignItems: 'center', justifyContent: 'center', backgroundColor: Colors.light.primary },

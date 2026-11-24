@@ -51,54 +51,60 @@ export default function PracticeLobby() {
       headerVariant="dark"
       scrollEnabled={false}
       refreshEnabled={false}
-      contentContainerStyle={styles.content}
     >
-      <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-        keyboardVerticalOffset={12}
-        style={styles.keyboardArea}
-      >
-        <TouchableWithoutFeedback accessible={false} onPress={Keyboard.dismiss}>
-          <View style={styles.card}>
-            <ThemedText type="subtitle">MÃ PHÒNG</ThemedText>
-            <TextInput
-              accessibilityLabel="Mã phòng luyện tập"
-              value={code}
-              onChangeText={changeCode}
-              onSubmitEditing={() => { if (canJoin) void join(); }}
-              keyboardType="number-pad"
-              returnKeyType="done"
-              maxLength={4}
-              autoFocus
-              style={styles.input}
-              placeholder="0000"
-              placeholderTextColor={Colors.light.textSecondary}
-            />
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel="Vào làm giám định"
-              accessibilityState={{ disabled: !canJoin }}
-              disabled={!canJoin}
-              onPress={() => void join()}
-              style={({ pressed }) => [
-                styles.button,
-                !canJoin && styles.buttonDisabled,
-                pressed && canJoin && styles.buttonPressed,
-              ]}
-            >
-              <ThemedText style={styles.buttonText}>
-                {joining ? 'ĐANG VÀO…' : 'VÀO LÀM GIÁM ĐỊNH'}
-              </ThemedText>
-            </Pressable>
-          </View>
-        </TouchableWithoutFeedback>
-      </KeyboardAvoidingView>
+      <View style={styles.content}>
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+          keyboardVerticalOffset={12}
+          style={styles.keyboardArea}
+        >
+          <TouchableWithoutFeedback accessible={false} onPress={Keyboard.dismiss}>
+            <View style={styles.card}>
+              <ThemedText type="subtitle">MÃ PHÒNG</ThemedText>
+              <TextInput
+                accessibilityLabel="Mã phòng luyện tập"
+                value={code}
+                onChangeText={changeCode}
+                onSubmitEditing={() => { if (canJoin) void join(); }}
+                keyboardType="number-pad"
+                returnKeyType="done"
+                maxLength={4}
+                autoFocus
+                style={styles.input}
+                placeholder="0000"
+                placeholderTextColor={Colors.light.textSecondary}
+              />
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel="Vào làm giám định"
+                accessibilityState={{ disabled: !canJoin }}
+                disabled={!canJoin}
+                onPress={() => void join()}
+                style={({ pressed }) => [
+                  styles.button,
+                  !canJoin && styles.buttonDisabled,
+                  pressed && canJoin && styles.buttonPressed,
+                ]}
+              >
+                <ThemedText style={styles.buttonText}>
+                  {joining ? 'ĐANG VÀO…' : 'VÀO LÀM GIÁM ĐỊNH'}
+                </ThemedText>
+              </Pressable>
+            </View>
+          </TouchableWithoutFeedback>
+        </KeyboardAvoidingView>
+      </View>
     </StackScreenLayout>
   );
 }
 
 const styles = StyleSheet.create({
-  content: { flex: 1, padding: 20 },
+  content: {
+    flex: 1,
+    paddingHorizontal: 20,
+    paddingVertical: 20,
+    gap: 20,
+  },
   keyboardArea: { flex: 1 },
   card: { flex: 1, justifyContent: 'center', gap: 20 },
   input: {

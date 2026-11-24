@@ -302,7 +302,6 @@ export default function AttendanceHistoryScreen({
             <DefaultHeaderActions />
           </>
         }
-        contentContainerStyle={styles.content}
         floatingContent={
           historyActive && mode === "student" ? (
             <TrainingScoreFloatingButton
@@ -407,7 +406,7 @@ export default function AttendanceHistoryScreen({
             }
           />
         ) : (
-          <>
+          <View style={styles.content}>
             {activeCourseId ? (
               <ActiveCourseScopeBanner
                 courseName={activeCourseName}
@@ -501,7 +500,7 @@ export default function AttendanceHistoryScreen({
                 </View>
               )
             ) : null}
-          </>
+          </View>
         )}
       </StackScreenLayout>
 
@@ -577,13 +576,15 @@ export default function AttendanceHistoryScreen({
 
 const styles = StyleSheet.create({
   content: {
-    // paddingTop: 24,
-    // marginHorizontal: 20,
-    // paddingBottom: 34,
+    paddingHorizontal: 16,
+    paddingTop: 24,
+    paddingBottom: 96,
+    gap: 20,
   },
   sectionListContent: {
-    paddingBottom: 36,
+    paddingHorizontal: 16,
     paddingTop: 24,
+    paddingBottom: 96,
   },
   formContainer: {
     marginBottom: 16,

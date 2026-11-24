@@ -1,6 +1,6 @@
 import { Bell } from "reicon-react-native";
 import { useEffect } from "react";
-import { StyleSheet } from "react-native";
+import { StyleSheet, View } from "react-native";
 import { useLocalSearchParams, useRouter, type Href } from "expo-router";
 
 import { HomeHeaderButton } from "@/routes/navigation/components/HomeHeaderButton";
@@ -44,21 +44,22 @@ export default function NotificationDetailScreen() {
     <StackScreenLayout
       title="Chi tiết thông báo"
       rightActions={<HomeHeaderButton color={Colors.light.text} />}
-      contentContainerStyle={styles.content}
     >
-      {detailQuery.isLoading || detailQuery.isPending ? (
-        <NotificationSkeletonList />
-      ) : detailQuery.isError || !detail ? (
-        <NotificationStateView
-          icon={<Bell />}
-          title="Không tìm thấy thông báo"
-          description="Thông báo có thể đã bị xóa hoặc bạn không còn quyền xem."
-          actionLabel="Thử lại"
-          onActionPress={() => void detailQuery.refetch()}
-        />
-      ) : (
-        <NotificationDetailInfoPanel detail={detail} onBackToList={backToList} />
-      )}
+      <View style={styles.content}>
+        {detailQuery.isLoading || detailQuery.isPending ? (
+          <NotificationSkeletonList />
+        ) : detailQuery.isError || !detail ? (
+          <NotificationStateView
+            icon={<Bell />}
+            title="Không tìm thấy thông báo"
+            description="Thông báo có thể đã bị xóa hoặc bạn không còn quyền xem."
+            actionLabel="Thử lại"
+            onActionPress={() => void detailQuery.refetch()}
+          />
+        ) : (
+          <NotificationDetailInfoPanel detail={detail} onBackToList={backToList} />
+        )}
+      </View>
     </StackScreenLayout>
   );
 }
@@ -66,6 +67,8 @@ export default function NotificationDetailScreen() {
 const styles = StyleSheet.create({
   content: {
     gap: 14,
+    paddingHorizontal: 16,
     paddingTop: 20,
+    paddingBottom: 16,
   },
 });

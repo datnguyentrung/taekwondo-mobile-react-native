@@ -115,69 +115,70 @@ export function TrainingPlanManagementScreen() {
     <>
       <StackScreenLayout
         title="Gói học"
-        contentContainerStyle={styles.content}
         onRefresh={async () => {
           await plans.refetch();
         }}
         refreshing={plans.isRefetching}
       >
-        <SegmentedControl<PlanFilter>
-          value={tab}
-          onChange={setTab}
-          options={[
-            { value: "ALL", label: "Tất cả" },
-            { value: "ACTIVE", label: "Đang bán" },
-            { value: "INACTIVE", label: "Tạm dừng" },
-          ]}
-        />
-        <View style={styles.searchRow}>
-          <View style={styles.grow}>
-            <AdminSearchField
-              value={search}
-              onChangeText={setSearch}
-              placeholder="Tìm theo tên gói học, cấp độ..."
-            />
+        <View style={styles.content}>
+          <SegmentedControl<PlanFilter>
+            value={tab}
+            onChange={setTab}
+            options={[
+              { value: "ALL", label: "Tất cả" },
+              { value: "ACTIVE", label: "Đang bán" },
+              { value: "INACTIVE", label: "Tạm dừng" },
+            ]}
+          />
+          <View style={styles.searchRow}>
+            <View style={styles.grow}>
+              <AdminSearchField
+                value={search}
+                onChangeText={setSearch}
+                placeholder="Tìm theo tên gói học, cấp độ..."
+              />
+            </View>
+            {canCreate ? (
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel="Tạo gói học"
+                hitSlop={8}
+                pressRetentionOffset={12}
+                onPress={() => setIsCreateOpen(true)}
+                style={({ pressed }) => [
+                  styles.add,
+                  pressed && styles.addPressed,
+                ]}
+              >
+                <AppIcon icon={<Plus />} size={30} color={Colors.light.surface} />
+              </Pressable>
+            ) : null}
           </View>
-          {canCreate ? (
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel="Tạo gói học"
-              hitSlop={8}
-              pressRetentionOffset={12}
-              onPress={() => setIsCreateOpen(true)}
-              style={({ pressed }) => [
-                styles.add,
-                pressed && styles.addPressed,
-              ]}
-            >
-              <AppIcon icon={<Plus />} size={30} color={Colors.light.surface} />
-            </Pressable>
+          {plans.isPending ? (
+            <View style={styles.state}>
+              <ActivityIndicator color={Colors.light.primary} />
+            </View>
+          ) : (
+            groups.map((group) => (
+              <PlanGroupCard
+                key={group.key}
+                group={group}
+                expanded={!collapsedGroups.has(group.key)}
+                onToggle={() => toggleGroup(group.key)}
+                onPress={(plan) =>
+                  router.push(
+                    `/admin/training-plans/${plan.trainingPlanId}` as never,
+                  )
+                }
+              />
+            ))
+          )}
+          {!plans.isPending && groups.length === 0 ? (
+            <ThemedText type="bodySmall" style={styles.empty}>
+              Chưa có gói học phù hợp.
+            </ThemedText>
           ) : null}
         </View>
-        {plans.isPending ? (
-          <View style={styles.state}>
-            <ActivityIndicator color={Colors.light.primary} />
-          </View>
-        ) : (
-          groups.map((group) => (
-            <PlanGroupCard
-              key={group.key}
-              group={group}
-              expanded={!collapsedGroups.has(group.key)}
-              onToggle={() => toggleGroup(group.key)}
-              onPress={(plan) =>
-                router.push(
-                  `/admin/training-plans/${plan.trainingPlanId}` as never,
-                )
-              }
-            />
-          ))
-        )}
-        {!plans.isPending && groups.length === 0 ? (
-          <ThemedText type="bodySmall" style={styles.empty}>
-            Chưa có gói học phù hợp.
-          </ThemedText>
-        ) : null}
       </StackScreenLayout>
       <TrainingPlanFormSheet
         visible={isCreateOpen}

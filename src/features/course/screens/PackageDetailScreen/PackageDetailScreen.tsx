@@ -38,50 +38,51 @@ export function PackageDetailScreen({ courseId, packageId }: CourseRouteProps) {
   return (
     <StackScreenLayout
       title="Chi tiết gói học"
-      contentContainerStyle={styles.content}
       floatingContent={<PackageRegisterButton onPress={handleRegister} />}
     >
-      <View style={styles.titleBlock}>
-        <ThemedText type="featureLabel" style={styles.eyebrow}>
-          KHÓA HỌC
-        </ThemedText>
-        <ThemedText type="heading" style={styles.courseTitle}>
-          {course.courseName}
-        </ThemedText>
-      </View>
-
-      <PackageHeroCard item={item} />
-
-      <PackageSectionCard icon={<Gift />} title="Bạn nhận được">
-        <BenefitLine>
-          {item.sessions} buổi học theo lịch của khóa học đã chọn
-        </BenefitLine>
-        <BenefitLine>
-          Không có buổi tặng hoặc ưu đãi bổ sung trong dữ liệu hiện tại
-        </BenefitLine>
-      </PackageSectionCard>
-
-      <PackageSectionCard icon={<File />} title="Thông tin gói">
-        <View style={styles.infoRows}>
-          <PackageInfoRow label="Số buổi" value={`${item.sessions} buổi`} />
-          <PackageInfoRow label="Thời hạn" value={item.durationLabel} />
-          <PackageInfoRow
-            label="Giá"
-            value={formatVnd(item.amount)}
-            showDivider={false}
-          />
+      <View style={styles.content}>
+        <View style={styles.titleBlock}>
+          <ThemedText type="featureLabel" style={styles.eyebrow}>
+            KHÓA HỌC
+          </ThemedText>
+          <ThemedText type="heading" style={styles.courseTitle}>
+            {course.courseName}
+          </ThemedText>
         </View>
-      </PackageSectionCard>
 
-      <PackageSectionCard icon={<ShieldCheck />} title="Điều kiện & chính sách">
-        <BenefitLine>Áp dụng khi khóa học đang mở đăng ký.</BenefitLine>
-        <BenefitLine>
-          Thời hạn sử dụng được tính theo kỳ học sau khi đăng ký.
-        </BenefitLine>
-        <BenefitLine>
-          Các chính sách khác áp dụng theo quy định hiện hành của trung tâm.
-        </BenefitLine>
-      </PackageSectionCard>
+        <PackageHeroCard item={item} />
+
+        <PackageSectionCard icon={<Gift />} title="Bạn nhận được">
+          <BenefitLine>
+            {item.sessions} buổi học theo lịch của khóa học đã chọn
+          </BenefitLine>
+          <BenefitLine>
+            Không có buổi tặng hoặc ưu đãi bổ sung trong dữ liệu hiện tại
+          </BenefitLine>
+        </PackageSectionCard>
+
+        <PackageSectionCard icon={<File />} title="Thông tin gói">
+          <View style={styles.infoRows}>
+            <PackageInfoRow label="Số buổi" value={`${item.sessions} buổi`} />
+            <PackageInfoRow label="Thời hạn" value={item.durationLabel} />
+            <PackageInfoRow
+              label="Giá"
+              value={formatVnd(item.amount)}
+              showDivider={false}
+            />
+          </View>
+        </PackageSectionCard>
+
+        <PackageSectionCard icon={<ShieldCheck />} title="Điều kiện & chính sách">
+          <BenefitLine>Áp dụng khi khóa học đang mở đăng ký.</BenefitLine>
+          <BenefitLine>
+            Thời hạn sử dụng được tính theo kỳ học sau khi đăng ký.
+          </BenefitLine>
+          <BenefitLine>
+            Các chính sách khác áp dụng theo quy định hiện hành của trung tâm.
+          </BenefitLine>
+        </PackageSectionCard>
+      </View>
     </StackScreenLayout>
   );
 }

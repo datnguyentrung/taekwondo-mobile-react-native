@@ -336,7 +336,6 @@ export function TrainingPlanRegistrationScreen({ studentCode }: Props) {
     <>
       <StackScreenLayout
         title="Đăng ký gói học"
-        contentContainerStyle={styles.screen}
         floatingContent={
           <FloatingActionBar>
             <View style={styles.paymentBarContent}>
@@ -368,115 +367,117 @@ export function TrainingPlanRegistrationScreen({ studentCode }: Props) {
           </FloatingActionBar>
         }
       >
-        <Section title="1. Học viên">
-          <StepChoice
-            icon={<User />}
-            completed={Boolean(selectedStudent)}
-            title={selectedStudent?.fullName ?? "Chọn học viên"}
-            subtitle={
-              selectedStudent
-                ? selectedStudent.personCode
-                : canChooseStudent
-                  ? "Chọn học viên cần đăng ký gói"
-                  : "Không tìm thấy hồ sơ học viên"
-            }
-            locked={!canChooseStudent && !selectedStudent}
-            onPress={() => canChooseStudent && setStudentSheet(true)}
-          />
-        </Section>
-        <Section title="2. Gói học">
-          <StepChoice
-            icon={<Layers />}
-            completed={Boolean(selectedPlan)}
-            title={selectedPlan?.name ?? "Chọn gói học"}
-            subtitle={
-              selectedPlan
-                ? `${selectedPlan.durationMonths} tháng · ${selectedPlan.includedSessionCount} buổi · ${money(selectedPlan.finalPrice)}`
-                : selectedStudent
-                  ? "Gói xác định quota và các khóa được phép học"
-                  : "Chọn học viên trước"
-            }
-            locked={!selectedStudent}
-            onPress={() => selectedStudent && setPlanSheet(true)}
-          />
-        </Section>
-        <Section title="3. Ngày bắt đầu">
-          <StepChoice
-            icon={<Calendar />}
-            completed={Boolean(startDate)}
-            title={dateLabel(startDate)}
-            subtitle="Lịch phù hợp được tính lại theo ngày này"
-            onPress={() => setDatePickerOpen(true)}
-          />
-        </Section>
-        {selectedPlan ? (
-          <Section title="4. Chốt lịch cố định">
-            {options.isFetching ? (
-              <InlineState loading message="Đang tải các lịch phù hợp…" />
-            ) : null}
-            {options.isError ? (
-              <InlineState
-                message="Không thể tải lịch phù hợp."
-                actionLabel="Thử lại"
-                onAction={() => void options.refetch()}
-              />
-            ) : null}
-            {!options.isFetching &&
-            !options.isError &&
-            options.data?.recurringRequirements.length === 0 ? (
-              <InlineState message="Gói này chưa có quota lịch học để đăng ký." />
-            ) : null}
-            {options.data?.recurringRequirements.map((requirement) => {
-              const ids =
-                schedulesByRequirement[requirement.requirementId] ?? [];
-              const complete = ids.length === requirement.sessionsPerWeek;
-              return (
-                <StepChoice
-                  key={requirement.requirementId}
-                  icon={<Clock />}
-                  completed={complete}
-                  title={SessionTypeLabel[requirement.sessionType]}
-                  subtitle={
-                    complete
-                      ? `Đã chốt ${ids.length}/${requirement.sessionsPerWeek} ca mỗi tuần`
-                      : `Cần chọn ${requirement.sessionsPerWeek} ca mỗi tuần · đã chọn ${ids.length}`
-                  }
-                  onPress={() => setScheduleSheetFor(requirement.requirementId)}
-                />
-              );
-            })}
-          </Section>
-        ) : null}
-        {selectedPlan && !options.isFetching && hasScheduleConflict ? (
-          <ThemedText type="bodySmall" style={styles.error}>
-            Các ca đã chọn đang bị trùng giờ. Vui lòng chọn lại lịch.
-          </ThemedText>
-        ) : selectedPlan && options.data && !validRecurring ? (
-          <ThemedText type="bodySmall" style={styles.helper}>
-            Chọn đủ số ca cho từng quota để tiếp tục thanh toán.
-          </ThemedText>
-        ) : selectedPlan && wallet.isPending ? (
-          <ThemedText type="bodySmall" style={styles.helper}>
-            Đang kiểm tra số dư ví…
-          </ThemedText>
-        ) : selectedPlan && wallet.isError ? (
-          <ThemedText type="bodySmall" style={styles.error}>
-            {walletErrorMessage}
-          </ThemedText>
-        ) : selectedPlan && hasInsufficientBalance ? (
-          <ThemedText type="bodySmall" style={styles.error}>
-            Số dư ví không đủ. Cần nạp thêm{" "}
-            {money(selectedPlan.finalPrice - (wallet.data?.balance ?? 0))}.
-          </ThemedText>
-        ) : null}
-        {selectedPlan ? (
-          <Section title="5. Chi tiết thanh toán">
-            <PaymentDetails
-              plan={selectedPlan}
-              walletBalance={wallet.data?.balance}
+        <View style={styles.screen}>
+          <Section title="1. Học viên">
+            <StepChoice
+              icon={<User />}
+              completed={Boolean(selectedStudent)}
+              title={selectedStudent?.fullName ?? "Chọn học viên"}
+              subtitle={
+                selectedStudent
+                  ? selectedStudent.personCode
+                  : canChooseStudent
+                    ? "Chọn học viên cần đăng ký gói"
+                    : "Không tìm thấy hồ sơ học viên"
+              }
+              locked={!canChooseStudent && !selectedStudent}
+              onPress={() => canChooseStudent && setStudentSheet(true)}
             />
           </Section>
-        ) : null}
+          <Section title="2. Gói học">
+            <StepChoice
+              icon={<Layers />}
+              completed={Boolean(selectedPlan)}
+              title={selectedPlan?.name ?? "Chọn gói học"}
+              subtitle={
+                selectedPlan
+                  ? `${selectedPlan.durationMonths} tháng · ${selectedPlan.includedSessionCount} buổi · ${money(selectedPlan.finalPrice)}`
+                  : selectedStudent
+                    ? "Gói xác định quota và các khóa được phép học"
+                    : "Chọn học viên trước"
+              }
+              locked={!selectedStudent}
+              onPress={() => selectedStudent && setPlanSheet(true)}
+            />
+          </Section>
+          <Section title="3. Ngày bắt đầu">
+            <StepChoice
+              icon={<Calendar />}
+              completed={Boolean(startDate)}
+              title={dateLabel(startDate)}
+              subtitle="Lịch phù hợp được tính lại theo ngày này"
+              onPress={() => setDatePickerOpen(true)}
+            />
+          </Section>
+          {selectedPlan ? (
+            <Section title="4. Chốt lịch cố định">
+              {options.isFetching ? (
+                <InlineState loading message="Đang tải các lịch phù hợp…" />
+              ) : null}
+              {options.isError ? (
+                <InlineState
+                  message="Không thể tải lịch phù hợp."
+                  actionLabel="Thử lại"
+                  onAction={() => void options.refetch()}
+                />
+              ) : null}
+              {!options.isFetching &&
+              !options.isError &&
+              options.data?.recurringRequirements.length === 0 ? (
+                <InlineState message="Gói này chưa có quota lịch học để đăng ký." />
+              ) : null}
+              {options.data?.recurringRequirements.map((requirement) => {
+                const ids =
+                  schedulesByRequirement[requirement.requirementId] ?? [];
+                const complete = ids.length === requirement.sessionsPerWeek;
+                return (
+                  <StepChoice
+                    key={requirement.requirementId}
+                    icon={<Clock />}
+                    completed={complete}
+                    title={SessionTypeLabel[requirement.sessionType]}
+                    subtitle={
+                      complete
+                        ? `Đã chốt ${ids.length}/${requirement.sessionsPerWeek} ca mỗi tuần`
+                        : `Cần chọn ${requirement.sessionsPerWeek} ca mỗi tuần · đã chọn ${ids.length}`
+                    }
+                    onPress={() => setScheduleSheetFor(requirement.requirementId)}
+                  />
+                );
+              })}
+            </Section>
+          ) : null}
+          {selectedPlan && !options.isFetching && hasScheduleConflict ? (
+            <ThemedText type="bodySmall" style={styles.error}>
+              Các ca đã chọn đang bị trùng giờ. Vui lòng chọn lại lịch.
+            </ThemedText>
+          ) : selectedPlan && options.data && !validRecurring ? (
+            <ThemedText type="bodySmall" style={styles.helper}>
+              Chọn đủ số ca cho từng quota để tiếp tục thanh toán.
+            </ThemedText>
+          ) : selectedPlan && wallet.isPending ? (
+            <ThemedText type="bodySmall" style={styles.helper}>
+              Đang kiểm tra số dư ví…
+            </ThemedText>
+          ) : selectedPlan && wallet.isError ? (
+            <ThemedText type="bodySmall" style={styles.error}>
+              {walletErrorMessage}
+            </ThemedText>
+          ) : selectedPlan && hasInsufficientBalance ? (
+            <ThemedText type="bodySmall" style={styles.error}>
+              Số dư ví không đủ. Cần nạp thêm{" "}
+              {money(selectedPlan.finalPrice - (wallet.data?.balance ?? 0))}.
+            </ThemedText>
+          ) : null}
+          {selectedPlan ? (
+            <Section title="5. Chi tiết thanh toán">
+              <PaymentDetails
+                plan={selectedPlan}
+                walletBalance={wallet.data?.balance}
+              />
+            </Section>
+          ) : null}
+        </View>
       </StackScreenLayout>
 
       <BottomSheetWindow
@@ -1039,7 +1040,12 @@ function PaymentDetails({
 }
 
 const styles = StyleSheet.create({
-  screen: { paddingTop: Spacing.two, paddingBottom: 112, gap: Spacing.four },
+  screen: {
+    paddingHorizontal: 16,
+    paddingTop: Spacing.two,
+    paddingBottom: 112,
+    gap: Spacing.four,
+  },
   section: { gap: Spacing.two },
   flex: { flex: 1, minWidth: 0, gap: Spacing.one },
   notice: { flexDirection: "row", gap: Spacing.three, padding: Spacing.three },

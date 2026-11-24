@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { StyleSheet } from "react-native";
+import { StyleSheet, View } from "react-native";
 
 import StackScreenLayout from "@/routes/navigation/layouts/StackScreenLayout";
 import { Colors } from "@/theme";
@@ -29,22 +29,21 @@ export function WalletTransactionsScreen({
   );
 
   return (
-    <StackScreenLayout
-      title="Lịch sử giao dịch"
-      contentContainerStyle={styles.content}
-    >
-      <SegmentedTabs
-        value={filter}
-        tabs={[
-          { value: "all", label: "Tất cả" },
-          { value: "credit", label: "Tiền vào" },
-          { value: "debit", label: "Tiền ra" },
-        ]}
-        onChange={setFilter}
-      />
-      {transactions.map((transaction) => (
-        <TransactionCard key={transaction.id} transaction={transaction} />
-      ))}
+    <StackScreenLayout title="Lịch sử giao dịch">
+      <View style={styles.content}>
+        <SegmentedTabs
+          value={filter}
+          tabs={[
+            { value: "all", label: "Tất cả" },
+            { value: "credit", label: "Tiền vào" },
+            { value: "debit", label: "Tiền ra" },
+          ]}
+          onChange={setFilter}
+        />
+        {transactions.map((transaction) => (
+          <TransactionCard key={transaction.id} transaction={transaction} />
+        ))}
+      </View>
     </StackScreenLayout>
   );
 }

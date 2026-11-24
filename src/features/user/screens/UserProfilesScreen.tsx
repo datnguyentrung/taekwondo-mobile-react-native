@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { View } from "react-native";
+import { StyleSheet, View } from "react-native";
 
 import type { RelationshipType } from "@/features/authentication/domain/auth.types";
 import type { PersonSimpleResponse } from "@/features/person";
@@ -18,7 +18,6 @@ import {
   AdminPickerField,
   AdminPickerSheet,
   AdminSectionHeader,
-  adminStyles,
 } from "@/shared/ui/admin/AdministrationPrimitives";
 import { useToast } from "@/shared/ui/Toast";
 import { LinkedPersonDetailSheet } from "../components/LinkedPersonDetailSheet";
@@ -71,118 +70,128 @@ export function UserProfilesScreen() {
   return (
     <StackScreenLayout
       title="Hồ sơ liên kết"
-      contentContainerStyle={adminStyles.screen}
       refreshing={refreshing}
       onRefresh={onRefresh}
     >
-      <AdminSectionHeader title={`${linked.length} hồ sơ đã liên kết`} />
-      {user.isPending ? (
-        <AdminLoadingState />
-      ) : linked.length === 0 ? (
-        <AdminEmptyState message="Chưa có hồ sơ liên kết" />
-      ) : (
-        <View style={userAdminStyles.list}>
-          {linked.map((person) => (
-            <AdminListRow
-              key={person.personId}
-              leading={
-                <Avatar
-                  name={person.fullName}
-                  imageUrl={person.faceImagePath}
-                />
-              }
-              title={person.fullName}
-              subtitle={person.position?.name}
-              onPress={() => setSelectedPerson(person)}
-              meta={
-                person.status ? (
-                  <AdminChip
-                    label={
-                      person.status === "ACTIVE"
-                        ? "Hoạt động"
-                        : "Ngừng hoạt động"
-                    }
-                    tone={person.status === "ACTIVE" ? "success" : "neutral"}
+      <View style={styles.content}>
+        <AdminSectionHeader title={`${linked.length} hồ sơ đã liên kết`} />
+        {user.isPending ? (
+          <AdminLoadingState />
+        ) : linked.length === 0 ? (
+          <AdminEmptyState message="Chưa có hồ sơ liên kết" />
+        ) : (
+          <View style={userAdminStyles.list}>
+            {linked.map((person) => (
+              <AdminListRow
+                key={person.personId}
+                leading={
+                  <Avatar
+                    name={person.fullName}
+                    imageUrl={person.faceImagePath}
                   />
-                ) : (
-                  <StatusChip status={null} />
-                )
-              }
-            />
-          ))}
-        </View>
-      )}
-      <AdminSectionHeader title="Thêm liên kết" />
-      <AdminPickerField
-        label="Hồ sơ"
-        valueLabel={newlySelectedPerson?.fullName}
-        placeholder="Chọn hồ sơ chưa liên kết"
-        onPress={() => setPersonSheet(true)}
-      />
-      <AdminPickerField
-        label="Mối quan hệ"
-        valueLabel={relationshipLabel(relationship)}
-        placeholder="Chọn mối quan hệ"
-        onPress={() => setRelationshipSheet(true)}
-      />
-      <AdminButton
-        label="Liên kết hồ sơ"
-        disabled={!personId}
-        onPress={() => setConfirming(true)}
-      />
-      <AdminPickerSheet
-        visible={personSheet}
-        title="Chọn hồ sơ"
-        searchable
-        searchPlaceholder="Tìm kiếm hồ sơ theo tên hoặc mã..."
-        searchValue={personSearch}
-        onSearchChange={setPersonSearch}
-        loading={people.isPending}
-        options={available.map((person) => ({
-          value: person.personId,
-          label: person.fullName,
-          description: person.personCode ?? undefined,
-        }))}
-        selectedValue={personId}
-        onSelect={setPersonId}
-        onClose={() => setPersonSheet(false)}
-      />
-      <AdminPickerSheet
-        visible={relationshipSheet}
-        title="Chọn mối quan hệ"
-        searchable
-        searchPlaceholder="Tìm kiếm mối quan hệ..."
-        options={userRelationships.map((value) => ({
-          value,
-          label: relationshipLabel(value),
-        }))}
-        selectedValue={relationship}
-        onSelect={(value) => setRelationship(value as RelationshipType)}
-        onClose={() => setRelationshipSheet(false)}
-      />
-      <AdminConfirmDialog
-        confirming={confirming}
-        title="Tạo liên kết hồ sơ?"
-        message={`${newlySelectedPerson?.fullName ?? "Hồ sơ"} sẽ được liên kết với tài khoản theo quan hệ ${relationshipLabel(relationship).toLocaleLowerCase("vi-VN")}.`}
-        confirmLabel="Tạo mới"
-        loading={create.isPending}
-        onCancel={() => setConfirming(false)}
-        onConfirm={() =>
-          create.mutate({
-            userId: userId as string,
-            personId: personId as string,
-            relationshipType: relationship,
-            active: true,
-          })
-        }
-      />
+                }
+                title={person.fullName}
+                subtitle={person.position?.name}
+                onPress={() => setSelectedPerson(person)}
+                meta={
+                  person.status ? (
+                    <AdminChip
+                      label={
+                        person.status === "ACTIVE"
+                          ? "Hoạt động"
+                          : "Ngừng hoạt động"
+                      }
+                      tone={person.status === "ACTIVE" ? "success" : "neutral"}
+                    />
+                  ) : (
+                    <StatusChip status={null} />
+                  )
+                }
+              />
+            ))}
+          </View>
+        )}
+        <AdminSectionHeader title="Thêm liên kết" />
+        <AdminPickerField
+          label="Hồ sơ"
+          valueLabel={newlySelectedPerson?.fullName}
+          placeholder="Chọn hồ sơ chưa liên kết"
+          onPress={() => setPersonSheet(true)}
+        />
+        <AdminPickerField
+          label="Mối quan hệ"
+          valueLabel={relationshipLabel(relationship)}
+          placeholder="Chọn mối quan hệ"
+          onPress={() => setRelationshipSheet(true)}
+        />
+        <AdminButton
+          label="Liên kết hồ sơ"
+          disabled={!personId}
+          onPress={() => setConfirming(true)}
+        />
+        <AdminPickerSheet
+          visible={personSheet}
+          title="Chọn hồ sơ"
+          searchable
+          searchPlaceholder="Tìm kiếm hồ sơ theo tên hoặc mã..."
+          searchValue={personSearch}
+          onSearchChange={setPersonSearch}
+          loading={people.isPending}
+          options={available.map((person) => ({
+            value: person.personId,
+            label: person.fullName,
+            description: person.personCode ?? undefined,
+          }))}
+          selectedValue={personId}
+          onSelect={setPersonId}
+          onClose={() => setPersonSheet(false)}
+        />
+        <AdminPickerSheet
+          visible={relationshipSheet}
+          title="Chọn mối quan hệ"
+          searchable
+          searchPlaceholder="Tìm kiếm mối quan hệ..."
+          options={userRelationships.map((value) => ({
+            value,
+            label: relationshipLabel(value),
+          }))}
+          selectedValue={relationship}
+          onSelect={(value) => setRelationship(value as RelationshipType)}
+          onClose={() => setRelationshipSheet(false)}
+        />
+        <AdminConfirmDialog
+          confirming={confirming}
+          title="Tạo liên kết hồ sơ?"
+          message={`${newlySelectedPerson?.fullName ?? "Hồ sơ"} sẽ được liên kết với tài khoản theo quan hệ ${relationshipLabel(relationship).toLocaleLowerCase("vi-VN")}.`}
+          confirmLabel="Tạo mới"
+          loading={create.isPending}
+          onCancel={() => setConfirming(false)}
+          onConfirm={() =>
+            create.mutate({
+              userId: userId as string,
+              personId: personId as string,
+              relationshipType: relationship,
+              active: true,
+            })
+          }
+        />
 
-      {/* Chi tiết hồ sơ liên kết & Popover đổi chức vụ */}
-      <LinkedPersonDetailSheet
-        person={selectedPerson}
-        userId={userId}
-        onClose={() => setSelectedPerson(null)}
-      />
+        {/* Chi tiết hồ sơ liên kết & Popover đổi chức vụ */}
+        <LinkedPersonDetailSheet
+          person={selectedPerson}
+          userId={userId}
+          onClose={() => setSelectedPerson(null)}
+        />
+      </View>
     </StackScreenLayout>
   );
 }
+
+const styles = StyleSheet.create({
+  content: {
+    paddingTop: 20,
+    paddingHorizontal: 16,
+    paddingBottom: 32,
+    gap: 14,
+  },
+});

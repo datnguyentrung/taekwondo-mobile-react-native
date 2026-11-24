@@ -1,6 +1,6 @@
 import { useRouter, type Href } from "expo-router";
 import { useState } from "react";
-import { View } from "react-native";
+import { StyleSheet, View } from "react-native";
 
 import type { RelationshipType } from "@/features/authentication/domain/auth.types";
 import { relationshipLabel } from "@/features/person/domain/personViewModel";
@@ -67,110 +67,118 @@ export function UserCreateScreen() {
     phone.trim().length >= 9 && password.length >= 6 && Boolean(personId);
 
   return (
-    <StackScreenLayout
-      title="Tạo người dùng"
-      contentContainerStyle={adminStyles.screen}
-    >
-      <AdminField
-        label="Số điện thoại"
-        value={phone}
-        onChangeText={setPhone}
-        keyboardType="phone-pad"
-        placeholder="Nhập số điện thoại đăng nhập"
-      />
-      <AdminField
-        label="Mật khẩu ban đầu"
-        value={password}
-        onChangeText={setPassword}
-        secureTextEntry
-        placeholder="Tối thiểu 6 ký tự"
-      />
-      <AdminPickerField
-        label="Hồ sơ"
-        valueLabel={selectedPerson?.fullName}
-        placeholder="Chọn một hồ sơ bắt buộc"
-        onPress={() => setPersonSheet(true)}
-      />
-      <AdminPickerField
-        label="Mối quan hệ"
-        valueLabel={relationshipLabel(relationship)}
-        placeholder="Chọn mối quan hệ"
-        onPress={() => setRelationshipSheet(true)}
-      />
-      <AdminSectionHeader title="Vai trò ban đầu" />
-      <View style={adminStyles.chips}>
-        {(roles.data?.content ?? []).map((role) => (
-          <AdminChip
-            key={role.code}
-            label={role.name}
-            selected={roleCodes.includes(role.code)}
-            onPress={() => toggleRole(role.code)}
-          />
-        ))}
+    <StackScreenLayout title="Tạo người dùng">
+      <View style={styles.content}>
+        <AdminField
+          label="Số điện thoại"
+          value={phone}
+          onChangeText={setPhone}
+          keyboardType="phone-pad"
+          placeholder="Nhập số điện thoại đăng nhập"
+        />
+        <AdminField
+          label="Mật khẩu ban đầu"
+          value={password}
+          onChangeText={setPassword}
+          secureTextEntry
+          placeholder="Tối thiểu 6 ký tự"
+        />
+        <AdminPickerField
+          label="Hồ sơ"
+          valueLabel={selectedPerson?.fullName}
+          placeholder="Chọn một hồ sơ bắt buộc"
+          onPress={() => setPersonSheet(true)}
+        />
+        <AdminPickerField
+          label="Mối quan hệ"
+          valueLabel={relationshipLabel(relationship)}
+          placeholder="Chọn mối quan hệ"
+          onPress={() => setRelationshipSheet(true)}
+        />
+        <AdminSectionHeader title="Vai trò ban đầu" />
+        <View style={adminStyles.chips}>
+          {(roles.data?.content ?? []).map((role) => (
+            <AdminChip
+              key={role.code}
+              label={role.name}
+              selected={roleCodes.includes(role.code)}
+              onPress={() => toggleRole(role.code)}
+            />
+          ))}
+        </View>
+        <AdminInfoBanner>
+          Tài khoản bắt buộc liên kết chính xác một hồ sơ khi tạo, theo hợp đồng
+          backend hiện tại.
+        </AdminInfoBanner>
+        <AdminButton
+          label="Tạo người dùng"
+          disabled={!valid}
+          onPress={() => setConfirming(true)}
+        />
+        <AdminButton
+          label="Hủy"
+          variant="secondary"
+          onPress={() => router.back()}
+        />
+        <AdminPickerSheet
+          visible={personSheet}
+          title="Chọn hồ sơ"
+          searchable
+          searchPlaceholder="Tìm kiếm hồ sơ theo tên hoặc mã..."
+          searchValue={personSearch}
+          onSearchChange={setPersonSearch}
+          loading={people.isPending}
+          options={(people.data?.content ?? []).map((person) => ({
+            value: person.personId,
+            label: person.fullName,
+            description: person.personCode ?? undefined,
+          }))}
+          selectedValue={personId}
+          onSelect={setPersonId}
+          onClose={() => setPersonSheet(false)}
+        />
+        <AdminPickerSheet
+          visible={relationshipSheet}
+          title="Chọn mối quan hệ"
+          searchable
+          searchPlaceholder="Tìm kiếm mối quan hệ..."
+          options={userRelationships.map((value) => ({
+            value,
+            label: relationshipLabel(value),
+          }))}
+          selectedValue={relationship}
+          onSelect={(value) => setRelationship(value as RelationshipType)}
+          onClose={() => setRelationshipSheet(false)}
+        />
+        <AdminConfirmDialog
+          confirming={confirming}
+          title="Tạo người dùng mới?"
+          message={`Tài khoản ${phone} sẽ được tạo và liên kết với ${selectedPerson?.fullName ?? "hồ sơ đã chọn"}.`}
+          confirmLabel="Tạo mới"
+          loading={create.isPending}
+          onCancel={() => setConfirming(false)}
+          onConfirm={() =>
+            create.mutate({
+              request: {
+                phoneNumber: phone.trim(),
+                passwordHash: password,
+                personId: personId as string,
+                relationshipType: relationship,
+              },
+              roleCodes,
+            })
+          }
+        />
       </View>
-      <AdminInfoBanner>
-        Tài khoản bắt buộc liên kết chính xác một hồ sơ khi tạo, theo hợp đồng
-        backend hiện tại.
-      </AdminInfoBanner>
-      <AdminButton
-        label="Tạo người dùng"
-        disabled={!valid}
-        onPress={() => setConfirming(true)}
-      />
-      <AdminButton
-        label="Hủy"
-        variant="secondary"
-        onPress={() => router.back()}
-      />
-      <AdminPickerSheet
-        visible={personSheet}
-        title="Chọn hồ sơ"
-        searchable
-        searchPlaceholder="Tìm kiếm hồ sơ theo tên hoặc mã..."
-        searchValue={personSearch}
-        onSearchChange={setPersonSearch}
-        loading={people.isPending}
-        options={(people.data?.content ?? []).map((person) => ({
-          value: person.personId,
-          label: person.fullName,
-          description: person.personCode ?? undefined,
-        }))}
-        selectedValue={personId}
-        onSelect={setPersonId}
-        onClose={() => setPersonSheet(false)}
-      />
-      <AdminPickerSheet
-        visible={relationshipSheet}
-        title="Chọn mối quan hệ"
-        searchable
-        searchPlaceholder="Tìm kiếm mối quan hệ..."
-        options={userRelationships.map((value) => ({
-          value,
-          label: relationshipLabel(value),
-        }))}
-        selectedValue={relationship}
-        onSelect={(value) => setRelationship(value as RelationshipType)}
-        onClose={() => setRelationshipSheet(false)}
-      />
-      <AdminConfirmDialog
-        confirming={confirming}
-        title="Tạo người dùng mới?"
-        message={`Tài khoản ${phone} sẽ được tạo và liên kết với ${selectedPerson?.fullName ?? "hồ sơ đã chọn"}.`}
-        confirmLabel="Tạo mới"
-        loading={create.isPending}
-        onCancel={() => setConfirming(false)}
-        onConfirm={() =>
-          create.mutate({
-            request: {
-              phoneNumber: phone.trim(),
-              passwordHash: password,
-              personId: personId as string,
-              relationshipType: relationship,
-            },
-            roleCodes,
-          })
-        }
-      />
     </StackScreenLayout>
   );
 }
+
+const styles = StyleSheet.create({
+  content: {
+    paddingTop: 20,
+    paddingHorizontal: 16,
+    paddingBottom: 32,
+    gap: 14,
+  },
+});

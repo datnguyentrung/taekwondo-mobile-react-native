@@ -32,6 +32,7 @@ export function SensorStreamScreen() {
 
 const styles = StyleSheet.create({
   container: {
+    paddingHorizontal: 16,
     paddingVertical: Spacing.four,
     gap: Spacing.three,
   },

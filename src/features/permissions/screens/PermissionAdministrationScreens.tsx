@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { StyleSheet } from "react-native";
+import { StyleSheet, View } from "react-native";
 import { useLocalSearchParams, useRouter, type Href } from "expo-router";
 
 import type { PermissionResponse } from "../api/permission.dto";
@@ -85,14 +85,13 @@ export function PermissionsTabContent() {
 
 export function PermissionListScreen() {
   return (
-    <StackScreenLayout
-      title="Vai trò & quyền"
-      contentContainerStyle={adminStyles.screen}
-    >
-      <AdminIntro>
-        Danh mục quyền kỹ thuật được dùng để cấu hình các vai trò.
-      </AdminIntro>
-      <PermissionsTabContent />
+    <StackScreenLayout title="Vai trò & quyền">
+      <View style={[adminStyles.screen, styles.content]}>
+        <AdminIntro>
+          Danh mục quyền kỹ thuật được dùng để cấu hình các vai trò.
+        </AdminIntro>
+        <PermissionsTabContent />
+      </View>
     </StackScreenLayout>
   );
 }
@@ -182,25 +181,25 @@ export function PermissionEditScreen() {
   const permission = usePermission(permissionId);
 
   return (
-    <StackScreenLayout
-      title="Sửa quyền"
-      contentContainerStyle={adminStyles.screen}
-    >
-      {permission.isPending ? (
-        <AdminLoadingState />
-      ) : !permission.data ? (
-        <AdminEmptyState message="Không tìm thấy quyền" />
-      ) : (
-        <PermissionEditForm
-          key={permission.data.permissionId}
-          permission={permission.data}
-        />
-      )}
+    <StackScreenLayout title="Sửa quyền">
+      <View style={[adminStyles.screen, styles.content]}>
+        {permission.isPending ? (
+          <AdminLoadingState />
+        ) : !permission.data ? (
+          <AdminEmptyState message="Không tìm thấy quyền" />
+        ) : (
+          <PermissionEditForm
+            key={permission.data.permissionId}
+            permission={permission.data}
+          />
+        )}
+      </View>
     </StackScreenLayout>
   );
 }
 
 const styles = StyleSheet.create({
+  content: { paddingHorizontal: 16 },
   permissionGroup: { padding: 0, overflow: "hidden" },
   groupTitle: {
     padding: 14,

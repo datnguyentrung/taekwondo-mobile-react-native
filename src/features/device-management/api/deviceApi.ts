@@ -1,4 +1,5 @@
 import { javaApi } from '@/infrastructure/http/httpClient';
+import { create } from 'axios';
 import type { DeviceBootstrap, DeviceEvent, ManagedDevice } from '../domain/device.types';
 
 export type DeviceCreateRequest = {
@@ -9,6 +10,11 @@ export type DeviceCreateRequest = {
   pairedKioskId?: string | null;
 };
 export type DeviceUpdateRequest = { displayName: string; branchId?: number | null; fogGatewayId?: string | null; pairedKioskId?: string | null; groupCode?: string | null; areaLabel?: string | null; locationLabel?: string | null; };
+export type Esp32PairingSession = { sessionId: string; hardwareId: string; firmwareVersion: string | null; hardwareVersion: string | null; status: 'WAITING' | 'APPROVED'; expiresAt: string; };
+
+function fogClient(fogHttpUrl: string) {
+  return create({ baseURL: fogHttpUrl, timeout: 10_000 });
+}
 
 export const deviceApi = {
   list: async (): Promise<ManagedDevice[]> => (await javaApi.get<ManagedDevice[]>('/devices')).data,
@@ -18,6 +24,12 @@ export const deviceApi = {
   remove: async (deviceId: string): Promise<void> => { await javaApi.delete(`/devices/${deviceId}`); },
   lifecycle: async (deviceId: string, targetStatus: string) => (await javaApi.patch<ManagedDevice>(`/devices/${deviceId}/lifecycle`, { targetStatus })).data,
   provisionCode: async (deviceId: string) => (await javaApi.post<{ code: string }>(`/devices/${deviceId}/provisioning-codes`)).data,
+  claimFogAt: async (ipAddress: string, port: number, code: string) =>
+    (await create({ baseURL: `http://${ipAddress}:${port}`, timeout: 10_000 }).post<{ deviceCode: string; status: string }>('/local/device-provisioning/fog/claim', { code })).data,
+  esp32PairingSessions: async (fogHttpUrl: string): Promise<Esp32PairingSession[]> =>
+    (await fogClient(fogHttpUrl).get<Esp32PairingSession[]>('/local/device-provisioning/esp32/pairing-sessions')).data,
+  approveEsp32Pairing: async (fogHttpUrl: string, sessionId: string, code: string) =>
+    (await fogClient(fogHttpUrl).post(`/local/device-provisioning/esp32/pairing-sessions/${sessionId}/approve`, { code })).data,
   revoke: async (deviceId: string) => (await javaApi.post<ManagedDevice>(`/devices/${deviceId}/credentials/revoke`)).data,
   configuration: async (deviceId: string, desiredConfig: string, expectedConfigVersion: number) => javaApi.put(`/devices/${deviceId}/configuration`, { desiredConfig, expectedConfigVersion }),
   claim: async (request: { code: string; deviceType: 'KIOSK'; installationId: string }) =>

@@ -1,4 +1,4 @@
-import { ChevronRight } from "reicon-react-native";
+﻿import { ChevronRight } from "reicon-react-native";
 import { memo } from "react";
 import { Pressable, StyleSheet, View } from "react-native";
 
@@ -52,7 +52,7 @@ function NotificationCardComponent({
             {formatNotificationDate(notification.createdAt)}
           </NotificationPill>
           {!notification.read ? (
-            <NotificationPill tone="primary">ChÆ°a Ä‘á»c</NotificationPill>
+            <NotificationPill tone="primary">Chưa đọc</NotificationPill>
           ) : null}
         </View>
       </View>

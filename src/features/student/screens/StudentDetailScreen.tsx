@@ -218,11 +218,12 @@ export function StudentDetailScreen({ studentCode, personType = "student" }: Stu
     return (
       <StackScreenLayout
         title={title}
-        contentContainerStyle={[styles.content, styles.center]}
         refreshing={refreshing}
         onRefresh={onRefresh}
       >
-        <ActivityIndicator size="large" color={Colors.light.primary} />
+        <View style={[styles.content, styles.center]}>
+          <ActivityIndicator size="large" color={Colors.light.primary} />
+        </View>
       </StackScreenLayout>
     );
   }
@@ -231,13 +232,14 @@ export function StudentDetailScreen({ studentCode, personType = "student" }: Stu
     return (
       <StackScreenLayout
         title={title}
-        contentContainerStyle={[styles.content, styles.center]}
         refreshing={refreshing}
         onRefresh={onRefresh}
       >
-        <ThemedText type="bodySmall" style={styles.blackText}>
-          Không tìm thấy thông tin học viên.
-        </ThemedText>
+        <View style={[styles.content, styles.center]}>
+          <ThemedText type="bodySmall" style={styles.blackText}>
+            Không tìm thấy thông tin học viên.
+          </ThemedText>
+        </View>
       </StackScreenLayout>
     );
   }
@@ -245,7 +247,6 @@ export function StudentDetailScreen({ studentCode, personType = "student" }: Stu
   return (
     <StackScreenLayout
       title={title}
-      contentContainerStyle={styles.content}
       refreshing={refreshing}
       onRefresh={onRefresh}
       floatingContent={
@@ -309,160 +310,162 @@ export function StudentDetailScreen({ studentCode, personType = "student" }: Stu
         />
       }
     >
-      {student ? (
-        <StudentProfileSummaryCard
-          student={student}
-          avatarUrl={avatarUrl}
-          onAvatarPress={() => setAvatarSheetVisible(true)}
-          isAvatarUpdating={isAvatarProcessing}
-          avatarUpdateStatus={avatarProcessingStep}
-        />
-      ) : null}
-
-      <SurfaceCard>
-        <View style={styles.row}>
-          <AppIcon icon={<Wallet />} size={24} color={Colors.light.primary} />
-          <ThemedText type="bodySmall" style={styles.blackText}>
-            Ví điện tử
-          </ThemedText>
-        </View>
-        <ThemedText type="heading" style={styles.blackText}>
-          {walletQuery.isLoading
-            ? "Đang tải..."
-            : walletQuery.data
-              ? formatVnd(walletQuery.data.balance)
-              : "Không có dữ liệu"}
-        </ThemedText>
-        <ThemedText type="bodySmall" style={styles.blackText}>
-          Số dư khả dụng
-        </ThemedText>
-        <Pressable
-          onPress={() =>
-            router.push(asHref(`/students/${activeStudentId}/wallet`))
-          }
-        >
-          <ThemedText type="action" style={styles.primaryText}>
-            Xem chi tiết ví ›
-          </ThemedText>
-        </Pressable>
-      </SurfaceCard>
-
-      <NavigationMenu>
-        <NavigationMenuItem
-          icon={<DocText />}
-          title="Khóa học tham gia"
-          count={0}
-          onPress={() =>
-            router.push(asHref(`/students/${activeStudentId}/courses?personType=${personType}`))
-          }
-        />
-        <NavigationMenuItem
-          icon={<CheckListNotes />}
-          title="Lịch sử tập luyện"
-          onPress={() => router.push(asHref("/history/student"))}
-        />
-        {canViewUserAccounts ? (
-          <NavigationMenuItem
-            icon={<People />}
-            title="Tài khoản người dùng"
-            onPress={() =>
-              router.push(asHref(`/students/${activeStudentId}/users`))
-            }
+      <View style={styles.content}>
+        {student ? (
+          <StudentProfileSummaryCard
+            student={student}
+            avatarUrl={avatarUrl}
+            onAvatarPress={() => setAvatarSheetVisible(true)}
+            isAvatarUpdating={isAvatarProcessing}
+            avatarUpdateStatus={avatarProcessingStep}
           />
         ) : null}
-      </NavigationMenu>
-      <ConfirmationDialog
-        visible={confirmDelete}
-        title="Xóa học viên"
-        description={`Bạn có chắc muốn xóa học viên "${student?.fullName ?? "này"}" không? Thao tác này không thể hoàn tác.`}
-        confirmLabel="Xóa"
-        confirmVariant="danger"
-        onCancel={() => setConfirmDelete(false)}
-        onConfirm={handleDelete}
-      />
-      <CancellableLoadingOverlay
-        visible={deleting}
-        message="Đang xóa học viên..."
-        cancelLabel="Hủy"
-        onCancel={() => deleteController.current?.abort()}
-      />
-      <BottomSheetWindow
-        visible={avatarSheetVisible}
-        title="Ảnh đại diện"
-        onClose={() => setAvatarSheetVisible(false)}
-        scrollable={false}
-      >
-        <View style={styles.avatarSheetOptions}>
-          <AvatarSheetOption
-            icon={<UserCircle weight="Filled" />}
-            label="Xem ảnh đại diện"
-            onPress={() => {
-              setAvatarSheetVisible(false);
-              setAvatarPreviewVisible(true);
-            }}
+
+        <SurfaceCard>
+          <View style={styles.row}>
+            <AppIcon icon={<Wallet />} size={24} color={Colors.light.primary} />
+            <ThemedText type="bodySmall" style={styles.blackText}>
+              Ví điện tử
+            </ThemedText>
+          </View>
+          <ThemedText type="heading" style={styles.blackText}>
+            {walletQuery.isLoading
+              ? "Đang tải..."
+              : walletQuery.data
+                ? formatVnd(walletQuery.data.balance)
+                : "Không có dữ liệu"}
+          </ThemedText>
+          <ThemedText type="bodySmall" style={styles.blackText}>
+            Số dư khả dụng
+          </ThemedText>
+          <Pressable
+            onPress={() =>
+              router.push(asHref(`/students/${activeStudentId}/wallet`))
+            }
+          >
+            <ThemedText type="action" style={styles.primaryText}>
+              Xem chi tiết ví ›
+            </ThemedText>
+          </Pressable>
+        </SurfaceCard>
+
+        <NavigationMenu>
+          <NavigationMenuItem
+            icon={<DocText />}
+            title="Khóa học tham gia"
+            count={0}
+            onPress={() =>
+              router.push(asHref(`/students/${activeStudentId}/courses?personType=${personType}`))
+            }
           />
-          <AvatarSheetOption
-            icon={<Camera />}
-            label="Chụp ảnh mới"
-            onPress={handleTakeAvatarPhoto}
+          <NavigationMenuItem
+            icon={<CheckListNotes />}
+            title="Lịch sử tập luyện"
+            onPress={() => router.push(asHref("/history/student"))}
           />
-          <AvatarSheetOption
-            icon={<Gallery />}
-            label="Tải ảnh lên từ thư viện"
-            onPress={handlePickAvatarImage}
-          />
-          {avatarUrl ? (
+          {canViewUserAccounts ? (
+            <NavigationMenuItem
+              icon={<People />}
+              title="Tài khoản người dùng"
+              onPress={() =>
+                router.push(asHref(`/students/${activeStudentId}/users`))
+              }
+            />
+          ) : null}
+        </NavigationMenu>
+        <ConfirmationDialog
+          visible={confirmDelete}
+          title="Xóa học viên"
+          description={`Bạn có chắc muốn xóa học viên "${student?.fullName ?? "này"}" không? Thao tác này không thể hoàn tác.`}
+          confirmLabel="Xóa"
+          confirmVariant="danger"
+          onCancel={() => setConfirmDelete(false)}
+          onConfirm={handleDelete}
+        />
+        <CancellableLoadingOverlay
+          visible={deleting}
+          message="Đang xóa học viên..."
+          cancelLabel="Hủy"
+          onCancel={() => deleteController.current?.abort()}
+        />
+        <BottomSheetWindow
+          visible={avatarSheetVisible}
+          title="Ảnh đại diện"
+          onClose={() => setAvatarSheetVisible(false)}
+          scrollable={false}
+        >
+          <View style={styles.avatarSheetOptions}>
+            <AvatarSheetOption
+              icon={<UserCircle weight="Filled" />}
+              label="Xem ảnh đại diện"
+              onPress={() => {
+                setAvatarSheetVisible(false);
+                setAvatarPreviewVisible(true);
+              }}
+            />
+            <AvatarSheetOption
+              icon={<Camera />}
+              label="Chụp ảnh mới"
+              onPress={handleTakeAvatarPhoto}
+            />
+            <AvatarSheetOption
+              icon={<Gallery />}
+              label="Tải ảnh lên từ thư viện"
+              onPress={handlePickAvatarImage}
+            />
+            {avatarUrl ? (
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel="Xóa ảnh đại diện"
+                onPress={handleDeleteAvatar}
+                style={({ pressed }) => [
+                  styles.avatarDeleteOption,
+                  activeEffect(pressed, "pressedScale"),
+                ]}
+              >
+                <ThemedText style={styles.avatarDeleteText}>
+                  Xóa ảnh đại diện hiện tại
+                </ThemedText>
+              </Pressable>
+            ) : null}
+          </View>
+        </BottomSheetWindow>
+        <Modal
+          visible={avatarPreviewVisible}
+          transparent
+          animationType="fade"
+          onRequestClose={() => setAvatarPreviewVisible(false)}
+        >
+          <View style={styles.avatarPreviewBackdrop}>
             <Pressable
               accessibilityRole="button"
-              accessibilityLabel="Xóa ảnh đại diện"
-              onPress={handleDeleteAvatar}
+              accessibilityLabel="Đóng xem ảnh"
+              onPress={() => setAvatarPreviewVisible(false)}
               style={({ pressed }) => [
-                styles.avatarDeleteOption,
-                activeEffect(pressed, "pressedScale"),
+                styles.avatarPreviewClose,
+                activeEffect(pressed),
               ]}
             >
-              <ThemedText style={styles.avatarDeleteText}>
-                Xóa ảnh đại diện hiện tại
-              </ThemedText>
+              <ThemedText style={styles.avatarPreviewCloseText}>Đóng</ThemedText>
             </Pressable>
-          ) : null}
-        </View>
-      </BottomSheetWindow>
-      <Modal
-        visible={avatarPreviewVisible}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setAvatarPreviewVisible(false)}
-      >
-        <View style={styles.avatarPreviewBackdrop}>
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel="Đóng xem ảnh"
-            onPress={() => setAvatarPreviewVisible(false)}
-            style={({ pressed }) => [
-              styles.avatarPreviewClose,
-              activeEffect(pressed),
-            ]}
-          >
-            <ThemedText style={styles.avatarPreviewCloseText}>Đóng</ThemedText>
-          </Pressable>
-          {avatarUrl ? (
-            <Image
-              source={{ uri: avatarUrl }}
-              style={styles.avatarPreviewImage}
-              contentFit="contain"
-            />
-          ) : (
-            <View style={styles.avatarPreviewPlaceholder}>
-              <AppIcon
-                icon={<UserCircle weight="Filled" />}
-                size={180}
-                color={figmaColors.color1}
+            {avatarUrl ? (
+              <Image
+                source={{ uri: avatarUrl }}
+                style={styles.avatarPreviewImage}
+                contentFit="contain"
               />
-            </View>
-          )}
-        </View>
-      </Modal>
+            ) : (
+              <View style={styles.avatarPreviewPlaceholder}>
+                <AppIcon
+                  icon={<UserCircle weight="Filled" />}
+                  size={180}
+                  color={figmaColors.color1}
+                />
+              </View>
+            )}
+          </View>
+        </Modal>
+      </View>
     </StackScreenLayout>
   );
 }
@@ -496,7 +499,10 @@ function AvatarSheetOption({
 
 const styles = StyleSheet.create({
   content: {
+    paddingHorizontal: 16,
+    paddingTop: 16,
     paddingBottom: 128,
+    gap: 20,
   },
   center: {
     justifyContent: "center",

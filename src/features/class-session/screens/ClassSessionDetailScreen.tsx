@@ -193,7 +193,6 @@ export function ClassSessionDetailScreen({
   return (
     <StackScreenLayout
       title="Chi tiết buổi tập"
-      contentContainerStyle={styles.content}
       floatingContent={
         course && classSessionId ? (
           <ClassSessionActionButtons
@@ -215,49 +214,51 @@ export function ClassSessionDetailScreen({
         ) : undefined
       }
     >
-      {!classSessionId ? (
-        <StateCard
-          title="Không tìm thấy buổi tập"
-          description="Thiếu mã buổi tập để tải chi tiết."
-        />
-      ) : sessionQuery.isLoading ? (
-        <View style={styles.loadingState}>
-          <ActivityIndicator size="large" color={Colors.light.primary} />
-          <ThemedText type="bodySmall" style={styles.secondaryText}>
-            Đang tải chi tiết buổi tập...
-          </ThemedText>
-        </View>
-      ) : sessionQuery.isError ? (
-        <StateCard
-          title="Không thể tải chi tiết buổi tập"
-          description="Đã xảy ra lỗi trong quá trình tải dữ liệu. Vui lòng thử lại."
-          onRetry={() => sessionQuery.refetch()}
-        />
-      ) : !course ? (
-        <StateCard
-          title="Không tìm thấy buổi tập"
-          description="Buổi tập này không còn tồn tại hoặc bạn không có quyền truy cập."
-        />
-      ) : (
-        <CourseDetailContent
-          course={course}
-          topContent={<LearningProgressCard progress={progress} />}
-          onOpenCoaches={() =>
-            router.push(asHref(`/courses/${course.courseId}/members/coaches`))
-          }
-          onOpenAssistants={() =>
-            router.push(asHref(`/courses/${course.courseId}/members/teaching-assistants`))
-          }
-          onOpenStudents={() =>
-            router.push(asHref(`/courses/${course.courseId}/members/students`))
-          }
-          onOpenPackage={(packageId) =>
-            router.push(
-              asHref(`/courses/${course.courseId}/packages/${packageId}`),
-            )
-          }
-        />
-      )}
+      <View style={styles.content}>
+        {!classSessionId ? (
+          <StateCard
+            title="Không tìm thấy buổi tập"
+            description="Thiếu mã buổi tập để tải chi tiết."
+          />
+        ) : sessionQuery.isLoading ? (
+          <View style={styles.loadingState}>
+            <ActivityIndicator size="large" color={Colors.light.primary} />
+            <ThemedText type="bodySmall" style={styles.secondaryText}>
+              Đang tải chi tiết buổi tập...
+            </ThemedText>
+          </View>
+        ) : sessionQuery.isError ? (
+          <StateCard
+            title="Không thể tải chi tiết buổi tập"
+            description="Đã xảy ra lỗi trong quá trình tải dữ liệu. Vui lòng thử lại."
+            onRetry={() => sessionQuery.refetch()}
+          />
+        ) : !course ? (
+          <StateCard
+            title="Không tìm thấy buổi tập"
+            description="Buổi tập này không còn tồn tại hoặc bạn không có quyền truy cập."
+          />
+        ) : (
+          <CourseDetailContent
+            course={course}
+            topContent={<LearningProgressCard progress={progress} />}
+            onOpenCoaches={() =>
+              router.push(asHref(`/courses/${course.courseId}/members/coaches`))
+            }
+            onOpenAssistants={() =>
+              router.push(asHref(`/courses/${course.courseId}/members/teaching-assistants`))
+            }
+            onOpenStudents={() =>
+              router.push(asHref(`/courses/${course.courseId}/members/students`))
+            }
+            onOpenPackage={(packageId) =>
+              router.push(
+                asHref(`/courses/${course.courseId}/packages/${packageId}`),
+              )
+            }
+          />
+        )}
+      </View>
     </StackScreenLayout>
   );
 }

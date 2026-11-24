@@ -1,6 +1,6 @@
 import { useRouter, type Href } from "expo-router";
 import { useRef, useState } from "react";
-import { View } from "react-native";
+import { StyleSheet, View } from "react-native";
 import { Trash6 } from "reicon-react-native";
 
 import { Permission, useCan } from "@/features/authorization";
@@ -80,7 +80,6 @@ export function UserDetailScreen() {
     <>
       <StackScreenLayout
         title="Chi tiết người dùng"
-        contentContainerStyle={[adminStyles.screen, { paddingBottom: 128 }]}
         refreshing={refreshing}
         onRefresh={onRefresh}
         floatingContent={
@@ -136,105 +135,107 @@ export function UserDetailScreen() {
           ) : undefined
         }
       >
-      {user.isPending ? (
-        <AdminLoadingState />
-      ) : !user.data ? (
-        <AdminEmptyState message="Không tìm thấy người dùng" />
-      ) : (
-        <>
-          <AdminCard style={adminStyles.gap}>
-            <View style={userAdminStyles.titleRow}>
-              <Avatar name={user.data.phoneNumber?.substring(8)} />
-              <View style={adminStyles.grow}>
-                <ThemedText type="heading">{user.data.phoneNumber}</ThemedText>
-                <ThemedText type="bodySmall" style={adminStyles.muted}>
-                  Được tạo: {formatDateDMY(user.data.createdAt)}
-                </ThemedText>
-              </View>
-              <StatusChip status={user.data.status} />
-            </View>
-            <View style={adminStyles.labelValue}>
-              <ThemedText type="featureLabel">Đăng nhập gần nhất</ThemedText>
-              <ThemedText type="bodySmall" style={adminStyles.muted}>
-                {formatDateTime(user.data.lastLoginAt)}
-              </ThemedText>
-            </View>
-            <View style={adminStyles.labelValue}>
-              <ThemedText type="featureLabel">Phiên bản phân quyền</ThemedText>
-              <ThemedText type="bodySmall" style={adminStyles.muted}>
-                v{user.data.authorizationVersion ?? 0}
-              </ThemedText>
-            </View>
-          </AdminCard>
-          <AdminSectionHeader
-            title="Hồ sơ liên kết"
-            actionLabel="Quản lý"
-            onAction={() => navigate(router, `/admin/users/${userId}/profiles`)}
-          />
-          {linkedPeople.length === 0 ? (
-            <AdminEmptyState message="Chưa liên kết hồ sơ" />
+        <View style={styles.content}>
+          {user.isPending ? (
+            <AdminLoadingState />
+          ) : !user.data ? (
+            <AdminEmptyState message="Không tìm thấy người dùng" />
           ) : (
-            <AdminCard style={userAdminStyles.zeroPadding}>
-              {linkedPeople.map((person: PersonSimpleResponse) => (
-                <AdminListRow
-                  key={person.personId}
-                  leading={
-                    <Avatar
-                      name={person.fullName}
-                      imageUrl={person.faceImagePath}
-                    />
-                  }
-                  title={person.fullName}
-                  subtitle={person.position?.name}
-                  onPress={() => setSelectedPerson(person)}
-                  meta={
-                    <AdminChip
-                      label={
-                        person.status === "ACTIVE"
-                          ? "Hoạt động"
-                          : "Ngừng hoạt động"
+            <>
+              <AdminCard style={adminStyles.gap}>
+                <View style={userAdminStyles.titleRow}>
+                  <Avatar name={user.data.phoneNumber?.substring(8)} />
+                  <View style={adminStyles.grow}>
+                    <ThemedText type="heading">{user.data.phoneNumber}</ThemedText>
+                    <ThemedText type="bodySmall" style={adminStyles.muted}>
+                      Được tạo: {formatDateDMY(user.data.createdAt)}
+                    </ThemedText>
+                  </View>
+                  <StatusChip status={user.data.status} />
+                </View>
+                <View style={adminStyles.labelValue}>
+                  <ThemedText type="featureLabel">Đăng nhập gần nhất</ThemedText>
+                  <ThemedText type="bodySmall" style={adminStyles.muted}>
+                    {formatDateTime(user.data.lastLoginAt)}
+                  </ThemedText>
+                </View>
+                <View style={adminStyles.labelValue}>
+                  <ThemedText type="featureLabel">Phiên bản phân quyền</ThemedText>
+                  <ThemedText type="bodySmall" style={adminStyles.muted}>
+                    v{user.data.authorizationVersion ?? 0}
+                  </ThemedText>
+                </View>
+              </AdminCard>
+              <AdminSectionHeader
+                title="Hồ sơ liên kết"
+                actionLabel="Quản lý"
+                onAction={() => navigate(router, `/admin/users/${userId}/profiles`)}
+              />
+              {linkedPeople.length === 0 ? (
+                <AdminEmptyState message="Chưa liên kết hồ sơ" />
+              ) : (
+                <AdminCard style={userAdminStyles.zeroPadding}>
+                  {linkedPeople.map((person: PersonSimpleResponse) => (
+                    <AdminListRow
+                      key={person.personId}
+                      leading={
+                        <Avatar
+                          name={person.fullName}
+                          imageUrl={person.faceImagePath}
+                        />
                       }
-                      tone={person.status === "ACTIVE" ? "success" : "neutral"}
+                      title={person.fullName}
+                      subtitle={person.position?.name}
+                      onPress={() => setSelectedPerson(person)}
+                      meta={
+                        <AdminChip
+                          label={
+                            person.status === "ACTIVE"
+                              ? "Hoạt động"
+                              : "Ngừng hoạt động"
+                          }
+                          tone={person.status === "ACTIVE" ? "success" : "neutral"}
+                        />
+                      }
                     />
-                  }
-                />
-              ))}
-            </AdminCard>
+                  ))}
+                </AdminCard>
+              )}
+              <AdminSectionHeader
+                title="Vai trò được gán"
+                actionLabel="Quản lý"
+                onAction={() => navigate(router, `/admin/users/${userId}/roles`)}
+              />
+              {assignedRoles.length === 0 ? (
+                <AdminEmptyState message="Chưa được gán vai trò" />
+              ) : (
+                <AdminCard style={userAdminStyles.zeroPadding}>
+                  {assignedRoles.map((role) => (
+                    <AdminListRow
+                      key={role.code}
+                      leading={<Avatar name={role.name} />}
+                      title={role.name}
+                      subtitle={role.code}
+                      meta={
+                        role.permissionVersion !== undefined ? (
+                          <AdminChip
+                            label={`v${role.permissionVersion}`}
+                            tone="info"
+                          />
+                        ) : (
+                          <AdminChip label="Vai trò" tone="info" />
+                        )
+                      }
+                      onPress={() =>
+                        navigate(router, `/admin/users/${userId}/roles`)
+                      }
+                    />
+                  ))}
+                </AdminCard>
+              )}
+            </>
           )}
-          <AdminSectionHeader
-            title="Vai trò được gán"
-            actionLabel="Quản lý"
-            onAction={() => navigate(router, `/admin/users/${userId}/roles`)}
-          />
-          {assignedRoles.length === 0 ? (
-            <AdminEmptyState message="Chưa được gán vai trò" />
-          ) : (
-            <AdminCard style={userAdminStyles.zeroPadding}>
-              {assignedRoles.map((role) => (
-                <AdminListRow
-                  key={role.code}
-                  leading={<Avatar name={role.name} />}
-                  title={role.name}
-                  subtitle={role.code}
-                  meta={
-                    role.permissionVersion !== undefined ? (
-                      <AdminChip
-                        label={`v${role.permissionVersion}`}
-                        tone="info"
-                      />
-                    ) : (
-                      <AdminChip label="Vai trò" tone="info" />
-                    )
-                  }
-                  onPress={() =>
-                    navigate(router, `/admin/users/${userId}/roles`)
-                  }
-                />
-              ))}
-            </AdminCard>
-          )}
-        </>
-      )}
+        </View>
       </StackScreenLayout>
       <ConfirmationDialog
         visible={confirming}
@@ -259,3 +260,12 @@ export function UserDetailScreen() {
     </>
   );
 }
+
+const styles = StyleSheet.create({
+  content: {
+    paddingTop: 20,
+    paddingHorizontal: 16,
+    paddingBottom: 128,
+    gap: 14,
+  },
+});

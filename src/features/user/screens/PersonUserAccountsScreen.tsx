@@ -1,6 +1,6 @@
 import { useRouter } from "expo-router";
 import { useMemo } from "react";
-import { View } from "react-native";
+import { StyleSheet, View } from "react-native";
 
 import { relationshipLabel } from "@/features/person/domain/personViewModel";
 import { usePerson, useUserPersons } from "@/features/person/queries/personQueries";
@@ -10,7 +10,6 @@ import {
   AdminEmptyState,
   AdminLoadingState,
   AdminSectionHeader,
-  adminStyles,
 } from "@/shared/ui/admin/AdministrationPrimitives";
 import { groupPersonUserAccounts } from "../domain/personUserAccounts";
 import { UserAccountRow, userAdminStyles } from "../components/UserAdministrationPrimitives";
@@ -34,16 +33,20 @@ export function PersonUserAccountsScreen({
 
   if (person.isPending) {
     return (
-      <StackScreenLayout title={title} contentContainerStyle={adminStyles.screen}>
-        <AdminLoadingState />
+      <StackScreenLayout title={title}>
+        <View style={styles.content}>
+          <AdminLoadingState />
+        </View>
       </StackScreenLayout>
     );
   }
 
   if (!person.data) {
     return (
-      <StackScreenLayout title={title} contentContainerStyle={adminStyles.screen}>
-        <AdminEmptyState message="Không tìm thấy học viên." />
+      <StackScreenLayout title={title}>
+        <View style={styles.content}>
+          <AdminEmptyState message="Không tìm thấy học viên." />
+        </View>
       </StackScreenLayout>
     );
   }
@@ -51,29 +54,39 @@ export function PersonUserAccountsScreen({
   return (
     <StackScreenLayout
       title={title}
-      contentContainerStyle={adminStyles.screen}
       refreshing={refreshing}
       onRefresh={onRefresh}
     >
-      <AdminSectionHeader title={`${accounts.length} tài khoản người dùng`} />
-      {links.isPending ? (
-        <AdminLoadingState />
-      ) : links.isError ? (
-        <AdminEmptyState message="Không thể tải tài khoản người dùng." />
-      ) : accounts.length === 0 ? (
-        <AdminEmptyState message="Học viên chưa có tài khoản người dùng liên kết." />
-      ) : (
-        <View style={userAdminStyles.list}>
-          {accounts.map((account) => (
-            <UserAccountRow
-              key={account.user.userId}
-              user={account.user}
-              subtitle={`${account.relationshipTypes.map(relationshipLabel).join(" · ")} · ${account.hasActiveLink ? "Đang liên kết" : "Liên kết đã ngừng"}`}
-              onPress={() => router.push(`/admin/users/${account.user.userId}`)}
-            />
-          ))}
-        </View>
-      )}
+      <View style={styles.content}>
+        <AdminSectionHeader title={`${accounts.length} tài khoản người dùng`} />
+        {links.isPending ? (
+          <AdminLoadingState />
+        ) : links.isError ? (
+          <AdminEmptyState message="Không thể tải tài khoản người dùng." />
+        ) : accounts.length === 0 ? (
+          <AdminEmptyState message="Học viên chưa có tài khoản người dùng liên kết." />
+        ) : (
+          <View style={userAdminStyles.list}>
+            {accounts.map((account) => (
+              <UserAccountRow
+                key={account.user.userId}
+                user={account.user}
+                subtitle={`${account.relationshipTypes.map(relationshipLabel).join(" · ")} · ${account.hasActiveLink ? "Đang liên kết" : "Liên kết đã ngừng"}`}
+                onPress={() => router.push(`/admin/users/${account.user.userId}`)}
+              />
+            ))}
+          </View>
+        )}
+      </View>
     </StackScreenLayout>
   );
 }
+
+const styles = StyleSheet.create({
+  content: {
+    paddingTop: 20,
+    paddingHorizontal: 16,
+    paddingBottom: 32,
+    gap: 14,
+  },
+});

@@ -18,52 +18,58 @@ export function TopUpRequestReviewListScreen() {
 
   if (!canReview) {
     return (
-      <StackScreenLayout title="Duyệt nạp tiền" contentContainerStyle={styles.center}>
-        <ThemedText type="bodySmall" style={styles.text}>Bạn không có quyền duyệt yêu cầu nạp tiền.</ThemedText>
+      <StackScreenLayout title="Duyệt nạp tiền" contentContainerStyle={styles.scrollCenter}>
+        <View style={styles.centerContent}>
+          <ThemedText type="bodySmall" style={styles.text}>Bạn không có quyền duyệt yêu cầu nạp tiền.</ThemedText>
+        </View>
       </StackScreenLayout>
     );
   }
 
   return (
-    <StackScreenLayout title="Duyệt nạp tiền" contentContainerStyle={styles.content}>
-      {requests.isLoading ? <ActivityIndicator size="large" color={Colors.light.primary} /> : null}
-      {requests.isError ? (
-        <View style={styles.center}>
-          <ThemedText type="bodySmall" style={styles.text}>Không thể tải danh sách yêu cầu.</ThemedText>
-          <Pressable accessibilityRole="button" onPress={() => void requests.refetch()}>
-            <ThemedText type="action" style={styles.primary}>Thử lại</ThemedText>
+    <StackScreenLayout title="Duyệt nạp tiền">
+      <View style={styles.content}>
+        {requests.isLoading ? <ActivityIndicator size="large" color={Colors.light.primary} /> : null}
+        {requests.isError ? (
+          <View style={styles.center}>
+            <ThemedText type="bodySmall" style={styles.text}>Không thể tải danh sách yêu cầu.</ThemedText>
+            <Pressable accessibilityRole="button" onPress={() => void requests.refetch()}>
+              <ThemedText type="action" style={styles.primary}>Thử lại</ThemedText>
+            </Pressable>
+          </View>
+        ) : null}
+        {!requests.isLoading && !requests.isError && requests.data?.content.length === 0 ? (
+          <ThemedText type="bodySmall" style={styles.secondary}>Không có yêu cầu đang chờ đối soát.</ThemedText>
+        ) : null}
+        {requests.data?.content.map((request) => (
+          <Pressable
+            key={request.topUpRequestId}
+            accessibilityRole="button"
+            accessibilityLabel={`Xem yêu cầu nạp tiền của ${request.studentName}`}
+            onPress={() => router.push(asHref(`/wallet/top-up-requests/${request.topUpRequestId}`))}
+            style={({ pressed }) => activeEffect(pressed, 'pressed')}
+          >
+            <SurfaceCard>
+              <View style={styles.row}>
+                <ThemedText type="title" style={styles.text}>{request.studentName}</ThemedText>
+                <ThemedText type="action" style={styles.primary}>{formatVnd(request.amount)}</ThemedText>
+              </View>
+              <ThemedText type="bodySmall" style={styles.secondary}>
+                {request.personCode || 'Không có mã học viên'} · Chờ đối soát
+              </ThemedText>
+              {request.note ? <ThemedText type="bodySmall" style={styles.text}>{request.note}</ThemedText> : null}
+            </SurfaceCard>
           </Pressable>
-        </View>
-      ) : null}
-      {!requests.isLoading && !requests.isError && requests.data?.content.length === 0 ? (
-        <ThemedText type="bodySmall" style={styles.secondary}>Không có yêu cầu đang chờ đối soát.</ThemedText>
-      ) : null}
-      {requests.data?.content.map((request) => (
-        <Pressable
-          key={request.topUpRequestId}
-          accessibilityRole="button"
-          accessibilityLabel={`Xem yêu cầu nạp tiền của ${request.studentName}`}
-          onPress={() => router.push(asHref(`/wallet/top-up-requests/${request.topUpRequestId}`))}
-          style={({ pressed }) => activeEffect(pressed, 'pressed')}
-        >
-          <SurfaceCard>
-            <View style={styles.row}>
-              <ThemedText type="title" style={styles.text}>{request.studentName}</ThemedText>
-              <ThemedText type="action" style={styles.primary}>{formatVnd(request.amount)}</ThemedText>
-            </View>
-            <ThemedText type="bodySmall" style={styles.secondary}>
-              {request.personCode || 'Không có mã học viên'} · Chờ đối soát
-            </ThemedText>
-            {request.note ? <ThemedText type="bodySmall" style={styles.text}>{request.note}</ThemedText> : null}
-          </SurfaceCard>
-        </Pressable>
-      ))}
+        ))}
+      </View>
     </StackScreenLayout>
   );
 }
 
 const styles = StyleSheet.create({
   content: { gap: 16, paddingTop: 16, paddingHorizontal: 20, paddingBottom: 32 },
+  scrollCenter: { flexGrow: 1 },
+  centerContent: { flexGrow: 1, alignItems: 'center', justifyContent: 'center', gap: 16, paddingHorizontal: 16, paddingVertical: 16 },
   center: { flexGrow: 1, alignItems: 'center', justifyContent: 'center', gap: 16 },
   row: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12 },
   text: { color: Colors.light.text },

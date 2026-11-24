@@ -1,4 +1,5 @@
 import { ConfirmationDialog } from "@/shared/ui/ConfirmationDialog";
+import StackScreenLayout from "@/routes/navigation/layouts/StackScreenLayout";
 import { ThemedText } from "@/shared/ui/ThemedText";
 import { Colors, radii } from "@/theme";
 import { router, useFocusEffect, useLocalSearchParams, type Href } from "expo-router";
@@ -10,7 +11,9 @@ import {
   useMemo,
   useState,
 } from "react";
-import { ActivityIndicator, AppState, Pressable, StyleSheet, View } from "react-native";
+import { ActivityIndicator, AppState, Image, Pressable, StyleSheet, View } from "react-native";
+
+const APP_LOGO = require("../../../../assets/logo/android/launchericon-512x512.png");
 
 import type {
   CheckInCameraMode,
@@ -157,8 +160,9 @@ export default function CheckInScreen() {
       return () => {
         setIsFocused(false);
         setIsCameraReady(false);
+        setCameraEnabled(false);
       };
-    }, [refreshPermission]),
+    }, [refreshPermission, setCameraEnabled]),
   );
 
   useEffect(() => {
@@ -255,6 +259,48 @@ export default function CheckInScreen() {
             ? "error"
             : "scanning";
 
+  if (!isCameraEnabled) {
+    return (
+      <StackScreenLayout
+        title="Điểm danh khuôn mặt"
+        scrollEnabled={false}
+        refreshEnabled={false}
+      >
+        <View style={styles.standbyLayoutContent}>
+          <StatusBar style="dark" />
+          <View style={styles.welcomeCard}>
+            <Image
+              source={APP_LOGO}
+              style={styles.welcomeLogo}
+              resizeMode="contain"
+            />
+            <ThemedText type="heading" style={styles.welcomeTitle}>
+              Điểm danh khuôn mặt
+            </ThemedText>
+            <ThemedText type="bodySmall" style={styles.welcomeDescription}>
+              Hệ thống nhận diện khuôn mặt tự động giúp học viên và huấn luyện
+              viên điểm danh nhanh chóng. Bấm nút bên dưới hoặc đứng trước cảm
+              biến để bật camera.
+            </ThemedText>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="Bật camera điểm danh"
+              onPress={() => setCameraEnabled(true)}
+              style={({ pressed }) => [
+                styles.enableCameraButton,
+                pressed ? styles.enableCameraButtonPressed : null,
+              ]}
+            >
+              <ThemedText type="action" style={styles.enableCameraButtonText}>
+                Bật camera
+              </ThemedText>
+            </Pressable>
+          </View>
+        </View>
+      </StackScreenLayout>
+    );
+  }
+
   return (
     <View style={styles.container}>
       <StatusBar style="light" />
@@ -298,7 +344,12 @@ export default function CheckInScreen() {
         <View style={[StyleSheet.absoluteFill, styles.fallbackBackground]} />
       )}
 
-      <View style={[StyleSheet.absoluteFill, styles.darkOverlay]} pointerEvents="none" />
+      {isCameraEnabled ? (
+        <View
+          style={[StyleSheet.absoluteFill, styles.darkOverlay]}
+          pointerEvents="none"
+        />
+      ) : null}
 
       <View style={styles.overlayContainer} pointerEvents="box-none">
         {isCameraEnabled ? (
@@ -334,11 +385,18 @@ export default function CheckInScreen() {
         >
           {!isCameraEnabled ? (
             <View style={styles.welcomeCard}>
+              <Image
+                source={APP_LOGO}
+                style={styles.welcomeLogo}
+                resizeMode="contain"
+              />
               <ThemedText type="heading" style={styles.welcomeTitle}>
-                WELCOME
+                Điểm danh khuôn mặt
               </ThemedText>
               <ThemedText type="bodySmall" style={styles.welcomeDescription}>
-                Đứng trước camera để bắt đầu điểm danh khuôn mặt.
+                Hệ thống nhận diện khuôn mặt tự động giúp học viên và huấn
+                luyện viên điểm danh nhanh chóng. Bấm nút bên dưới hoặc đứng
+                trước cảm biến để bật camera.
               </ThemedText>
               <Pressable
                 accessibilityRole="button"
@@ -453,6 +511,14 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: "#000000",
   },
+  standbyLayoutContent: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: 16,
+    paddingVertical: 16,
+    gap: 20,
+  },
   fallbackBackground: {
     backgroundColor: "#18191B",
   },
@@ -500,6 +566,11 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.light.surface,
     paddingHorizontal: 24,
     paddingVertical: 28,
+  },
+  welcomeLogo: {
+    width: 88,
+    height: 88,
+    borderRadius: 20,
   },
   welcomeTitle: {
     color: Colors.light.primary,

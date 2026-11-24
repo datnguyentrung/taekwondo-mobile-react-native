@@ -1,5 +1,5 @@
 import { AppState } from 'react-native';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 
 import { useAuthStore } from '@/features/authentication/store/auth.store';
 import { deviceApi } from '@/features/device-management/api/deviceApi';
@@ -9,6 +9,14 @@ import { mqttClient } from './mqttClient';
 
 export function useMqttRuntime(): void {
   const status = useAuthStore((state) => state.status);
+  const [provisioningRevision, setProvisioningRevision] = useState(0);
+
+  useEffect(
+    () => deviceProvisioningStorage.subscribe(() => {
+      setProvisioningRevision((revision) => revision + 1);
+    }),
+    [],
+  );
 
   useEffect(() => {
     if (status !== 'authenticated') {
@@ -28,7 +36,13 @@ export function useMqttRuntime(): void {
       if (disposed || !profile) return;
       try {
         const bootstrap = await deviceApi.bootstrap(profile);
-        if (disposed || bootstrap.lifecycleStatus !== 'ACTIVE' || !bootstrap.runtime.mqttWsUrl) {
+        // A newly claimed device must send one heartbeat before the server can
+        // promote it from PROVISIONED to ACTIVE.
+        if (
+          disposed
+          || !['PROVISIONED', 'ACTIVE'].includes(bootstrap.lifecycleStatus)
+          || !bootstrap.runtime.mqttWsUrl
+        ) {
           stop();
           return;
         }
@@ -64,5 +78,5 @@ export function useMqttRuntime(): void {
       appStateSubscription.remove();
       stop();
     };
-  }, [status]);
+  }, [status, provisioningRevision]);
 }

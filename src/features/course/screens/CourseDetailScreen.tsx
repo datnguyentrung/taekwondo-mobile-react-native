@@ -1,5 +1,5 @@
 import { useRouter } from "expo-router";
-import { Pressable, StyleSheet } from "react-native";
+import { Pressable, StyleSheet, View } from "react-native";
 
 import StackScreenLayout from "@/routes/navigation/layouts/StackScreenLayout";
 import { resolveDetailTitle } from "@/routes/navigation/utils/screenTitle";
@@ -28,47 +28,48 @@ export function CourseDetailScreen({
   return (
     <StackScreenLayout
       title={resolveDetailTitle(enrollment, { fallback: "Khóa học" })}
-      contentContainerStyle={styles.content}
     >
-      <SurfaceCard>
-        <ThemedText type="title" style={styles.blackText}>
-          {enrollment.courseName}
-        </ThemedText>
-        <ThemedText type="bodySmall" style={styles.blackText}>
-          {enrollment.branchName}
-        </ThemedText>
-        <StatusBadge label={enrollment.statusLabel} />
-      </SurfaceCard>
-      <SurfaceCard>
-        <ThemedText type="bodySmall" style={styles.blackText}>
-          Số buổi còn lại
-        </ThemedText>
-        <ThemedText type="bodySmall" style={styles.blackText}>
-          {Math.max(enrollment.totalSessions - enrollment.usedSessions, 0)} /{" "}
-          {enrollment.totalSessions}
-        </ThemedText>
-        <ThemedText type="bodySmall" style={styles.blackText}>
-          Đã sử dụng {enrollment.usedSessions} buổi
-        </ThemedText>
-      </SurfaceCard>
-      <SurfaceCard>
-        <InfoRow label="Gói học" value={enrollment.packageLabel} />
-        <InfoRow label="Thời hạn" value={enrollment.dateRangeLabel} />
-        <InfoRow label="Lịch học" value={enrollment.scheduleLabel} />
-        <InfoRow label="HLV chính" value={enrollment.coachName} />
-        <InfoRow label="Trạng thái" value="ACTIVE" />
-      </SurfaceCard>
-      <SurfaceCard>
-        <ThemedText type="action" style={styles.blackText}>
-          Thanh toán
-        </ThemedText>
-        <InfoRow label="Học phí" value={formatVnd(enrollment.tuitionFee)} />
-        <Pressable onPress={() => router.push(asHref(historyPath))}>
-          <ThemedText type="action" style={styles.primaryText}>
-            Xem giao dịch mua khóa học ›
+      <View style={styles.content}>
+        <SurfaceCard>
+          <ThemedText type="title" style={styles.blackText}>
+            {enrollment.courseName}
           </ThemedText>
-        </Pressable>
-      </SurfaceCard>
+          <ThemedText type="bodySmall" style={styles.blackText}>
+            {enrollment.branchName}
+          </ThemedText>
+          <StatusBadge label={enrollment.statusLabel} />
+        </SurfaceCard>
+        <SurfaceCard>
+          <ThemedText type="bodySmall" style={styles.blackText}>
+            Số buổi còn lại
+          </ThemedText>
+          <ThemedText type="bodySmall" style={styles.blackText}>
+            {Math.max(enrollment.totalSessions - enrollment.usedSessions, 0)} /{" "}
+            {enrollment.totalSessions}
+          </ThemedText>
+          <ThemedText type="bodySmall" style={styles.blackText}>
+            Đã sử dụng {enrollment.usedSessions} buổi
+          </ThemedText>
+        </SurfaceCard>
+        <SurfaceCard>
+          <InfoRow label="Gói học" value={enrollment.packageLabel} />
+          <InfoRow label="Thời hạn" value={enrollment.dateRangeLabel} />
+          <InfoRow label="Lịch học" value={enrollment.scheduleLabel} />
+          <InfoRow label="HLV chính" value={enrollment.coachName} />
+          <InfoRow label="Trạng thái" value="ACTIVE" />
+        </SurfaceCard>
+        <SurfaceCard>
+          <ThemedText type="action" style={styles.blackText}>
+            Thanh toán
+          </ThemedText>
+          <InfoRow label="Học phí" value={formatVnd(enrollment.tuitionFee)} />
+          <Pressable onPress={() => router.push(asHref(historyPath))}>
+            <ThemedText type="action" style={styles.primaryText}>
+              Xem giao dịch mua khóa học ›
+            </ThemedText>
+          </Pressable>
+        </SurfaceCard>
+      </View>
     </StackScreenLayout>
   );
 }

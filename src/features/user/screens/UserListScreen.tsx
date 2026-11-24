@@ -1,6 +1,6 @@
 import { useRouter } from "expo-router";
 import { useMemo, useState } from "react";
-import { View } from "react-native";
+import { StyleSheet, View } from "react-native";
 
 import StackScreenLayout from "@/routes/navigation/layouts/StackScreenLayout";
 import { useScreenRefresh } from "@/infrastructure/query/useScreenRefresh";
@@ -42,55 +42,65 @@ export function UserListScreen() {
   return (
     <StackScreenLayout
       title="Người dùng"
-      contentContainerStyle={adminStyles.listScreen}
       refreshing={refreshing}
       onRefresh={onRefresh}
     >
-      <AdminIntro>
-        Quản lý tài khoản, hồ sơ liên kết và vai trò truy cập.
-      </AdminIntro>
-      <AdminSearchField
-        value={search}
-        onChangeText={setSearch}
-        placeholder="Tìm số điện thoại hoặc tên hồ sơ"
-      />
-      <View style={adminStyles.chips}>
-        <AdminChip
-          label="Tất cả"
-          selected={status === "ALL"}
-          onPress={() => setStatus("ALL")}
+      <View style={styles.content}>
+        <AdminIntro>
+          Quản lý tài khoản, hồ sơ liên kết và vai trò truy cập.
+        </AdminIntro>
+        <AdminSearchField
+          value={search}
+          onChangeText={setSearch}
+          placeholder="Tìm số điện thoại hoặc tên hồ sơ"
         />
-        <AdminChip
-          label="Hoạt động"
-          selected={status === "ACTIVE"}
-          onPress={() => setStatus("ACTIVE")}
-        />
-        <AdminChip
-          label="Chờ kích hoạt"
-          selected={status === "PENDING"}
-          onPress={() => setStatus("PENDING")}
-        />
-      </View>
-      <AdminSectionHeader
-        title={`${users.data?.totalElements ?? 0} người dùng`}
-        actionLabel="Tạo người dùng"
-        onAction={() => navigate(router, "/admin/users/create")}
-      />
-      {users.isPending ? (
-        <AdminLoadingState />
-      ) : visible.length === 0 ? (
-        <AdminEmptyState message="Không tìm thấy người dùng phù hợp" />
-      ) : (
-        <View style={userAdminStyles.list}>
-          {visible.map((user: UserSimpleResponse) => (
-            <UserAccountRow
-              key={user.userId}
-              user={user}
-              onPress={() => navigate(router, `/admin/users/${user.userId}`)}
-            />
-          ))}
+        <View style={adminStyles.chips}>
+          <AdminChip
+            label="Tất cả"
+            selected={status === "ALL"}
+            onPress={() => setStatus("ALL")}
+          />
+          <AdminChip
+            label="Hoạt động"
+            selected={status === "ACTIVE"}
+            onPress={() => setStatus("ACTIVE")}
+          />
+          <AdminChip
+            label="Chờ kích hoạt"
+            selected={status === "PENDING"}
+            onPress={() => setStatus("PENDING")}
+          />
         </View>
-      )}
+        <AdminSectionHeader
+          title={`${users.data?.totalElements ?? 0} người dùng`}
+          actionLabel="Tạo người dùng"
+          onAction={() => navigate(router, "/admin/users/create")}
+        />
+        {users.isPending ? (
+          <AdminLoadingState />
+        ) : visible.length === 0 ? (
+          <AdminEmptyState message="Không tìm thấy người dùng phù hợp" />
+        ) : (
+          <View style={userAdminStyles.list}>
+            {visible.map((user: UserSimpleResponse) => (
+              <UserAccountRow
+                key={user.userId}
+                user={user}
+                onPress={() => navigate(router, `/admin/users/${user.userId}`)}
+              />
+            ))}
+          </View>
+        )}
+      </View>
     </StackScreenLayout>
   );
 }
+
+const styles = StyleSheet.create({
+  content: {
+    paddingTop: 16,
+    paddingHorizontal: 20,
+    paddingBottom: 32,
+    gap: 20,
+  },
+});

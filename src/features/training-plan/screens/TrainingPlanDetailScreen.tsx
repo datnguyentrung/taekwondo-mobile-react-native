@@ -39,13 +39,17 @@ export function TrainingPlanDetailScreen() {
   if (query.isPending)
     return (
       <StackScreenLayout title="Chi tiết gói học">
-        <ActivityIndicator color={Colors.light.primary} />
+        <View style={styles.content}>
+          <ActivityIndicator color={Colors.light.primary} />
+        </View>
       </StackScreenLayout>
     );
   if (!plan)
     return (
       <StackScreenLayout title="Chi tiết gói học">
-        <ThemedText type="bodySmall">Không tìm thấy gói học.</ThemedText>
+        <View style={styles.content}>
+          <ThemedText type="bodySmall">Không tìm thấy gói học.</ThemedText>
+        </View>
       </StackScreenLayout>
     );
   const handleDelete = async () => {
@@ -76,7 +80,6 @@ export function TrainingPlanDetailScreen() {
     <>
       <StackScreenLayout
         title="Chi tiết gói học"
-        contentContainerStyle={styles.content}
         onRefresh={async () => {
           await query.refetch();
         }}
@@ -128,51 +131,53 @@ export function TrainingPlanDetailScreen() {
           />
         }
       >
-        <PlanCard plan={plan} />
-        <AdminCard>
-          <AdminSectionHeader title="Thông tin cơ bản" />
-          {[
-            ["Tên gói học", plan.name],
-            ["Cấp độ", levelLabel(plan.level)],
-            ["Thời lượng", `${plan.durationMonths} tháng`],
-            ["Số buổi gồm trong gói", `${plan.includedSessionCount} buổi`],
-            [
-              "Giá gốc",
-              new Intl.NumberFormat("vi-VN").format(plan.basePrice) + "đ",
-            ],
-            [
-              "Giá bán",
-              new Intl.NumberFormat("vi-VN").format(plan.finalPrice) + "đ",
-            ],
-          ].map(([key, value]) => (
-            <View key={key} style={styles.info}>
-              <ThemedText type="bodySmall" style={styles.muted}>
-                {key}
-              </ThemedText>
-              <ThemedText type="bodySmall">{value}</ThemedText>
-            </View>
-          ))}
-        </AdminCard>
-        <NavigationMenu>
-          <NavigationMenuItem
-            title="Yêu cầu & Bổ sung"
-            count={plan.requirements.length + plan.addons.length}
-            onPress={() =>
-              router.push(
-                `/admin/training-plans/${plan.trainingPlanId}/requirements-addons` as never,
-              )
-            }
-          />
-          <NavigationMenuItem
-            title="Khóa học áp dụng"
-            count={plan.accessRules.length}
-            onPress={() =>
-              router.push(
-                `/admin/training-plans/${plan.trainingPlanId}/courses` as never,
-              )
-            }
-          />
-        </NavigationMenu>
+        <View style={styles.content}>
+          <PlanCard plan={plan} />
+          <AdminCard>
+            <AdminSectionHeader title="Thông tin cơ bản" />
+            {[
+              ["Tên gói học", plan.name],
+              ["Cấp độ", levelLabel(plan.level)],
+              ["Thời lượng", `${plan.durationMonths} tháng`],
+              ["Số buổi gồm trong gói", `${plan.includedSessionCount} buổi`],
+              [
+                "Giá gốc",
+                new Intl.NumberFormat("vi-VN").format(plan.basePrice) + "đ",
+              ],
+              [
+                "Giá bán",
+                new Intl.NumberFormat("vi-VN").format(plan.finalPrice) + "đ",
+              ],
+            ].map(([key, value]) => (
+              <View key={key} style={styles.info}>
+                <ThemedText type="bodySmall" style={styles.muted}>
+                  {key}
+                </ThemedText>
+                <ThemedText type="bodySmall">{value}</ThemedText>
+              </View>
+            ))}
+          </AdminCard>
+          <NavigationMenu>
+            <NavigationMenuItem
+              title="Yêu cầu & Bổ sung"
+              count={plan.requirements.length + plan.addons.length}
+              onPress={() =>
+                router.push(
+                  `/admin/training-plans/${plan.trainingPlanId}/requirements-addons` as never,
+                )
+              }
+            />
+            <NavigationMenuItem
+              title="Khóa học áp dụng"
+              count={plan.accessRules.length}
+              onPress={() =>
+                router.push(
+                  `/admin/training-plans/${plan.trainingPlanId}/courses` as never,
+                )
+              }
+            />
+          </NavigationMenu>
+        </View>
       </StackScreenLayout>
       <TrainingPlanFormSheet
         visible={editing}
@@ -211,7 +216,12 @@ export function TrainingPlanDetailScreen() {
   );
 }
 const styles = StyleSheet.create({
-  content: { paddingTop: Spacing.two, paddingBottom: 110, gap: Spacing.two },
+  content: {
+    paddingHorizontal: 16,
+    paddingTop: Spacing.two,
+    paddingBottom: 110,
+    gap: Spacing.two,
+  },
   info: {
     flexDirection: "row",
     justifyContent: "space-between",

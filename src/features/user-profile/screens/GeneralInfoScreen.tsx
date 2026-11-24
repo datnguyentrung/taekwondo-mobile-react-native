@@ -217,10 +217,10 @@ export default function GeneralInfoScreen() {
   return (
     <StackScreenLayout
       title="Thông tin chung"
-      contentContainerStyle={styles.content}
       floatingContent={<SupportButtons />}
     >
-      <View style={styles.card}>
+      <View style={styles.content}>
+        <View style={styles.card}>
         <Pressable
           style={({ pressed }) => [
             styles.avatarWrap,
@@ -385,6 +385,7 @@ export default function GeneralInfoScreen() {
           )}
         </View>
       </Modal>
+      </View>
     </StackScreenLayout>
   );
 }
@@ -441,7 +442,7 @@ const styles = StyleSheet.create({
   content: {
     paddingTop: 60,
     paddingHorizontal: 20,
-    paddingBottom: 22,
+    paddingBottom: 128,
   },
   card: {
     borderWidth: 1,

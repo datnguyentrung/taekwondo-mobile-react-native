@@ -391,9 +391,9 @@ export function KneeCounterScreen() {
 function Action({ label, disabled = false, onPress }: { label: string; disabled?: boolean; onPress: () => void | Promise<void> }) { return <Pressable accessibilityRole="button" accessibilityState={{ disabled }} disabled={disabled} onPress={() => void onPress()} style={({ pressed }) => [styles.action, disabled && styles.disabled, pressed && styles.pressed]}><ThemedText type="action" style={styles.title}>{label}</ThemedText></Pressable>; }
 
 const styles = StyleSheet.create({
-  content: { flex: 1, minHeight: 0, paddingBottom: 16 },
+  content: { flex: 1, minHeight: 0 },
   contentCompact: { flex: undefined, flexGrow: 1 },
-  workspace: { flex: 1, minHeight: 0, flexDirection: "row", gap: Spacing.three },
+  workspace: { flex: 1, minHeight: 0, flexDirection: "row", gap: Spacing.three, paddingHorizontal: 16, paddingTop: 16, paddingBottom: 16 },
   workspaceCompact: { flexDirection: "column", flex: undefined },
   leftColumn: { flex: 1, minWidth: 0, minHeight: 0, gap: Spacing.two },
   leftColumnCompact: { flex: undefined },

@@ -154,132 +154,140 @@ export function TopUpScreen({ studentCode, mode = "GUARDIAN_REQUEST" }: TopUpScr
 
   if (!canCreate) {
     return (
-      <StackScreenLayout title="Nạp tiền" contentContainerStyle={styles.center}>
-        <ThemedText type="bodySmall" style={styles.blackText}>
-          Bạn không có quyền thực hiện tính năng nạp tiền.
-        </ThemedText>
+      <StackScreenLayout title="Nạp tiền" contentContainerStyle={styles.scrollCenter}>
+        <View style={styles.center}>
+          <ThemedText type="bodySmall" style={styles.blackText}>
+            Bạn không có quyền thực hiện tính năng nạp tiền.
+          </ThemedText>
+        </View>
       </StackScreenLayout>
     );
   }
 
   if (isLoading) {
     return (
-      <StackScreenLayout title="Nạp tiền" contentContainerStyle={styles.center}>
-        <ActivityIndicator size="large" color={Colors.light.primary} />
+      <StackScreenLayout title="Nạp tiền" contentContainerStyle={styles.scrollCenter}>
+        <View style={styles.center}>
+          <ActivityIndicator size="large" color={Colors.light.primary} />
+        </View>
       </StackScreenLayout>
     );
   }
 
   if (hasLoadError || !student || !walletQuery.data) {
     return (
-      <StackScreenLayout title="Nạp tiền" contentContainerStyle={styles.center}>
-        <ThemedText type="bodySmall" style={styles.blackText}>
-          Không thể tải thông tin ví học viên.
-        </ThemedText>
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel="Tải lại thông tin ví"
-          onPress={() => {
-            void personQuery.refetch();
-            void walletQuery.refetch();
-          }}
-        >
-          <ThemedText type="action" style={styles.primaryText}>
-            Thử lại
+      <StackScreenLayout title="Nạp tiền" contentContainerStyle={styles.scrollCenter}>
+        <View style={styles.center}>
+          <ThemedText type="bodySmall" style={styles.blackText}>
+            Không thể tải thông tin ví học viên.
           </ThemedText>
-        </Pressable>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Tải lại thông tin ví"
+            onPress={() => {
+              void personQuery.refetch();
+              void walletQuery.refetch();
+            }}
+          >
+            <ThemedText type="action" style={styles.primaryText}>
+              Thử lại
+            </ThemedText>
+          </Pressable>
+        </View>
       </StackScreenLayout>
     );
   }
 
   return (
-    <StackScreenLayout title="Nạp tiền" contentContainerStyle={styles.content}>
-      <StudentProfileSummaryCard student={student} />
-      <BalanceCard label="Số dư hiện tại" amount={balance} />
-      <FormField
-        label="Số tiền"
-        value={formatNumberWithCommas(amountInput)}
-        placeholder="Nhập số tiền, ví dụ: 2,000,000"
-        keyboardType="numeric"
-        helper={isDirect
-          ? "Chỉ xác nhận sau khi đã đối soát tiền thực nhận"
-          : "Số dư chỉ tăng sau khi nhân viên tài chính đối soát và duyệt"}
-        onChangeText={(value) => {
-          const digits = value.replace(/\D/g, "");
-          setAmountInput(digits ? String(Math.min(Number(digits), MAX_TOP_UP)) : "");
-        }}
-      />
-      <FormField
-        label="Ghi chú"
-        value={note}
-        placeholder="Ví dụ: PH chuyển khoản qua Zalo"
-        maxLength={500}
-        onChangeText={setNote}
-      />
-      <SurfaceCard soft style={styles.uploadBox}>
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel="Thêm ảnh chuyển khoản"
-          onPress={() => void pickTransferImage()}
-          style={({ pressed }) => [styles.uploadAction, pressed ? styles.pressed : null]}
-        >
-          {transferImage ? (
-            <>
-              <Image source={{ uri: transferImage.uri }} contentFit="cover" style={styles.transferImage} />
-              <ThemedText type="bodySmall" numberOfLines={1} style={styles.primaryText}>
-                {transferImage.fileName || "Đã thêm ảnh chuyển khoản"}
-              </ThemedText>
-            </>
-          ) : (
-            <ThemedText type="bodySmall" style={styles.primaryText}>
-              ＋ Thêm ảnh chuyển khoản
-            </ThemedText>
-          )}
-        </Pressable>
-      </SurfaceCard>
-      <ThemedText type="bodySmall" style={styles.secondaryText}>JPG / PNG · tối đa 5 MB · bắt buộc</ThemedText>
-      <BalanceCard label={isDirect ? "Số dư sau giao dịch" : "Số dư dự kiến sau khi duyệt"} amount={balance + amount} />
-      <PrimaryActionButton
-        title={isDirect ? "Xác nhận nạp tiền" : "Gửi yêu cầu nạp tiền"}
-        loading={submitTopUp.isPending}
-        disabled={!amount || amount > MAX_TOP_UP || !transferImage || !currentUserId}
-        onPress={() => setConfirmVisible(true)}
-      />
-      <ThemedText type="bodySmall" style={styles.blackText}>
-        {isDirect
-          ? "Giao dịch TOP_UP / CREDIT chỉ được tạo sau xác nhận đối soát."
-          : "Ảnh chứng từ không tự xác nhận tiền đã vào tài khoản. Nhân viên tài chính sẽ kiểm tra trước khi duyệt."}
-      </ThemedText>
-      {!isDirect && latestRequest ? (
-        <SurfaceCard soft>
-          <ThemedText type="title" style={styles.blackText}>Yêu cầu gần nhất</ThemedText>
-          <View style={styles.statusRow}>
-            <ThemedText type="bodySmall" style={styles.secondaryText}>{formatVnd(latestRequest.amount)}</ThemedText>
-            <ThemedText type="bodySmall" style={styles.primaryText}>{statusLabel[latestRequest.status]}</ThemedText>
-          </View>
-          {latestRequest.rejectionReason ? (
-            <ThemedText type="bodySmall" style={styles.errorText}>{latestRequest.rejectionReason}</ThemedText>
-          ) : null}
-        </SurfaceCard>
-      ) : null}
-      {isDirect && canReview ? (
-        <PrimaryActionButton
-          title="Xem yêu cầu chờ duyệt"
-          variant="outline"
-          onPress={() => router.push(asHref("/wallet/top-up-requests"))}
+    <StackScreenLayout title="Nạp tiền">
+      <View style={styles.content}>
+        <StudentProfileSummaryCard student={student} />
+        <BalanceCard label="Số dư hiện tại" amount={balance} />
+        <FormField
+          label="Số tiền"
+          value={formatNumberWithCommas(amountInput)}
+          placeholder="Nhập số tiền, ví dụ: 2,000,000"
+          keyboardType="numeric"
+          helper={isDirect
+            ? "Chỉ xác nhận sau khi đã đối soát tiền thực nhận"
+            : "Số dư chỉ tăng sau khi nhân viên tài chính đối soát và duyệt"}
+          onChangeText={(value) => {
+            const digits = value.replace(/\D/g, "");
+            setAmountInput(digits ? String(Math.min(Number(digits), MAX_TOP_UP)) : "");
+          }}
         />
-      ) : null}
-      <ConfirmationDialog
-        visible={confirmVisible}
-        title={isDirect ? "Xác nhận đã đối soát" : "Gửi yêu cầu nạp tiền"}
-        description={isDirect
-          ? `Xác nhận đã nhận ${formatVnd(amount)} và cộng tiền vào ví ${student.fullName}.`
-          : `Gửi chứng từ ${formatVnd(amount)} để nhân viên tài chính đối soát. Số dư chưa thay đổi ở bước này.`}
-        confirmLabel={isDirect ? "Đã đối soát" : "Gửi yêu cầu"}
-        pending={submitTopUp.isPending}
-        onCancel={() => setConfirmVisible(false)}
-        onConfirm={() => void submit()}
-      />
+        <FormField
+          label="Ghi chú"
+          value={note}
+          placeholder="Ví dụ: PH chuyển khoản qua Zalo"
+          maxLength={500}
+          onChangeText={setNote}
+        />
+        <SurfaceCard soft style={styles.uploadBox}>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Thêm ảnh chuyển khoản"
+            onPress={() => void pickTransferImage()}
+            style={({ pressed }) => [styles.uploadAction, pressed ? styles.pressed : null]}
+          >
+            {transferImage ? (
+              <>
+                <Image source={{ uri: transferImage.uri }} contentFit="cover" style={styles.transferImage} />
+                <ThemedText type="bodySmall" numberOfLines={1} style={styles.primaryText}>
+                  {transferImage.fileName || "Đã thêm ảnh chuyển khoản"}
+                </ThemedText>
+              </>
+            ) : (
+              <ThemedText type="bodySmall" style={styles.primaryText}>
+                ＋ Thêm ảnh chuyển khoản
+              </ThemedText>
+            )}
+          </Pressable>
+        </SurfaceCard>
+        <ThemedText type="bodySmall" style={styles.secondaryText}>JPG / PNG · tối đa 5 MB · bắt buộc</ThemedText>
+        <BalanceCard label={isDirect ? "Số dư sau giao dịch" : "Số dư dự kiến sau khi duyệt"} amount={balance + amount} />
+        <PrimaryActionButton
+          title={isDirect ? "Xác nhận nạp tiền" : "Gửi yêu cầu nạp tiền"}
+          loading={submitTopUp.isPending}
+          disabled={!amount || amount > MAX_TOP_UP || !transferImage || !currentUserId}
+          onPress={() => setConfirmVisible(true)}
+        />
+        <ThemedText type="bodySmall" style={styles.blackText}>
+          {isDirect
+            ? "Giao dịch TOP_UP / CREDIT chỉ được tạo sau xác nhận đối soát."
+            : "Ảnh chứng từ không tự xác nhận tiền đã vào tài khoản. Nhân viên tài chính sẽ kiểm tra trước khi duyệt."}
+        </ThemedText>
+        {!isDirect && latestRequest ? (
+          <SurfaceCard soft>
+            <ThemedText type="title" style={styles.blackText}>Yêu cầu gần nhất</ThemedText>
+            <View style={styles.statusRow}>
+              <ThemedText type="bodySmall" style={styles.secondaryText}>{formatVnd(latestRequest.amount)}</ThemedText>
+              <ThemedText type="bodySmall" style={styles.primaryText}>{statusLabel[latestRequest.status]}</ThemedText>
+            </View>
+            {latestRequest.rejectionReason ? (
+              <ThemedText type="bodySmall" style={styles.errorText}>{latestRequest.rejectionReason}</ThemedText>
+            ) : null}
+          </SurfaceCard>
+        ) : null}
+        {isDirect && canReview ? (
+          <PrimaryActionButton
+            title="Xem yêu cầu chờ duyệt"
+            variant="outline"
+            onPress={() => router.push(asHref("/wallet/top-up-requests"))}
+          />
+        ) : null}
+        <ConfirmationDialog
+          visible={confirmVisible}
+          title={isDirect ? "Xác nhận đã đối soát" : "Gửi yêu cầu nạp tiền"}
+          description={isDirect
+            ? `Xác nhận đã nhận ${formatVnd(amount)} và cộng tiền vào ví ${student.fullName}.`
+            : `Gửi chứng từ ${formatVnd(amount)} để nhân viên tài chính đối soát. Số dư chưa thay đổi ở bước này.`}
+          confirmLabel={isDirect ? "Đã đối soát" : "Gửi yêu cầu"}
+          pending={submitTopUp.isPending}
+          onCancel={() => setConfirmVisible(false)}
+          onConfirm={() => void submit()}
+        />
+      </View>
     </StackScreenLayout>
   );
 }
@@ -291,11 +299,16 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingBottom: 24,
   },
+  scrollCenter: {
+    flexGrow: 1,
+  },
   center: {
     flexGrow: 1,
     alignItems: "center",
     justifyContent: "center",
     gap: 16,
+    paddingHorizontal: 16,
+    paddingVertical: 16,
   },
   uploadBox: {
     minHeight: 96,

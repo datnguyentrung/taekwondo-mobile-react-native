@@ -97,80 +97,81 @@ export function CourseScheduleListScreen({ courseId }: { courseId: string }) {
   return <>
     <StackScreenLayout
       title="Danh sách lịch học"
-      contentContainerStyle={styles.content}
       refreshing={refreshing}
       onRefresh={onRefresh}
     >
-      <View style={styles.header}>
-        <View style={styles.searchRow}>
-          <View style={styles.searchField}>
-            <AdminSearchField
-              value={searchInput}
-              onChangeText={setSearchInput}
-              placeholder="Tìm thứ, giờ, cơ sở, HLV..."
-            />
+      <View style={styles.content}>
+        <View style={styles.header}>
+          <View style={styles.searchRow}>
+            <View style={styles.searchField}>
+              <AdminSearchField
+                value={searchInput}
+                onChangeText={setSearchInput}
+                placeholder="Tìm thứ, giờ, cơ sở, HLV..."
+              />
+            </View>
+            {canUpdate ? (
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel="Thêm lịch học"
+                onPress={() => setIsCreateOpen(true)}
+                style={({ pressed }) => [styles.addButton, pressed && styles.pressed]}
+              >
+                <AppIcon icon={<Plus />} size={24} color={Colors.light.surface} />
+              </Pressable>
+            ) : null}
           </View>
-          {canUpdate ? (
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel="Thêm lịch học"
-              onPress={() => setIsCreateOpen(true)}
-              style={({ pressed }) => [styles.addButton, pressed && styles.pressed]}
-            >
-              <AppIcon icon={<Plus />} size={24} color={Colors.light.surface} />
-            </Pressable>
-          ) : null}
         </View>
-      </View>
 
-      {schedules.length > 0 ? (
-        <View style={styles.groups}>
-          {scheduleGroups.map((group) => (
-            <View key={group.branchName} style={styles.group}>
-              <View style={styles.groupHeader}>
-                <ThemedText type="subtitle" style={styles.groupTitle}>
-                  {group.branchName}
-                </ThemedText>
-                <View style={styles.countBadge}>
-                  <ThemedText type="bodySmall" style={styles.countBadgeText}>
-                    {group.countLabel}
+        {schedules.length > 0 ? (
+          <View style={styles.groups}>
+            {scheduleGroups.map((group) => (
+              <View key={group.branchName} style={styles.group}>
+                <View style={styles.groupHeader}>
+                  <ThemedText type="subtitle" style={styles.groupTitle}>
+                    {group.branchName}
                   </ThemedText>
+                  <View style={styles.countBadge}>
+                    <ThemedText type="bodySmall" style={styles.countBadgeText}>
+                      {group.countLabel}
+                    </ThemedText>
+                  </View>
+                </View>
+                <View style={styles.list}>
+                  {group.schedules.map((schedule, index) => (
+                    <View key={schedule.courseScheduleId}>
+                      <ScheduleRow
+                        schedule={schedule}
+                        onPress={() => setSelected(schedule)}
+                      />
+                      {index < group.schedules.length - 1 ? (
+                        <View style={styles.separator} />
+                      ) : null}
+                    </View>
+                  ))}
                 </View>
               </View>
-              <View style={styles.list}>
-                {group.schedules.map((schedule, index) => (
-                  <View key={schedule.courseScheduleId}>
-                    <ScheduleRow
-                      schedule={schedule}
-                      onPress={() => setSelected(schedule)}
-                    />
-                    {index < group.schedules.length - 1 ? (
-                      <View style={styles.separator} />
-                    ) : null}
-                  </View>
-                ))}
-              </View>
-            </View>
-          ))}
-        </View>
-      ) : (
-        <View style={styles.state}>
-          {query.isLoading ? (
-            <ActivityIndicator
-              accessibilityLabel="Đang tải danh sách lịch"
-              color={Colors.light.primary}
-            />
-          ) : query.isError ? (
-            <ThemedText type="bodySmall" style={styles.emptyText}>
-              Không thể tải danh sách lịch học.
-            </ThemedText>
-          ) : (
-            <ThemedText type="bodySmall" style={styles.emptyText}>
-              {search ? "Không tìm thấy lịch học phù hợp." : "Chưa có lịch học."}
-            </ThemedText>
-          )}
-        </View>
-      )}
+            ))}
+          </View>
+        ) : (
+          <View style={styles.state}>
+            {query.isLoading ? (
+              <ActivityIndicator
+                accessibilityLabel="Đang tải danh sách lịch"
+                color={Colors.light.primary}
+              />
+            ) : query.isError ? (
+              <ThemedText type="bodySmall" style={styles.emptyText}>
+                Không thể tải danh sách lịch học.
+              </ThemedText>
+            ) : (
+              <ThemedText type="bodySmall" style={styles.emptyText}>
+                {search ? "Không tìm thấy lịch học phù hợp." : "Chưa có lịch học."}
+              </ThemedText>
+            )}
+          </View>
+        )}
+      </View>
     </StackScreenLayout>
     <CourseScheduleDetailWindow schedule={selected} onClose={() => setSelected(undefined)} onEdit={canOpenEditor ? setEditing : undefined} onToggleStatus={canUpdate ? toggle : undefined} onDelete={canUpdate ? removeSchedule : undefined} onCancelDelete={() => deleteAbortRef.current?.abort()} deleting={remove.isPending} actionPending={update.isPending} />
     <CourseScheduleFormSheet mode="edit" courseId={courseId} visible={Boolean(editing)} schedule={editing} submitting={update.isPending} onClose={() => setEditing(undefined)} onSubmit={(request) => { if (editing) void updateSchedule(editing, request, "Cập nhật lịch học thành công"); }} />
@@ -185,7 +186,7 @@ function matchesSearch(schedule: CourseScheduleView, search: string) {
 }
 
 const styles = StyleSheet.create({
-  content: { paddingTop: Spacing.two, paddingBottom: Spacing.four },
+  content: { paddingHorizontal: Spacing.three, paddingTop: Spacing.two, paddingBottom: Spacing.four, gap: 20 },
   header: { paddingBottom: Spacing.two },
   searchRow: { flexDirection: "row", alignItems: "center", gap: Spacing.three },
   searchField: { flex: 1, minWidth: 0 },

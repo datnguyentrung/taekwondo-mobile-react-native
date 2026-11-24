@@ -44,7 +44,8 @@ export function SparringLobbyScreen() {
     }
   };
 
-  return <StackScreenLayout title="ĐỐI KHÁNG" headerVariant="dark" scrollEnabled={false} refreshEnabled={false} contentContainerStyle={styles.page}>
+  return <StackScreenLayout title="ĐỐI KHÁNG" headerVariant="dark" scrollEnabled={false} refreshEnabled={false}>
+    <View style={styles.page}>
       <View style={styles.main}>
         <View style={styles.column}>
           <ThemedText style={styles.title}>REFEREE PRACTICE</ThemedText>
@@ -89,11 +90,12 @@ export function SparringLobbyScreen() {
         </View>
       </View>
       {error ? <ThemedText style={styles.error}>{error}</ThemedText> : null}
+    </View>
   </StackScreenLayout>;
 }
 
 const styles = StyleSheet.create({
-  page: { flex: 1 },
+  page: { flex: 1, paddingHorizontal: 16, paddingVertical: 16, gap: 20 },
   main: {
     flex: 1,
     flexDirection: 'row',

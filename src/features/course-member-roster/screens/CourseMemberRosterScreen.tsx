@@ -268,7 +268,7 @@ const styles = StyleSheet.create({
     borderCurve: "continuous",
   },
   pressed: effects.pressed,
-  listContent: { flexGrow: 1, paddingTop: 20, paddingBottom: 32 },
+  listContent: { flexGrow: 1, paddingHorizontal: 16, paddingTop: 20, paddingBottom: 32 },
   listHeader: { gap: 14, marginBottom: 14 },
   listGap: { height: 12 },
   state: {

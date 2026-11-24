@@ -9,32 +9,33 @@ export function StudentEnrollmentScheduleScreen({ enrollmentId }: { enrollmentId
   return (
     <StackScreenLayout
       title="Lịch học đăng ký"
-      contentContainerStyle={styles.content}
       onRefresh={async () => { await schedules.refetch(); }}
       refreshing={schedules.isRefetching}
     >
-      <AdminIntro>
-        Lịch được chốt khi đăng ký. Thay đổi dài hạn phải đi qua yêu cầu đổi lịch và được duyệt; không sửa trực tiếp từng lịch.
-      </AdminIntro>
-      <AdminSectionHeader title="Lịch đã chốt" />
-      {schedules.isPending ? (
-        <View style={styles.state}><ActivityIndicator color={Colors.light.primary} /></View>
-      ) : schedules.isError ? (
-        <AdminEmptyState message="Không thể tải lịch học." />
-      ) : schedules.data?.length ? (
-        <AdminCard>
-          {schedules.data.map((item) => (
-            <AdminListRow
-              key={item.studentEnrollmentScheduleId}
-              title={item.courseSchedule.classSchedule?.name ?? `Lịch ${item.courseSchedule.courseScheduleId.slice(0, 8)}`}
-              subtitle={`${item.courseSchedule.startDate} · ${item.courseSchedule.status}`}
-            />
-          ))}
-        </AdminCard>
-      ) : (
-        <AdminEmptyState message="Chưa có lịch học." />
-      )}
+      <View style={styles.content}>
+        <AdminIntro>
+          Lịch được chốt khi đăng ký. Thay đổi dài hạn phải đi qua yêu cầu đổi lịch và được duyệt; không sửa trực tiếp từng lịch.
+        </AdminIntro>
+        <AdminSectionHeader title="Lịch đã chốt" />
+        {schedules.isPending ? (
+          <View style={styles.state}><ActivityIndicator color={Colors.light.primary} /></View>
+        ) : schedules.isError ? (
+          <AdminEmptyState message="Không thể tải lịch học." />
+        ) : schedules.data?.length ? (
+          <AdminCard>
+            {schedules.data.map((item) => (
+              <AdminListRow
+                key={item.studentEnrollmentScheduleId}
+                title={item.courseSchedule.classSchedule?.name ?? `Lịch ${item.courseSchedule.courseScheduleId.slice(0, 8)}`}
+                subtitle={`${item.courseSchedule.startDate} · ${item.courseSchedule.status}`}
+              />
+            ))}
+          </AdminCard>
+        ) : (
+          <AdminEmptyState message="Chưa có lịch học." />
+        )}
+      </View>
     </StackScreenLayout>
   );
 }
-const styles=StyleSheet.create({content:{gap:Spacing.three},state:{paddingVertical:48,alignItems:'center'}});
+const styles=StyleSheet.create({content:{paddingHorizontal:16,paddingVertical:16,gap:Spacing.three},state:{paddingVertical:48,alignItems:'center'}});

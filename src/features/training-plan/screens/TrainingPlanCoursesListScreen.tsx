@@ -182,7 +182,7 @@ export function TrainingPlanCoursesListScreen() {
   if (planQuery.isPending)
     return (
       <StackScreenLayout title="Khóa học áp dụng">
-        <View style={styles.state}>
+        <View style={[styles.content, styles.state]}>
           <ActivityIndicator color={Colors.light.primary} />
         </View>
       </StackScreenLayout>
@@ -190,71 +190,74 @@ export function TrainingPlanCoursesListScreen() {
   if (!planQuery.data)
     return (
       <StackScreenLayout title="Khóa học áp dụng">
-        <AdminEmptyState message="Không tìm thấy gói học." />
+        <View style={styles.content}>
+          <AdminEmptyState message="Không tìm thấy gói học." />
+        </View>
       </StackScreenLayout>
     );
   return (
     <>
       <StackScreenLayout
         title="Khóa học áp dụng"
-        contentContainerStyle={styles.content}
         refreshing={planQuery.isRefetching}
         onRefresh={async () => {
           await planQuery.refetch();
         }}
       >
-        <View style={styles.searchRow}>
-          <View style={styles.searchField}>
-            <AdminSearchField
-              value={searchInput}
-              onChangeText={setSearchInput}
-              placeholder="Tìm khóa học hoặc loại buổi..."
-            />
+        <View style={styles.content}>
+          <View style={styles.searchRow}>
+            <View style={styles.searchField}>
+              <AdminSearchField
+                value={searchInput}
+                onChangeText={setSearchInput}
+                placeholder="Tìm khóa học hoặc loại buổi..."
+              />
+            </View>
+            {canCreate ? (
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel="Thêm khóa học áp dụng"
+                onPress={openCreate}
+                style={({ pressed }) => [
+                  styles.addButton,
+                  activeEffect(pressed, "pressed"),
+                ]}
+              >
+                <AppIcon icon={<Plus />} size={24} color={Colors.light.surface} />
+              </Pressable>
+            ) : null}
           </View>
-          {canCreate ? (
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel="Thêm khóa học áp dụng"
-              onPress={openCreate}
-              style={({ pressed }) => [
-                styles.addButton,
-                activeEffect(pressed, "pressed"),
-              ]}
-            >
-              <AppIcon icon={<Plus />} size={24} color={Colors.light.surface} />
-            </Pressable>
-          ) : null}
-        </View>
-        {ruleGroups.length ? (
-          <View style={styles.groups}>
-            {ruleGroups.map((group) => (
-              <View key={group.value} style={styles.group}>
-                <View style={styles.groupContent}>
-                  <ThemedText type="featureLabel" style={styles.groupTitle}>
-                    {group.label}
-                  </ThemedText>
-                  <View style={styles.list}>
-                    {group.rules.map((rule) => (
-                      <AdminListRow
-                        key={rule.trainingPlanAccessRuleId}
-                        title={rule.targetCourseName}
-                        onPress={() => setSelected(rule)}
-                      />
-                    ))}
+          {ruleGroups.length ? (
+            <View style={styles.groups}>
+              {ruleGroups.map((group) => (
+                <View key={group.value} style={styles.group}>
+                  <View style={styles.groupContent}>
+                    <ThemedText type="featureLabel" style={styles.groupTitle}>
+                      {group.label}
+                    </ThemedText>
+                    <View style={styles.list}>
+                      {group.rules.map((rule) => (
+                        <AdminListRow
+                          key={rule.trainingPlanAccessRuleId}
+                          title={rule.targetCourseName}
+                          onPress={() => setSelected(rule)}
+                        />
+                      ))}
+                    </View>
                   </View>
                 </View>
-              </View>
-            ))}
-          </View>
-        ) : (
-          <View style={styles.state}>
-            <ThemedText type="bodySmall" style={styles.empty}>
-              {search
-                ? "Không tìm thấy khóa học phù hợp."
-                : "Chưa có khóa học áp dụng."}
-            </ThemedText>
-          </View>
-        )}
+              ))}
+            </View>
+          ) : (
+            <View style={styles.state}>
+              <ThemedText type="bodySmall" style={styles.empty}>
+                {search
+                  ? "Không tìm thấy khóa học phù hợp."
+                  : "Chưa có khóa học áp dụng."}
+              </ThemedText>
+            </View>
+          )}
+        </View>
       </StackScreenLayout>
       <DetailSheet
         rule={selected}
@@ -494,6 +497,7 @@ function sessionLabel(value: SessionType) {
 }
 const styles = StyleSheet.create({
   content: {
+    paddingHorizontal: 16,
     paddingTop: Spacing.two,
     paddingBottom: Spacing.four,
     gap: Spacing.four,

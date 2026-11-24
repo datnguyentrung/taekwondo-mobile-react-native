@@ -113,21 +113,20 @@ export function RoleListScreen({
   });
 
   return (
-    <StackScreenLayout
-      title="Vai trò & quyền"
-      contentContainerStyle={adminStyles.listScreen}
-    >
-      <AdminTabs
-        items={tabs}
-        value={activeTab}
-        onChange={(value) => setActiveTab(value as "roles" | "permissions")}
-      />
-      <AdminIntro>
-        {activeTab === "roles"
-          ? "Quản lý vai trò và tập quyền truy cập trong hệ thống."
-          : "Danh mục quyền kỹ thuật được dùng để cấu hình các vai trò."}
-      </AdminIntro>
-      {activeTab === "roles" ? <RolesTabContent /> : <PermissionsTabContent />}
+    <StackScreenLayout title="Vai trò & quyền">
+      <View style={adminStyles.listScreen}>
+        <AdminTabs
+          items={tabs}
+          value={activeTab}
+          onChange={(value) => setActiveTab(value as "roles" | "permissions")}
+        />
+        <AdminIntro>
+          {activeTab === "roles"
+            ? "Quản lý vai trò và tập quyền truy cập trong hệ thống."
+            : "Danh mục quyền kỹ thuật được dùng để cấu hình các vai trò."}
+        </AdminIntro>
+        {activeTab === "roles" ? <RolesTabContent /> : <PermissionsTabContent />}
+      </View>
     </StackScreenLayout>
   );
 }
@@ -175,7 +174,6 @@ export function RoleDetailScreen() {
     <>
       <StackScreenLayout
         title="Chi tiết vai trò"
-        contentContainerStyle={[adminStyles.screen, { paddingBottom: 128 }]}
         floatingContent={
           role.data ? (
             <FloatingActionBar
@@ -230,58 +228,60 @@ export function RoleDetailScreen() {
           ) : undefined
         }
       >
-      {role.isPending ? (
-        <AdminLoadingState />
-      ) : !role.data ? (
-        <AdminEmptyState message="Không tìm thấy vai trò" />
-      ) : (
-        <>
-          <AdminCard style={adminStyles.gap}>
-            <ThemedText type="heading">{role.data.name}</ThemedText>
-            <ThemedText type="code" style={styles.code}>
-              {role.data.code}
-            </ThemedText>
-            <ThemedText type="bodySmall" style={adminStyles.muted}>
-              {role.data.description || "Chưa có mô tả"}
-            </ThemedText>
-            <View style={styles.stats}>
-              <View>
-                <ThemedText type="heading">{assigned.length}</ThemedText>
-                <ThemedText type="bodySmall" style={adminStyles.muted}>
-                  Quyền
-                </ThemedText>
-              </View>
-              <View>
-                <ThemedText type="heading">
-                  v{role.data.permissionVersion}
-                </ThemedText>
-                <ThemedText type="bodySmall" style={adminStyles.muted}>
-                  Phiên bản
-                </ThemedText>
-              </View>
-            </View>
-          </AdminCard>
-          <AdminSectionHeader title="Quyền đã gán" />
-          {Object.entries(grouped).length === 0 ? (
-            <AdminEmptyState message="Vai trò chưa được gán quyền" />
+        <View style={[adminStyles.screen, styles.detailContent]}>
+          {role.isPending ? (
+            <AdminLoadingState />
+          ) : !role.data ? (
+            <AdminEmptyState message="Không tìm thấy vai trò" />
           ) : (
-            Object.entries(grouped).map(([model, items]) => (
-              <AdminCard key={model} style={adminStyles.gap}>
-                <ThemedText type="title">{model}</ThemedText>
-                <View style={adminStyles.chips}>
-                  {items.map((permission) => (
-                    <AdminChip
-                      key={permission.code}
-                      label={permission.action}
-                      tone="info"
-                    />
-                  ))}
+            <>
+              <AdminCard style={adminStyles.gap}>
+                <ThemedText type="heading">{role.data.name}</ThemedText>
+                <ThemedText type="code" style={styles.code}>
+                  {role.data.code}
+                </ThemedText>
+                <ThemedText type="bodySmall" style={adminStyles.muted}>
+                  {role.data.description || "Chưa có mô tả"}
+                </ThemedText>
+                <View style={styles.stats}>
+                  <View>
+                    <ThemedText type="heading">{assigned.length}</ThemedText>
+                    <ThemedText type="bodySmall" style={adminStyles.muted}>
+                      Quyền
+                    </ThemedText>
+                  </View>
+                  <View>
+                    <ThemedText type="heading">
+                      v{role.data.permissionVersion}
+                    </ThemedText>
+                    <ThemedText type="bodySmall" style={adminStyles.muted}>
+                      Phiên bản
+                    </ThemedText>
+                  </View>
                 </View>
               </AdminCard>
-            ))
+              <AdminSectionHeader title="Quyền đã gán" />
+              {Object.entries(grouped).length === 0 ? (
+                <AdminEmptyState message="Vai trò chưa được gán quyền" />
+              ) : (
+                Object.entries(grouped).map(([model, items]) => (
+                  <AdminCard key={model} style={adminStyles.gap}>
+                    <ThemedText type="title">{model}</ThemedText>
+                    <View style={adminStyles.chips}>
+                      {items.map((permission) => (
+                        <AdminChip
+                          key={permission.code}
+                          label={permission.action}
+                          tone="info"
+                        />
+                      ))}
+                    </View>
+                  </AdminCard>
+                ))
+              )}
+            </>
           )}
-        </>
-      )}
+        </View>
       </StackScreenLayout>
       <ConfirmationDialog
         visible={confirming}
@@ -499,11 +499,10 @@ function RoleEditForm({ role }: { role: RoleResponse }) {
 
 export function RoleCreateScreen() {
   return (
-    <StackScreenLayout
-      title="Tạo vai trò"
-      contentContainerStyle={adminStyles.screen}
-    >
-      <RoleCreateForm />
+    <StackScreenLayout title="Tạo vai trò">
+      <View style={[adminStyles.screen, styles.screenContent]}>
+        <RoleCreateForm />
+      </View>
     </StackScreenLayout>
   );
 }
@@ -513,17 +512,16 @@ export function RoleEditScreen() {
   const role = useRole(roleCode);
 
   return (
-    <StackScreenLayout
-      title="Sửa vai trò"
-      contentContainerStyle={adminStyles.screen}
-    >
-      {role.isPending ? (
-        <AdminLoadingState />
-      ) : !role.data ? (
-        <AdminEmptyState message="Không tìm thấy vai trò" />
-      ) : (
-        <RoleEditForm key={role.data.code} role={role.data} />
-      )}
+    <StackScreenLayout title="Sửa vai trò">
+      <View style={[adminStyles.screen, styles.screenContent]}>
+        {role.isPending ? (
+          <AdminLoadingState />
+        ) : !role.data ? (
+          <AdminEmptyState message="Không tìm thấy vai trò" />
+        ) : (
+          <RoleEditForm key={role.data.code} role={role.data} />
+        )}
+      </View>
     </StackScreenLayout>
   );
 }
@@ -629,26 +627,27 @@ export function RolePermissionsScreen() {
   const permissions = usePermissionsCatalog();
 
   return (
-    <StackScreenLayout
-      title="Phân quyền"
-      contentContainerStyle={adminStyles.screen}
-    >
-      {role.isPending || permissions.isPending ? (
-        <AdminLoadingState />
-      ) : !role.data ? (
-        <AdminEmptyState message="Không tìm thấy vai trò" />
-      ) : (
-        <RolePermissionsForm
-          key={role.data.code}
-          role={role.data}
-          catalog={permissions.data?.content ?? []}
-        />
-      )}
+    <StackScreenLayout title="Phân quyền">
+      <View style={[adminStyles.screen, styles.screenContent]}>
+        {role.isPending || permissions.isPending ? (
+          <AdminLoadingState />
+        ) : !role.data ? (
+          <AdminEmptyState message="Không tìm thấy vai trò" />
+        ) : (
+          <RolePermissionsForm
+            key={role.data.code}
+            role={role.data}
+            catalog={permissions.data?.content ?? []}
+          />
+        )}
+      </View>
     </StackScreenLayout>
   );
 }
 
 const styles = StyleSheet.create({
+  screenContent: { paddingHorizontal: 16 },
+  detailContent: { paddingHorizontal: 16, paddingBottom: 128 },
   list: { overflow: "hidden", borderRadius: radii.md },
   code: {
     alignSelf: "flex-start",

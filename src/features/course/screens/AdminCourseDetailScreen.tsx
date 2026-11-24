@@ -202,7 +202,6 @@ export function AdminCourseDetailScreen({ courseId }: CourseRouteProps) {
     <>
       <StackScreenLayout
         title={resolveDetailTitle(course, { fallback: "Khóa học" })}
-        contentContainerStyle={styles.content}
         refreshing={refreshing}
         onRefresh={onRefresh}
         floatingContent={
@@ -224,43 +223,45 @@ export function AdminCourseDetailScreen({ courseId }: CourseRouteProps) {
           />
         }
       >
-        {course ? (
-          <CourseDetailContent
-            course={course}
-            topContent={
-              isLoading && !apiCourse ? (
-                <View style={styles.loadingContainer}>
-                  <ActivityIndicator size="small" color={Colors.light.primary} />
-                </View>
-              ) : undefined
-            }
-            onOpenCoaches={() =>
-              router.push(asHref(`/courses/${course.courseId}/members/coaches`))
-            }
-            onOpenAssistants={() =>
-              router.push(asHref(`/courses/${course.courseId}/members/teaching-assistants`))
-            }
-            onOpenStudents={() =>
-              router.push(asHref(`/courses/${course.courseId}/members/students`))
-            }
-            onOpenPackage={(packageId) =>
-              router.push(asHref(`/courses/${course.courseId}/packages/${packageId}`))
-            }
-            onOpenSchedules={() =>
-              router.push(asHref(`/courses/${course.courseId}/schedules`))
-            }
-            onEditSchedule={canOpenScheduleEditor ? setScheduleToEdit : undefined}
-            onToggleScheduleStatus={canUpdateCourse ? handleToggleScheduleStatus : undefined}
-            onDeleteSchedule={canUpdateCourse ? handleScheduleDelete : undefined}
-            onCancelScheduleDelete={canUpdateCourse ? handleCancelScheduleDelete : undefined}
-            scheduleDeletePending={deleteSchedule.isPending}
-            scheduleActionPending={updateSchedule.isPending}
-          />
-        ) : (
-          <View style={styles.loadingContainer}>
-            <ActivityIndicator size="large" color={Colors.light.primary} />
-          </View>
-        )}
+        <View style={styles.content}>
+          {course ? (
+            <CourseDetailContent
+              course={course}
+              topContent={
+                isLoading && !apiCourse ? (
+                  <View style={styles.loadingContainer}>
+                    <ActivityIndicator size="small" color={Colors.light.primary} />
+                  </View>
+                ) : undefined
+              }
+              onOpenCoaches={() =>
+                router.push(asHref(`/courses/${course.courseId}/members/coaches`))
+              }
+              onOpenAssistants={() =>
+                router.push(asHref(`/courses/${course.courseId}/members/teaching-assistants`))
+              }
+              onOpenStudents={() =>
+                router.push(asHref(`/courses/${course.courseId}/members/students`))
+              }
+              onOpenPackage={(packageId) =>
+                router.push(asHref(`/courses/${course.courseId}/packages/${packageId}`))
+              }
+              onOpenSchedules={() =>
+                router.push(asHref(`/courses/${course.courseId}/schedules`))
+              }
+              onEditSchedule={canOpenScheduleEditor ? setScheduleToEdit : undefined}
+              onToggleScheduleStatus={canUpdateCourse ? handleToggleScheduleStatus : undefined}
+              onDeleteSchedule={canUpdateCourse ? handleScheduleDelete : undefined}
+              onCancelScheduleDelete={canUpdateCourse ? handleCancelScheduleDelete : undefined}
+              scheduleDeletePending={deleteSchedule.isPending}
+              scheduleActionPending={updateSchedule.isPending}
+            />
+          ) : (
+            <View style={styles.loadingContainer}>
+              <ActivityIndicator size="large" color={Colors.light.primary} />
+            </View>
+          )}
+        </View>
       </StackScreenLayout>
 
       <CourseEditSheet

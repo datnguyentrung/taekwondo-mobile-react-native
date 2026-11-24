@@ -9,6 +9,7 @@ jest.mock('@/features/device-management/services/deviceProvisioningStorage', () 
     read: jest.fn(async () => ({
       deviceCode: 'kiosk-01', secret: 'device-secret', installationId: 'install-1',
     })),
+    subscribe: jest.fn(() => jest.fn()),
   },
 }));
 
@@ -36,6 +37,17 @@ const mqttClientMock = jest.requireMock('./mqttClient').mqttClient as {
   publish: jest.Mock;
   disconnect: jest.Mock;
 };
+const deviceApiMock = jest.requireMock('@/features/device-management/api/deviceApi').deviceApi as {
+  bootstrap: jest.Mock;
+};
+const storageMock = jest.requireMock('@/features/device-management/services/deviceProvisioningStorage').deviceProvisioningStorage as {
+  read: jest.Mock;
+  subscribe: jest.Mock;
+};
+
+const runtime = {
+  mqttWsUrl: 'wss://broker.example.com/mqtt', heartbeatTopic: 'heartbeats', heartbeatSeconds: 30,
+};
 
 describe('useMqttRuntime', () => {
   beforeEach(() => {
@@ -43,6 +55,14 @@ describe('useMqttRuntime', () => {
     mqttClientMock.subscribe.mockClear();
     mqttClientMock.publish.mockClear();
     mqttClientMock.disconnect.mockClear();
+    deviceApiMock.bootstrap.mockReset();
+    deviceApiMock.bootstrap.mockResolvedValue({
+      deviceCode: 'kiosk-01', deviceType: 'KIOSK', lifecycleStatus: 'ACTIVE', runtime,
+    });
+    storageMock.read.mockReset();
+    storageMock.read.mockResolvedValue({ deviceCode: 'kiosk-01', secret: 'device-secret', installationId: 'install-1' });
+    storageMock.subscribe.mockReset();
+    storageMock.subscribe.mockReturnValue(jest.fn());
     useAuthStore.setState({ status: 'anonymous' });
   });
 
@@ -72,8 +92,7 @@ describe('useMqttRuntime', () => {
   });
 
   it('does not connect when no active provisioned profile exists', async () => {
-    const storage = jest.requireMock('@/features/device-management/services/deviceProvisioningStorage').deviceProvisioningStorage as { read: jest.Mock };
-    storage.read.mockResolvedValueOnce(null);
+    storageMock.read.mockResolvedValueOnce(null);
 
     const { unmount } = await renderHook(() => useMqttRuntime());
 
@@ -82,6 +101,45 @@ describe('useMqttRuntime', () => {
     });
 
     expect(mqttClientMock.connect).not.toHaveBeenCalled();
+    unmount();
+  });
+
+  it('connects immediately after a Kiosk provisioning profile is written', async () => {
+    let onProfileChanged: (() => void) | undefined;
+    storageMock.read.mockResolvedValueOnce(null);
+    storageMock.subscribe.mockImplementation((listener: () => void) => {
+      onProfileChanged = listener;
+      return jest.fn();
+    });
+
+    const { unmount } = await renderHook(() => useMqttRuntime());
+    await act(async () => {
+      useAuthStore.setState({ status: 'authenticated' });
+    });
+    expect(mqttClientMock.connect).not.toHaveBeenCalled();
+
+    storageMock.read.mockResolvedValue({ deviceCode: 'kiosk-01', secret: 'device-secret', installationId: 'install-1' });
+    await act(async () => {
+      onProfileChanged?.();
+    });
+
+    expect(mqttClientMock.connect).toHaveBeenCalledWith(expect.objectContaining({ username: 'kiosk-01' }));
+    unmount();
+  });
+
+  it('connects while PROVISIONED so its first heartbeat can activate it', async () => {
+    deviceApiMock.bootstrap.mockResolvedValueOnce({
+      deviceCode: 'kiosk-01', deviceType: 'KIOSK', lifecycleStatus: 'PROVISIONED', runtime,
+    });
+
+    const { unmount } = await renderHook(() => useMqttRuntime());
+    await act(async () => {
+      useAuthStore.setState({ status: 'authenticated' });
+    });
+
+    expect(mqttClientMock.connect).toHaveBeenCalledWith(expect.objectContaining({
+      brokerUrl: runtime.mqttWsUrl, username: 'kiosk-01', clientId: 'kiosk-01',
+    }));
     unmount();
   });
 });

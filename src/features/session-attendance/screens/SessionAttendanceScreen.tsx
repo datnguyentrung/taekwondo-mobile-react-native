@@ -126,7 +126,6 @@ export function SessionAttendanceScreen({
     <StackScreenLayout
       title="Đánh giá"
       scrollEnabled={false}
-      contentContainerStyle={styles.container}
       floatingContent={
         classSessionId && canCreate ? (
           <Pressable
@@ -312,7 +311,6 @@ export function SessionAttendanceScreen({
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, paddingHorizontal: 0 },
   listContent: {
     flexGrow: 1,
     paddingHorizontal: 20,
@@ -333,6 +331,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     paddingHorizontal: 24,
+    paddingVertical: 16,
     gap: 12,
   },
   loadingText: { color: Colors.light.textSecondary, textAlign: "center" },

@@ -213,7 +213,6 @@ export function CoachListScreen() {
     <>
       <StackScreenLayout
         title="Huấn luyện viên"
-        contentContainerStyle={styles.content}
         refreshing={coachesQuery.isRefetching}
         onRefresh={async () => {
           await coachesQuery.refetch();
@@ -231,68 +230,70 @@ export function CoachListScreen() {
           </>
         }
       >
-        <SegmentedTabs value={activeTab} tabs={[...COACH_TABS]} onChange={setActiveTab} />
-        <View style={styles.searchRow}>
-          <View style={styles.searchContainer}>
-          <AppIcon
-            icon={<Search />}
-            size={20}
-            color={Colors.light.textSecondary}
-          />
-          <TextInput
-            accessibilityLabel="Tìm kiếm huấn luyện viên"
-            value={searchQuery}
-            onChangeText={setSearchQuery}
-            placeholder="Tìm theo họ tên, mã..."
-            placeholderTextColor={Colors.light.textSecondary}
-            style={styles.searchInput}
-            returnKeyType="search"
-            clearButtonMode="while-editing"
-          />
+        <View style={styles.content}>
+          <SegmentedTabs value={activeTab} tabs={[...COACH_TABS]} onChange={setActiveTab} />
+          <View style={styles.searchRow}>
+            <View style={styles.searchContainer}>
+            <AppIcon
+              icon={<Search />}
+              size={20}
+              color={Colors.light.textSecondary}
+            />
+            <TextInput
+              accessibilityLabel="Tìm kiếm huấn luyện viên"
+              value={searchQuery}
+              onChangeText={setSearchQuery}
+              placeholder="Tìm theo họ tên, mã..."
+              placeholderTextColor={Colors.light.textSecondary}
+              style={styles.searchInput}
+              returnKeyType="search"
+              clearButtonMode="while-editing"
+            />
+            </View>
+            <Pressable accessibilityRole="button" accessibilityLabel="Tạo huấn luyện viên" hitSlop={8} onPress={() => setCreateVisible(true)} style={({ pressed }) => [styles.createButton, pressed && styles.createButtonPressed]}>
+              <AppIcon icon={<Plus />} size={22} color={Colors.light.surface} />
+            </Pressable>
           </View>
-          <Pressable accessibilityRole="button" accessibilityLabel="Tạo huấn luyện viên" hitSlop={8} onPress={() => setCreateVisible(true)} style={({ pressed }) => [styles.createButton, pressed && styles.createButtonPressed]}>
-            <AppIcon icon={<Plus />} size={22} color={Colors.light.surface} />
-          </Pressable>
-        </View>
 
-        {coachesQuery.isLoading ? (
-          <View style={styles.loadingContainer}>
-            <ActivityIndicator size="large" color={Colors.light.primary} />
-          </View>
-        ) : (
-          <View style={styles.coachList}>
-            {visibleCoaches.map((coach) => (
-              <PersonListItem
-                key={coach.personId}
-                person={coach}
-                onPress={() => {
-                  // Navigate to coach profile/detail if available, or view details
-                  router.push(`/students/${coach.personId}?personType=coach`);
-                }}
-              />
-            ))}
-          </View>
-        )}
+          {coachesQuery.isLoading ? (
+            <View style={styles.loadingContainer}>
+              <ActivityIndicator size="large" color={Colors.light.primary} />
+            </View>
+          ) : (
+            <View style={styles.coachList}>
+              {visibleCoaches.map((coach) => (
+                <PersonListItem
+                  key={coach.personId}
+                  person={coach}
+                  onPress={() => {
+                    // Navigate to coach profile/detail if available, or view details
+                    router.push(`/students/${coach.personId}?personType=coach`);
+                  }}
+                />
+              ))}
+            </View>
+          )}
 
-        {!coachesQuery.isLoading && visibleCoaches.length === 0 ? (
-          <View style={styles.emptyContainer}>
+          {!coachesQuery.isLoading && visibleCoaches.length === 0 ? (
+            <View style={styles.emptyContainer}>
+              <ThemedText type="bodySmall" style={styles.helperText}>
+                {appliedCount > 0
+                  ? "Không tìm thấy huấn luyện viên phù hợp với bộ lọc."
+                  : "Chưa có huấn luyện viên trong trạng thái này."}
+              </ThemedText>
+            </View>
+          ) : null}
+
+          <View style={styles.footerNote}>
+            <AppIcon
+              icon={<InfoCircle />}
+              size={22}
+              color={Colors.light.textSecondary}
+            />
             <ThemedText type="bodySmall" style={styles.helperText}>
-              {appliedCount > 0
-                ? "Không tìm thấy huấn luyện viên phù hợp với bộ lọc."
-                : "Chưa có huấn luyện viên trong trạng thái này."}
+              Chọn huấn luyện viên để xem thông tin chi tiết.
             </ThemedText>
           </View>
-        ) : null}
-
-        <View style={styles.footerNote}>
-          <AppIcon
-            icon={<InfoCircle />}
-            size={22}
-            color={Colors.light.textSecondary}
-          />
-          <ThemedText type="bodySmall" style={styles.helperText}>
-            Chọn huấn luyện viên để xem thông tin chi tiết.
-          </ThemedText>
         </View>
       </StackScreenLayout>
 

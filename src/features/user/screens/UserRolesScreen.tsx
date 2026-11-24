@@ -1,6 +1,6 @@
 import { useRouter, type Href } from "expo-router";
 import { useEffect, useState } from "react";
-import { View } from "react-native";
+import { StyleSheet, View } from "react-native";
 
 import { useRoles } from "@/features/roles/queries/roleQueries";
 import { roleCodesForUser } from "../domain/userViewModel";
@@ -54,49 +54,59 @@ export function UserRolesScreen() {
   return (
     <StackScreenLayout
       title="Gán vai trò"
-      contentContainerStyle={adminStyles.screen}
       refreshing={refreshing}
       onRefresh={onRefresh}
     >
-      <AdminCard>
-        <ThemedText type="title">{user.data?.phoneNumber ?? "Người dùng"}</ThemedText>
-        <ThemedText type="bodySmall" style={adminStyles.muted}>
-          {selected.length} vai trò được chọn
-        </ThemedText>
-      </AdminCard>
-      {roles.isPending || assignments.isPending ? (
-        <AdminLoadingState />
-      ) : (
-        <View style={userAdminStyles.list}>
-          {(roles.data?.content ?? []).map((role) => (
-            <AdminListRow
-              key={role.code}
-              title={role.name}
-              subtitle={role.code}
-              selected={selected.includes(role.code)}
-              onPress={() => toggle(role.code)}
-            />
-          ))}
+      <View style={styles.content}>
+        <AdminCard>
+          <ThemedText type="title">{user.data?.phoneNumber ?? "Người dùng"}</ThemedText>
+          <ThemedText type="bodySmall" style={adminStyles.muted}>
+            {selected.length} vai trò được chọn
+          </ThemedText>
+        </AdminCard>
+        {roles.isPending || assignments.isPending ? (
+          <AdminLoadingState />
+        ) : (
+          <View style={userAdminStyles.list}>
+            {(roles.data?.content ?? []).map((role) => (
+              <AdminListRow
+                key={role.code}
+                title={role.name}
+                subtitle={role.code}
+                selected={selected.includes(role.code)}
+                onPress={() => toggle(role.code)}
+              />
+            ))}
+          </View>
+        )}
+        <View style={adminStyles.actions}>
+          <AdminButton
+            label="Đặt lại"
+            variant="secondary"
+            onPress={() =>
+              setSelected(roleCodesForUser(userId ?? "", assignments.data?.content ?? []))
+            }
+            style={adminStyles.grow}
+          />
+          <AdminButton
+            label="Lưu vai trò"
+            loading={save.isPending}
+            onPress={() =>
+              save.mutate({ userId: userId as string, roleCodes: selected })
+            }
+            style={adminStyles.grow}
+          />
         </View>
-      )}
-      <View style={adminStyles.actions}>
-        <AdminButton
-          label="Đặt lại"
-          variant="secondary"
-          onPress={() =>
-            setSelected(roleCodesForUser(userId ?? "", assignments.data?.content ?? []))
-          }
-          style={adminStyles.grow}
-        />
-        <AdminButton
-          label="Lưu vai trò"
-          loading={save.isPending}
-          onPress={() =>
-            save.mutate({ userId: userId as string, roleCodes: selected })
-          }
-          style={adminStyles.grow}
-        />
       </View>
     </StackScreenLayout>
   );
 }
+
+const styles = StyleSheet.create({
+  content: {
+    paddingTop: 20,
+    paddingHorizontal: 16,
+    paddingBottom: 32,
+    gap: 14,
+  },
+});

@@ -1,7 +1,7 @@
 import { useMemo } from "react";
 import { Layers, NoteText } from "reicon-react-native";
 import { type Href, useRouter } from "expo-router";
-import { ActivityIndicator, StyleSheet } from "react-native";
+import { ActivityIndicator, StyleSheet, View } from "react-native";
 
 import { BeltLabel, PersonStatusLabel } from "@/features/person/constants/person.constants";
 import { usePerson } from "@/features/person/queries/personQueries";
@@ -74,11 +74,12 @@ function WalletOverview({ studentCode, context }: WalletOverviewProps) {
     return (
       <StackScreenLayout
         title="Ví điện tử"
-        contentContainerStyle={styles.center}
         refreshing={refreshing}
         onRefresh={onRefresh}
       >
-        <ActivityIndicator size="large" color={Colors.light.primary} />
+        <View style={styles.center}>
+          <ActivityIndicator size="large" color={Colors.light.primary} />
+        </View>
       </StackScreenLayout>
     );
   }
@@ -87,13 +88,14 @@ function WalletOverview({ studentCode, context }: WalletOverviewProps) {
     return (
       <StackScreenLayout
         title="Ví điện tử"
-        contentContainerStyle={styles.center}
         refreshing={refreshing}
         onRefresh={onRefresh}
       >
-        <ThemedText type="bodySmall" style={styles.errorText}>
-          Không thể tải thông tin ví học viên.
-        </ThemedText>
+        <View style={styles.center}>
+          <ThemedText type="bodySmall" style={styles.errorText}>
+            Không thể tải thông tin ví học viên.
+          </ThemedText>
+        </View>
       </StackScreenLayout>
     );
   }
@@ -101,35 +103,36 @@ function WalletOverview({ studentCode, context }: WalletOverviewProps) {
   return (
     <StackScreenLayout
       title="Ví điện tử"
-      contentContainerStyle={styles.content}
       refreshing={refreshing}
       onRefresh={onRefresh}
     >
-      <WalletBalanceCard
-        student={student ?? state.selectedStudent}
-        balance={isAccount ? state.wallet.balance : walletQuery.data!.balance}
-        actionLabel="Nạp tiền"
-        onActionPress={() => router.push(asHref(topUpPath))}
-      />
+      <View style={styles.content}>
+        <WalletBalanceCard
+          student={student ?? state.selectedStudent}
+          balance={isAccount ? state.wallet.balance : walletQuery.data!.balance}
+          actionLabel="Nạp tiền"
+          onActionPress={() => router.push(asHref(topUpPath))}
+        />
 
-      <NavigationMenu>
-        <NavigationMenuItem
-          icon={<NoteText />}
-          // iconBox
-          title="Giao dịch gần đây"
-          subtitle="Xem lịch sử thu chi của ví"
-          count={recentTransactions.length}
-          onPress={() => router.push(asHref(transactionListPath))}
-        />
-        <NavigationMenuItem
-          icon={<Layers weight="Filled" />}
-          // iconBox
-          title="Khóa học tham gia"
-          subtitle="Xem danh sách khóa học hiện tại"
-          count={activeEnrollments.length}
-          onPress={() => router.push(asHref(courseListPath))}
-        />
-      </NavigationMenu>
+        <NavigationMenu>
+          <NavigationMenuItem
+            icon={<NoteText />}
+            // iconBox
+            title="Giao dịch gần đây"
+            subtitle="Xem lịch sử thu chi của ví"
+            count={recentTransactions.length}
+            onPress={() => router.push(asHref(transactionListPath))}
+          />
+          <NavigationMenuItem
+            icon={<Layers weight="Filled" />}
+            // iconBox
+            title="Khóa học tham gia"
+            subtitle="Xem danh sách khóa học hiện tại"
+            count={activeEnrollments.length}
+            onPress={() => router.push(asHref(courseListPath))}
+          />
+        </NavigationMenu>
+      </View>
     </StackScreenLayout>
   );
 }
@@ -156,6 +159,8 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     minHeight: 200,
+    paddingHorizontal: 16,
+    paddingVertical: 16,
   },
   errorText: {
     color: Colors.light.text,
