@@ -1,4 +1,4 @@
-import { usePathname, useRouter } from "expo-router";
+import { usePathname, useRouter, type Href } from "expo-router";
 import {
   TabList,
   TabSlot,
@@ -47,7 +47,10 @@ export default function AppTabsLayout() {
         </CustomTabList>
       </TabList>
       {!isCheckInScreen ? (
-        <ChatbotFab onPress={() => router.push("/support")} />
+        <ChatbotFab
+          onPress={() => router.push("/support")}
+          onSelectAction={(href) => router.push(href as Href)}
+        />
       ) : null}
     </Tabs>
   );

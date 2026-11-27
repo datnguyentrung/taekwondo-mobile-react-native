@@ -16,6 +16,7 @@ jest.mock('../api/walletTopUpRequestApi', () => ({
 }));
 jest.mock('./topUpDraftStorage', () => ({
   topUpDraftStorage: {
+    currentTenantId: jest.fn(() => 'default'),
     read: jest.fn(),
     write: jest.fn(),
     clear: jest.fn(),
@@ -92,6 +93,7 @@ describe('submitTopUpRequest', () => {
   it('resolves an ambiguous network failure from the server without creating a new UUID', async () => {
     jest.mocked(topUpDraftStorage.read).mockResolvedValue({
       ...input,
+      tenantId: 'default',
       clientRequestId: 'client-1',
       createdAt: Date.now(),
     });
@@ -108,6 +110,7 @@ describe('submitTopUpRequest', () => {
   it('accepts a server-side rejection as the final result of an ambiguous retry', async () => {
     jest.mocked(topUpDraftStorage.read).mockResolvedValue({
       ...input,
+      tenantId: 'default',
       clientRequestId: 'client-1',
       createdAt: Date.now(),
     });

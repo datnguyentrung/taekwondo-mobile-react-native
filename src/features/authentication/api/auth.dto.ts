@@ -1,5 +1,5 @@
 import type { NotificationPlatform } from '@/infrastructure/notifications/notification.types';
-import type { AuthSession, AuthUser, UserContext } from '../domain/auth.types';
+import type { AuthSession, AuthUser, TenantInfo, UserContext } from '../domain/auth.types';
 
 export type DevicePlatform = NotificationPlatform;
 
@@ -23,6 +23,10 @@ export type SwitchContextRequest = {
   userPersonId: string;
 };
 
+export type SelectTenantRequest = {
+  tenantId: string;
+};
+
 export type PasswordResetChannel = 'APP' | 'EMAIL';
 export type PasswordResetEmail = { userPersonId: string; maskedEmail: string };
 export type PasswordResetOptions = { requestId: string; appAvailable: boolean; emails: PasswordResetEmail[] };
@@ -33,6 +37,9 @@ export type AuthResponse = {
   accessToken?: string;
   refreshToken?: string;
   user: AuthUser;
+  activeTenant: TenantInfo | null;
+  availableTenants: TenantInfo[];
+  requiresTenantSelection: boolean;
   activeContext: UserContext | null;
   availableContexts: UserContext[];
   requiresContextSelection: boolean;

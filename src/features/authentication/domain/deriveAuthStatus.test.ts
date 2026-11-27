@@ -1,5 +1,5 @@
 import { deriveAuthStatus } from './deriveAuthStatus';
-import type { AuthUser, UserContext } from './auth.types';
+import type { AuthUser, TenantInfo, UserContext } from './auth.types';
 
 const user: AuthUser = {
   userId: 'user-1',
@@ -7,6 +7,13 @@ const user: AuthUser = {
   status: 'ACTIVE',
   roles: ['ROLE_STUDENT'],
   permissions: [],
+};
+
+const tenant: TenantInfo = {
+  tenantId: 'tenant-1',
+  code: 'VAN_QUAN',
+  name: 'Taekwondo Văn Quán',
+  status: 'ACTIVE',
 };
 
 const context: UserContext = {
@@ -18,8 +25,9 @@ const context: UserContext = {
   gender: true,
 };
 
-it('derives anonymous, context selection and authenticated states with web parity', () => {
+it('derives anonymous, tenant selection, context selection and authenticated states', () => {
   expect(deriveAuthStatus(null, null, null, false)).toBe('anonymous');
-  expect(deriveAuthStatus('token', user, null, true)).toBe('selecting-context');
-  expect(deriveAuthStatus('token', user, context, false)).toBe('authenticated');
+  expect(deriveAuthStatus('token', user, null, false, null, true)).toBe('selecting-tenant');
+  expect(deriveAuthStatus('token', user, null, true, tenant, false)).toBe('selecting-context');
+  expect(deriveAuthStatus('token', user, context, false, tenant, false)).toBe('authenticated');
 });

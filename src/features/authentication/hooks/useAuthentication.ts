@@ -1,7 +1,7 @@
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
 
-import type { SwitchContextRequest } from '../api/auth.dto';
+import type { SelectTenantRequest, SwitchContextRequest } from '../api/auth.dto';
 import { authApi } from '../api/authApi';
 import { authSessionService } from '../services/authSessionService';
 import { routeAfterAuthResponse } from '../utils/authRouting';
@@ -29,6 +29,19 @@ export function useLogout() {
 export function useLogoutAll() {
   return useMutation({
     mutationFn: authSessionService.logoutAll,
+  });
+}
+
+export function useSelectTenant() {
+  const router = useRouter();
+  return useMutation({
+    mutationFn: (request: SelectTenantRequest) =>
+      authSessionService.selectTenant(request),
+    onSuccess: (response) => {
+      if (!response.requiresContextSelection && response.activeContext) {
+        router.replace(routeAfterAuthResponse(response));
+      }
+    },
   });
 }
 

@@ -31,7 +31,7 @@ function mockSseResponse(chunks: string[]) {
 }
 
 describe("decodeAdkSseEnvelope", () => {
-  it("decodes session, token, message, error, and done events", () => {
+  it("decodes session, status, final, error, and done events", () => {
     expect(
       decodeAdkSseEnvelope({
         event: "session",
@@ -41,31 +41,37 @@ describe("decodeAdkSseEnvelope", () => {
 
     expect(
       decodeAdkSseEnvelope({
-        event: "token",
-        data: JSON.stringify({ author: "tbot", text: "Xin " }),
+        event: "status",
+        data: JSON.stringify({ requestId: "req-1", status: "SEARCHING", message: "Đang tìm..." }),
       }),
-    ).toEqual({ type: "token", author: "tbot", text: "Xin " });
+    ).toEqual({ type: "status", requestId: "req-1", status: "SEARCHING", message: "Đang tìm..." });
 
     expect(
       decodeAdkSseEnvelope({
-        event: "message",
-        data: JSON.stringify({ author: "tbot", text: "Xin chào!" }),
+        event: "final",
+        data: JSON.stringify({ requestId: "req-1", messageId: "m-1", content: "Xin chào!" }),
       }),
-    ).toEqual({ type: "message", author: "tbot", text: "Xin chào!" });
+    ).toEqual({
+      type: "final",
+      requestId: "req-1",
+      messageId: "m-1",
+      content: "Xin chào!",
+      createdAt: undefined,
+    });
 
     expect(
       decodeAdkSseEnvelope({
         event: "error",
-        data: JSON.stringify({ errorType: "RuntimeError", error: "Boom" }),
+        data: JSON.stringify({ requestId: "req-1", code: "AI_ERROR", message: "Boom" }),
       }),
-    ).toEqual({ type: "error", errorType: "RuntimeError", error: "Boom" });
+    ).toEqual({ type: "error", requestId: "req-1", code: "AI_ERROR", error: "Boom" });
 
     expect(
       decodeAdkSseEnvelope({
         event: "done",
-        data: JSON.stringify({ sessionId: "s-1", userId: "u-1" }),
+        data: JSON.stringify({ requestId: "req-1", sessionId: "s-1", userId: "u-1" }),
       }),
-    ).toEqual({ type: "done", sessionId: "s-1", userId: "u-1" });
+    ).toEqual({ type: "done", requestId: "req-1", sessionId: "s-1", userId: "u-1" });
   });
 });
 
@@ -76,30 +82,29 @@ describe("createAdkAgentTransport", () => {
     fetchMock.mockReset();
   });
 
-  it("streams tokens from /api/v1/agent/chat/stream and reuses sessionId", async () => {
+  it("streams final response via Java gateway /ai/chat/stream and reuses sessionId", async () => {
     fetchMock
       .mockResolvedValueOnce(
         mockSseResponse([
           'event: session\ndata: {"sessionId":"sess-123","userId":"u-1"}\n\n',
-          'event: token\ndata: {"author":"tbot","text":"Chào "}\n\n',
-          'event: token\ndata: {"author":"tbot","text":"bạn!"}\n\n',
-          'event: message\ndata: {"author":"tbot","text":"Chào bạn!"}\n\n',
+          'event: status\ndata: {"requestId":"c-1","status":"SEARCHING","message":"Đang tìm..."}\n\n',
+          'event: final\ndata: {"requestId":"c-1","messageId":"m-1","content":"Chào bạn!"}\n\n',
           'event: done\ndata: {"sessionId":"sess-123","userId":"u-1"}\n\n',
         ]) as never,
       )
       .mockResolvedValueOnce(
         mockSseResponse([
           'event: session\ndata: {"sessionId":"sess-123","userId":"u-1"}\n\n',
-          'event: message\ndata: {"author":"tbot","text":"Lần 2"}\n\n',
+          'event: final\ndata: {"requestId":"c-2","messageId":"m-2","content":"Lần 2"}\n\n',
           'event: done\ndata: {"sessionId":"sess-123","userId":"u-1"}\n\n',
         ]) as never,
       );
 
     const transport = createAdkAgentTransport({
-      baseUrl: "http://localhost:8000",
+      baseUrl: "http://localhost:8080/api/v1",
     });
 
-    const updates: string[] = [];
+    const peerMessages: string[] = [];
     const acks: string[] = [];
 
     await new Promise<void>((resolve) => {
@@ -118,19 +123,18 @@ describe("createAdkAgentTransport", () => {
           onDeliveryCursorUpdated: jest.fn(),
           onReadCursorUpdated: jest.fn(),
           onPeerTyping: jest.fn(),
-          onPeerMessage: jest.fn(),
-          onPeerStreamUpdate: (u) => {
-            updates.push(u.text);
-            if (u.isFinal) resolve();
+          onPeerMessage: (msg) => {
+            peerMessages.push(msg.text);
+            resolve();
           },
         },
       );
     });
 
     expect(acks).toEqual(["c-1"]);
-    expect(updates).toEqual(["Chào ", "Chào bạn!", "Chào bạn!"]);
+    expect(peerMessages).toEqual(["Chào bạn!"]);
     expect(fetchMock).toHaveBeenCalledWith(
-      "http://localhost:8000/api/v1/agent/chat/stream",
+      "http://localhost:8080/api/v1/ai/chat/stream",
       expect.objectContaining({
         method: "POST",
         body: JSON.stringify({
@@ -138,7 +142,7 @@ describe("createAdkAgentTransport", () => {
           user_id: "u-1",
           session_id: null,
           attachments: [],
-          stream_tokens: true,
+          stream_tokens: false,
         }),
       }),
     );
@@ -160,16 +164,13 @@ describe("createAdkAgentTransport", () => {
           onDeliveryCursorUpdated: jest.fn(),
           onReadCursorUpdated: jest.fn(),
           onPeerTyping: jest.fn(),
-          onPeerMessage: jest.fn(),
-          onPeerStreamUpdate: (u) => {
-            if (u.isFinal) resolve();
-          },
+          onPeerMessage: () => resolve(),
         },
       );
     });
 
     expect(fetchMock).toHaveBeenLastCalledWith(
-      "http://localhost:8000/api/v1/agent/chat/stream",
+      "http://localhost:8080/api/v1/ai/chat/stream",
       expect.objectContaining({
         method: "POST",
         body: JSON.stringify({
@@ -177,7 +178,7 @@ describe("createAdkAgentTransport", () => {
           user_id: "u-1",
           session_id: "sess-123",
           attachments: [],
-          stream_tokens: true,
+          stream_tokens: false,
         }),
       }),
     );
@@ -186,7 +187,7 @@ describe("createAdkAgentTransport", () => {
   it("marks message FAILED when the SSE request fails", async () => {
     fetchMock.mockRejectedValueOnce(new Error("Network error"));
     const transport = createAdkAgentTransport({
-      baseUrl: "http://localhost:8000",
+      baseUrl: "http://localhost:8080/api/v1",
     });
 
     const failedIds: string[] = [];

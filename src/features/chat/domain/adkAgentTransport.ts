@@ -152,14 +152,14 @@ export type AdkAgentTransportOptions = {
 };
 
 /**
- * Connects TBot chat to the FastAPI ADK Agent SSE router:
- * - POST /api/v1/agent/chat/stream (JSON)
- * - POST /api/v1/agent/chat/upload/stream (multipart/form-data when imageUri is present)
+ * Connects TBot chat through the authenticated Java gateway SSE router:
+ * - POST /api/v1/ai/chat/stream (JSON)
+ * - POST /api/v1/ai/chat/upload/stream (multipart/form-data when imageUri is present)
  */
 export function createAdkAgentTransport(
   options: AdkAgentTransportOptions = {},
 ): ChatTransport {
-  const baseUrl = (options.baseUrl ?? env.agentApiUrl).replace(/\/+$/, "");
+  const baseUrl = (options.baseUrl ?? env.javaApiUrl).replace(/\/+$/, "");
   let nextSequenceNo = options.initialSequenceNo ?? 10;
   let sessionId: string | null = null;
   const activeControllers = new Set<AbortController>();
@@ -174,8 +174,8 @@ export function createAdkAgentTransport(
 
     const hasImage = Boolean(payload.imageUri);
     const url = hasImage
-      ? `${baseUrl}/api/v1/agent/chat/upload/stream`
-      : `${baseUrl}/api/v1/agent/chat/stream`;
+      ? `${baseUrl}/ai/chat/upload/stream`
+      : `${baseUrl}/ai/chat/stream`;
 
     let body: BodyInit;
     let extraHeaders: Record<string, string> = {};

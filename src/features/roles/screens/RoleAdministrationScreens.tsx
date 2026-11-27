@@ -595,7 +595,7 @@ function RolePermissionsForm({
                 key={permission.code}
                 label={permission.action}
                 selected={selected.includes(permission.code)}
-                onPress={() => toggle(permission.code)}
+                onPress={role.code === 'SYSTEM_ADMIN' ? () => {} : () => toggle(permission.code)}
               />
             ))}
           </View>
@@ -608,14 +608,16 @@ function RolePermissionsForm({
           onPress={() => setSelected(initialCodes)}
           style={adminStyles.grow}
         />
-        <AdminButton
-          label="Lưu phân quyền"
-          loading={save.isPending}
-          onPress={() =>
-            save.mutate({ roleCode: role.code, permissionCodes: selected })
-          }
-          style={adminStyles.grow}
-        />
+        {role.code !== 'SYSTEM_ADMIN' ? (
+          <AdminButton
+            label="Lưu phân quyền"
+            loading={save.isPending}
+            onPress={() =>
+              save.mutate({ roleCode: role.code, permissionCodes: selected })
+            }
+            style={adminStyles.grow}
+          />
+        ) : null}
       </View>
     </>
   );

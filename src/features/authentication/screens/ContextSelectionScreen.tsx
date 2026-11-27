@@ -4,8 +4,8 @@ import { memo, useCallback } from 'react';
 import { ActivityIndicator, FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import type { UserContext } from '../domain/auth.types';
-import { useSwitchContext } from '../hooks/useAuthentication';
+import type { TenantInfo, UserContext } from '../domain/auth.types';
+import { useSelectTenant, useSwitchContext } from '../hooks/useAuthentication';
 import { useAuthStore } from '../store/auth.store';
 import { normalizeAuthError } from '../utils/normalizeAuthError';
 
@@ -78,9 +78,15 @@ export default function ContextSelectionScreen() {
   const router = useRouter();
   const params = useLocalSearchParams<{ mode?: string }>();
   const isSwitchMode = params.mode === 'switch';
+  const availableTenants = useAuthStore((state) => state.availableTenants);
+  const activeTenant = useAuthStore((state) => state.activeTenant);
+  const requiresTenantSelection = useAuthStore((state) => state.requiresTenantSelection);
   const contexts = useAuthStore((state) => state.availableContexts);
   const activeContext = useAuthStore((state) => state.activeContext);
+  const selectTenant = useSelectTenant();
   const switchContext = useSwitchContext();
+
+  const showTenantList = requiresTenantSelection || !activeTenant;
 
   const handleBack = useCallback(() => {
     if (!isSwitchMode) return;
@@ -115,7 +121,57 @@ export default function ContextSelectionScreen() {
     [activeContext, isSwitchMode, selectContext, switchContext.isPending],
   );
 
-  const error = switchContext.error ? normalizeAuthError(switchContext.error) : null;
+  const errorObj = selectTenant.error ?? switchContext.error;
+  const error = errorObj ? normalizeAuthError(errorObj) : null;
+
+  if (showTenantList) {
+    return (
+      <SafeAreaView style={styles.safeArea}>
+        <FlatList
+          data={availableTenants}
+          keyExtractor={(item: TenantInfo) => item.tenantId}
+          contentInsetAdjustmentBehavior="automatic"
+          contentContainerStyle={styles.content}
+          ItemSeparatorComponent={ListSeparator}
+          renderItem={({ item }) => (
+            <Pressable
+              disabled={selectTenant.isPending}
+              onPress={() => selectTenant.mutate({ tenantId: item.tenantId })}
+              accessibilityRole="button"
+              style={({ pressed }) => [
+                styles.row,
+                activeTenant?.tenantId === item.tenantId ? styles.rowSelected : null,
+                pressed ? styles.rowPressed : null,
+              ]}>
+              <View style={styles.rowIcon}>
+                <ShieldCheck size={22} color="#D71113" aria-hidden />
+              </View>
+              <View style={styles.rowContent}>
+                <Text style={styles.rowName}>{item.name}</Text>
+                <Text style={styles.rowMeta}>{item.code}</Text>
+              </View>
+              {selectTenant.isPending ? <ActivityIndicator color="#D71113" /> : null}
+            </Pressable>
+          )}
+          ListHeaderComponent={
+            <View style={styles.header}>
+              <Text style={styles.eyebrow}>CHỌN TRUNG TÂM</Text>
+              <Text style={styles.title}>Bạn muốn làm việc với trung tâm nào?</Text>
+              <Text style={styles.subtitle}>
+                Dữ liệu, vai trò và hồ sơ sẽ được cô lập theo trung tâm bạn chọn.
+              </Text>
+              {error ? (
+                <Text style={styles.error} accessibilityRole="alert">
+                  {error}
+                </Text>
+              ) : null}
+            </View>
+          }
+        />
+      </SafeAreaView>
+    );
+  }
+
   return (
     <SafeAreaView style={styles.safeArea}>
       <FlatList
@@ -136,7 +192,21 @@ export default function ContextSelectionScreen() {
                 <ChevronLeft size={24} color="#252529" aria-hidden />
               </Pressable>
             ) : null}
-            <Text style={styles.eyebrow}>CHỌN NGỮ CẢNH</Text>
+            {activeTenant && availableTenants.length > 1 ? (
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                <Text style={styles.eyebrow}>{activeTenant.name}</Text>
+                <Pressable
+                  disabled={selectTenant.isPending}
+                  onPress={() => {
+                    const next = availableTenants.find((t) => t.tenantId !== activeTenant.tenantId);
+                    if (next) selectTenant.mutate({ tenantId: next.tenantId });
+                  }}>
+                  <Text style={[styles.eyebrow, { textDecorationLine: 'underline' }]}>Đổi trung tâm</Text>
+                </Pressable>
+              </View>
+            ) : (
+              <Text style={styles.eyebrow}>CHỌN NGỮ CẢNH</Text>
+            )}
             <Text style={styles.title}>Bạn muốn thao tác với hồ sơ nào?</Text>
             <Text style={styles.subtitle}>
               Dữ liệu, quyền hạn và thông báo sẽ đồng bộ theo hồ sơ bạn chọn.

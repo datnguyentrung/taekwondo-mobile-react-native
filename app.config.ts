@@ -8,7 +8,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
 
   name: "Taek Link",
   slug: "taekwondo-mobile",
-  version: "1.0.0",
+  version: "2.0.0",
 
   orientation: "default",
   icon: "./assets/logo/android/launchericon-512x512.png",

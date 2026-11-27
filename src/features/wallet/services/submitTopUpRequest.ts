@@ -30,6 +30,7 @@ async function getOrCreateLocalDraft(input: SubmitTopUpInput): Promise<StoredTop
   if (existing && sameDraft(existing, input)) return existing;
   const created: StoredTopUpDraft = {
     ...input,
+    tenantId: topUpDraftStorage.currentTenantId(),
     clientRequestId: Crypto.randomUUID(),
     createdAt: Date.now(),
   };

@@ -16,9 +16,9 @@ jest.mock('expo-secure-store', () => ({
 }));
 
 const secureStoreMock = SecureStore as jest.Mocked<typeof SecureStore>;
-const TOKEN_KEY = 'auth.tokens.v1';
-const SNAPSHOT_KEY = 'auth.snapshot.v1';
-const MIGRATION_KEY = 'auth.storage-migration.v1';
+const TOKEN_KEY = 'auth.tokens.v2';
+const SNAPSHOT_KEY = 'auth.snapshot.v2';
+const MIGRATION_KEY = 'auth.storage-migration.v2';
 
 describe('auth session storage boundaries', () => {
   beforeEach(async () => {
@@ -35,7 +35,7 @@ describe('auth session storage boundaries', () => {
     expect(secureStoreMock.setItemAsync).toHaveBeenCalledTimes(1);
     expect(secureStoreMock.setItemAsync).toHaveBeenCalledWith(
       TOKEN_KEY,
-      JSON.stringify({ version: 1, accessToken: 'access', refreshToken: 'refresh' }),
+      JSON.stringify({ version: 2, accessToken: 'access', refreshToken: 'refresh' }),
       expect.any(Object),
     );
     expect(await AsyncStorage.getItem(TOKEN_KEY)).toBeNull();
@@ -50,6 +50,9 @@ describe('auth session storage boundaries', () => {
         roles: ['ROLE_STUDENT'],
         permissions: [],
       },
+      activeTenant: null,
+      availableTenants: [],
+      requiresTenantSelection: false,
       activeContext: null,
       availableContexts: [],
       requiresContextSelection: true,
@@ -65,7 +68,7 @@ describe('auth session storage boundaries', () => {
     await AsyncStorage.setItem(
       SNAPSHOT_KEY,
       JSON.stringify({
-        version: 1,
+        version: 2,
         snapshot: {
           user: {
             userId: 'user-1',
@@ -74,6 +77,9 @@ describe('auth session storage boundaries', () => {
             roles: ['ROLE_STUDENT'],
             permissions: [],
           },
+          activeTenant: null,
+          availableTenants: [],
+          requiresTenantSelection: false,
           activeContext: {
             userPersonId: 'user-person-1',
             personId: 'person-1',
@@ -120,6 +126,6 @@ describe('auth session storage boundaries', () => {
     expect(await AsyncStorage.getItem('token')).toBeNull();
     expect(await AsyncStorage.getItem('refreshToken')).toBeNull();
     expect(await AsyncStorage.getItem('user')).toBeNull();
-    expect(await AsyncStorage.getItem(MIGRATION_KEY)).toBe('1');
+    expect(await AsyncStorage.getItem(MIGRATION_KEY)).toBe('2');
   });
 });

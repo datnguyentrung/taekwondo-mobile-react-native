@@ -1,6 +1,6 @@
 import { javaApi } from '@/infrastructure/http/httpClient';
 
-import type { UserContext } from '../domain/auth.types';
+import type { UserContext, TenantInfo } from '../domain/auth.types';
 import type {
   AuthResponse,
   AuthSession,
@@ -9,6 +9,7 @@ import type {
   LogoutRequest,
   MobileAuthResponse,
   RefreshRequest,
+  SelectTenantRequest,
   SwitchContextRequest,
   PasswordResetChannel,
   PasswordResetOptions,
@@ -39,6 +40,19 @@ export const authApi = {
 
   async getAccount(): Promise<AuthResponse> {
     const response = await javaApi.get<AuthResponse>('/auth/account');
+    return response.data;
+  },
+
+  async getTenants(): Promise<TenantInfo[]> {
+    const response = await javaApi.get<TenantInfo[]>('/auth/tenants');
+    return response.data;
+  },
+
+  async selectTenant(request: SelectTenantRequest): Promise<AuthResponse> {
+    const response = await javaApi.post<AuthResponse>(
+      '/auth/mobile/tenants/select',
+      request,
+    );
     return response.data;
   },
 

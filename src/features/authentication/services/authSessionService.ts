@@ -10,6 +10,7 @@ import { authApi } from '../api/authApi';
 import type {
   AuthResponse,
   LoginRequest,
+  SelectTenantRequest,
   SwitchContextRequest,
 } from '../api/auth.dto';
 import { isAccessTokenUsable } from '../domain/isAccessTokenUsable';
@@ -24,6 +25,9 @@ import { authSessionStorageService } from './authSessionStorageService';
 function toSnapshot(response: AuthResponse): AuthSnapshot {
   return {
     user: response.user,
+    activeTenant: response.activeTenant ?? null,
+    availableTenants: response.availableTenants ?? [],
+    requiresTenantSelection: response.requiresTenantSelection ?? !response.activeTenant,
     activeContext: response.activeContext,
     availableContexts: response.availableContexts ?? [],
     requiresContextSelection: response.requiresContextSelection,
@@ -50,6 +54,9 @@ async function persistPersonFaceImage(
   const updated = useAuthStore.getState();
   await authSessionStorageService.snapshot.write({
     user: updated.user!,
+    activeTenant: updated.activeTenant,
+    availableTenants: updated.availableTenants,
+    requiresTenantSelection: updated.requiresTenantSelection,
     activeContext: updated.activeContext,
     availableContexts: updated.availableContexts,
     requiresContextSelection: updated.requiresContextSelection,
@@ -194,6 +201,28 @@ export const authSessionService = {
     });
     lastSyncedFcmToken = null;
     return persistRotatedSession(response);
+  },
+
+  async selectTenant(request: SelectTenantRequest): Promise<AuthResponse> {
+    await queryClient.cancelQueries();
+    const response = await authApi.selectTenant(request);
+    const tokens = await authSessionStorageService.tokens.read();
+    const accessToken = response.accessToken;
+    if (!tokens || !accessToken) {
+      await invalidateSession('missing-refresh-token');
+      throw new Error('The tenant response did not contain an access token.');
+    }
+
+    await authSessionStorageService.tokens.write({
+      accessToken,
+      refreshToken: tokens.refreshToken,
+    });
+    await applyAndPersist(response, accessToken);
+    queryClient.clear();
+    await useNotificationStore.getState().reset();
+    lastSyncedFcmToken = null;
+    void syncFcm().catch(() => undefined);
+    return response;
   },
 
   async switchContext(request: SwitchContextRequest): Promise<AuthResponse> {

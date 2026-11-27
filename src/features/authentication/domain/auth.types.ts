@@ -34,6 +34,15 @@ export type RelationshipType =
   | 'MANAGER'
   | (string & {});
 
+export type TenantStatus = 'ACTIVE' | 'INACTIVE' | 'SUSPENDED' | (string & {});
+
+export type TenantInfo = {
+  tenantId: string;
+  code: string;
+  name: string;
+  status: TenantStatus;
+};
+
 export type AuthUser = {
   userId: string;
   phoneNumber: string;
@@ -55,12 +64,16 @@ export type UserContext = {
 export type AuthStatus =
   | 'bootstrapping'
   | 'anonymous'
+  | 'selecting-tenant'
   | 'selecting-context'
   | 'authenticated'
   | 'recoverable-error';
 
 export type AuthSnapshot = {
   user: AuthUser;
+  activeTenant: TenantInfo | null;
+  availableTenants: TenantInfo[];
+  requiresTenantSelection: boolean;
   activeContext: UserContext | null;
   availableContexts: UserContext[];
   requiresContextSelection: boolean;
@@ -74,6 +87,7 @@ export type AuthSession = {
   createdAt: string;
   updatedAt: string;
   expiresAt: string;
+  tenantId: string | null;
   activeUserPersonId: string | null;
 };
 

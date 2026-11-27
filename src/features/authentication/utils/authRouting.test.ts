@@ -10,6 +10,21 @@ const response: AuthResponse = {
     roles: ["ROLE_STUDENT"],
     permissions: [],
   },
+  activeTenant: {
+    tenantId: "tenant-1",
+    code: "VAN_QUAN",
+    name: "Taekwondo Văn Quán",
+    status: "ACTIVE",
+  },
+  availableTenants: [
+    {
+      tenantId: "tenant-1",
+      code: "VAN_QUAN",
+      name: "Taekwondo Văn Quán",
+      status: "ACTIVE",
+    },
+  ],
+  requiresTenantSelection: false,
   activeContext: null,
   availableContexts: [],
   requiresContextSelection: true,
