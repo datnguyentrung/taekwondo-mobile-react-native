@@ -1,19 +1,29 @@
-import { ConfirmationDialog } from "@/shared/ui/ConfirmationDialog";
 import StackScreenLayout from "@/routes/navigation/layouts/StackScreenLayout";
+import { ConfirmationDialog } from "@/shared/ui/ConfirmationDialog";
 import { ThemedText } from "@/shared/ui/ThemedText";
 import { Colors, radii } from "@/theme";
-import { router, useFocusEffect, useLocalSearchParams, type Href } from "expo-router";
+import {
+  router,
+  useFocusEffect,
+  useLocalSearchParams,
+  type Href,
+} from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import {
-  type ComponentType,
   useCallback,
   useEffect,
   useMemo,
   useState,
+  type ComponentType,
 } from "react";
-import { ActivityIndicator, AppState, Image, Pressable, StyleSheet, View } from "react-native";
-
-const APP_LOGO = require("../../../../assets/logo/android/launchericon-512x512.png");
+import {
+  ActivityIndicator,
+  AppState,
+  Image,
+  Pressable,
+  StyleSheet,
+  View,
+} from "react-native";
 
 import type {
   CheckInCameraMode,
@@ -39,6 +49,8 @@ import type {
   FaceQualityReason,
   ScannerState,
 } from "../types/faceScanner.types";
+
+const APP_LOGO = require("../../../../assets/logo/android/launchericon-512x512.png");
 
 const CAMERA_PERMISSION_DESCRIPTION =
   "Camera được dùng để nhận diện khuôn mặt và điểm danh học viên/HLV.";
@@ -75,15 +87,18 @@ export default function CheckInScreen() {
   const layout = useCheckInCameraLayout();
   const session = useFaceCheckInSession();
   const isCameraEnabled = useKioskCameraStore((state) => state.isCameraEnabled);
-  const setCameraEnabled = useKioskCameraStore((state) => state.setCameraEnabled);
+  const setCameraEnabled = useKioskCameraStore(
+    (state) => state.setCameraEnabled,
+  );
   const [initialVisionLoad] = useState(loadVisionCamera);
   const [isFocused, setIsFocused] = useState(false);
   const [isCameraReady, setIsCameraReady] = useState(false);
-  const [manualCameraError, setManualCameraError] = useState<string | null>(null);
-  const [cameraMode, setCameraMode] =
-    useState<CheckInCameraMode>(
-      initialVisionLoad.available ? "vision-auto" : "manual",
-    );
+  const [manualCameraError, setManualCameraError] = useState<string | null>(
+    null,
+  );
+  const [cameraMode, setCameraMode] = useState<CheckInCameraMode>(
+    initialVisionLoad.available ? "vision-auto" : "manual",
+  );
   const [fallbackReason, setFallbackReason] =
     useState<VisionFallbackReason | null>(
       initialVisionLoad.available ? null : initialVisionLoad.reason,
@@ -128,7 +143,8 @@ export default function CheckInScreen() {
 
   const activateManualMode = useCallback(
     (reason: VisionFallbackReason, error?: unknown) => {
-      if (error) console.warn("[CheckInCamera] Chuyển sang camera thủ công:", error);
+      if (error)
+        console.warn("[CheckInCamera] Chuyển sang camera thủ công:", error);
       setFallbackReason(reason);
       setCameraMode("manual");
       setVisionFlashAvailable(false);
@@ -211,11 +227,8 @@ export default function CheckInScreen() {
   }, [tryLoadVisionCamera]);
 
   const handleScannerPresentationChange = useCallback(
-    (
-      state: ScannerState,
-      message: string,
-      qualityReason: FaceQualityReason,
-    ) => setScannerPresentation({ state, message, qualityReason }),
+    (state: ScannerState, message: string, qualityReason: FaceQualityReason) =>
+      setScannerPresentation({ state, message, qualityReason }),
     [],
   );
 
@@ -229,10 +242,12 @@ export default function CheckInScreen() {
     session.isResultSheetVisible ||
     session.isHistorySheetVisible ||
     isSubmittingOrProcessing;
-  const scannerEnabled =
-    isCameraActive && isCameraReady && !isCameraSuspended;
+  const scannerEnabled = isCameraActive && isCameraReady && !isCameraSuspended;
   const shouldShowPermissionDialog =
-    isFocused && isCameraEnabled && !isPermissionLoading && !isPermissionGranted;
+    isFocused &&
+    isCameraEnabled &&
+    !isPermissionLoading &&
+    !isPermissionGranted;
   const permissionDialogDescription =
     permissionError ||
     (!canAskAgain
@@ -246,7 +261,8 @@ export default function CheckInScreen() {
       ? isTorchAvailable
       : cameraMode === "vision-auto" && visionFlashAvailable);
   const canRetryVision =
-    fallbackReason === "vision-runtime-error" || fallbackReason === "mlkit-error";
+    fallbackReason === "vision-runtime-error" ||
+    fallbackReason === "mlkit-error";
 
   const manualScannerState: ScannerState =
     session.status === "submitting"
@@ -265,37 +281,36 @@ export default function CheckInScreen() {
         title="Điểm danh khuôn mặt"
         scrollEnabled={false}
         refreshEnabled={false}
+        contentContainerStyle={styles.standbyLayoutContent}
       >
-        <View style={styles.standbyLayoutContent}>
-          <StatusBar style="dark" />
-          <View style={styles.welcomeCard}>
-            <Image
-              source={APP_LOGO}
-              style={styles.welcomeLogo}
-              resizeMode="contain"
-            />
-            <ThemedText type="heading" style={styles.welcomeTitle}>
-              Điểm danh khuôn mặt
+        <StatusBar style="dark" />
+        <View style={styles.welcomeCard}>
+          <Image
+            source={APP_LOGO}
+            style={styles.welcomeLogo}
+            resizeMode="contain"
+          />
+          <ThemedText type="heading" style={styles.welcomeTitle}>
+            Điểm danh khuôn mặt
+          </ThemedText>
+          <ThemedText type="bodySmall" style={styles.welcomeDescription}>
+            Hệ thống nhận diện khuôn mặt tự động giúp học viên và huấn luyện
+            viên điểm danh nhanh chóng. Bấm nút bên dưới hoặc đứng trước cảm
+            biến để bật camera.
+          </ThemedText>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Bật camera điểm danh"
+            onPress={() => setCameraEnabled(true)}
+            style={({ pressed }) => [
+              styles.enableCameraButton,
+              pressed ? styles.enableCameraButtonPressed : null,
+            ]}
+          >
+            <ThemedText type="action" style={styles.enableCameraButtonText}>
+              Bật camera
             </ThemedText>
-            <ThemedText type="bodySmall" style={styles.welcomeDescription}>
-              Hệ thống nhận diện khuôn mặt tự động giúp học viên và huấn luyện
-              viên điểm danh nhanh chóng. Bấm nút bên dưới hoặc đứng trước cảm
-              biến để bật camera.
-            </ThemedText>
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel="Bật camera điểm danh"
-              onPress={() => setCameraEnabled(true)}
-              style={({ pressed }) => [
-                styles.enableCameraButton,
-                pressed ? styles.enableCameraButtonPressed : null,
-              ]}
-            >
-              <ThemedText type="action" style={styles.enableCameraButtonText}>
-                Bật camera
-              </ThemedText>
-            </Pressable>
-          </View>
+          </Pressable>
         </View>
       </StackScreenLayout>
     );
@@ -308,9 +323,7 @@ export default function CheckInScreen() {
       {cameraMode === "vision-auto" && VisionCameraAdapter ? (
         <VisionCameraErrorBoundary
           resetKey={visionAttemptKey}
-          onError={(error) =>
-            activateManualMode("vision-runtime-error", error)
-          }
+          onError={(error) => activateManualMode("vision-runtime-error", error)}
         >
           <VisionCameraAdapter
             key={`vision-${facing}-${visionAttemptKey}`}
@@ -394,9 +407,9 @@ export default function CheckInScreen() {
                 Điểm danh khuôn mặt
               </ThemedText>
               <ThemedText type="bodySmall" style={styles.welcomeDescription}>
-                Hệ thống nhận diện khuôn mặt tự động giúp học viên và huấn
-                luyện viên điểm danh nhanh chóng. Bấm nút bên dưới hoặc đứng
-                trước cảm biến để bật camera.
+                Hệ thống nhận diện khuôn mặt tự động giúp học viên và huấn luyện
+                viên điểm danh nhanh chóng. Bấm nút bên dưới hoặc đứng trước cảm
+                biến để bật camera.
               </ThemedText>
               <Pressable
                 accessibilityRole="button"
@@ -516,8 +529,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     paddingHorizontal: 16,
-    paddingVertical: 16,
-    gap: 20,
   },
   fallbackBackground: {
     backgroundColor: "#18191B",
